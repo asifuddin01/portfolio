@@ -11,8 +11,11 @@ const attribution = fp?.data.attribution ?? 'the author';
 const location = fp?.data.location ?? LOCATION;
 const words = epigraph.split(' ').filter(Boolean);
 
-/* The frontispiece carries whichever tabula sorts first. */
-const [firstPlate] = await getTabulae();
+/* Whichever plate claims the frontispiece slot, falling back to the first. */
+const tabulae = await getTabulae();
+const firstPlate =
+  tabulae.find((t) => t.data.placement === 'frontispiece') ?? tabulae[0];
+const frontN = firstPlate ? tabulae.indexOf(firstPlate) + 1 : 1;
 ---
 <section class="fp" aria-labelledby="fp-h">
   <div class="codex fp-inner">
@@ -37,7 +40,7 @@ const [firstPlate] = await getTabulae();
      <div class="fp-art" data-intro style="--d:300ms">
        <ArtPlate
          entry={firstPlate}
-         n={1}
+         n={frontN}
          eager={true}
          depth={0.08}
          sizes="(max-width: 999px) min(92vw, 26rem), 24rem"

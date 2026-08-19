@@ -18,10 +18,13 @@ import Correspondence from '../components/home/Correspondence.astro';
 
 import { AUTHOR, ROLE, toRoman } from '../consts';
 
-/* Tabula 1 sits on the frontispiece; the rest interleave the chapters in
-   order, so re-ordering them in /admin re-orders the page. */
-const [, ...interleaves] = (await getTabulae()).filter((t) => t.data.onHome);
-const plate = (i: number) => interleaves[i];
+/* Each plate declares which chapter it follows, so its position on the page
+   is an editorial choice made in /admin rather than an array index here.
+   Numerals stay tied to the gallery sequence wherever a plate appears. */
+const tabulae = await getTabulae();
+const numeral = new Map(tabulae.map((t, i) => [t.id, i + 1]));
+const at = (slot: string) =>
+  tabulae.find((t) => t.data.onHome && t.data.placement === slot);
 ---
 <BaseLayout
   title={`${AUTHOR} — Deep learning researcher`}
@@ -33,40 +36,42 @@ const plate = (i: number) => interleaves[i];
   <div class="codex">
     <LesionRule />
     <Prologue />
-    {plate(0) && <ArtInterleaf entry={plate(0)!} n={2} />}
+    {at('prologue') && <ArtInterleaf entry={at('prologue')!} n={numeral.get(at('prologue')!.id)} />}
 
     <LesionRule />
     <Axioms />
-    {plate(1) && <ArtInterleaf entry={plate(1)!} n={3} />}
+    {at('axioms') && <ArtInterleaf entry={at('axioms')!} n={numeral.get(at('axioms')!.id)} />}
 
     <LesionRule />
     <Instrumentarium />
-    {plate(2) && <ArtInterleaf entry={plate(2)!} n={4} />}
+    {at('instrumentarium') && <ArtInterleaf entry={at('instrumentarium')!} n={numeral.get(at('instrumentarium')!.id)} />}
 
     <LesionRule />
     <Compendium />
-    {plate(3) && <ArtInterleaf entry={plate(3)!} n={5} />}
+    {at('compendium') && <ArtInterleaf entry={at('compendium')!} n={numeral.get(at('compendium')!.id)} />}
 
     <LesionRule />
     <InstrumentaPropria />
+    {at('instrumenta') && <ArtInterleaf entry={at('instrumenta')!} n={numeral.get(at('instrumenta')!.id)} />}
 
     <LesionRule />
     <ElementaSection />
-    {plate(4) && <ArtInterleaf entry={plate(4)!} n={6} />}
+    {at('elementa') && <ArtInterleaf entry={at('elementa')!} n={numeral.get(at('elementa')!.id)} />}
 
     <LesionRule />
     <MarginaliaSection />
-    {plate(5) && <ArtInterleaf entry={plate(5)!} n={7} />}
+    {at('marginalia') && <ArtInterleaf entry={at('marginalia')!} n={numeral.get(at('marginalia')!.id)} />}
 
     <LesionRule />
     <Chronicle />
-    {plate(6) && <ArtInterleaf entry={plate(6)!} n={8} />}
+    {at('chronicle') && <ArtInterleaf entry={at('chronicle')!} n={numeral.get(at('chronicle')!.id)} />}
 
     <LesionRule />
     <Appendix />
+    {at('appendix') && <ArtInterleaf entry={at('appendix')!} n={numeral.get(at('appendix')!.id)} />}
 
     <LesionRule />
     <Correspondence />
-    {plate(7) && <ArtInterleaf entry={plate(7)!} n={9} />}
+    {at('correspondence') && <ArtInterleaf entry={at('correspondence')!} n={numeral.get(at('correspondence')!.id)} />}
   </div>
 </BaseLayout>

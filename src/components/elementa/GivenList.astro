@@ -1,11 +1,14 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { getBookIndex } from '../../lib/collections';
+import { toRoman } from '../../consts';
 
 interface Props {
   given: string[];
   all: CollectionEntry<'elementa'>[];
 }
 const { given, all } = Astro.props;
+const bookIndex = await getBookIndex();
 
 const resolved = given
   .map((slug) => all.find((e) => e.id === slug))
@@ -20,7 +23,7 @@ const resolved = given
       {resolved.map((p) => (
         <li>
           <a class="link" href={`/elementa/${p.id}`}>
-            Book {p.data.book}, Prop. {p.data.proposition} — {p.data.statement}
+            Book {toRoman(bookIndex.get(p.data.book.id)?.n ?? 0)}, Prop. {p.data.proposition} — {p.data.statement}
           </a>
         </li>
       ))}

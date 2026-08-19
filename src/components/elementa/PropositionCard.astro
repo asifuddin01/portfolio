@@ -1,16 +1,15 @@
 ---
-import { toRoman } from '../../consts';
 interface Props {
-  book: number;
+  bookNumeral: string;
   proposition: number;
   statement: string;
   slug: string;
   status: 'draft' | 'published';
 }
-const { book, proposition, statement, slug, status } = Astro.props;
+const { bookNumeral, proposition, statement, slug, status } = Astro.props;
 ---
 <a class="pcd" href={`/elementa/${slug}`}>
-  <span class="pcd-ref">Book {toRoman(book)} · Prop. {proposition}</span>
+  <span class="pcd-ref">Book {bookNumeral} · Prop. {proposition}</span>
   <span class="pcd-st">{statement}</span>
   {status === 'draft' && <span class="pcd-draft">draft</span>}
 </a>

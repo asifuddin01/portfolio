@@ -1,79 +1,28 @@
 ---
 import Chapter from './Chapter.astro';
+import { getCollection, getEntry } from 'astro:content';
 
-/** Skills as an engraved instrument plate. No bars, no percentages,
-    no star ratings, no logo grids — each group is a numbered figure
-    with a note on actual use. */
-const GROUPS: ReadonlyArray<{ title: string; note: string; items: string }> = [
-  {
-    title: 'Languages',
-    note: 'Everything below is written in the first of these.',
-    items: 'Python (primary). C (coursework level).',
-  },
-  {
-    title: 'Deep learning',
-    note: 'Training discipline more than library familiarity.',
-    items:
-      'PyTorch, timm, segmentation_models_pytorch. Mixed-precision training with GradScaler tuning, EMA, test-time augmentation, k-fold CV with resumable per-fold checkpointing, class-imbalance handling (pos_weight, weighted samplers), threshold calibration on validation only, ordinal regression (CORN), mixture-of-experts, cross-attention fusion, attention gates, ASPP, GeM pooling, deep supervision, frozen-backbone transfer, Grad-CAM.',
-  },
-  {
-    title: 'Architectures used hands-on',
-    note: 'The last two were written here, not imported.',
-    items:
-      'ConvNeXtV2, SwinV2, DINOv2/v3, image-text encoders, EfficientNet, U-Net, UNet++, Attention U-Net, SwinHRUNetPP, HSMoE-AUNet.',
-  },
-  {
-    title: 'Medical imaging',
-    note: 'Most of this is preprocessing nobody writes papers about.',
-    items:
-      'Fundus photography, non-contrast CT, NIfTI and DICOM handling, FOV masking with morphological erosion, CLAHE on the green channel, retinal cropping, patch extraction and stitching, lesion-level connected-component evaluation, de-identification, radiologist report parsing.',
-  },
-  {
-    title: 'Evaluation',
-    note: 'The per-dataset breakdown is the part that matters.',
-    items:
-      'QWK, ICC, AUC-ROC, AUC-PR, Dice, IoU, NMI, lesion-level and image-level recall, sensitivity/specificity tradeoff analysis, per-dataset breakdowns, held-out test discipline and leakage assertions.',
-  },
-  {
-    title: 'Causal inference and computational biology',
-    note: 'The newest direction, and the least finished.',
-    items:
-      'Causal graphs and DAGs, gene perturbation analysis, gene regulatory network inference, multi-omics integration, biomarker discovery.',
-  },
-  {
-    title: 'Data',
-    note: 'Ordinary tools, used daily.',
-    items: 'pandas, NumPy, Albumentations, OpenCV, Matplotlib, Seaborn, scikit-learn, nbformat.',
-  },
-  {
-    title: 'Backend',
-    note: 'From building CSMMS, in the appendix.',
-    items: 'FastAPI, REST APIs, SQLAlchemy, JWT auth, Alembic, AWS S3, CloudFront.',
-  },
-  {
-    title: 'Other',
-    note: 'One machine, a great deal of patience.',
-    items: 'Git, Jupyter, LaTeX, lex/yacc, CUDA-level debugging. Trained on an NVIDIA RTX A6000.',
-  },
-];
+const groups = (await getCollection('instrumentarium')).sort(
+  (a, b) => a.data.order - b.data.order
+);
+const meta = await getEntry('site', 'instrumentarium');
+const notYet = meta?.data.notYet ?? '';
 
-const ROMAN_LOWER = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix'];
+const ROMAN_LOWER = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii'];
 ---
 <Chapter n={4} title="Instrumentarium" id="instrumentarium">
   <div class="in-grid" data-reveal-stagger>
-    {GROUPS.map((g, i) => (
+    {groups.map((g, i) => (
       <section class="in-item">
-        <p class="in-fig">Fig. {ROMAN_LOWER[i]}</p>
-        <h3 class="in-title">{g.title}</h3>
-        <p class="in-items">{g.items}</p>
-        <p class="in-note">{g.note}</p>
+        <p class="in-fig">Fig. {ROMAN_LOWER[i] ?? i + 1}</p>
+        <h3 class="in-title">{g.data.title}</h3>
+        <p class="in-items">{g.data.items}</p>
+        <p class="in-note">{g.data.note}</p>
       </section>
     ))}
   </div>
 
-  <p class="in-not-yet" data-reveal>
-    Not yet: SQL, propensity score methods, Mendelian randomization.
-  </p>
+  {notYet && <p class="in-not-yet" data-reveal>{notYet}</p>}
 </Chapter>
 
 <style>

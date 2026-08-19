@@ -2,17 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import PropositionCard from '../../components/elementa/PropositionCard.astro';
-import { getPropositions } from '../../lib/collections';
+import { getPropositions, getBooks } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
 const props = await getPropositions();
 
-const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
-  { n: 1, title: 'Foundations',     covers: 'tokenisation, attention, the transformer block' },
-  { n: 2, title: 'Vision',          covers: 'ViT, DINOv2, self-supervised visual representation' },
-  { n: 3, title: 'Vision-language', covers: 'contrastive pretraining, fusion, VLM architectures' },
-  { n: 4, title: 'Practice',        covers: 'losses, training dynamics, evaluation' },
-];
+const books = await getBooks();
 ---
 <BaseLayout
   title="Elementa — Md. Asif Uddin"
@@ -36,16 +31,16 @@ const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
 
     <LesionRule />
 
-    {BOOKS.map((b) => {
-      const inBook = props.filter((p) => p.data.book === b.n);
+    {books.map((b, bi) => {
+      const inBook = props.filter((p) => p.data.book.id === b.id);
       return (
-        <section class="el-book" aria-labelledby={`book-${b.n}`}>
+        <section class="el-book" aria-labelledby={`book-${b.id}`}>
           <header class="el-book-head">
-            <h2 class="el-book-h" id={`book-${b.n}`}>
-              <span class="el-book-n">Book {toRoman(b.n)}</span>
-              {b.title}
+            <h2 class="el-book-h" id={`book-${b.id}`}>
+              <span class="el-book-n">Book {toRoman(bi + 1)}</span>
+              {b.data.title}
             </h2>
-            <p class="el-book-c">{b.covers}</p>
+            <p class="el-book-c">{b.data.covers}</p>
           </header>
           {inBook.length === 0 ? (
             <p class="el-empty">Not yet written.</p>
@@ -53,7 +48,7 @@ const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
             <div class="el-list" data-reveal-stagger>
               {inBook.map((p) => (
                 <PropositionCard
-                  book={p.data.book}
+                  bookNumeral={toRoman(bi + 1)}
                   proposition={p.data.proposition}
                   statement={p.data.statement}
                   slug={p.id}

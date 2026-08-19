@@ -93,6 +93,39 @@ collections:
         hint: "Use the image button in the toolbar to upload and place pictures."
 
   # ------------------------------------------------------------------
+  - name: books
+    label: Elementa books
+    label_singular: Book
+    description: >-
+      The books the propositions are filed under. Add one here first, then it
+      appears in the Book list when you write a proposition.
+    folder: src/content/books
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{order}} · {{title}}"
+    sortable_fields: [order, title]
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "Foundations, Vision, Causal inference, Bioinformatics…"
+      - label: Covers
+        name: covers
+        widget: string
+        hint: "The short line under the title, e.g. DAGs, interventions, counterfactuals."
+      - label: Reading order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        hint: >-
+          Sort order only. Gaps are fine — the Book numeral on the page is
+          worked out from the running order, not from this value.
+
+  # ------------------------------------------------------------------
   - name: elementa
     label: Elementa
     label_singular: Proposition
@@ -104,19 +137,18 @@ collections:
     format: frontmatter
     create: true
     identifier_field: statement
-    slug: "book-{{fields.book}}-prop-{{fields.proposition}}"
+    slug: "{{fields.book}}-prop-{{fields.proposition}}"
     summary: "Book {{book}} · Prop {{proposition}} — {{statement}}"
     sortable_fields: [book, proposition, updated]
     fields:
       - label: Book
         name: book
-        widget: select
-        value_type: int
-        options:
-          - { label: "I — Foundations", value: 1 }
-          - { label: "II — Vision", value: 2 }
-          - { label: "III — Vision-language", value: 3 }
-          - { label: "IV — Practice", value: 4 }
+        widget: relation
+        collection: books
+        search_fields: [title]
+        display_fields: [title]
+        value_field: "{{slug}}"
+        hint: "Add a new book under Elementa books first if the one you want is missing."
       - label: Proposition number
         name: proposition
         widget: number
@@ -314,6 +346,76 @@ collections:
         hint: "Where it came from, what is happening in it, why it is here."
 
   # ------------------------------------------------------------------
+  - name: instrumentarium
+    label: Instrumentarium
+    label_singular: Group
+    description: >-
+      The instrument plate on the home page. Each group is a numbered figure.
+      No bars, no percentages, no logos — that is the point of it.
+    folder: src/content/instrumentarium
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{order}} · {{title}}"
+    sortable_fields: [order, title]
+    fields:
+      - { label: Group, name: title, widget: string, hint: "Languages, Deep learning, Evaluation…" }
+      - label: Contents
+        name: items
+        widget: text
+        hint: "The tools and techniques themselves, as a sentence or a list."
+      - label: Note on actual use
+        name: note
+        widget: string
+        hint: "One line. What you really do with these."
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        hint: "Sort order only. Figure numbers come from the running order."
+
+  # ------------------------------------------------------------------
+  - name: instrumenta
+    label: Instrumenta propria
+    label_singular: Entry
+    description: >-
+      Architectures and losses written from scratch. Each entry states the
+      design problem, then the decision.
+    folder: src/content/instrumenta
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: name
+    slug: "{{slug}}"
+    summary: "{{order}} · {{name}}"
+    sortable_fields: [order, name]
+    fields:
+      - { label: Name, name: name, widget: string }
+      - label: The design problem
+        name: problem
+        widget: text
+        hint: "Set in italic. Why the obvious approach does not work."
+      - label: The decision
+        name: decision
+        widget: text
+      - label: Rejected along the way
+        name: rejections
+        widget: list
+        required: false
+        field: { label: What was rejected, name: item, widget: string }
+        hint: >-
+          Things that made the result worse. Negative results are the part
+          nobody publishes and everybody respects — leave empty if there are none.
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+
+  # ------------------------------------------------------------------
   - name: site
     label: Site text
     description: Prose that appears on the home page.
@@ -334,6 +436,27 @@ collections:
             name: body
             widget: markdown
             hint: "Use the image button in the toolbar to add pictures."
+      - name: instrumentarium
+        label: Instrumentarium closing line
+        file: src/content/site/instrumentarium.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: "Not yet"
+            name: notYet
+            widget: string
+            hint: >-
+              The line admitting what is missing. A skills list that visibly
+              excludes things is more credible than one that does not.
+      - name: colophon
+        label: Colophon
+        file: src/content/site/colophon.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - { label: Colophon, name: body, widget: markdown }
       - name: frontispiece
         label: Frontispiece
         file: src/content/site/frontispiece.mdx

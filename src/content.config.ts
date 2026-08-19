@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { z } from 'zod';
 import { glob } from 'astro/loaders';
 
@@ -55,10 +55,25 @@ const works = defineCollection({
   }),
 });
 
+/**
+ * The books of the Elementa. A collection rather than a fixed list so new
+ * ones — causal inference, bioinformatics — can be added from /admin.
+ */
+const books = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/books' }),
+  schema: z.object({
+    order: z.number(),
+    title: z.string(),
+    covers: z.string(),
+  }),
+});
+
 const elementa = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/elementa' }),
   schema: z.object({
-    book: z.number().min(1).max(4),
+    // A reference, so a proposition pointing at a book that does not exist
+    // fails the build instead of rendering a blank heading.
+    book: reference('books'),
     proposition: z.number(),
     statement: z.string(),                   // the claim, asserted
     given: z.array(z.string()).default([]),  // slugs of prerequisite props
@@ -100,6 +115,8 @@ const site = defineCollection({
     epigraph: z.string().optional(),
     attribution: z.string().optional(),
     location: z.string().optional(),
+    // Instrumentarium closing line.
+    notYet: z.string().optional(),
   }),
 });
 
@@ -130,9 +147,46 @@ const art = defineCollection({
       // object cannot, and gets a duotone instead.
       treatment: z.enum(['intaglio', 'photograph']).default('intaglio'),
       side: z.enum(['left', 'right']).default('right'),
+      /**
+       * Which chapter the plate follows on the home scroll. `frontispiece`
+       * puts it beside the name; `none` keeps it in the gallery only. Two
+       * plates claiming the same slot is harmless — the first one wins.
+       */
+      placement: z
+        .enum([
+          'frontispiece', 'prologue', 'axioms', 'instrumentarium',
+          'compendium', 'instrumenta', 'elementa', 'marginalia',
+          'chronicle', 'appendix', 'correspondence', 'none',
+        ])
+        .default('none'),
       onHome: z.boolean().default(true),
       status: z.enum(['draft', 'published']).default('published'),
     }),
 });
 
-export const collections = { works, elementa, marginalia, site, art };
+/** The instrument plate: skill groups, each a numbered figure. */
+const instrumentarium = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/instrumentarium' }),
+  schema: z.object({
+    order: z.number(),
+    title: z.string(),
+    note: z.string(),
+    items: z.string(),
+  }),
+});
+
+/** Architectures and losses written from scratch. */
+const instrumenta = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/instrumenta' }),
+  schema: z.object({
+    order: z.number(),
+    name: z.string(),
+    problem: z.string(),
+    decision: z.string(),
+    rejections: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = {
+  works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
+};

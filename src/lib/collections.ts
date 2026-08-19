@@ -4,13 +4,28 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 const visible = <T extends { data: { status: 'draft' | 'published' } }>(e: T): boolean =>
   !import.meta.env.PROD || e.data.status === 'published';
 
+/** Books in reading order. */
+export async function getBooks(): Promise<CollectionEntry<'books'>[]> {
+  const all = await getCollection('books');
+  return all.sort((a, b) => a.data.order - b.data.order);
+}
+
+/**
+ * Book numerals come from position, not from the `order` value, so adding or
+ * renumbering a book can never leave a gap in the sequence.
+ */
+export async function getBookIndex(): Promise<Map<string, { n: number; entry: CollectionEntry<'books'> }>> {
+  const books = await getBooks();
+  return new Map(books.map((entry, i) => [entry.id, { n: i + 1, entry }]));
+}
+
 export async function getPropositions(): Promise<CollectionEntry<'elementa'>[]> {
   const all = await getCollection('elementa');
+  const index = await getBookIndex();
+  const rank = (e: CollectionEntry<'elementa'>) => index.get(e.data.book.id)?.n ?? 999;
   return all
     .filter(visible)
-    .sort((a, b) =>
-      a.data.book - b.data.book || a.data.proposition - b.data.proposition
-    );
+    .sort((a, b) => rank(a) - rank(b) || a.data.proposition - b.data.proposition);
 }
 
 export async function getMarginalia(): Promise<CollectionEntry<'marginalia'>[]> {

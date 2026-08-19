@@ -1,0 +1,15 @@
+---
+order: 2
+name: "SwinHRUNetPP"
+problem: "Vessel segmentation needs global context and hairline spatial precision at once, and most hybrids trade one away."
+decision: "A Swin-based high-resolution U-Net++ hybrid, arrived at by rejection rather than by design."
+rejections:
+  - "SwinV2-Large"
+  - "smp UNet++"
+  - "plain SwinUNet"
+  - "Lovász loss"
+  - "BoundaryLoss"
+  - "warm-restart scheduling"
+  - "label smoothing"
+  - "encoder freezing"
+---

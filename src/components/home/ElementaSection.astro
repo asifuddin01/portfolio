@@ -1,20 +1,16 @@
 ---
 import Chapter from './Chapter.astro';
-import { getCollection } from 'astro:content';
+import { getPropositions, getBooks, getBookIndex } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
-const all = await getCollection('elementa');
-const published = all.filter((e) => !import.meta.env.PROD || e.data.status === 'published');
-const recent = published
+const published = await getPropositions();
+const bookIndex = await getBookIndex();
+const books = await getBooks();
+const recent = [...published]
   .sort((a, b) => b.data.updated.getTime() - a.data.updated.getTime())
   .slice(0, 3);
+const numeralFor = (id: string): string => toRoman(bookIndex.get(id)?.n ?? 0);
 
-const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
-  { n: 1, title: 'Foundations',    covers: 'tokenisation, attention, the transformer block' },
-  { n: 2, title: 'Vision',         covers: 'ViT, DINOv2, self-supervised visual representation' },
-  { n: 3, title: 'Vision-language', covers: 'contrastive pretraining, fusion, VLM architectures' },
-  { n: 4, title: 'Practice',       covers: 'losses, training dynamics, evaluation' },
-];
 ---
 <Chapter n={7} title="Elementa" id="elementa">
   <p class="el-lede codex-measure" data-reveal>
@@ -25,11 +21,11 @@ const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
   </p>
 
   <ol class="el-books" data-reveal-stagger>
-    {BOOKS.map((b) => (
+    {books.map((b, i) => (
       <li class="el-book">
-        <span class="el-book-n">Book {toRoman(b.n)}</span>
-        <span class="el-book-t">{b.title}</span>
-        <span class="el-book-c">{b.covers}</span>
+        <span class="el-book-n">Book {toRoman(i + 1)}</span>
+        <span class="el-book-t">{b.data.title}</span>
+        <span class="el-book-c">{b.data.covers}</span>
       </li>
     ))}
   </ol>
@@ -40,7 +36,7 @@ const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
         <li class="el-recent-item">
           <a class="el-recent-link" href={`/elementa/${p.id}`}>
             <span class="el-recent-ref">
-              Book {toRoman(p.data.book)} · Prop. {p.data.proposition}
+              Book {numeralFor(p.data.book.id)} · Prop. {p.data.proposition}
             </span>
             <span class="el-recent-st">{p.data.statement}</span>
           </a>

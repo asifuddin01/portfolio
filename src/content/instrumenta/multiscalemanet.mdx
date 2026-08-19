@@ -1,0 +1,7 @@
+---
+order: 3
+name: "MultiScaleMANet"
+problem: "Microaneurysms vanish at low resolution and lose context at high resolution."
+decision: "Three branches — full 512×512 through EfficientNet-B4, four 256×256 patches through a shared EfficientNet-B0, sixteen 128×128 patches through the same encoder — with spatial reassembly and bottleneck fusion. Alignment was proved on paper before implementation."
+rejections: []
+---

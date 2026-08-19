@@ -58,6 +58,9 @@ What you can edit there:
 | Elementa | Propositions, including the `Given` dependency links |
 | Plates | Abstracts, citations, paper and repo links, results |
 | Tabulae | Artwork — upload an image and write its history |
+| Elementa books | The books propositions are filed under — add your own |
+| Instrumentarium | The skill groups on the home page |
+| Instrumenta propria | Architectures and losses written from scratch |
 | Site text | The Prologue, the colophon, the frontispiece epigraph and role line |
 
 Images have two destinations, on purpose:
@@ -115,6 +118,13 @@ runs `npm run build` from a fresh checkout, and a cold build has no stale file
 list. Verified by cloning the repo and building from scratch. If you ever
 suspect a stale content cache, `npx astro build --force` clears it.
 
+### Adding a book to the Elementa
+
+Books are a collection, not a fixed list. Add one under **Elementa books**
+first — causal inference, bioinformatics, whatever — and it appears in the
+Book dropdown when you write a proposition. A proposition pointing at a book
+that does not exist fails the build rather than rendering a blank heading.
+
 ### Two things the CMS cannot do
 
 - **Add a figure.** Figures are hand-written SVG diagrams, not uploads; a new
@@ -169,6 +179,7 @@ duotone instead. Re-fetch with `npm run plates`.
 | `npm run verify` | build → audit → contrast → typecheck |
 | `npm run audit` | heading order, alt text, landmarks, self-hosting |
 | `npm run contrast` | WCAG ratios for every token pair, both themes |
+| `npm run check:cms` | Parses config.yml; checks folders and relations resolve |
 | `npm run plates` | re-download the artwork |
 | `npm run og` | regenerate `public/og.png` |
 
