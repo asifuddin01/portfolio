@@ -40,18 +40,30 @@ const { title, description, folio, image, type } = Astro.props;
          or disabled script can never blank the page. -->
     <script is:inline>
       (function () {
-        document.documentElement.classList.add('js');
-        try {
-          var stored = localStorage.getItem('codex-theme');
-          if (stored === 'nocturne' || stored === 'vellum') {
-            document.documentElement.dataset.theme = stored;
-          } else {
-            document.documentElement.dataset.theme =
-              window.matchMedia('(prefers-color-scheme: dark)').matches ? 'nocturne' : 'vellum';
+        function apply() {
+          var root = document.documentElement;
+          root.classList.add('js');
+          try {
+            var stored = localStorage.getItem('codex-theme');
+            if (stored === 'nocturne' || stored === 'vellum') {
+              root.dataset.theme = stored;
+            } else {
+              root.dataset.theme =
+                window.matchMedia('(prefers-color-scheme: dark)').matches ? 'nocturne' : 'vellum';
+            }
+          } catch (e) {
+            root.dataset.theme = 'vellum';
           }
-        } catch (e) {
-          document.documentElement.dataset.theme = 'vellum';
         }
+
+        apply();
+
+        // On a soft navigation the router copies the <html> attributes from
+        // the incoming document, which is server-rendered and carries neither
+        // the theme nor the `js` class. Without this the page reverted to
+        // vellum on every click, and the reveal animations stopped firing.
+        // after-swap runs before the new page paints, so nothing flashes.
+        document.addEventListener('astro:after-swap', apply);
       })();
     </script>
   </head>
