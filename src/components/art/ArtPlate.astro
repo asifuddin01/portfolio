@@ -1,49 +1,38 @@
 ---
 import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
-import plates from '../../lib/plates.json';
+import type { CollectionEntry } from 'astro:content';
 import { toRoman } from '../../consts';
 
 interface Props {
-  slug: string;
-  /** Plate numeral shown in the caption rail. */
-  n: number;
-  /** Line of the author's own, set beneath the attribution. */
-  gloss?: string;
-  align?: 'left' | 'right' | 'full';
-  depth?: number;
-  eager?: boolean;
+  entry: CollectionEntry<'art'>;
+  /** Tabula numeral. Defaults to the entry's own order. */
+  n?: number;
   /** Real rendered width of the slot, so the srcset picks a sane candidate. */
   sizes?: string;
+  depth?: number;
+  eager?: boolean;
+  /** Link the caption through to the full note. */
+  linked?: boolean;
 }
 const {
-  slug, n, gloss, align = 'right', depth = 0.16, eager = false,
+  entry,
+  n,
   sizes = '(max-width: 700px) 92vw, 30rem',
+  depth = 0.16,
+  eager = false,
+  linked = true,
 } = Astro.props;
 
-const meta = plates.find((p) => p.slug === slug);
-if (!meta) throw new Error(`ArtPlate: no plate named "${slug}" in plates.json`);
-
-const files = import.meta.glob<{ default: ImageMetadata }>('../../assets/plates/*.jpg', {
-  eager: true,
-});
-const key = `../../assets/plates/${meta.file}`;
-const entry = files[key];
-if (!entry) throw new Error(`ArtPlate: image missing for "${slug}" at ${key}`);
-const img = entry.default;
-
-/* Engravings are line art on white and can be printed straight onto the page
-   with a blend mode. Photographed objects cannot, so they get a duotone. */
-const PHOTOGRAPHS = new Set(['bust', 'meditation']);
-const treatment = PHOTOGRAPHS.has(slug) ? 'photo' : 'intaglio';
-
-const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
+const d = entry.data;
+const numeral = toRoman(n ?? d.order);
+const attribution = [d.artist, d.date].filter(Boolean).join(', ');
+const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
 ---
-<figure class:list={['art', `art--${align}`, `art--${treatment}`]}>
+<figure class:list={['art', `art--${d.treatment}`]}>
   <div class="art-frame plate-art" data-parallax={depth}>
     <Image
-      src={img}
-      alt={`${meta.title}${meta.artist ? `, ${meta.artist}` : ''}${meta.date ? `, ${meta.date}` : ''}`}
+      src={d.image}
+      alt={alt}
       widths={[340, 480, 680, 900]}
       sizes={sizes}
       loading={eager ? 'eager' : 'lazy'}
@@ -53,13 +42,19 @@ const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
     />
   </div>
   <figcaption class="art-cap">
-    <span class="art-n">Plate {toRoman(n)}</span>
-    <span class="art-title">{meta.title}</span>
+    <span class="art-n">Tabula {numeral}</span>
+    {linked ? (
+      <a class="art-title art-link" href={`/tabulae/${entry.id}`}>{d.title}</a>
+    ) : (
+      <span class="art-title">{d.title}</span>
+    )}
     <span class="art-attr">{attribution}</span>
-    {gloss && <span class="art-gloss">{gloss}</span>}
-    <a class="art-src" href={meta.sourceUrl} rel="noopener">
-      Art Institute of Chicago · CC0
-    </a>
+    {d.gloss && <span class="art-gloss">{d.gloss}</span>}
+    {d.source ? (
+      <a class="art-src" href={d.source} rel="noopener">{d.credit}</a>
+    ) : (
+      <span class="art-src">{d.credit}</span>
+    )}
   </figcaption>
 </figure>
 
@@ -84,10 +79,10 @@ const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
   }
 
   /* Photographed objects: duotone toward the page, no blend mode. */
-  .art--photo .art-frame :global(img) {
+  .art--photograph .art-frame :global(img) {
     filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02);
   }
-  :global([data-theme='nocturne']) .art--photo .art-frame :global(img) {
+  :global([data-theme='nocturne']) .art--photograph .art-frame :global(img) {
     filter: grayscale(1) sepia(0.16) contrast(0.98) brightness(0.86);
   }
 
@@ -101,6 +96,7 @@ const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
   }
   .art-n { color: var(--brass-text); letter-spacing: 0.16em; text-transform: uppercase; }
   .art-title { color: var(--ink); font-style: italic; }
+  .art-link:hover { color: var(--fundus); }
   .art-attr { color: var(--ink-soft); }
   .art-gloss {
     color: var(--ink-soft);
@@ -112,5 +108,5 @@ const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
     max-width: 34ch;
   }
   .art-src { color: var(--brass-text); justify-self: start; margin-top: 0.3rem; }
-  .art-src:hover { color: var(--fundus); }
+  a.art-src:hover { color: var(--fundus); }
 </style>

@@ -1,16 +1,16 @@
 ---
 import LesionRule from '../ornament/LesionRule.astro';
+import { getEntry, render } from 'astro:content';
 import { EMAIL, GITHUB, LINKEDIN } from '../../consts';
+
+const entry = await getEntry('site', 'colophon');
+const Colophon = entry ? (await render(entry)).Content : null;
 ---
 <footer class="cp">
   <div class="codex">
     <LesionRule />
     <div class="cp-body" data-reveal>
-      <p class="cp-text">
-        Set in Bodoni Moda and EB Garamond. Built with Astro and Tailwind.
-        Models trained on an NVIDIA RTX A6000. Written in Dhaka, MMXXVI.
-        The author is an eternal learner and an occasional chef.
-      </p>
+      <div class="cp-text">{Colophon && <Colophon />}</div>
       <ul class="cp-links">
         <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
         <li><a class="link" href={GITHUB} rel="me">github</a></li>
@@ -29,6 +29,7 @@ import { EMAIL, GITHUB, LINKEDIN } from '../../consts';
     flex-wrap: wrap;
     align-items: flex-start;
   }
+  .cp-text :global(p) { margin: 0; }
   .cp-text {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

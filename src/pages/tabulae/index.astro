@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import ArtPlate from '../../components/art/ArtPlate.astro';
+import { getTabulae } from '../../lib/collections';
+
+const tabulae = await getTabulae();
+---
+<BaseLayout
+  title="Tabulae — Md. Asif Uddin"
+  description="The interleaved plates: engravings, drawings and sculpture that sit between the chapters, each with a note on where it came from."
+  folio="T"
+>
+  <div class="codex tb">
+    <header class="tb-head">
+      <p class="tb-kicker" data-reveal>The plates</p>
+      <h1 class="tb-h1" data-press>Tabulae</h1>
+      <p class="tb-lede codex-measure" data-reveal>
+        The images interleaved between the chapters. Engravings are printed onto
+        the page with a blend mode rather than pasted on top of it, so the white
+        of the original plate becomes the vellum; sculpture is toned instead.
+        Each one has a note on where it came from.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {tabulae.length === 0 ? (
+      <p class="tb-empty">No plates yet.</p>
+    ) : (
+      <div class="tb-grid" data-reveal-stagger>
+        {tabulae.map((t) => (
+          <ArtPlate entry={t} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 44vw, 22rem" />
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .tb { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .tb-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .tb-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .tb-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .tb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+    gap: 3rem 2.5rem;
+    align-items: start;
+  }
+  .tb-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+</style>

@@ -220,6 +220,97 @@ collections:
       - { label: Chapter body, name: body, widget: markdown }
 
   # ------------------------------------------------------------------
+  - name: art
+    label: Tabulae
+    label_singular: Plate
+    description: >-
+      The artwork interleaved between the chapters. Upload an image, say where
+      it came from, and write as much history as you like in the note.
+    folder: src/content/art
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{order}} · {{title}} — {{artist}}"
+    sortable_fields: [order, title, artist]
+    # Relative to this collection's folder, so uploads land in
+    # src/assets/plates and the saved path is one Astro can optimise.
+    media_folder: "../../assets/plates"
+    public_folder: "../../assets/plates"
+    fields:
+      - label: Image
+        name: image
+        widget: image
+        hint: "Uploads are optimised automatically. Large scans are fine."
+      - label: Title
+        name: title
+        widget: string
+      - label: Artist
+        name: artist
+        widget: string
+        default: Unknown
+      - label: Date
+        name: date
+        widget: string
+        hint: "As the source gives it, e.g. 1514, or c. 12th century."
+      - label: Plate order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        hint: "Lowest number sits on the frontispiece; the rest interleave the chapters in order."
+      - label: Treatment
+        name: treatment
+        widget: select
+        default: intaglio
+        options:
+          - { label: "Intaglio — line art, prints onto the page", value: intaglio }
+          - { label: "Photograph — an object, toned instead", value: photograph }
+        hint: >-
+          Engravings and drawings on white paper should be intaglio. Photographs
+          of sculpture or objects should be photograph, or they will go black.
+      - label: Gloss
+        name: gloss
+        widget: text
+        hint: "One line, set in italic beneath the caption."
+      - label: Alt text
+        name: alt
+        widget: string
+        required: false
+        hint: "For screen readers. Leave blank to use the title and artist."
+      - label: Credit
+        name: credit
+        widget: string
+        default: "Art Institute of Chicago · CC0"
+        hint: "Who holds it, and the licence. Only use images you are allowed to publish."
+      - label: Source link
+        name: source
+        widget: string
+        required: false
+      - label: Side
+        name: side
+        widget: select
+        default: right
+        options: [left, right]
+        hint: "Which margin it hangs in on the home page."
+      - label: Show on the home page
+        name: onHome
+        widget: boolean
+        default: true
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+      - label: Note — description and historical background
+        name: body
+        widget: markdown
+        hint: "Where it came from, what is happening in it, why it is here."
+
+  # ------------------------------------------------------------------
   - name: site
     label: Site text
     description: Prose that appears on the home page.

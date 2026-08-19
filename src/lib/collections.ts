@@ -17,3 +17,9 @@ export async function getMarginalia(): Promise<CollectionEntry<'marginalia'>[]> 
   const all = await getCollection('marginalia');
   return all.filter(visible).sort((a, b) => b.data.entry - a.data.entry);
 }
+
+/** The interleaved artwork, in plate order. */
+export async function getTabulae(): Promise<CollectionEntry<'art'>[]> {
+  const all = await getCollection('art');
+  return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+}

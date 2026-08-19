@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import ArtInterleaf from '../components/art/ArtInterleaf.astro';
+import { getTabulae } from '../lib/collections';
 
 import Frontispiece from '../components/home/Frontispiece.astro';
 import Prologue from '../components/home/Prologue.astro';
@@ -16,6 +17,11 @@ import Appendix from '../components/home/Appendix.astro';
 import Correspondence from '../components/home/Correspondence.astro';
 
 import { AUTHOR, ROLE, toRoman } from '../consts';
+
+/* Tabula 1 sits on the frontispiece; the rest interleave the chapters in
+   order, so re-ordering them in /admin re-orders the page. */
+const [, ...interleaves] = (await getTabulae()).filter((t) => t.data.onHome);
+const plate = (i: number) => interleaves[i];
 ---
 <BaseLayout
   title={`${AUTHOR} — Deep learning researcher`}
@@ -27,80 +33,40 @@ import { AUTHOR, ROLE, toRoman } from '../consts';
   <div class="codex">
     <LesionRule />
     <Prologue />
-    <ArtInterleaf
-      slug="saint-jerome"
-      n={2}
-      side="right"
-      gloss="The scholar's room, drawn as a machine for concentration."
-    />
+    {plate(0) && <ArtInterleaf entry={plate(0)!} />}
 
     <LesionRule />
     <Axioms />
-    <ArtInterleaf
-      slug="knight-death"
-      n={3}
-      side="left"
-      gloss="Proceeding anyway, which is most of method."
-    />
+    {plate(1) && <ArtInterleaf entry={plate(1)!} />}
 
     <LesionRule />
     <Instrumentarium />
-    <ArtInterleaf
-      slug="anatomy"
-      n={4}
-      side="right"
-      gloss="The body, sectioned and numbered — the ancestor of every figure here."
-    />
+    {plate(2) && <ArtInterleaf entry={plate(2)!} />}
 
     <LesionRule />
     <Compendium />
-    <ArtInterleaf
-      slug="carceri"
-      n={5}
-      side="left"
-      gloss="Architecture as an argument that never terminates."
-    />
+    {plate(3) && <ArtInterleaf entry={plate(3)!} />}
 
     <LesionRule />
     <InstrumentaPropria />
 
     <LesionRule />
     <ElementaSection />
-    <ArtInterleaf
-      slug="meditation"
-      n={6}
-      side="right"
-      gloss="A different tradition, arriving at stillness by a different road."
-    />
+    {plate(4) && <ArtInterleaf entry={plate(4)!} />}
 
     <LesionRule />
     <MarginaliaSection />
-    <ArtInterleaf
-      slug="bust"
-      n={7}
-      side="left"
-      gloss="A face kept for two thousand years because of what was said behind it."
-    />
+    {plate(5) && <ArtInterleaf entry={plate(5)!} />}
 
     <LesionRule />
     <Chronicle />
-    <ArtInterleaf
-      slug="scholar"
-      n={8}
-      side="right"
-      gloss="Light arriving in a room where someone is working."
-    />
+    {plate(6) && <ArtInterleaf entry={plate(6)!} />}
 
     <LesionRule />
     <Appendix />
 
     <LesionRule />
     <Correspondence />
-    <ArtInterleaf
-      slug="sleep-reason"
-      n={9}
-      side="left"
-      gloss="What reason leaves behind when it stops."
-    />
+    {plate(7) && <ArtInterleaf entry={plate(7)!} />}
   </div>
 </BaseLayout>

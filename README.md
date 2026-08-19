@@ -22,6 +22,8 @@ npm run verify     # build + a11y audit + contrast check + typecheck
 | `/elementa` | Index of the teaching corpus |
 | `/elementa/[slug]` | One proposition |
 | `/elementa/figures` | The reusable figure library, with copy-SVG |
+| `/tabulae` | The plate gallery — artwork, each with a note |
+| `/tabulae/[slug]` | One plate, with its historical background |
 | `/marginalia` | The commonplace book — reviews and notes |
 | `/marginalia/[slug]` | One entry |
 | `/vitae` | Printable CV (`@media print` styles included) |
@@ -55,10 +57,28 @@ What you can edit there:
 | Marginalia | Book reviews, model reviews, essays, notes — with image upload |
 | Elementa | Propositions, including the `Given` dependency links |
 | Plates | Abstracts, citations, paper and repo links, results |
-| Site text | The Prologue, and the frontispiece epigraph and role line |
+| Tabulae | Artwork — upload an image and write its history |
+| Site text | The Prologue, the colophon, the frontispiece epigraph and role line |
 
-Images uploaded through the editor land in `public/uploads/` and are referenced
-as `/uploads/<name>`. They are framed like a plate by `.prose img`.
+Images have two destinations, on purpose:
+
+- **Pictures inside a review** go to `public/uploads/` and are referenced as
+  `/uploads/<name>`. Framed like a plate by `.prose img`.
+- **Artwork in the Tabulae collection** goes to `src/assets/plates/` with a
+  path relative to the entry, so Astro optimises it into a responsive WebP
+  set. That is what the collection-specific `media_folder` in `config.yml`
+  is for; do not "simplify" it to an absolute path or the optimisation stops.
+
+### Tabulae, and why they are not called plates
+
+The four research entries in `works` are Plates I–IV. The artwork is numbered
+too, so calling both "plate" collided. The artwork is *tabulae* — the term
+engraved atlases use — and lives at `/tabulae`.
+
+Each entry carries a `treatment`: `intaglio` for line art, which prints onto
+the page with a blend mode so the paper white becomes vellum, or `photograph`
+for objects, which are toned instead. **Choosing `intaglio` for a photograph
+will render it nearly black.**
 
 ### Signing in
 
@@ -97,9 +117,10 @@ suspect a stale content cache, `npx astro build --force` clears it.
 
 ### Two things the CMS cannot do
 
-- **Add a figure.** Figures are hand-written SVG components; a new one needs a
-  developer. The `Figure` dropdown lists what is registered in
-  `src/lib/figures.ts`.
+- **Add a figure.** Figures are hand-written SVG diagrams, not uploads; a new
+  one needs a developer. The `Figure` dropdown lists what is registered in
+  `src/lib/figures.ts`. Artwork is different — that is Tabulae, and you can
+  add as much of it as you like.
 - **Add or delete a plate.** Plate numbers drive the whole compendium, so the
   Plates collection is edit-only by design.
 

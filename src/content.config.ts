@@ -103,4 +103,33 @@ const site = defineCollection({
   }),
 });
 
-export const collections = { works, elementa, marginalia, site };
+/**
+ * The interleaved artwork. Called tabulae rather than plates so the numbering
+ * does not collide with the four research plates in `works`.
+ *
+ * Images live in src/assets/plates and are declared with image(), so Astro
+ * optimises whatever gets uploaded through /admin.
+ */
+const art = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/art' }),
+  schema: ({ image }) =>
+    z.object({
+      order: z.number(),
+      title: z.string(),
+      artist: z.string(),
+      date: z.string(),
+      image: image(),
+      alt: z.string().optional(),
+      gloss: z.string(),
+      credit: z.string().default('Art Institute of Chicago \u00b7 CC0'),
+      source: optionalUrl,
+      // Line art prints onto the page with a blend mode; a photographed
+      // object cannot, and gets a duotone instead.
+      treatment: z.enum(['intaglio', 'photograph']).default('intaglio'),
+      side: z.enum(['left', 'right']).default('right'),
+      onHome: z.boolean().default(true),
+      status: z.enum(['draft', 'published']).default('published'),
+    }),
+});
+
+export const collections = { works, elementa, marginalia, site, art };

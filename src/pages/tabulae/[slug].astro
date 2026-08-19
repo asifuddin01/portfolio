@@ -1,0 +1,160 @@
+---
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getTabulae } from '../../lib/collections';
+import { toRoman } from '../../consts';
+
+export async function getStaticPaths() {
+  const tabulae = await getTabulae();
+  return tabulae.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: { entry, next: tabulae[(i + 1) % tabulae.length] },
+  }));
+}
+
+interface Props { entry: CollectionEntry<'art'>; next: CollectionEntry<'art'> }
+const { entry, next } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
+
+const meta = [
+  { label: 'Artist', value: d.artist },
+  { label: 'Date', value: d.date },
+].filter((m) => m.value);
+---
+<BaseLayout
+  title={`Tabula ${toRoman(d.order)} · ${d.title} — Md. Asif Uddin`}
+  description={d.gloss || `${d.title}, ${d.artist}`}
+  folio={d.order}
+  type="article"
+>
+  <article class="codex tab">
+    <header class="tab-head">
+      <p class="tab-n" data-reveal>Tabula {toRoman(d.order)}</p>
+      <h1 class="tab-title" data-press>{d.title}</h1>
+      <p class="tab-attr" data-reveal>{[d.artist, d.date].filter(Boolean).join(', ')}</p>
+    </header>
+
+    <figure class:list={['tab-fig', `art--${d.treatment}`]} data-reveal>
+      <div class="tab-frame plate-art">
+        <Image
+          src={d.image}
+          alt={alt}
+          widths={[420, 720, 1000, 1400]}
+          sizes="(max-width: 900px) 92vw, 46rem"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          quality={74}
+        />
+      </div>
+      {d.gloss && <figcaption class="tab-gloss">{d.gloss}</figcaption>}
+    </figure>
+
+    <dl class="tab-meta" data-reveal-stagger>
+      {meta.map((m) => (
+        <div class="tab-meta-row"><dt>{m.label}</dt><dd>{m.value}</dd></div>
+      ))}
+      <div class="tab-meta-row">
+        <dt>Source</dt>
+        <dd>
+          {d.source ? <a class="link" href={d.source} rel="noopener">{d.credit}</a> : d.credit}
+        </dd>
+      </div>
+    </dl>
+
+    <div class="prose tab-body"><Content /></div>
+
+    <LesionRule />
+
+    <nav class="tab-next" aria-label="Next plate">
+      <a class="tab-next-link" href={`/tabulae/${next.id}`} data-magnet>
+        <span class="tab-next-label">Next — Tabula {toRoman(next.data.order)}</span>
+        <span class="tab-next-title">{next.data.title}</span>
+      </a>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .tab { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .tab-head { margin-bottom: 2rem; }
+  .tab-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .tab-title { font-size: var(--t-2xl); line-height: 1.08; margin-bottom: 0.7rem; max-width: 22ch; }
+  .tab-attr { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .tab-fig { margin: 0 0 2rem; max-width: 46rem; }
+  .tab-frame {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    background: var(--paper-raised);
+    padding: clamp(1rem, 3vw, 2rem);
+    overflow: hidden;
+  }
+  .tab-frame :global(img) { width: 100%; height: auto; display: block; }
+  .art--intaglio .tab-frame :global(img) { filter: grayscale(1) contrast(1.06); mix-blend-mode: multiply; }
+  :global([data-theme='nocturne']) .art--intaglio .tab-frame :global(img) {
+    filter: grayscale(1) invert(1) contrast(1.04) brightness(0.94);
+    mix-blend-mode: screen;
+  }
+  .art--photograph .tab-frame :global(img) { filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02); }
+  :global([data-theme='nocturne']) .art--photograph .tab-frame :global(img) {
+    filter: grayscale(1) sepia(0.16) contrast(0.98) brightness(0.86);
+  }
+  .tab-gloss {
+    margin-top: 0.9rem;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-md);
+    color: var(--ink-soft);
+    max-width: 44ch;
+  }
+
+  .tab-meta {
+    margin: 0 0 2.4rem;
+    max-width: var(--measure);
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .tab-meta-row {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 1rem;
+    padding: 0.55rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .tab-meta dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .tab-meta dd { margin: 0; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .tab-next { margin-bottom: 2rem; }
+  .tab-next-link { display: inline-block; }
+  .tab-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .tab-next-title { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 640px) {
+    .tab-title { font-size: var(--t-xl); }
+    .tab-meta-row { grid-template-columns: 1fr; gap: 0.15rem; }
+  }
+</style>
