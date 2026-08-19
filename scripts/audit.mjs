@@ -11,6 +11,9 @@ async function* walk(dir) {
   }
 }
 
+/** Our own origin; a self-referential canonical tag is not "external". */
+const SITE_ORIGIN = 'https://mdasifuddin.com';
+
 let fail = 0;
 const problems = [];
 
@@ -41,11 +44,24 @@ for await (const file of walk('dist')) {
   if (!/<html[^>]+lang=/.test(html)) problems.push(`${page}  <html> missing lang`);
   if (!/<main/.test(html)) problems.push(`${page}  no <main> landmark`);
 
-  // nothing may leave the origin (fonts, scripts, styles, images)
-  const ext = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
-    .map((m) => m[1])
-    .filter((u) => !/schema\.org|artic\.edu|github\.com|linkedin\.com|mdasifuddin\.com/.test(u));
-  for (const u of ext) problems.push(`${page}  external subresource: ${u}`);
+  // Nothing may LOAD from another origin. Outbound <a href> links are fine
+  // and expected — a review that cites a paper should link to it — so only
+  // resource-loading attributes are checked, not every absolute URL.
+  const loaders = [
+    /<script\b[^>]*\ssrc="(https?:\/\/[^"]+)"/gi,
+    /<link\b[^>]*\shref="(https?:\/\/[^"]+)"/gi,
+    /<img\b[^>]*\ssrc="(https?:\/\/[^"]+)"/gi,
+    /<iframe\b[^>]*\ssrc="(https?:\/\/[^"]+)"/gi,
+    /<(?:video|audio|source|embed)\b[^>]*\ssrc="(https?:\/\/[^"]+)"/gi,
+  ];
+  for (const re of loaders) {
+    for (const m of html.matchAll(re)) {
+      // rel=canonical/alternate/sitemap point at our own site by design
+      if (/rel="(?:canonical|alternate|sitemap)"/i.test(m[0])) continue;
+      if (m[1].startsWith(SITE_ORIGIN)) continue;
+      problems.push(`${page}  external subresource: ${m[1]}`);
+    }
+  }
 
   if (/fonts\.googleapis|fonts\.gstatic|use\.typekit/.test(html)) {
     problems.push(`${page}  NETWORK FONT REQUEST`);
