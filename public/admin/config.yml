@@ -259,7 +259,10 @@ collections:
         widget: number
         value_type: int
         min: 1
-        hint: "Lowest number sits on the frontispiece; the rest interleave the chapters in order."
+        hint: >-
+          Sort order only. Lowest sits on the frontispiece; the rest interleave
+          the chapters. Gaps are fine — the plate numbers on the page are
+          worked out from the running order, not from this value.
       - label: Treatment
         name: treatment
         widget: select

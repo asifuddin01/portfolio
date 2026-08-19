@@ -114,6 +114,9 @@ const art = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/art' }),
   schema: ({ image }) =>
     z.object({
+      // Sort key only. The Roman numeral shown on the page comes from the
+      // entry's position in the sorted list, so gaps never appear as
+      // missing plates and you can renumber freely.
       order: z.number(),
       title: z.string(),
       artist: z.string(),

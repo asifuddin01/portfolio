@@ -33,40 +33,40 @@ const plate = (i: number) => interleaves[i];
   <div class="codex">
     <LesionRule />
     <Prologue />
-    {plate(0) && <ArtInterleaf entry={plate(0)!} />}
+    {plate(0) && <ArtInterleaf entry={plate(0)!} n={2} />}
 
     <LesionRule />
     <Axioms />
-    {plate(1) && <ArtInterleaf entry={plate(1)!} />}
+    {plate(1) && <ArtInterleaf entry={plate(1)!} n={3} />}
 
     <LesionRule />
     <Instrumentarium />
-    {plate(2) && <ArtInterleaf entry={plate(2)!} />}
+    {plate(2) && <ArtInterleaf entry={plate(2)!} n={4} />}
 
     <LesionRule />
     <Compendium />
-    {plate(3) && <ArtInterleaf entry={plate(3)!} />}
+    {plate(3) && <ArtInterleaf entry={plate(3)!} n={5} />}
 
     <LesionRule />
     <InstrumentaPropria />
 
     <LesionRule />
     <ElementaSection />
-    {plate(4) && <ArtInterleaf entry={plate(4)!} />}
+    {plate(4) && <ArtInterleaf entry={plate(4)!} n={6} />}
 
     <LesionRule />
     <MarginaliaSection />
-    {plate(5) && <ArtInterleaf entry={plate(5)!} />}
+    {plate(5) && <ArtInterleaf entry={plate(5)!} n={7} />}
 
     <LesionRule />
     <Chronicle />
-    {plate(6) && <ArtInterleaf entry={plate(6)!} />}
+    {plate(6) && <ArtInterleaf entry={plate(6)!} n={8} />}
 
     <LesionRule />
     <Appendix />
 
     <LesionRule />
     <Correspondence />
-    {plate(7) && <ArtInterleaf entry={plate(7)!} />}
+    {plate(7) && <ArtInterleaf entry={plate(7)!} n={9} />}
   </div>
 </BaseLayout>

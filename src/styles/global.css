@@ -318,3 +318,34 @@ hr { border: 0; border-top: var(--rule) solid var(--brass); opacity: 0.6; margin
   line-height: 1.7;
   color: var(--ink-soft);
 }
+
+/* ------------------------------------------------------------------
+   Plate treatments. Defined once here because two routes render
+   artwork and the rules must not drift apart.
+
+   Vellum: line art is grayscaled and multiplied, so the white of the
+   original sheet drops out and the ink prints onto the page.
+
+   Nocturne: the blend mode is switched off and the image is left
+   POSITIVE. An engraving is black lines on white paper; inverting it
+   in dark mode shows the viewer a different picture, not a styled one.
+   It is only dimmed slightly so a bright sheet does not glare against
+   the dark ground.
+   ------------------------------------------------------------------ */
+.art--intaglio img {
+  filter: grayscale(1) contrast(1.06);
+  mix-blend-mode: multiply;
+}
+[data-theme='nocturne'] .art--intaglio img {
+  filter: grayscale(1) contrast(1.02) brightness(0.92);
+  mix-blend-mode: normal;
+}
+
+.art--photograph img {
+  filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02);
+  mix-blend-mode: normal;
+}
+[data-theme='nocturne'] .art--photograph img {
+  filter: grayscale(1) sepia(0.16) contrast(1) brightness(0.94);
+  mix-blend-mode: normal;
+}

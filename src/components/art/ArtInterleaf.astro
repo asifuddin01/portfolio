@@ -2,12 +2,12 @@
 import ArtPlate from './ArtPlate.astro';
 import type { CollectionEntry } from 'astro:content';
 
-interface Props { entry: CollectionEntry<'art'>; depth?: number }
-const { entry, depth = 0.18 } = Astro.props;
+interface Props { entry: CollectionEntry<'art'>; n?: number; depth?: number }
+const { entry, n, depth = 0.18 } = Astro.props;
 ---
 <aside class:list={['il', `il--${entry.data.side}`]} aria-label="Interleaved plate">
   <div class="il-plate">
-    <ArtPlate entry={entry} depth={depth} />
+    <ArtPlate entry={entry} n={n} depth={depth} />
   </div>
 </aside>
 

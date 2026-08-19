@@ -68,24 +68,6 @@ const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
   }
   .art-frame :global(img) { width: 100%; height: auto; display: block; }
 
-  /* Intaglio: white of the plate drops out, ink prints onto the vellum. */
-  .art--intaglio .art-frame :global(img) {
-    filter: grayscale(1) contrast(1.06);
-    mix-blend-mode: multiply;
-  }
-  :global([data-theme='nocturne']) .art--intaglio .art-frame :global(img) {
-    filter: grayscale(1) invert(1) contrast(1.04) brightness(0.94);
-    mix-blend-mode: screen;
-  }
-
-  /* Photographed objects: duotone toward the page, no blend mode. */
-  .art--photograph .art-frame :global(img) {
-    filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02);
-  }
-  :global([data-theme='nocturne']) .art--photograph .art-frame :global(img) {
-    filter: grayscale(1) sepia(0.16) contrast(0.98) brightness(0.86);
-  }
-
   .art-cap {
     display: grid;
     gap: 0.2rem;

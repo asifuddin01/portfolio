@@ -10,12 +10,22 @@ export async function getStaticPaths() {
   const tabulae = await getTabulae();
   return tabulae.map((entry, i) => ({
     params: { slug: entry.id },
-    props: { entry, next: tabulae[(i + 1) % tabulae.length] },
+    props: {
+      entry,
+      n: i + 1,
+      next: tabulae[(i + 1) % tabulae.length],
+      nextN: ((i + 1) % tabulae.length) + 1,
+    },
   }));
 }
 
-interface Props { entry: CollectionEntry<'art'>; next: CollectionEntry<'art'> }
-const { entry, next } = Astro.props;
+interface Props {
+  entry: CollectionEntry<'art'>;
+  n: number;
+  next: CollectionEntry<'art'>;
+  nextN: number;
+}
+const { entry, n, next, nextN } = Astro.props;
 const d = entry.data;
 const { Content } = await render(entry);
 const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
@@ -26,14 +36,14 @@ const meta = [
 ].filter((m) => m.value);
 ---
 <BaseLayout
-  title={`Tabula ${toRoman(d.order)} · ${d.title} — Md. Asif Uddin`}
+  title={`Tabula ${toRoman(n)} · ${d.title} — Md. Asif Uddin`}
   description={d.gloss || `${d.title}, ${d.artist}`}
-  folio={d.order}
+  folio={n}
   type="article"
 >
   <article class="codex tab">
     <header class="tab-head">
-      <p class="tab-n" data-reveal>Tabula {toRoman(d.order)}</p>
+      <p class="tab-n" data-reveal>Tabula {toRoman(n)}</p>
       <h1 class="tab-title" data-press>{d.title}</h1>
       <p class="tab-attr" data-reveal>{[d.artist, d.date].filter(Boolean).join(', ')}</p>
     </header>
@@ -72,7 +82,7 @@ const meta = [
 
     <nav class="tab-next" aria-label="Next plate">
       <a class="tab-next-link" href={`/tabulae/${next.id}`} data-magnet>
-        <span class="tab-next-label">Next — Tabula {toRoman(next.data.order)}</span>
+        <span class="tab-next-label">Next — Tabula {toRoman(nextN)}</span>
         <span class="tab-next-title">{next.data.title}</span>
       </a>
     </nav>
@@ -101,15 +111,6 @@ const meta = [
     overflow: hidden;
   }
   .tab-frame :global(img) { width: 100%; height: auto; display: block; }
-  .art--intaglio .tab-frame :global(img) { filter: grayscale(1) contrast(1.06); mix-blend-mode: multiply; }
-  :global([data-theme='nocturne']) .art--intaglio .tab-frame :global(img) {
-    filter: grayscale(1) invert(1) contrast(1.04) brightness(0.94);
-    mix-blend-mode: screen;
-  }
-  .art--photograph .tab-frame :global(img) { filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02); }
-  :global([data-theme='nocturne']) .art--photograph .tab-frame :global(img) {
-    filter: grayscale(1) sepia(0.16) contrast(0.98) brightness(0.86);
-  }
   .tab-gloss {
     margin-top: 0.9rem;
     font-family: var(--font-body);

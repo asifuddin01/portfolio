@@ -16,10 +16,11 @@ const tabulae = await getTabulae();
       <p class="tb-kicker" data-reveal>The plates</p>
       <h1 class="tb-h1" data-press>Tabulae</h1>
       <p class="tb-lede codex-measure" data-reveal>
-        The images interleaved between the chapters. Engravings are printed onto
-        the page with a blend mode rather than pasted on top of it, so the white
-        of the original plate becomes the vellum; sculpture is toned instead.
-        Each one has a note on where it came from.
+        The images interleaved between the chapters. On vellum an engraving is
+        printed onto the page rather than pasted on top of it, so the white of
+        the original sheet becomes the paper. In the dark it is left as it is —
+        an engraving is black lines on white, and inverting one would show you a
+        different picture. Each has a note on where it came from.
       </p>
     </header>
 
@@ -29,8 +30,8 @@ const tabulae = await getTabulae();
       <p class="tb-empty">No plates yet.</p>
     ) : (
       <div class="tb-grid" data-reveal-stagger>
-        {tabulae.map((t) => (
-          <ArtPlate entry={t} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 44vw, 22rem" />
+        {tabulae.map((t, i) => (
+          <ArtPlate entry={t} n={i + 1} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 44vw, 22rem" />
         ))}
       </div>
     )}
