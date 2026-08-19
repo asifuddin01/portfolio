@@ -56,7 +56,7 @@ What you can edit there:
 |---|---|
 | Marginalia | Book reviews, model reviews, essays, notes — with image upload |
 | Elementa | Propositions, including the `Given` dependency links |
-| Plates | Abstracts, citations, paper and repo links, results |
+| Plates | Research plates — add, edit and delete |
 | Tabulae | Artwork — upload an image and write its history |
 | Elementa books | The books propositions are filed under — add your own |
 | Instrumentarium | The skill groups on the home page |
@@ -125,14 +125,21 @@ first — causal inference, bioinformatics, whatever — and it appears in the
 Book dropdown when you write a proposition. A proposition pointing at a book
 that does not exist fails the build rather than rendering a blank heading.
 
-### Two things the CMS cannot do
+### One thing the CMS cannot do
 
-- **Add a figure.** Figures are hand-written SVG diagrams, not uploads; a new
-  one needs a developer. The `Figure` dropdown lists what is registered in
-  `src/lib/figures.ts`. Artwork is different — that is Tabulae, and you can
-  add as much of it as you like.
-- **Add or delete a plate.** Plate numbers drive the whole compendium, so the
-  Plates collection is edit-only by design.
+**Add a figure.** Figures are hand-written SVG diagrams, not uploads; a new
+one needs a developer. The `Figure` dropdown lists what is registered in
+`src/lib/figures.ts`. Artwork is different — that is Tabulae, and you can add
+as much of it as you like.
+That is the only one. Everything else — plates, tabulae, books, marginalia,
+propositions, the home-page sections — can be added and deleted from `/admin`.
+
+### There are no roles
+
+Sveltia has no permission system. "Disabled by the administrator" is a
+`create: false` flag in `config.yml`, not a role check. Whoever can sign in
+has full write access to the repository, which is why the token should be
+fine-grained and scoped to this repo alone.
 
 ### If a save does not appear on the site
 

@@ -200,35 +200,53 @@ collections:
     label: Plates
     label_singular: Plate
     description: >-
-      The four research plates. You can edit these, but you cannot add or
-      delete them here — the plate numbers drive the whole compendium.
+      The research plates. The plate number is both the sort order and the
+      numeral shown on the page, so keep them consecutive.
     folder: src/content/works
     extension: mdx
     format: frontmatter
-    create: false
-    delete: false
+    create: true
+    delete: true
     identifier_field: title
     summary: "Plate {{plate}} — {{title}}"
     sortable_fields: [plate]
     fields:
-      - { label: Plate number, name: plate, widget: number, value_type: int, min: 1 }
+      - label: Plate number
+        name: plate
+        widget: number
+        value_type: int
+        min: 1
+        hint: >-
+          Both the sort order and the numeral on the page — Plate 5 renders as
+          "Plate V". Keep them consecutive so the compendium reads cleanly.
       - { label: Short title, name: title, widget: string }
       - { label: Full title, name: fullTitle, widget: text }
       - { label: Subtitle, name: subtitle, widget: string }
       - label: Status
         name: status
         widget: select
-        options: [deposited, in-preparation, proposal-accepted]
+        default: in-preparation
+        options:
+          - { label: "In preparation", value: in-preparation }
+          - { label: "Proposal accepted", value: proposal-accepted }
+          - { label: "Deposited", value: deposited }
       - label: Disclosure
         name: disclosure
         widget: select
-        options: [public, embargoed]
+        default: embargoed
+        options:
+          - { label: "Embargoed — results stay off the page", value: embargoed }
+          - { label: "Public — results may be shown", value: public }
         hint: >-
           EMBARGOED plates must have an empty Results table. Adding a result to
           an embargoed plate will deliberately fail the build so unpublished
           numbers cannot leak.
-      - { label: Year, name: year, widget: string }
-      - { label: Supervisors, name: supervisors, widget: list, field: { label: Name, name: name, widget: string } }
+      - { label: Year, name: year, widget: string, default: "2026" }
+      - label: Supervisors
+        name: supervisors
+        widget: list
+        field: { label: Name, name: name, widget: string }
+        hint: "At least one — the schema requires it."
       - { label: Co-authors, name: coauthors, widget: list, required: false, field: { label: Name, name: name, widget: string } }
       - { label: Datasets, name: datasets, widget: list, required: false, field: { label: Dataset, name: dataset, widget: string } }
       - label: Abstract
