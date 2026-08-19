@@ -4,6 +4,7 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { unified } from '@astrojs/markdown-remark';
 
 import { SITE } from './src/consts.ts';
 
@@ -61,7 +62,9 @@ export default defineConfig({
   build: { inlineStylesheets: 'auto' },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {
-    rehypePlugins: [rehypeProseDefaults],
+    // Astro 7 takes the pipeline as a processor; the old top-level
+    // remarkPlugins/rehypePlugins keys are deprecated.
+    processor: unified({ rehypePlugins: [rehypeProseDefaults] }),
   },
   vite: {
     plugins: [tailwindcss()],

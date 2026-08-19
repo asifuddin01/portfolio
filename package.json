@@ -17,7 +17,7 @@
     "og": "node scripts/make-og.mjs",
     "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs",
-    "predev": "node scripts/sync-cms.mjs",
+    "predev": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs",
     "deploy:manual": "npm run build && wrangler pages deploy dist --project-name=codex",
     "dev:plain": "astro dev",
     "check:cms": "node scripts/check-cms.mjs",
