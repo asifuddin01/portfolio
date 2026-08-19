@@ -713,6 +713,12 @@ collections:
         format: frontmatter
         fields:
           - { label: Heading, name: title, widget: string }
+          - label: Kicker
+            name: kicker
+            widget: string
+            hint: >-
+              The small line above the title. Say what the subject is — a
+              visitor should not have to guess that this is about deep learning.
           - label: On the Elementa page
             name: lede
             widget: text

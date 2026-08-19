@@ -125,6 +125,7 @@ const site = defineCollection({
     github: optionalUrl,
     linkedin: optionalUrl,
     // Elementa ledes.
+    kicker: z.string().optional(),
     lede: z.string().optional(),
     homeIntro: z.string().optional(),
     // CV singleton.

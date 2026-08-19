@@ -18,7 +18,7 @@ const meta = await getEntry('site', 'elementa');
 >
   <div class="codex el">
     <header class="el-head">
-      <p class="el-kicker" data-reveal>The teaching corpus</p>
+      {meta?.data.kicker && <p class="el-kicker" data-reveal>{meta.data.kicker}</p>}
       <h1 class="el-h1" data-press>Elementa</h1>
       {meta?.data.lede && (
         <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>
