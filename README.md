@@ -75,23 +75,25 @@ Two options; the CMS offers both on its login screen.
 `local_backend: true` is also set, so running `npm run dev` and opening
 `/admin` lets you edit the files on disk directly with no login at all.
 
-### A new entry does not appear until you restart `astro dev`
+### New entries appear on their own
 
-This catches everyone once. Astro's glob loader builds its file list when the
-dev server starts and **does not rescan for new files**. Verified behaviour:
+Astro's glob loader fixes its file list when the dev server boots and never
+rescans, so a newly created entry would otherwise stay invisible until a
+restart. `npm run dev` therefore runs `scripts/dev-auto.mjs`, which watches
+`src/content/` and restarts the server only when the *set* of files changes.
 
-| Action, while `astro dev` runs | Appears? |
+| Action | What happens |
 |---|---|
-| Editing an existing entry | Yes, immediately |
-| Adding a new entry | **No — restart required** |
+| Edit an existing entry | Hot-reloads. No restart — Astro already handles it. |
+| Add a new entry | Restart, automatically. Visible in ~5s. |
+| Delete an entry | Restart, automatically. Gone in ~2s. |
 
-```bash
-npm run dev:restart
-```
+`npm run dev:plain` is the unwrapped `astro dev` if you ever want it.
 
-This is a local-development limitation only. In production the CMS commits to
-GitHub, Cloudflare runs a clean `npm run build`, and new entries always appear —
-so once the site is deployed, this stops being a thing you have to think about.
+**In production none of this applies.** The CMS commits to GitHub, Cloudflare
+runs `npm run build` from a fresh checkout, and a cold build has no stale file
+list. Verified by cloning the repo and building from scratch. If you ever
+suspect a stale content cache, `npx astro build --force` clears it.
 
 ### Two things the CMS cannot do
 
