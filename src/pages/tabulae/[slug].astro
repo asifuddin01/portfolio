@@ -28,7 +28,10 @@ interface Props {
 const { entry, n, next, nextN } = Astro.props;
 const d = entry.data;
 const { Content } = await render(entry);
-const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
+const alt =
+  d.alt && d.alt.trim() !== ''
+    ? d.alt
+    : `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
 
 const meta = [
   { label: 'Artist', value: d.artist },

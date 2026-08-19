@@ -26,7 +26,10 @@ const {
 const d = entry.data;
 const numeral = toRoman(n ?? d.order);
 const attribution = [d.artist, d.date].filter(Boolean).join(', ');
-const alt = d.alt ?? `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
+const alt =
+  d.alt && d.alt.trim() !== ''
+    ? d.alt
+    : `${d.title}${d.artist ? `, ${d.artist}` : ''}`;
 ---
 <figure class:list={['art', `art--${d.treatment}`]}>
   <div class="art-frame plate-art" data-parallax={depth}>

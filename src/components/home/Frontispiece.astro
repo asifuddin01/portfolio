@@ -1,7 +1,7 @@
 ---
 import ArtPlate from '../art/ArtPlate.astro';
 import { getEntry } from 'astro:content';
-import { getTabulae } from '../../lib/collections';
+import { getHomePlates } from '../../lib/collections';
 import { AUTHOR, LOCATION } from '../../consts';
 
 const fp = await getEntry('site', 'frontispiece');
@@ -11,11 +11,9 @@ const attribution = fp?.data.attribution ?? 'the author';
 const location = fp?.data.location ?? LOCATION;
 const words = epigraph.split(' ').filter(Boolean);
 
-/* Whichever plate claims the frontispiece slot, falling back to the first. */
-const tabulae = await getTabulae();
-const firstPlate =
-  tabulae.find((t) => t.data.placement === 'frontispiece') ?? tabulae[0];
-const frontN = firstPlate ? tabulae.indexOf(firstPlate) + 1 : 1;
+/* The hero plate, chosen by the same rule the page body uses. */
+const { front: firstPlate, numeral } = await getHomePlates();
+const frontN = firstPlate ? (numeral.get(firstPlate.id) ?? 1) : 1;
 ---
 <section class="fp" aria-labelledby="fp-h">
   <div class="codex fp-inner">

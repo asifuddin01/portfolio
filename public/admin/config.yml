@@ -323,6 +323,25 @@ collections:
         name: source
         widget: string
         required: false
+      - label: Position on the home page
+        name: placement
+        widget: select
+        default: none
+        options:
+          - { label: "Anywhere — take the next free position", value: none }
+          - { label: "Frontispiece — beside the name", value: frontispiece }
+          - { label: "After the Prologue", value: prologue }
+          - { label: "After the Axioms", value: axioms }
+          - { label: "After the Instrumentarium", value: instrumentarium }
+          - { label: "After the Compendium", value: compendium }
+          - { label: "After Instrumenta propria", value: instrumenta }
+          - { label: "After the Elementa", value: elementa }
+          - { label: "After the Marginalia", value: marginalia }
+          - { label: "After the Chronicle", value: chronicle }
+          - { label: "After the Appendix", value: appendix }
+          - { label: "After the Correspondence", value: correspondence }
+        hint: >-
+          Only decides where. Whether it appears at all is the switch below.
       - label: Side
         name: side
         widget: select
@@ -333,6 +352,9 @@ collections:
         name: onHome
         widget: boolean
         default: true
+        hint: >-
+          The only switch that decides this. Off means it stays in the Tabulae
+          gallery but never appears on the home page.
       - label: Status
         name: status
         widget: select

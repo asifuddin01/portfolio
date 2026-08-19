@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import ArtInterleaf from '../components/art/ArtInterleaf.astro';
-import { getTabulae } from '../lib/collections';
+import { getHomePlates } from '../lib/collections';
 
 import Frontispiece from '../components/home/Frontispiece.astro';
 import Prologue from '../components/home/Prologue.astro';
@@ -18,13 +18,9 @@ import Correspondence from '../components/home/Correspondence.astro';
 
 import { AUTHOR, ROLE, toRoman } from '../consts';
 
-/* Each plate declares which chapter it follows, so its position on the page
-   is an editorial choice made in /admin rather than an array index here.
-   Numerals stay tied to the gallery sequence wherever a plate appears. */
-const tabulae = await getTabulae();
-const numeral = new Map(tabulae.map((t, i) => [t.id, i + 1]));
-const at = (slot: string) =>
-  tabulae.find((t) => t.data.onHome && t.data.placement === slot);
+/* "Show on the home page" decides whether a plate appears; placement decides
+   only where. Numerals stay tied to the gallery sequence. */
+const { numeral, bySlot } = await getHomePlates();
 ---
 <BaseLayout
   title={`${AUTHOR} — Deep learning researcher`}
@@ -36,42 +32,62 @@ const at = (slot: string) =>
   <div class="codex">
     <LesionRule />
     <Prologue />
-    {at('prologue') && <ArtInterleaf entry={at('prologue')!} n={numeral.get(at('prologue')!.id)} />}
+    {(bySlot.get('prologue') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Axioms />
-    {at('axioms') && <ArtInterleaf entry={at('axioms')!} n={numeral.get(at('axioms')!.id)} />}
+    {(bySlot.get('axioms') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Instrumentarium />
-    {at('instrumentarium') && <ArtInterleaf entry={at('instrumentarium')!} n={numeral.get(at('instrumentarium')!.id)} />}
+    {(bySlot.get('instrumentarium') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Compendium />
-    {at('compendium') && <ArtInterleaf entry={at('compendium')!} n={numeral.get(at('compendium')!.id)} />}
+    {(bySlot.get('compendium') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <InstrumentaPropria />
-    {at('instrumenta') && <ArtInterleaf entry={at('instrumenta')!} n={numeral.get(at('instrumenta')!.id)} />}
+    {(bySlot.get('instrumenta') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <ElementaSection />
-    {at('elementa') && <ArtInterleaf entry={at('elementa')!} n={numeral.get(at('elementa')!.id)} />}
+    {(bySlot.get('elementa') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <MarginaliaSection />
-    {at('marginalia') && <ArtInterleaf entry={at('marginalia')!} n={numeral.get(at('marginalia')!.id)} />}
+    {(bySlot.get('marginalia') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Chronicle />
-    {at('chronicle') && <ArtInterleaf entry={at('chronicle')!} n={numeral.get(at('chronicle')!.id)} />}
+    {(bySlot.get('chronicle') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Appendix />
-    {at('appendix') && <ArtInterleaf entry={at('appendix')!} n={numeral.get(at('appendix')!.id)} />}
+    {(bySlot.get('appendix') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
 
     <LesionRule />
     <Correspondence />
-    {at('correspondence') && <ArtInterleaf entry={at('correspondence')!} n={numeral.get(at('correspondence')!.id)} />}
+    {(bySlot.get('correspondence') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
   </div>
 </BaseLayout>
