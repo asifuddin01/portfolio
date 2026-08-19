@@ -15,7 +15,8 @@
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
     "og": "node scripts/make-og.mjs",
-    "verify": "npm run build && npm run audit && npm run contrast && npm run check"
+    "verify": "npm run build && npm run audit && npm run contrast && npm run check",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=codex"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.124.0"
   }
 }
