@@ -387,10 +387,10 @@ collections:
 
   # ------------------------------------------------------------------
   - name: images
-    label: Images
+    label: Imagines
     label_singular: Image
     description: >-
-      Photographs, shown on the Images page with a caption and, if you want
+      Photographs, shown on the Imagines page with a caption and, if you want
       one, a longer note. For engravings and paintings use Tabulae instead.
     folder: src/content/images
     extension: mdx

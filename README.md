@@ -22,6 +22,7 @@ npm run verify     # build + a11y audit + contrast check + typecheck
 | `/elementa` | Index of the teaching corpus |
 | `/elementa/[slug]` | One proposition |
 | `/elementa/figures` | The reusable figure library, with copy-SVG |
+| `/imagines` | Photographs, with captions and optional notes |
 | `/papers` | Published papers and manuscripts, with links |
 | `/tabulae` | The plate gallery — artwork, each with a note |
 | `/tabulae/[slug]` | One plate, with its historical background |
@@ -58,6 +59,7 @@ What you can edit there:
 | Marginalia | Book reviews, model reviews, essays, notes — with image upload |
 | Elementa | Propositions, including the `Given` dependency links |
 | Plates | Research plates — add, edit and delete |
+| Imagines | Photographs — upload, caption, optional note |
 | Papers | Published papers and manuscripts — add one, paste the link |
 | Education | Degrees, shown on the Vitae page and in the CV |
 | Engineering projects | Shown in the Appendix and on the CV |
