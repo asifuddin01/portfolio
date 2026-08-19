@@ -1,0 +1,59 @@
+---
+/** Vellum ⇄ Nocturne. Persists to localStorage; paired with the no-flash
+    script in BaseLayout's <head>. */
+---
+<button class="tt" type="button" data-theme-toggle aria-label="Switch between Vellum and Nocturne">
+  <span class="tt-face" data-tt-label>Vellum</span>
+</button>
+
+<style>
+  .tt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    background: transparent;
+    border: var(--rule) solid var(--brass);
+    padding: 0.32em 0.7em 0.26em;
+    cursor: pointer;
+    line-height: 1.2;
+    min-width: 6.6em;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tt { transition: background-color 240ms var(--ease-out), color 240ms var(--ease-out); }
+  }
+  .tt:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+</style>
+
+<script>
+  function syncLabel(): void {
+    const isNocturne = document.documentElement.dataset.theme === 'nocturne';
+    for (const el of document.querySelectorAll<HTMLElement>('[data-tt-label]')) {
+      el.textContent = isNocturne ? 'Nocturne' : 'Vellum';
+    }
+  }
+
+  function bind(): void {
+    syncLabel();
+    for (const btn of document.querySelectorAll<HTMLElement>('[data-theme-toggle]')) {
+      if (btn.dataset.bound === '1') continue;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const next =
+          document.documentElement.dataset.theme === 'nocturne' ? 'vellum' : 'nocturne';
+        document.documentElement.dataset.theme = next;
+        try {
+          localStorage.setItem('codex-theme', next);
+        } catch {
+          /* private mode — the choice just won't persist */
+        }
+        syncLabel();
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', bind);
+  if (document.readyState !== 'loading') bind();
+  else document.addEventListener('DOMContentLoaded', bind);
+</script>

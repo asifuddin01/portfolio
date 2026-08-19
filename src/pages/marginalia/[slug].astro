@@ -1,0 +1,113 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import KindMark from '../../components/marginalia/KindMark.astro';
+import { getMarginalia } from '../../lib/collections';
+import { toRoman } from '../../consts';
+
+export async function getStaticPaths() {
+  const entries = await getMarginalia();
+  return entries.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: { entry, next: entries[i + 1] ?? null },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'marginalia'>;
+  next: CollectionEntry<'marginalia'> | null;
+}
+const { entry, next } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+---
+<BaseLayout
+  title={`${d.title} — Marginalia — Md. Asif Uddin`}
+  description={d.summary}
+  folio={toRoman(d.entry)}
+  type="article"
+>
+  <article class="codex me">
+    <header class="me-head">
+      <p class="me-ref" data-reveal>
+        Marginalia {toRoman(d.entry)}
+        {d.status === 'draft' && <span class="me-draft">draft</span>}
+      </p>
+      <h1 class="me-title" data-press>{d.title}</h1>
+      <div class="me-meta" data-reveal>
+        <KindMark kind={d.kind} />
+        <span class="me-subject">{d.subject}</span>
+        <time class="me-date" datetime={d.updated.toISOString()}>
+          {d.updated.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </time>
+      </div>
+      {d.source && (
+        <p class="me-source"><a class="link" href={d.source}>Source</a></p>
+      )}
+    </header>
+
+    <div class="prose me-body"><Content /></div>
+
+    <LesionRule />
+
+    <nav class="me-next" aria-label="Next entry">
+      {next ? (
+        <a class="me-next-link" href={`/marginalia/${next.id}`} data-magnet>
+          <span class="me-next-label">Next — Marginalia {toRoman(next.data.entry)}</span>
+          <span class="me-next-title">{next.data.title}</span>
+        </a>
+      ) : (
+        <a class="me-next-link" href="/marginalia" data-magnet>
+          <span class="me-next-label">End of the ledger</span>
+          <span class="me-next-title">Back to the index</span>
+        </a>
+      )}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .me { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .me-head { margin-bottom: 2rem; }
+  .me-ref {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .me-draft {
+    margin-left: 0.7rem;
+    color: var(--oxblood-text);
+    border: var(--rule) solid var(--oxblood);
+    padding: 0.05em 0.4em;
+  }
+  .me-title { font-size: var(--t-2xl); line-height: 1.08; margin-bottom: 1rem; max-width: 22ch; }
+  .me-meta {
+    display: flex;
+    gap: 1.2rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+    padding-top: 0.8rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .me-subject { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink); }
+  .me-date { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .me-source { margin-top: 0.7rem; font-family: var(--font-mono); font-size: var(--t-xs); }
+  .me-body { margin-top: 2.2rem; }
+  .me-next { margin-bottom: 2rem; }
+  .me-next-link { display: inline-block; }
+  .me-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .me-next-title { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+  @media (max-width: 640px) { .me-title { font-size: var(--t-xl); } }
+</style>

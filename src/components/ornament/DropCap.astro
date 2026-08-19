@@ -1,0 +1,23 @@
+---
+/**
+ * Bodoni Moda, three lines deep, --fundus. Opens the Prologue and each
+ * plate's marginal note only.
+ */
+interface Props { letter: string }
+const { letter } = Astro.props;
+---
+<span class="dropcap" aria-hidden="true">{letter}</span>
+<style>
+  .dropcap {
+    float: left;
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--fundus);
+    /* three lines of body text at 19px / 1.75 */
+    font-size: calc(var(--body-size) * var(--body-leading) * 3);
+    line-height: 0.78;
+    padding-right: 0.09em;
+    padding-top: 0.04em;
+    margin-left: -0.04em;
+  }
+</style>

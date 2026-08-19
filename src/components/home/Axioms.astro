@@ -1,0 +1,59 @@
+---
+import Chapter from './Chapter.astro';
+import MarginalCite from '../ornament/MarginalCite.astro';
+import { toRoman } from '../../consts';
+
+const AXIOMS: ReadonlyArray<{ text: string; cite: string }> = [
+  { text: 'A number nobody can compare to their own is not a result.', cite: 'HierarchiRetina, Stage III' },
+  { text: 'The test set is read once, and only after the threshold is locked.', cite: 'HierarchiRetina, Stage I' },
+  { text: 'When a model predicts nothing, the loss is usually right and the design is wrong.', cite: 'Cotton wool spots, v1' },
+  { text: 'Name the limitation before the reviewer does.', cite: 'HierarchiRetina, evaluation' },
+  { text: 'Ask until someone answers. One reply is a dataset.', cite: 'FGADR acquisition' },
+];
+---
+<Chapter n={3} title="Axioms" id="axioms">
+  <ol class="ax" data-reveal-stagger>
+    {AXIOMS.map((ax, i) => (
+      <li class="ax-item">
+        <MarginalCite>{ax.cite}</MarginalCite>
+        <span class="ax-num" aria-hidden="true">{toRoman(i + 1)}</span>
+        <span class="ax-text">{ax.text}</span>
+      </li>
+    ))}
+  </ol>
+</Chapter>
+
+<style>
+  .ax {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 62rem;
+  }
+  .ax-item {
+    position: relative;
+    padding-block: 1.15rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent);
+  }
+  .ax-item:first-child { border-top: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent); }
+  .ax-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    color: var(--brass-text);
+    margin-right: 1.1rem;
+    vertical-align: 0.32em;
+  }
+  .ax-text {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  @media (min-width: 900px) {
+    .ax { max-width: 75rem; }
+    /* The gutter belongs to the item, so MarginalCite's left:0 resolves
+       against the item box and lands in the margin instead of the text. */
+    .ax-item { padding-left: 13rem; }
+  }
+</style>

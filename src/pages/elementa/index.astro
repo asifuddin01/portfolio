@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import PropositionCard from '../../components/elementa/PropositionCard.astro';
+import { getPropositions } from '../../lib/collections';
+import { toRoman } from '../../consts';
+
+const props = await getPropositions();
+
+const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
+  { n: 1, title: 'Foundations',     covers: 'tokenisation, attention, the transformer block' },
+  { n: 2, title: 'Vision',          covers: 'ViT, DINOv2, self-supervised visual representation' },
+  { n: 3, title: 'Vision-language', covers: 'contrastive pretraining, fusion, VLM architectures' },
+  { n: 4, title: 'Practice',        covers: 'losses, training dynamics, evaluation' },
+];
+---
+<BaseLayout
+  title="Elementa — Md. Asif Uddin"
+  description="A structured corpus on transformers, vision and vision-language models, written as numbered propositions and meant to be read in order."
+  folio="E"
+>
+  <div class="codex el">
+    <header class="el-head">
+      <p class="el-kicker" data-reveal>The teaching corpus</p>
+      <h1 class="el-h1" data-press>Elementa</h1>
+      <p class="el-lede codex-measure" data-reveal>
+        Four books, read in order, like Euclid. Each entry is a proposition rather
+        than a post: it states a claim, names the propositions it depends on, and
+        carries one figure. If the figure cannot be drawn, the proposition is not
+        ready to be written.
+      </p>
+      <p class="el-figlink" data-reveal>
+        <a class="link" href="/elementa/figures">Every figure, with permalinks →</a>
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {BOOKS.map((b) => {
+      const inBook = props.filter((p) => p.data.book === b.n);
+      return (
+        <section class="el-book" aria-labelledby={`book-${b.n}`}>
+          <header class="el-book-head">
+            <h2 class="el-book-h" id={`book-${b.n}`}>
+              <span class="el-book-n">Book {toRoman(b.n)}</span>
+              {b.title}
+            </h2>
+            <p class="el-book-c">{b.covers}</p>
+          </header>
+          {inBook.length === 0 ? (
+            <p class="el-empty">Not yet written.</p>
+          ) : (
+            <div class="el-list" data-reveal-stagger>
+              {inBook.map((p) => (
+                <PropositionCard
+                  book={p.data.book}
+                  proposition={p.data.proposition}
+                  statement={p.data.statement}
+                  slug={p.id}
+                  status={p.data.status}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    })}
+  </div>
+</BaseLayout>
+
+<style>
+  .el { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .el-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .el-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .el-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1rem; }
+  .el-figlink { font-family: var(--font-mono); font-size: var(--t-xs); }
+  .el-book { margin-bottom: 3.2rem; }
+  .el-book-head { margin-bottom: 0.6rem; }
+  .el-book-h { font-size: var(--t-lg); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.9rem; }
+  .el-book-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .el-book-c { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0.3rem 0 0; }
+  .el-list { max-width: 62rem; border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent); }
+  .el-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); padding-top: 0.8rem; border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); max-width: 62rem; }
+</style>

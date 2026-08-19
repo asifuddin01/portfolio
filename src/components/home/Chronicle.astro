@@ -1,0 +1,104 @@
+---
+import Chapter from './Chapter.astro';
+
+const ENTRIES: ReadonlyArray<{ when: string; place: string; where: string; lines: string[] }> = [
+  {
+    when: 'Fall 2026',
+    place: 'BRAC University',
+    where: 'Dhaka',
+    lines: [
+      'MSc, Computer Science and Engineering.',
+      'Thesis proposal accepted: HCGT-PG. Supervisor Dr. Badhan Das.',
+    ],
+  },
+  {
+    when: 'Fall 2021 – Summer 2026',
+    place: 'BRAC University',
+    where: 'Dhaka',
+    lines: ['BSc, Computer Science and Engineering.', 'CGPA 3.30. Thesis: HierarchiRetina.'],
+  },
+  {
+    when: '2020',
+    place: 'Uttara High School and College',
+    where: 'Dhaka',
+    lines: ['HSC. GPA 5.00 / 5.00.'],
+  },
+  {
+    when: '2018',
+    place: 'Ullapara Merchant Pilot High School',
+    where: 'Sirajganj',
+    lines: ['SSC. GPA 4.72 / 5.00.'],
+  },
+];
+---
+<Chapter n={8} title="Chronicle" id="chronicle">
+  <ol class="ch" data-reveal-stagger>
+    {ENTRIES.map((e) => (
+      <li class="ch-row">
+        <p class="ch-when">{e.when}</p>
+        <div class="ch-what">
+          <h3 class="ch-place">{e.place}<span class="ch-where">, {e.where}</span></h3>
+          {e.lines.map((l) => <p class="ch-line">{l}</p>)}
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  <p class="ch-course" data-reveal>
+    <span class="ch-course-label">Coursework</span>
+    machine learning, deep learning, compilers, theory of computation, DBMS,
+    operating systems, algorithms, software engineering.
+  </p>
+</Chapter>
+
+<style>
+  .ch { list-style: none; margin: 0; padding: 0; max-width: 62rem; }
+  .ch-row {
+    display: grid;
+    grid-template-columns: 15rem 1fr;
+    gap: 1.5rem;
+    padding: 1.15rem 0 1.15rem 1.5rem;
+    border-left: var(--rule) solid var(--brass);
+    position: relative;
+  }
+  .ch-row::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 1.55rem;
+    width: 5px;
+    height: 5px;
+    background: var(--brass);
+  }
+  .ch-when {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    color: var(--brass-text);
+    margin: 0;
+    font-variant-numeric: lining-nums;
+    padding-top: 0.25rem;
+  }
+  .ch-place { font-size: var(--t-md); font-family: var(--font-display); margin: 0 0 0.3rem; }
+  .ch-where { color: var(--ink-soft); font-size: var(--t-base); }
+  .ch-line { margin: 0; font-size: var(--t-base); line-height: 1.65; color: var(--ink-soft); }
+  .ch-course {
+    margin-top: 2rem;
+    padding-top: 1.1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    max-width: var(--measure);
+  }
+  .ch-course-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-right: 0.7rem;
+  }
+  @media (max-width: 700px) {
+    .ch-row { grid-template-columns: 1fr; gap: 0.35rem; }
+  }
+</style>

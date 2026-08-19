@@ -1,0 +1,48 @@
+---
+/** Book I, Prop. 1 — the same string, two tokenisations. */
+const A = ['un', 'happi', 'ness'];
+const B = ['unhappiness'];
+const C = ['un', 'h', 'a', 'p', 'p', 'i', 'n', 'e', 's', 's'];
+const rows = [
+  { y: 60,  label: 'subword', cells: A, colour: 'var(--lesion-ves)' },
+  { y: 130, label: 'word',    cells: B, colour: 'var(--lesion-ex)' },
+  { y: 200, label: 'char',    cells: C, colour: 'var(--lesion-cws)' },
+];
+const CH = 15;
+---
+<svg class="fig" viewBox="0 0 720 260" role="img" aria-labelledby="tb-t tb-d" preserveAspectRatio="xMidYMid meet">
+  <title id="tb-t">One string under three tokenisations</title>
+  <desc id="tb-d">
+    The string "unhappiness" segmented three ways: as subwords un / happi / ness,
+    as a single word token, and as ten individual characters. Each segmentation
+    fixes which distinctions the model is able to represent at its input.
+  </desc>
+  <text x="0" y="24" class="t-lab">unhappiness</text>
+  {rows.map((r) => {
+    let x = 110;
+    return (
+      <g>
+        <text x="0" y={r.y + 24} class="t-sm">{r.label}</text>
+        {r.cells.map((c) => {
+          const w = Math.max(38, c.length * CH + 18);
+          const el = (
+            <g>
+              <rect x={x} y={r.y} width={w} height={38} fill="none" stroke="currentColor" />
+              <rect x={x} y={r.y} width={w} height="3" fill={r.colour} stroke="none" />
+              <text x={x + w / 2} y={r.y + 25} class="t-md" text-anchor="middle">{c}</text>
+            </g>
+          );
+          x += w + 8;
+          return el;
+        })}
+      </g>
+    );
+  })}
+</svg>
+<style>
+  .fig { width: 100%; height: auto; min-width: 560px; color: var(--ink); }
+  .fig rect[stroke='currentColor'] { stroke: color-mix(in srgb, var(--brass) 85%, transparent); }
+  .t-lab { font-family: var(--font-mono); font-size: 13px; fill: var(--brass-text); letter-spacing: 0.14em; text-transform: uppercase; }
+  .t-md { font-family: var(--font-mono); font-size: 13px; fill: currentColor; }
+  .t-sm { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-soft); letter-spacing: 0.08em; }
+</style>

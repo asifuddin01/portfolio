@@ -1,0 +1,51 @@
+---
+plate: 2
+title: HNSD-VLM
+fullTitle: >-
+  HNSD-VLM: Hierarchical Novel Species Discovery in Vision-Language Models,
+  Uncertainty-Guided Taxonomic Placement of Unknown Species
+subtitle: Placing unseen species inside the taxonomy, not in flat clusters
+status: in-preparation
+disclosure: embargoed
+year: "2026"
+supervisors: ["Niloy Farhan"]
+coauthors: []
+datasets: ["iNaturalist 2021 — 550 species, 11 supercategories"]
+abstract: "[SUPPLY]"
+citation: null
+paperUrl: null
+repoUrl: null
+metrics: []
+---
+
+## The problem
+
+A closed-set classifier meeting an organism nobody trained it on will name it
+anyway, confidently and wrongly. The usual repair is open-set recognition, which
+detects the unknown and then drops it into an unlabelled cluster. For a biologist
+that is barely an improvement: *unknown* is not a useful answer when the question
+is *what is this, roughly*.
+
+HNSD-VLM detects species unseen during training and then places them **inside the
+taxonomic hierarchy** — this is a beetle of some kind, attaching at family level —
+rather than into a flat pile of rejects.
+
+## Approach
+
+The backbones stay entirely frozen. A single fusion module trains, which is what
+keeps the whole thing runnable on one GPU rather than a cluster.
+
+Three components:
+
+- A **systematic backbone ablation**, because which visual encoder you start from
+  turns out to matter more than the fusion design on top of it.
+- A **language-guided novelty detector**, which uses the text tower to decide that
+  something falls outside every class it has names for.
+- A **taxonomic placement method** that infers the attachment rank by watching
+  where confidence collapses as it descends the hierarchy. Confidence holds at
+  order, wavers at family, falls apart at genus — so the organism attaches at
+  family.
+
+## Status
+
+In preparation. Results are held until publication.

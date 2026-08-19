@@ -1,0 +1,267 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { getCollection } from 'astro:content';
+import { AUTHOR, EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
+
+const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
+
+const EDUCATION = [
+  {
+    when: 'Fall 2026 —',
+    what: 'MSc, Computer Science and Engineering',
+    where: 'BRAC University, Dhaka',
+    detail: 'Thesis proposal accepted: HCGT-PG. Supervisor: Dr. Badhan Das.',
+  },
+  {
+    when: 'Fall 2021 – Summer 2026',
+    what: 'BSc, Computer Science and Engineering',
+    where: 'BRAC University, Dhaka',
+    detail: 'CGPA 3.30. Thesis: HierarchiRetina.',
+  },
+  {
+    when: '2020',
+    what: 'Higher Secondary Certificate',
+    where: 'Uttara High School and College, Dhaka',
+    detail: 'GPA 5.00 / 5.00.',
+  },
+  {
+    when: '2018',
+    what: 'Secondary School Certificate',
+    where: 'Ullapara Merchant Pilot High School, Sirajganj',
+    detail: 'GPA 4.72 / 5.00.',
+  },
+];
+
+const SKILLS = [
+  { k: 'Languages', v: 'Python (primary), C' },
+  { k: 'Deep learning', v: 'PyTorch, timm, segmentation_models_pytorch; mixed-precision training, EMA, TTA, k-fold CV, class-imbalance handling, threshold calibration, ordinal regression (CORN), mixture-of-experts, cross-attention fusion, attention gates, ASPP, GeM pooling, deep supervision, Grad-CAM' },
+  { k: 'Architectures', v: 'ConvNeXtV2, SwinV2, DINOv2/v3, image-text encoders, EfficientNet, U-Net, UNet++, Attention U-Net, SwinHRUNetPP, HSMoE-AUNet' },
+  { k: 'Medical imaging', v: 'Fundus photography, non-contrast CT, NIfTI and DICOM, FOV masking, CLAHE, patch extraction and stitching, lesion-level evaluation, de-identification, report parsing' },
+  { k: 'Evaluation', v: 'QWK, ICC, AUC-ROC, AUC-PR, Dice, IoU, NMI, lesion- and image-level recall, per-dataset breakdowns, held-out test discipline, leakage assertions' },
+  { k: 'Causal / comp-bio', v: 'Causal graphs and DAGs, gene perturbation analysis, gene regulatory network inference, multi-omics integration, biomarker discovery' },
+  { k: 'Data', v: 'pandas, NumPy, Albumentations, OpenCV, Matplotlib, Seaborn, scikit-learn' },
+  { k: 'Backend', v: 'FastAPI, REST, SQLAlchemy, JWT, Alembic, AWS S3, CloudFront' },
+  { k: 'Other', v: 'Git, Jupyter, LaTeX, lex/yacc, CUDA-level debugging; NVIDIA RTX A6000' },
+];
+
+const ENGINEERING = [
+  { t: 'CSMMS — Campus Student Management and Marketplace System', d: 'FastAPI backend; filtered and paginated item CRUD, S3 image upload with Pillow compression via CloudFront, live-computed impact metrics, SQLAlchemy, JWT, Alembic.' },
+  { t: 'Compiler symbol table', d: 'lex and yacc/bison; hash table with scope stack via parent pointers and mid-rule actions for correct parameter scoping. Portable across macOS and Linux.' },
+  { t: 'Direct RE-to-DFA construction', d: 'Syntax tree with leaf positions, nullable/firstpos/lastpos, followpos, transition table.' },
+];
+---
+<BaseLayout
+  title={`Vitae — ${AUTHOR}`}
+  description={`Curriculum vitae of ${AUTHOR}, deep learning researcher in medical imaging, vision-language models and causal inference.`}
+  folio="V"
+>
+  <div class="codex cv">
+    <header class="cv-head">
+      <div class="cv-headline">
+        <div>
+          <h1 class="cv-name" data-press>{AUTHOR}</h1>
+          <p class="cv-role" data-reveal>
+            Deep learning researcher — medical imaging, vision-language models,
+            causal inference
+          </p>
+        </div>
+        <button class="cv-print" type="button" data-print>Print</button>
+      </div>
+      <ul class="cv-contact" data-reveal>
+        <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
+        <li><a class="link" href={GITHUB}>github.com/asifuddin01</a></li>
+        <li><a class="link" href={LINKEDIN}>linkedin.com/in/md-asif-uddin01</a></li>
+        <li>{LOCATION}</li>
+      </ul>
+    </header>
+
+    <LesionRule />
+
+    <section class="cv-sec" aria-labelledby="cv-research">
+      <h2 class="cv-h2" id="cv-research">Research</h2>
+      <ol class="cv-list">
+        {works.map((w) => (
+          <li class="cv-item">
+            <div class="cv-item-head">
+              <h3 class="cv-item-t">
+                <a class="link" href={`/works/${w.id}`}>{w.data.title}</a>
+              </h3>
+              <span class="cv-when">{w.data.year}</span>
+            </div>
+            <p class="cv-full">{w.data.fullTitle}</p>
+            <p class="cv-detail">
+              <span class="cv-tag">{w.data.status.replace(/-/g, ' ')}</span>
+              Supervisors: {w.data.supervisors.join(', ')}.
+              {w.data.coauthors.length > 0 && ` Co-authors: ${w.data.coauthors.join(', ')}.`}
+            </p>
+            {w.data.metrics.length > 0 && (
+              <p class="cv-metrics">
+                {w.data.metrics.map((m, i) => (
+                  <span>{i > 0 && ' · '}{m.label} {m.value}</span>
+                ))}
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="cv-sec" aria-labelledby="cv-education">
+      <h2 class="cv-h2" id="cv-education">Education</h2>
+      <ol class="cv-list">
+        {EDUCATION.map((e) => (
+          <li class="cv-item">
+            <div class="cv-item-head">
+              <h3 class="cv-item-t">{e.what}</h3>
+              <span class="cv-when">{e.when}</span>
+            </div>
+            <p class="cv-detail">{e.where}. {e.detail}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="cv-detail cv-course">
+        Coursework: machine learning, deep learning, compilers, theory of
+        computation, DBMS, operating systems, algorithms, software engineering.
+      </p>
+    </section>
+
+    <section class="cv-sec" aria-labelledby="cv-skills">
+      <h2 class="cv-h2" id="cv-skills">Technical</h2>
+      <dl class="cv-skills">
+        {SKILLS.map((s) => (
+          <div class="cv-skill">
+            <dt>{s.k}</dt>
+            <dd>{s.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p class="cv-detail cv-notyet">Not yet: SQL, propensity score methods, Mendelian randomization.</p>
+    </section>
+
+    <section class="cv-sec" aria-labelledby="cv-eng">
+      <h2 class="cv-h2" id="cv-eng">Engineering</h2>
+      <ol class="cv-list">
+        {ENGINEERING.map((e) => (
+          <li class="cv-item">
+            <h3 class="cv-item-t">{e.t}</h3>
+            <p class="cv-detail">{e.d}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .cv { padding-top: clamp(2.5rem, 7vh, 5rem); max-width: 58rem; }
+  .cv-headline { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; }
+  .cv-name { font-size: var(--t-2xl); letter-spacing: 0.02em; margin-bottom: 0.7rem; }
+  .cv-role {
+    font-family: var(--font-body);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.1em;
+    font-size: var(--t-md);
+    color: var(--ink-soft);
+    max-width: 40ch;
+  }
+  .cv-print {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    background: transparent;
+    border: var(--rule) solid var(--brass);
+    padding: 0.32em 0.8em 0.26em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cv-print:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .cv-contact {
+    list-style: none;
+    margin: 1.3rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .cv-sec { margin-bottom: 2.6rem; }
+  .cv-h2 {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    padding-bottom: 0.5rem;
+    border-bottom: var(--rule) solid var(--brass);
+    margin-bottom: 1.1rem;
+  }
+  .cv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.4rem; }
+  .cv-item-head { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+  .cv-item-t { font-family: var(--font-display); font-size: var(--t-md); margin: 0 0 0.25rem; }
+  .cv-when { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); white-space: nowrap; }
+  .cv-full { font-style: italic; font-size: var(--t-base); color: var(--ink-soft); margin: 0 0 0.35rem; line-height: 1.5; }
+  .cv-detail { font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .cv-tag {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-right: 0.6rem;
+  }
+  .cv-metrics {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink);
+    margin: 0.35rem 0 0;
+    line-height: 1.7;
+    font-variant-numeric: lining-nums;
+  }
+  .cv-skills { margin: 0; display: grid; gap: 0.7rem; }
+  .cv-skill { display: grid; grid-template-columns: 11rem 1fr; gap: 1rem; }
+  .cv-skill dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .cv-skill dd { margin: 0; font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); }
+  .cv-course, .cv-notyet { margin-top: 0.9rem; font-style: italic; }
+  @media (max-width: 640px) {
+    .cv-skill { grid-template-columns: 1fr; gap: 0.15rem; }
+    .cv-name { font-size: var(--t-xl); }
+  }
+</style>
+
+<style is:global>
+  @media print {
+    :root { --paper: #fff; --paper-raised: #fff; --ink: #000; --ink-soft: #333; --brass: #666; --brass-text: #444; --fundus: #000; }
+    header.hd, footer.cp, .grain, .ink-wash, .cursor-lens, .folio, .cv-print, .lesion-rule { display: none !important; }
+    body { background: #fff !important; font-size: 10.5pt; }
+    .cv { padding-top: 0; max-width: 100%; }
+    .cv-sec { break-inside: avoid; page-break-inside: avoid; }
+    .cv-item { break-inside: avoid; page-break-inside: avoid; }
+    a { color: #000 !important; text-decoration: none !important; }
+    @page { margin: 16mm; }
+  }
+</style>
+
+<script>
+  function bindPrint(): void {
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-print]')) {
+      if (btn.dataset.bound === '1') continue;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => window.print());
+    }
+  }
+  document.addEventListener('astro:page-load', bindPrint);
+  if (document.readyState !== 'loading') bindPrint();
+  else document.addEventListener('DOMContentLoaded', bindPrint);
+</script>

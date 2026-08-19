@@ -1,0 +1,44 @@
+---
+book: 1
+proposition: 7
+statement: Attention is permutation-invariant, and positional encoding is the repair.
+given: ["book-1-prop-4"]
+figure: FigPermutation
+status: published
+updated: 2026-08-09
+---
+
+## Demonstration
+
+Let *P* be a permutation matrix and *f* a self-attention layer. Then
+
+```
+f(PX) = P f(X)
+```
+
+The layer is permutation-**equivariant**: permute the input and you get the same
+outputs in the permuted order. Pool over the sequence and equivariance becomes
+outright invariance — the set of outputs is unchanged.
+
+The proof is immediate from Proposition 4. Every weight *wᵢⱼ* depends only on the
+contents of rows *i* and *j*. Relabelling rows relabels the weights identically,
+so the products and their sums carry through unchanged. There is no term anywhere
+in the computation that references an absolute index.
+
+This means *the cat sat* and *sat the cat* are, to attention alone, the same
+object. For language that is fatal. For point clouds it is exactly what you want,
+which is a good reminder that this is a property rather than a bug.
+
+The repair is to make position part of the content. Sinusoidal and learned
+absolute encodings add a position-dependent vector to each token embedding before
+the first layer. Rotary encodings instead rotate **q** and **k** by an angle
+proportional to position, so that the dot product *q*ᵢ · *k*ⱼ becomes a function
+of *i − j* — relative position falls out of the algebra rather than being bolted
+on.
+
+## Corollary
+
+Any claim that a transformer "understands word order" is a claim about the
+positional encoding, not about attention. When order-sensitivity fails — long
+contexts, extrapolation past the training length — the encoding is the first
+thing to examine, because attention itself never had an opinion about order.

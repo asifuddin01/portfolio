@@ -1,0 +1,38 @@
+---
+/** A hairline-bordered container with a `Fig. N —` caption beneath.
+    Every figure on the site sits in one. */
+import { toRoman } from '../../consts';
+
+interface Props {
+  n: number | string;
+  caption: string;
+  /** Roman numerals read as plate-native; pass 'arabic' for figure libraries. */
+  numeral?: 'roman' | 'arabic';
+  id?: string;
+  class?: string;
+}
+const { n, caption, numeral = 'roman', id, class: className = '' } = Astro.props;
+const mark = numeral === 'roman' && typeof n === 'number' ? toRoman(n) : String(n);
+---
+<figure class:list={['ff', className]} id={id}>
+  <div class="ff-frame scroll-x"><slot /></div>
+  <figcaption class="ff-cap"><span class="ff-n">Fig. {mark} —</span> {caption}</figcaption>
+</figure>
+<style>
+  .ff { margin: 2.75rem 0; max-width: 100%; }
+  .ff-frame {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    background: var(--paper-raised);
+    padding: clamp(1rem, 3vw, 2rem);
+  }
+  .ff-cap {
+    margin-top: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .ff-n { color: var(--brass-text); letter-spacing: 0.1em; }
+</style>

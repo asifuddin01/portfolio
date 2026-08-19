@@ -1,0 +1,39 @@
+---
+book: 1
+proposition: 4
+statement: Attention is a weighted average whose weights are computed from content.
+given: ["book-1-prop-1"]
+figure: FigAttentionWeights
+status: published
+updated: 2026-07-28
+---
+
+## Demonstration
+
+Attention is often introduced as a mechanism for "focus", which is evocative and
+not very useful. Mechanically it is an average.
+
+For a query vector **q** and a set of key–value pairs (**k**ᵢ, **v**ᵢ):
+
+```
+wᵢ = softmax( q · kᵢ / √d )
+out = Σ wᵢ vᵢ
+```
+
+The output is a convex combination of the value vectors. It lives in the convex
+hull of the values and can never leave it — which is why the feed-forward block
+after attention is not optional decoration. Attention mixes; the MLP transforms.
+
+The division by √d is not cosmetic. For **q** and **k** with unit-variance
+components, the dot product has variance *d*. Left unscaled, the logits grow with
+dimension, the softmax saturates, and gradients through it vanish. Dividing by √d
+restores unit variance and keeps the distribution soft enough to train.
+
+The decisive property is where the weights come from: **content**. The index *i*
+appears nowhere in the computation of *wᵢ*. Two identical keys receive identical
+weights no matter where in the sequence they sit.
+
+## Corollary
+
+Because the weights are content-addressed and index-free, the whole operation is
+blind to order. That blindness is the subject of [Proposition 7](/elementa/book-1-prop-7).

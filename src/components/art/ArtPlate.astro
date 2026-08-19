@@ -1,0 +1,116 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import plates from '../../lib/plates.json';
+import { toRoman } from '../../consts';
+
+interface Props {
+  slug: string;
+  /** Plate numeral shown in the caption rail. */
+  n: number;
+  /** Line of the author's own, set beneath the attribution. */
+  gloss?: string;
+  align?: 'left' | 'right' | 'full';
+  depth?: number;
+  eager?: boolean;
+  /** Real rendered width of the slot, so the srcset picks a sane candidate. */
+  sizes?: string;
+}
+const {
+  slug, n, gloss, align = 'right', depth = 0.16, eager = false,
+  sizes = '(max-width: 700px) 92vw, 30rem',
+} = Astro.props;
+
+const meta = plates.find((p) => p.slug === slug);
+if (!meta) throw new Error(`ArtPlate: no plate named "${slug}" in plates.json`);
+
+const files = import.meta.glob<{ default: ImageMetadata }>('../../assets/plates/*.jpg', {
+  eager: true,
+});
+const key = `../../assets/plates/${meta.file}`;
+const entry = files[key];
+if (!entry) throw new Error(`ArtPlate: image missing for "${slug}" at ${key}`);
+const img = entry.default;
+
+/* Engravings are line art on white and can be printed straight onto the page
+   with a blend mode. Photographed objects cannot, so they get a duotone. */
+const PHOTOGRAPHS = new Set(['bust', 'meditation']);
+const treatment = PHOTOGRAPHS.has(slug) ? 'photo' : 'intaglio';
+
+const attribution = [meta.artist, meta.date].filter(Boolean).join(', ');
+---
+<figure class:list={['art', `art--${align}`, `art--${treatment}`]}>
+  <div class="art-frame plate-art" data-parallax={depth}>
+    <Image
+      src={img}
+      alt={`${meta.title}${meta.artist ? `, ${meta.artist}` : ''}${meta.date ? `, ${meta.date}` : ''}`}
+      widths={[340, 480, 680, 900]}
+      sizes={sizes}
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : 'auto'}
+      decoding="async"
+      quality={70}
+    />
+  </div>
+  <figcaption class="art-cap">
+    <span class="art-n">Plate {toRoman(n)}</span>
+    <span class="art-title">{meta.title}</span>
+    <span class="art-attr">{attribution}</span>
+    {gloss && <span class="art-gloss">{gloss}</span>}
+    <a class="art-src" href={meta.sourceUrl} rel="noopener">
+      Art Institute of Chicago · CC0
+    </a>
+  </figcaption>
+</figure>
+
+<style>
+  .art { margin: 0; display: grid; gap: 0.9rem; }
+  .art-frame {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    padding: clamp(0.75rem, 2vw, 1.4rem);
+    background: var(--paper-raised);
+    overflow: hidden;
+  }
+  .art-frame :global(img) { width: 100%; height: auto; display: block; }
+
+  /* Intaglio: white of the plate drops out, ink prints onto the vellum. */
+  .art--intaglio .art-frame :global(img) {
+    filter: grayscale(1) contrast(1.06);
+    mix-blend-mode: multiply;
+  }
+  :global([data-theme='nocturne']) .art--intaglio .art-frame :global(img) {
+    filter: grayscale(1) invert(1) contrast(1.04) brightness(0.94);
+    mix-blend-mode: screen;
+  }
+
+  /* Photographed objects: duotone toward the page, no blend mode. */
+  .art--photo .art-frame :global(img) {
+    filter: grayscale(1) sepia(0.22) contrast(1.04) brightness(1.02);
+  }
+  :global([data-theme='nocturne']) .art--photo .art-frame :global(img) {
+    filter: grayscale(1) sepia(0.16) contrast(0.98) brightness(0.86);
+  }
+
+  .art-cap {
+    display: grid;
+    gap: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.65;
+    max-width: 42ch;
+  }
+  .art-n { color: var(--brass-text); letter-spacing: 0.16em; text-transform: uppercase; }
+  .art-title { color: var(--ink); font-style: italic; }
+  .art-attr { color: var(--ink-soft); }
+  .art-gloss {
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: var(--t-base);
+    font-style: italic;
+    line-height: 1.5;
+    margin-top: 0.35rem;
+    max-width: 34ch;
+  }
+  .art-src { color: var(--brass-text); justify-self: start; margin-top: 0.3rem; }
+  .art-src:hover { color: var(--fundus); }
+</style>

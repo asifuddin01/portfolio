@@ -1,0 +1,144 @@
+---
+import Chapter from './Chapter.astro';
+
+/** Architectures and losses written from scratch. Design problem, then
+    the decision. Fig. II lists its rejections on purpose. */
+const ENTRIES: ReadonlyArray<{
+  mark: string;
+  name: string;
+  problem: string;
+  decision: string;
+  rejections?: string[];
+}> = [
+  {
+    mark: 'I',
+    name: 'HSMoE-AUNet',
+    problem:
+      'A microaneurysm is a few dark pixels. A cotton wool spot is a soft pale patch. They do not respond to the same design.',
+    decision:
+      'Hierarchical sparse mixture-of-experts attention U-Net on a ConvNeXt-Small encoder, with a different expert set per lesion type. Custom experts: MultiScaleExpert, BrightSpotExpert, EdgeEnhancingExpert, SoftRegionExpert, TextureExpert.',
+  },
+  {
+    mark: 'II',
+    name: 'SwinHRUNetPP',
+    problem:
+      'Vessel segmentation needs global context and hairline spatial precision at once, and most hybrids trade one away.',
+    decision:
+      'A Swin-based high-resolution U-Net++ hybrid, arrived at by rejection rather than by design.',
+    rejections: [
+      'SwinV2-Large',
+      'smp UNet++',
+      'plain SwinUNet',
+      'Lovász loss',
+      'BoundaryLoss',
+      'warm-restart scheduling',
+      'label smoothing',
+      'encoder freezing',
+    ],
+  },
+  {
+    mark: 'III',
+    name: 'MultiScaleMANet',
+    problem:
+      'Microaneurysms vanish at low resolution and lose context at high resolution.',
+    decision:
+      'Three branches — full 512×512 through EfficientNet-B4, four 256×256 patches through a shared EfficientNet-B0, sixteen 128×128 patches through the same encoder — with spatial reassembly and bottleneck fusion. Alignment was proved on paper before implementation.',
+  },
+  {
+    mark: 'IV',
+    name: 'RichAttentionUNet',
+    problem: 'A baseline worth trusting has to be one you can account for line by line.',
+    decision:
+      'Written from scratch with no pretrained weights: residual conv blocks with SE channel attention, an ASPP multi-scale bottleneck, attention gates in the decoder, deep supervision heads.',
+  },
+  {
+    mark: 'V',
+    name: 'Custom losses',
+    problem:
+      'Off-the-shelf losses reward the wrong thing on sparse, bright, or boundary-defined lesions.',
+    decision:
+      'DualEdgeBoundaryLoss, OpticDiscSuppressionLoss, SoftBoundaryLoss, probability-weighted RegionCoherenceLoss, an FOV-masked composite loss, clDice.',
+  },
+];
+---
+<Chapter n={6} title="Instrumenta propria" id="instrumenta">
+  <ol class="ip" data-reveal-stagger>
+    {ENTRIES.map((e) => (
+      <li class="ip-item">
+        <p class="ip-fig">Fig. {e.mark}</p>
+        <h3 class="ip-name">{e.name}</h3>
+        <p class="ip-problem">{e.problem}</p>
+        <p class="ip-decision">{e.decision}</p>
+        {e.rejections && (
+          <div class="ip-rej">
+            <p class="ip-rej-label">Rejected along the way</p>
+            <ul class="ip-rej-list">
+              {e.rejections.map((r) => <li>{r}</li>)}
+            </ul>
+            <p class="ip-rej-note">Each of these made the result worse.</p>
+          </div>
+        )}
+      </li>
+    ))}
+  </ol>
+</Chapter>
+
+<style>
+  .ip { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.6rem; max-width: 60rem; }
+  .ip-item {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    padding-top: 1.3rem;
+  }
+  .ip-fig {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.35rem;
+  }
+  .ip-name { font-size: var(--t-lg); color: var(--ink); margin: 0 0 0.7rem; }
+  .ip-problem {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-md);
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    margin: 0 0 0.7rem;
+    line-height: 1.6;
+  }
+  .ip-decision { font-size: var(--t-base); line-height: 1.7; max-width: var(--measure); margin: 0; }
+  .ip-rej {
+    margin-top: 1.1rem;
+    padding: 1rem 1.2rem;
+    background: var(--paper-raised);
+    border-left: 2px solid var(--oxblood);
+    max-width: var(--measure);
+  }
+  .ip-rej-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+    margin: 0 0 0.5rem;
+  }
+  .ip-rej-list {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink);
+  }
+  .ip-rej-list li::before { content: '×  '; color: var(--oxblood-text); }
+  .ip-rej-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0;
+  }
+</style>

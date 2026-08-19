@@ -1,0 +1,28 @@
+---
+import ArtPlate from './ArtPlate.astro';
+
+interface Props {
+  slug: string;
+  n: number;
+  gloss?: string;
+  side?: 'left' | 'right';
+  depth?: number;
+}
+const { slug, n, gloss, side = 'right', depth = 0.18 } = Astro.props;
+---
+<aside class:list={['il', `il--${side}`]} aria-label="Interleaved plate">
+  <div class="il-plate">
+    <ArtPlate slug={slug} n={n} gloss={gloss} depth={depth} />
+  </div>
+</aside>
+
+<style>
+  .il { margin-block: var(--chapter-gap); display: flex; }
+  .il--right { justify-content: flex-end; }
+  .il--left { justify-content: flex-start; }
+  .il-plate { width: min(30rem, 100%); }
+  @media (max-width: 700px) {
+    .il { justify-content: center; }
+    .il-plate { width: 100%; }
+  }
+</style>

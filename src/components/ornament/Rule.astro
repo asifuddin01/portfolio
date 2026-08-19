@@ -1,0 +1,10 @@
+---
+interface Props { class?: string; tone?: 'brass' | 'soft' }
+const { class: className = '', tone = 'brass' } = Astro.props;
+---
+<hr class:list={['rule', `rule--${tone}`, className]} />
+<style>
+  .rule { width: 100%; border: 0; height: var(--rule); }
+  .rule--brass { background: var(--brass); opacity: 0.7; }
+  .rule--soft  { background: var(--brass); opacity: 0.32; }
+</style>

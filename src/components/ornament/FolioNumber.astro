@@ -1,0 +1,26 @@
+---
+/**
+ * Folio number, bottom outer corner. Roman numerals on the home scroll,
+ * Arabic on chapter routes.
+ */
+interface Props { value: string | number; side?: 'left' | 'right' }
+const { value, side = 'right' } = Astro.props;
+---
+<div class:list={['folio', `folio--${side}`]} aria-hidden="true">
+  <span class="folio-mark">{value}</span>
+</div>
+<style>
+  .folio {
+    position: absolute;
+    bottom: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    color: var(--brass-text);
+    font-variant-numeric: lining-nums;
+    pointer-events: none;
+  }
+  .folio--right { right: var(--gutter); }
+  .folio--left  { left: var(--gutter); }
+  @media (max-width: 640px) { .folio { display: none; } }
+</style>

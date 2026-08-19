@@ -1,0 +1,40 @@
+---
+book: 1
+proposition: 1
+statement: Tokenisation fixes what a model can never afterwards distinguish.
+given: []
+figure: FigTokenBoundary
+status: published
+updated: 2026-07-14
+---
+
+## Demonstration
+
+A transformer never sees text. It sees a sequence of integers produced by a
+tokeniser, and every downstream layer operates on embeddings indexed by those
+integers. Whatever the tokeniser merges, the model receives already merged.
+
+Take `unhappiness`. Under a word-level vocabulary it is one symbol, and the model
+has no route from it to `unhappy` or to `happiness` other than whatever the
+embedding space happens to learn from co-occurrence. Under a subword vocabulary
+it arrives as `un` + `happi` + `ness`, and the negation is a token the model has
+seen thousands of times elsewhere. Under character-level segmentation the
+morphology is fully exposed and the sequence is ten times longer, which costs
+quadratic attention.
+
+The consequence is that certain failures are not modelling failures at all. A
+model that cannot do arithmetic on long numbers may be suffering from a tokeniser
+that splits `1234` into `12` and `34` in one context and `1`, `234` in another.
+No amount of training fixes a distinction that was destroyed before layer one.
+
+```python
+# Two strings that differ, and a segmentation that hides the difference.
+tok.encode("1234")   # -> [16, 2019]
+tok.encode(" 1234")  # -> [220, 4513]   different pieces entirely
+```
+
+## Corollary
+
+Before blaming the architecture, read the token ids. The input representation is
+the first place a capability can be lost, and the only place where the loss is
+silent.

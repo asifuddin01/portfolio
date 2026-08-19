@@ -1,0 +1,106 @@
+---
+plate: 1
+title: HierarchiRetina
+fullTitle: >-
+  HierarchiRetina: A Lesion-Aware Hierarchical Deep Learning Framework Enabling
+  Interpretable Diabetic Retinopathy Severity Assessment via Multi-Stage Retinal
+  Fundus Image Analysis
+subtitle: Interpretable diabetic retinopathy grading from retinal photographs
+status: deposited
+disclosure: public
+year: "2026"
+supervisors: ["Rafeed Rahman", "Niloy Farhan", "Md. Golam Rabiul Alam"]
+coauthors: ["Hosni Rabbani", "Shahrin Tabassum"]
+datasets: ["EyePACS","APTOS 2019","Messidor-2","IDRiD","DDR","FGADR","DRIVE","STARE","MAPLES-DR","HRF","E-Ophtha"]
+abstract: "[SUPPLY — paste the thesis abstract verbatim]"
+citation: "[SUPPLY]"
+paperUrl: null
+repoUrl: null
+metrics:
+  - { label: "Macro-AUC", value: "0.9422" }
+  - { label: "Ungradable detection AUC", value: "0.9995" }
+  - { label: "DDR 5-class QWK, 5-fold ensemble", value: "0.8533", note: "n = 3,759; published benchmark on the same split, 0.8617" }
+  - { label: "End-to-end pipeline QWK", value: "0.7942" }
+  - { label: "Per-dataset QWK", value: "0.83 – 0.93", note: "FGADR to APTOS" }
+---
+
+## The decision that set the number
+
+DDR grades diabetic retinopathy on a five-point scale, and grade 5 is not a
+severity at all. It means the photograph cannot be read — the media are opaque,
+the field is wrong, the exposure failed. Treating it as an ordinal level above
+proliferative disease is arithmetically convenient and clinically false.
+
+Left as an ordinal class, grade 5 pushes QWK to **0.9017**. That number is not
+comparable to anything, because published work on the same split does not treat
+gradability as a severity. Splitting it out into a separate binary gradability
+head produced **0.8533** — lower, honest, and comparable to the 0.8617 benchmark
+on the identical split.
+
+It is also the better clinical design. An ungradable photograph should be routed
+to a human, not assigned a fabricated grade. The pipeline now says *I cannot read
+this* instead of guessing, and that is a different and more useful failure.
+
+## Stage I · Screening
+
+Referable disease is grade ≥ 2. Two backbones carry this stage: **SwinV2-Large**
+at 384px and **ConvNeXtV2-Large** at 512px, trained on roughly 56,455 DDR images.
+
+Validation AUC reached 0.9475; held-out test AUC was 0.9043 across 58,689 images.
+The operating threshold was calibrated on validation only and locked before the
+test set was read once.
+
+## Stage II · Five lesions, five designs
+
+A microaneurysm is a handful of dark pixels. A cotton wool spot is a soft pale
+patch with no edge worth speaking of. They do not respond to the same
+architecture, and they do not respond to the same loss.
+
+Each lesion class gets its own model, its own loss composition, and its own
+sampling regime — microaneurysms and haemorrhages through the sparse-lesion
+designs, hard exudates through bright-spot specialisation, vessels through the
+high-resolution hybrid under a field-of-view mask.
+
+### The cotton wool spot collapse
+
+Version 1 failed completely: `val_loss` NaN, Dice 0.0, precision 1.0, recall 0.0.
+A model predicting nothing scores perfect precision, and that is the tell.
+
+Three causes, all real:
+
+- `TextureExpert` computed local variance as `E[x²] − E[x]²`. Under mixed-precision
+  training that subtraction overflows in FP16 and propagates NaN through the whole
+  graph.
+- `RegionCoherenceLoss` used plain total variation. The global minimum of total
+  variation is the all-zero prediction. The model was not broken — it was
+  correctly minimising a loss that paid it to predict nothing.
+- No loss warmup and no `pos_weight` on an extremely sparse class.
+
+Version 2 fixed all three: mean absolute deviation in place of variance for FP16
+safety; probability-weighted total variation that returns zero loss on zero
+predictions; a three-phase loss warmup; NaN guards in both the training and
+validation loops; gradient clipping at 0.5; learning rate down to 7e-5.
+
+## Stage III · Lesion-guided grading
+
+The grader takes **eight channels** — RGB plus the five lesion masks — into a
+ConvNeXtV2-Large with cross-attention lesion gating. The severity head is a CORN
+ordinal regressor over grades 1–4. Gradability is a separate binary head, for the
+reason given at the top of this page. Final results come from a 5-fold ensemble.
+
+Because the masks are inputs rather than post-hoc explanations, the answer to
+*why did it say severe* is a set of segmentations you can look at.
+
+## Limitations
+
+Stated plainly, and before a reviewer states them.
+
+- **EyePACS dominates the pooled test set.** It is 91% of it, with Stage-A accuracy
+  0.476. The pooled figure is essentially the EyePACS figure wearing a disguise.
+  **The per-dataset table is the primary result; the pooled number is not.**
+- **EyePACS labels are single-grader** with no adjudication. There is no ceiling
+  estimate for label noise on the largest component of the evaluation.
+- **Stage I discards 3,161 true DR cases.** Whatever Stage III achieves, end-to-end
+  sensitivity is capped at 0.813 by that screening loss.
+- **FGADR specificity is not reported.** It would be computed on almost no true
+  negatives, so it is N/A rather than flattering.

@@ -1,0 +1,30 @@
+---
+entry: 2
+kind: model
+title: What the registers fixed
+subject: DINOv3 as a frozen backbone
+summary: Dense features that no longer need apologising for.
+status: published
+updated: 2026-08-11
+source: null
+---
+
+The practical complaint about DINOv2 for dense tasks was the artefacts: a handful
+of high-norm tokens in low-information patches that behave like scratch space and
+wreck attention maps if you visualise them. Registers — extra learnable tokens
+whose only job is to absorb that traffic — clean it up, and the dense feature maps
+stop having bright holes in the sky.
+
+For my purposes the interesting part is that this is a *representation* fix, not a
+loss fix. The model was already learning the right thing; it lacked somewhere to
+put the bookkeeping.
+
+Used frozen in HNSD-VLM, it behaves the way you want a backbone to behave: you can
+attach a small trainable head and the features do not fight you. The ablation
+across backbones is in the plate, embargoed until publication, so I will only say
+that the choice of encoder mattered more than the fusion design sitting on top of
+it, which was not what I expected going in.
+
+Caveat worth stating: everything above is about frozen-feature quality on natural
+images. Fundus photographs are not natural images, and the transfer story there is
+its own experiment.

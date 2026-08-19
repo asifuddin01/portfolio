@@ -1,0 +1,54 @@
+---
+import StatusMark from '../ornament/StatusMark.astro';
+import { toRoman } from '../../consts';
+
+interface Props {
+  plate: number;
+  title: string;
+  subtitle: string;
+  status: 'deposited' | 'in-preparation' | 'proposal-accepted';
+  year: string;
+  slug: string;
+}
+const { plate, title, subtitle, status, year, slug } = Astro.props;
+---
+<a class="pc" href={`/works/${slug}`} data-tilt>
+  <div class="pc-in">
+    <div class="pc-top">
+      <span class="pc-num">Plate {toRoman(plate)}</span>
+      <span class="pc-year">{year}</span>
+    </div>
+    <h3 class="pc-title">{title}</h3>
+    <p class="pc-sub">{subtitle}</p>
+    <div class="pc-foot"><StatusMark status={status} /></div>
+  </div>
+</a>
+<style>
+  .pc {
+    display: block;
+    border: var(--rule) solid var(--brass);
+    background: var(--paper-raised);
+    padding: 1.6rem 1.7rem 1.5rem;
+    color: var(--ink);
+    height: 100%;
+    position: relative;
+  }
+  .pc-in { display: flex; flex-direction: column; gap: 0.7rem; height: 100%; }
+  .pc-top {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .pc-title { font-size: var(--t-lg); line-height: 1.15; color: var(--ink); }
+  .pc-sub { font-size: var(--t-base); color: var(--ink-soft); margin: 0; flex: 1 1 auto; line-height: 1.5; }
+  .pc-foot { margin-top: 0.5rem; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pc { transition: border-color 260ms var(--ease-out), background-color 260ms var(--ease-out); }
+  }
+  .pc:hover { border-color: var(--fundus); }
+  .pc:hover .pc-title { color: var(--fundus); }
+</style>

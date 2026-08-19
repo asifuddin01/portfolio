@@ -1,0 +1,122 @@
+---
+import Chapter from './Chapter.astro';
+
+/** Skills as an engraved instrument plate. No bars, no percentages,
+    no star ratings, no logo grids — each group is a numbered figure
+    with a note on actual use. */
+const GROUPS: ReadonlyArray<{ title: string; note: string; items: string }> = [
+  {
+    title: 'Languages',
+    note: 'Everything below is written in the first of these.',
+    items: 'Python (primary). C (coursework level).',
+  },
+  {
+    title: 'Deep learning',
+    note: 'Training discipline more than library familiarity.',
+    items:
+      'PyTorch, timm, segmentation_models_pytorch. Mixed-precision training with GradScaler tuning, EMA, test-time augmentation, k-fold CV with resumable per-fold checkpointing, class-imbalance handling (pos_weight, weighted samplers), threshold calibration on validation only, ordinal regression (CORN), mixture-of-experts, cross-attention fusion, attention gates, ASPP, GeM pooling, deep supervision, frozen-backbone transfer, Grad-CAM.',
+  },
+  {
+    title: 'Architectures used hands-on',
+    note: 'The last two were written here, not imported.',
+    items:
+      'ConvNeXtV2, SwinV2, DINOv2/v3, image-text encoders, EfficientNet, U-Net, UNet++, Attention U-Net, SwinHRUNetPP, HSMoE-AUNet.',
+  },
+  {
+    title: 'Medical imaging',
+    note: 'Most of this is preprocessing nobody writes papers about.',
+    items:
+      'Fundus photography, non-contrast CT, NIfTI and DICOM handling, FOV masking with morphological erosion, CLAHE on the green channel, retinal cropping, patch extraction and stitching, lesion-level connected-component evaluation, de-identification, radiologist report parsing.',
+  },
+  {
+    title: 'Evaluation',
+    note: 'The per-dataset breakdown is the part that matters.',
+    items:
+      'QWK, ICC, AUC-ROC, AUC-PR, Dice, IoU, NMI, lesion-level and image-level recall, sensitivity/specificity tradeoff analysis, per-dataset breakdowns, held-out test discipline and leakage assertions.',
+  },
+  {
+    title: 'Causal inference and computational biology',
+    note: 'The newest direction, and the least finished.',
+    items:
+      'Causal graphs and DAGs, gene perturbation analysis, gene regulatory network inference, multi-omics integration, biomarker discovery.',
+  },
+  {
+    title: 'Data',
+    note: 'Ordinary tools, used daily.',
+    items: 'pandas, NumPy, Albumentations, OpenCV, Matplotlib, Seaborn, scikit-learn, nbformat.',
+  },
+  {
+    title: 'Backend',
+    note: 'From building CSMMS, in the appendix.',
+    items: 'FastAPI, REST APIs, SQLAlchemy, JWT auth, Alembic, AWS S3, CloudFront.',
+  },
+  {
+    title: 'Other',
+    note: 'One machine, a great deal of patience.',
+    items: 'Git, Jupyter, LaTeX, lex/yacc, CUDA-level debugging. Trained on an NVIDIA RTX A6000.',
+  },
+];
+
+const ROMAN_LOWER = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix'];
+---
+<Chapter n={4} title="Instrumentarium" id="instrumentarium">
+  <div class="in-grid" data-reveal-stagger>
+    {GROUPS.map((g, i) => (
+      <section class="in-item">
+        <p class="in-fig">Fig. {ROMAN_LOWER[i]}</p>
+        <h3 class="in-title">{g.title}</h3>
+        <p class="in-items">{g.items}</p>
+        <p class="in-note">{g.note}</p>
+      </section>
+    ))}
+  </div>
+
+  <p class="in-not-yet" data-reveal>
+    Not yet: SQL, propensity score methods, Mendelian randomization.
+  </p>
+</Chapter>
+
+<style>
+  .in-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: 2.2rem 3rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    padding-top: 2rem;
+  }
+  .in-item { max-width: 40ch; }
+  .in-fig {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.3rem;
+  }
+  .in-title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    font-size: var(--t-md);
+    color: var(--ink);
+    margin: 0 0 0.5rem;
+  }
+  .in-items { font-size: var(--t-base); line-height: 1.65; color: var(--ink); margin: 0 0 0.55rem; }
+  .in-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .in-not-yet {
+    margin-top: 2.6rem;
+    padding-top: 1.1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-md);
+    color: var(--ink-soft);
+  }
+</style>

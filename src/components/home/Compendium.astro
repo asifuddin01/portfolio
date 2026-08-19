@@ -1,0 +1,33 @@
+---
+import Chapter from './Chapter.astro';
+import PlateCard from '../plate/PlateCard.astro';
+import { getCollection } from 'astro:content';
+
+const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
+---
+<Chapter n={5} title="Compendium" id="compendium">
+  <div class="cm-grid" data-reveal-stagger>
+    {works.map((w) => (
+      <PlateCard
+        plate={w.data.plate}
+        title={w.data.title}
+        subtitle={w.data.subtitle}
+        status={w.data.status}
+        year={w.data.year}
+        slug={w.id}
+      />
+    ))}
+  </div>
+</Chapter>
+
+<style>
+  .cm-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6rem;
+    max-width: 62rem;
+  }
+  @media (max-width: 780px) {
+    .cm-grid { grid-template-columns: 1fr; }
+  }
+</style>

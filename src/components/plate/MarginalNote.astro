@@ -1,0 +1,32 @@
+---
+import DropCap from '../ornament/DropCap.astro';
+interface Props { letter: string }
+const { letter } = Astro.props;
+---
+<aside class="mn" data-reveal>
+  <p class="mn-label">Marginal note</p>
+  <div class="mn-body">
+    <DropCap letter={letter} />
+    <slot />
+  </div>
+</aside>
+<style>
+  .mn {
+    margin: 3.5rem 0 0;
+    padding: 1.6rem 1.8rem;
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    max-width: var(--measure);
+  }
+  .mn-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.9rem;
+  }
+  .mn-body { font-size: var(--body-size); line-height: var(--body-leading); }
+  .mn-body :global(p) { margin: 0 0 0.9em; }
+  .mn-body :global(p:last-child) { margin-bottom: 0; }
+</style>

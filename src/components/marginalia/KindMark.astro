@@ -1,0 +1,29 @@
+---
+interface Props { kind: 'book' | 'model' | 'essay' | 'note' }
+const { kind } = Astro.props;
+/** Each kind borrows one of the lesion data colours — the palette is
+    already the site's coding system, so nothing new is introduced. */
+const COLOUR: Record<Props['kind'], string> = {
+  book:  'var(--lesion-ves)',
+  model: 'var(--lesion-ma)',
+  essay: 'var(--lesion-ex)',
+  note:  'var(--lesion-cws)',
+};
+---
+<span class="km">
+  <span class="km-dot" style={`background:${COLOUR[kind]}`} aria-hidden="true"></span>
+  {kind}
+</span>
+<style>
+  .km {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .km-dot { width: 7px; height: 7px; flex: 0 0 auto; }
+</style>

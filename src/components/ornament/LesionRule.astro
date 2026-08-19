@@ -1,0 +1,48 @@
+---
+/**
+ * The signature element. A hairline brass rule interrupted at its centre
+ * by five filled marks in the five lesion colours, in thesis order:
+ * MA, HE, EX, CWS, vessels.
+ *
+ * Appears between every top-level section and nowhere else.
+ */
+interface Props { class?: string }
+const { class: className = '' } = Astro.props;
+
+const marks = [
+  { fill: 'var(--lesion-ma)',  label: 'microaneurysms' },
+  { fill: 'var(--lesion-he)',  label: 'haemorrhages' },
+  { fill: 'var(--lesion-ex)',  label: 'hard exudates' },
+  { fill: 'var(--lesion-cws)', label: 'cotton wool spots' },
+  { fill: 'var(--lesion-ves)', label: 'vessels' },
+];
+---
+
+<div class:list={['lesion-rule', className]} role="separator" aria-hidden="true">
+  <span class="lr-line lr-line-l"></span>
+  <svg class="lr-marks" width="86" height="10" viewBox="0 0 86 10" fill="none" focusable="false">
+    {marks.map((m, i) => (
+      <circle class="lr-mark" cx={5 + i * 19} cy="5" r="3.1" fill={m.fill}>
+        <title>{m.label}</title>
+      </circle>
+    ))}
+  </svg>
+  <span class="lr-line lr-line-r"></span>
+</div>
+
+<style>
+  .lesion-rule {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+    margin-block: var(--chapter-gap);
+  }
+  .lr-line {
+    flex: 1 1 auto;
+    height: var(--rule);
+    background: var(--brass);
+    opacity: 0.75;
+  }
+  .lr-marks { flex: 0 0 auto; overflow: visible; }
+</style>

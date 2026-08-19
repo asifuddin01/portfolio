@@ -1,0 +1,180 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StatusMark from '../../components/ornament/StatusMark.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import AbstractBlock from '../../components/plate/AbstractBlock.astro';
+import CitationLine from '../../components/plate/CitationLine.astro';
+import MetricsTable from '../../components/plate/MetricsTable.astro';
+import MarginalNote from '../../components/plate/MarginalNote.astro';
+import FigureFrame from '../../components/elementa/FigureFrame.astro';
+import FigPipelineHierarchiRetina from '../../components/figures/FigPipelineHierarchiRetina.astro';
+import { toRoman } from '../../consts';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works');
+  const ordered = works.sort((a, b) => a.data.plate - b.data.plate);
+  return ordered.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: { entry, next: ordered[(i + 1) % ordered.length] },
+  }));
+}
+
+interface Props { entry: CollectionEntry<'works'>; next: CollectionEntry<'works'> }
+const { entry, next } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+
+const HAS_PIPELINE = entry.id === 'hierarchiretina';
+
+/** Each plate closes on a marginal note in the author's own register. */
+const NOTES: Record<string, { letter: string; body: string }> = {
+  'hierarchiretina': {
+    letter: 'T',
+    body: 'he pipeline is three models deep, which means three chances to lose a patient. Stage I loses 3,161 of them. Everything downstream is bounded by that, and no amount of grading accuracy buys it back.',
+  },
+  'hnsd-vlm': {
+    letter: 'F',
+    body: 'reezing the backbones was a constraint before it was a design. One GPU, one trainable fusion module. The constraint turned out to be the interesting part of the paper.',
+  },
+  'renal-length': {
+    letter: 'A',
+    body: 'radiologist measures the kidney along its own axis without thinking about it. Reproducing that instinct in world coordinates, through 8mm slices, is most of the work.',
+  },
+  'hcgt-pg': {
+    letter: 'A',
+    body: 'gene that correlates with disease and a gene that causes it look identical in expression data. The only way to tell them apart is to intervene, or to find someone who already did.',
+  },
+};
+const note = NOTES[entry.id];
+
+const meta: Array<{ label: string; value: string }> = [
+  { label: 'Year', value: d.year },
+  { label: d.supervisors.length > 1 ? 'Supervisors' : 'Supervisor', value: d.supervisors.join(', ') },
+];
+if (d.coauthors.length > 0) meta.push({ label: 'Co-authors', value: d.coauthors.join(', ') });
+if (d.datasets.length > 0) meta.push({ label: 'Datasets', value: d.datasets.join(' · ') });
+---
+<BaseLayout
+  title={`Plate ${toRoman(d.plate)} · ${d.title} — Md. Asif Uddin`}
+  description={d.subtitle}
+  folio={d.plate}
+  type="article"
+>
+  <article class="codex plate">
+    <header class="pl-head">
+      <p class="pl-num" data-reveal>Plate {toRoman(d.plate)}</p>
+      <h1 class="pl-title" data-press>{d.title}</h1>
+      <p class="pl-full" data-reveal>{d.fullTitle}</p>
+      <div class="pl-status" data-reveal><StatusMark status={d.status} /></div>
+
+      <dl class="pl-meta" data-reveal-stagger>
+        {meta.map((m) => (
+          <div class="pl-meta-row">
+            <dt>{m.label}</dt>
+            <dd>{m.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </header>
+
+    <AbstractBlock abstract={d.abstract} />
+    <CitationLine citation={d.citation} paperUrl={d.paperUrl} repoUrl={d.repoUrl} />
+    <MetricsTable metrics={d.metrics} />
+
+    {HAS_PIPELINE && (
+      <div class="fig-draw" data-reveal>
+        <FigureFrame
+          n={1}
+          caption="The three-stage pipeline. Screening gates the image; five lesion models segment in parallel, each in its own colour; their masks rejoin the raw image as eight channels for grading. Ungradable images leave the pipeline rather than receive a grade."
+        >
+          <FigPipelineHierarchiRetina />
+        </FigureFrame>
+      </div>
+    )}
+
+    <div class="prose pl-body"><Content /></div>
+
+    {note && <MarginalNote letter={note.letter}><p>{note.body}</p></MarginalNote>}
+
+    <LesionRule />
+
+    <nav class="pl-next" aria-label="Next plate">
+      <a class="pl-next-link" href={`/works/${next.id}`} data-magnet>
+        <span class="pl-next-label">Next — Plate {toRoman(next.data.plate)}</span>
+        <span class="pl-next-title">{next.data.title}</span>
+      </a>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .plate { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pl-head { margin-bottom: 2.5rem; }
+  .pl-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .pl-title { font-size: var(--t-2xl); line-height: 1.05; margin-bottom: 1rem; }
+  .pl-full {
+    font-family: var(--font-body);
+    font-size: var(--t-md);
+    font-style: italic;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    line-height: 1.5;
+    margin-bottom: 1.4rem;
+  }
+  .pl-status { margin-bottom: 2rem; }
+  .pl-meta {
+    margin: 0;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    max-width: var(--measure);
+  }
+  .pl-meta-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .pl-meta dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .pl-meta dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+  @media (max-width: 640px) {
+    .pl-meta-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .pl-title { font-size: var(--t-xl); }
+  }
+  .pl-body { margin-top: 2.5rem; }
+  .pl-next { margin-bottom: 2rem; }
+  .pl-next-link { display: inline-block; }
+  .pl-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .pl-next-title {
+    font-family: var(--font-display);
+    font-size: var(--t-lg);
+    color: var(--fundus);
+  }
+</style>

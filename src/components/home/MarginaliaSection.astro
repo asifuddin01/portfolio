@@ -1,0 +1,70 @@
+---
+import KindMark from '../marginalia/KindMark.astro';
+import { getMarginalia } from '../../lib/collections';
+import { toRoman } from '../../consts';
+
+const recent = (await getMarginalia()).slice(0, 3);
+---
+{recent.length > 0 && (
+  <section class="mi" id="marginalia" aria-labelledby="mi-h">
+    <header class="mi-head" data-reveal>
+      <span class="mi-tag" aria-hidden="true">Interleaf</span>
+      <h2 class="mi-title" id="mi-h">Marginalia</h2>
+      <p class="mi-lede codex-measure">
+        Reviews of books and models, and notes that did not fit anywhere else.
+      </p>
+    </header>
+
+    <ul class="mi-list" data-reveal-stagger>
+      {recent.map((e) => (
+        <li class="mi-item">
+          <a class="mi-link" href={`/marginalia/${e.id}`}>
+            <span class="mi-num" aria-hidden="true">{toRoman(e.data.entry)}</span>
+            <span class="mi-body">
+              <span class="mi-meta">
+                <KindMark kind={e.data.kind} />
+                <span class="mi-subject">{e.data.subject}</span>
+              </span>
+              <span class="mi-t">{e.data.title}</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <p class="mi-more" data-reveal><a class="link" href="/marginalia">The whole ledger →</a></p>
+  </section>
+)}
+
+<style>
+  .mi { position: relative; scroll-margin-top: 5rem; }
+  .mi-head { margin-bottom: 1.6rem; }
+  .mi-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    border: var(--rule) solid var(--brass);
+    padding: 0.2em 0.6em 0.14em;
+    margin-bottom: 0.9rem;
+  }
+  .mi-title { font-size: var(--t-xl); margin-bottom: 0.7rem; }
+  .mi-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
+  .mi-list {
+    list-style: none;
+    margin: 0 0 1.2rem;
+    padding: 0;
+    max-width: 62rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .mi-item { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .mi-link { display: grid; grid-template-columns: 3.5rem 1fr; gap: 1rem; padding: 0.95rem 0; color: var(--ink); }
+  .mi-num { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.16em; color: var(--brass-text); }
+  .mi-meta { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: baseline; margin-bottom: 0.22rem; }
+  .mi-subject { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .mi-t { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .mi-link:hover .mi-t { color: var(--fundus); }
+  @media (max-width: 640px) { .mi-link { grid-template-columns: 1fr; gap: 0.25rem; } }
+</style>

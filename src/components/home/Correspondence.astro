@@ -1,0 +1,42 @@
+---
+import Chapter from './Chapter.astro';
+import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../../consts';
+---
+<Chapter n={10} title="Correspondence" id="correspondence">
+  <div class="co" data-reveal>
+    <p class="co-to">To —</p>
+    <address class="co-address">
+      <a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+      <a class="link" href={GITHUB}>github.com/asifuddin01</a>
+      <a class="link" href={LINKEDIN}>linkedin.com/in/md-asif-uddin01</a>
+      <span class="co-place">{LOCATION}</span>
+    </address>
+  </div>
+</Chapter>
+
+<style>
+  .co {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    background: var(--paper-raised);
+    padding: 2rem 2.2rem;
+    max-width: 34rem;
+  }
+  .co-to {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 1.1rem;
+  }
+  .co-address {
+    font-style: normal;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    letter-spacing: 0.02em;
+  }
+  .co-place { color: var(--ink-soft); margin-top: 0.4rem; }
+</style>

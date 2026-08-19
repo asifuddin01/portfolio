@@ -1,0 +1,73 @@
+---
+/**
+ * Book I, Prop. 7 — attention is permutation-equivariant; positional
+ * encoding is the repair.
+ */
+const TOKENS = [
+  { t: 'the', c: 'var(--lesion-ves)' },
+  { t: 'cat', c: 'var(--lesion-ma)' },
+  { t: 'sat', c: 'var(--lesion-ex)' },
+];
+const SHUFFLED = [TOKENS[2], TOKENS[0], TOKENS[1]];
+const W = 74;
+const GAP = 12;
+function row(items: typeof TOKENS, x0: number, y: number, tag?: boolean) {
+  return items.map((it, i) => ({ ...it, x: x0 + i * (W + GAP), y, tag }));
+}
+const panelA = [...row(TOKENS, 20, 56), ...row(SHUFFLED, 20, 128)];
+const panelB = [...row(TOKENS, 20, 250), ...row(SHUFFLED, 20, 322)];
+const outA = [...row(TOKENS, 470, 56), ...row(SHUFFLED, 470, 128)];
+const outB = [...row(TOKENS, 470, 250), ...row([TOKENS[1], TOKENS[2], TOKENS[0]], 470, 322)];
+---
+<svg class="fig" viewBox="0 0 720 400" role="img" aria-labelledby="pm-t pm-d" preserveAspectRatio="xMidYMid meet">
+  <title id="pm-t">Permutation equivariance, and the repair</title>
+  <desc id="pm-d">
+    In the upper panel, self-attention alone maps a shuffled input to an
+    identically shuffled output: reordering the tokens carries no information. In
+    the lower panel the same tokens carry positional encodings, so a reordering
+    produces a genuinely different output.
+  </desc>
+
+  <text x="20" y="28" class="t-lab">attention alone</text>
+  <text x="20" y="222" class="t-lab">attention + position</text>
+
+  {[...panelA, ...panelB].map((n) => (
+    <g>
+      <rect x={n.x} y={n.y} width={W} height="40" fill="none" class="bx" />
+      <rect x={n.x} y={n.y} width={W} height="3" fill={n.c} stroke="none" />
+      <text x={n.x + W / 2} y={n.y + 26} class="t-md" text-anchor="middle">{n.t}</text>
+    </g>
+  ))}
+
+  {panelB.map((n, i) => (
+    <text x={n.x + W - 6} y={n.y + 52} class="t-pos" text-anchor="end">+p{(i % 3) + 1}</text>
+  ))}
+
+  {[...outA, ...outB].map((n) => (
+    <g>
+      <rect x={n.x} y={n.y} width={W} height="40" fill="none" class="bx" />
+      <rect x={n.x} y={n.y} width={W} height="3" fill={n.c} stroke="none" />
+      <text x={n.x + W / 2} y={n.y + 26} class="t-md" text-anchor="middle">{n.t}′</text>
+    </g>
+  ))}
+
+  {[76, 148, 270, 342].map((y) => (
+    <g>
+      <line x1="290" y1={y} x2="440" y2={y} class="wire" />
+      <polygon points={`440,${y - 4} 450,${y} 440,${y + 4}`} class="head" />
+    </g>
+  ))}
+
+  <text x="20" y="190" class="t-sm">same output, merely reordered — the model cannot tell the two inputs apart</text>
+  <text x="20" y="384" class="t-sm">different output — order is now information</text>
+</svg>
+<style>
+  .fig { width: 100%; height: auto; min-width: 620px; color: var(--ink); }
+  .bx { stroke: color-mix(in srgb, var(--brass) 85%, transparent); }
+  .wire { stroke: color-mix(in srgb, var(--ink) 55%, transparent); }
+  .head { fill: color-mix(in srgb, var(--ink) 55%, transparent); }
+  .t-lab { font-family: var(--font-mono); font-size: 12px; fill: var(--brass-text); letter-spacing: 0.14em; text-transform: uppercase; }
+  .t-md { font-family: var(--font-mono); font-size: 13px; fill: currentColor; }
+  .t-sm { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-soft); }
+  .t-pos { font-family: var(--font-mono); font-size: 10px; fill: var(--brass-text); }
+</style>

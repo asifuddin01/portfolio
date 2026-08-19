@@ -1,0 +1,56 @@
+---
+import Chapter from './Chapter.astro';
+
+const ITEMS: ReadonlyArray<{ title: string; body: string }> = [
+  {
+    title: 'CSMMS — Campus Student Management and Marketplace System',
+    body:
+      'FastAPI backend. Item CRUD with keyword, category, price-range and sort filtering plus pagination. Image upload to S3 with Pillow compression, delivered through CloudFront. Service priority levels and live-computed impact metrics — weighted student ratings, students served, completion rate. SQLAlchemy models, JWT auth, Alembic migrations.',
+  },
+  {
+    title: 'Compiler symbol table',
+    body:
+      'lex and yacc/bison. Hash table using sum-of-characters mod bucket count, scope stack via parent pointers, and a scope_started flag with mid-rule actions so function parameters land inside function scope while if and for blocks get their own. Made portable across macOS and Linux.',
+  },
+  {
+    title: 'Direct RE-to-DFA construction',
+    body:
+      'Syntax tree with leaf positions, nullable/firstpos/lastpos bottom-up, followpos via cat-node and star-node rules, then the transition table. Coursework.',
+  },
+];
+---
+<Chapter n={9} title="Appendix" id="appendix">
+  <p class="ap-note codex-measure" data-reveal>Engineering work, set smaller than the research chapters.</p>
+  <ol class="ap" data-reveal-stagger>
+    {ITEMS.map((it) => (
+      <li class="ap-item">
+        <h3 class="ap-title">{it.title}</h3>
+        <p class="ap-body">{it.body}</p>
+      </li>
+    ))}
+  </ol>
+</Chapter>
+
+<style>
+  .ap-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin-bottom: 1.6rem;
+  }
+  .ap { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; max-width: 58rem; }
+  .ap-item {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent);
+    padding-top: 0.9rem;
+  }
+  .ap-title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.07em;
+    font-size: var(--t-base);
+    margin: 0 0 0.4rem;
+  }
+  .ap-body { font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); margin: 0; max-width: 66ch; }
+</style>

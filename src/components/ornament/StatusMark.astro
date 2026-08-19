@@ -1,0 +1,29 @@
+---
+/**
+ * What makes an absent metrics table read as embargo rather than as
+ * absence. Appears on every plate, including Plate I.
+ */
+interface Props { status: 'deposited' | 'in-preparation' | 'proposal-accepted' }
+const { status } = Astro.props;
+
+const LABELS: Record<Props['status'], string> = {
+  'deposited': 'Deposited',
+  'in-preparation': 'In preparation',
+  'proposal-accepted': 'Proposal accepted',
+};
+---
+<span class="status">{LABELS[status]}</span>
+<style>
+  .status {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    border: var(--rule) solid var(--brass);
+    padding: 0.28em 0.7em 0.22em;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+</style>

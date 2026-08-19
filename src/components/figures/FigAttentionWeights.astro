@@ -1,0 +1,53 @@
+---
+/** Book I, Prop. 4 — attention as a content-addressed weighted average. */
+const KEYS = [
+  { label: 'k₁', w: 0.06 },
+  { label: 'k₂', w: 0.61 },
+  { label: 'k₃', w: 0.09 },
+  { label: 'k₄', w: 0.24 },
+];
+const X0 = 190;
+const BAR = 300;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="aw-t aw-d" preserveAspectRatio="xMidYMid meet">
+  <title id="aw-t">Attention as a weighted average over values</title>
+  <desc id="aw-d">
+    A single query is compared against four keys. The resulting softmax weights —
+    0.06, 0.61, 0.09 and 0.24 — are shown as horizontal bars, and the output is
+    the sum of the value vectors scaled by those weights. The weights come from
+    content, not from position.
+  </desc>
+
+  <rect x="0" y="110" width="120" height="44" fill="none" class="bx" />
+  <text x="60" y="138" class="t-md" text-anchor="middle">query q</text>
+
+  <text x={X0} y="26" class="t-lab">softmax(q · kᵢ / √d)</text>
+
+  {KEYS.map((k, i) => {
+    const y = 50 + i * 46;
+    return (
+      <g>
+        <text x={X0 - 40} y={y + 20} class="t-md">{k.label}</text>
+        <rect x={X0} y={y + 6} width={BAR} height="18" class="bx-soft" fill="none" />
+        <rect x={X0} y={y + 6} width={BAR * k.w} height="18" fill="var(--lesion-ves)" stroke="none" opacity="0.85" />
+        <text x={X0 + BAR + 12} y={y + 20} class="t-sm">{k.w.toFixed(2)}</text>
+      </g>
+    );
+  })}
+
+  <line x1="120" y1="132" x2={X0 - 60} y2="132" class="wire" />
+  <line x1={X0 + BAR + 60} y1="132" x2={X0 + BAR + 100} y2="132" class="wire" />
+  <rect x={X0 + BAR + 100} y="110" width="130" height="44" fill="none" class="bx" />
+  <text x={X0 + BAR + 165} y="138" class="t-md" text-anchor="middle">Σ wᵢ vᵢ</text>
+
+  <text x="0" y="270" class="t-sm">weights are content-addressed — nothing here depends on i</text>
+</svg>
+<style>
+  .fig { width: 100%; height: auto; min-width: 600px; color: var(--ink); }
+  .bx { stroke: color-mix(in srgb, var(--brass) 85%, transparent); }
+  .bx-soft { stroke: color-mix(in srgb, var(--brass) 40%, transparent); }
+  .wire { stroke: color-mix(in srgb, var(--ink) 55%, transparent); }
+  .t-lab { font-family: var(--font-mono); font-size: 12px; fill: var(--brass-text); letter-spacing: 0.1em; }
+  .t-md { font-family: var(--font-mono); font-size: 13px; fill: currentColor; }
+  .t-sm { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-soft); }
+</style>

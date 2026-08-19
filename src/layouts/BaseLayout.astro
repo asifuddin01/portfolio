@@ -1,0 +1,83 @@
+---
+import { ClientRouter } from 'astro:transitions';
+
+import '@fontsource-variable/bodoni-moda/wght.css';
+import '@fontsource-variable/bodoni-moda/wght-italic.css';
+import '@fontsource-variable/eb-garamond/wght.css';
+import '@fontsource-variable/eb-garamond/wght-italic.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+
+import '../styles/global.css';
+import '../styles/motion.css';
+
+import BaseHead from '../components/layout/BaseHead.astro';
+import Header from '../components/layout/Header.astro';
+import Colophon from '../components/layout/Colophon.astro';
+import GrainOverlay from '../components/layout/GrainOverlay.astro';
+import InkWash from '../components/layout/InkWash.astro';
+import CursorLens from '../components/layout/CursorLens.astro';
+import FolioNumber from '../components/ornament/FolioNumber.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Bottom-outer-corner folio mark. Roman on the scroll, Arabic on chapters. */
+  folio?: string | number;
+  image?: string;
+  type?: 'website' | 'article';
+}
+
+const { title, description, folio, image, type } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} image={image} type={type} />
+    <ClientRouter />
+    <!-- No-flash theme + the `js` gate. Both must land before first paint:
+         without `js`, motion.css leaves every element visible, so a broken
+         or disabled script can never blank the page. -->
+    <script is:inline>
+      (function () {
+        document.documentElement.classList.add('js');
+        try {
+          var stored = localStorage.getItem('codex-theme');
+          if (stored === 'nocturne' || stored === 'vellum') {
+            document.documentElement.dataset.theme = stored;
+          } else {
+            document.documentElement.dataset.theme =
+              window.matchMedia('(prefers-color-scheme: dark)').matches ? 'nocturne' : 'vellum';
+          }
+        } catch (e) {
+          document.documentElement.dataset.theme = 'vellum';
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <InkWash />
+    <GrainOverlay />
+    <CursorLens />
+
+    <Header />
+
+    <main id="main" class="page">
+      <slot />
+      {folio !== undefined && <FolioNumber value={folio} />}
+    </main>
+
+    <Colophon />
+
+    <script>
+      import '../scripts/motion.ts';
+    </script>
+  </body>
+</html>
+
+<style>
+  .page { position: relative; padding-bottom: 3rem; }
+</style>

@@ -1,0 +1,33 @@
+---
+/**
+ * Superscript-sized brass text hung in the left margin on wide screens,
+ * falling inline beneath its parent below 900px.
+ */
+interface Props { class?: string }
+const { class: className = '' } = Astro.props;
+---
+<span class:list={['mcite', className]}><slot /></span>
+<style>
+  .mcite {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    color: var(--brass-text);
+    font-variant-numeric: lining-nums;
+  }
+  @media (min-width: 900px) {
+    .mcite {
+      position: absolute;
+      left: 0;
+      width: 13rem;
+      text-align: right;
+      padding-right: 1.75rem;
+      transform: translateY(0.45em);
+    }
+  }
+  @media (max-width: 899px) {
+    .mcite { margin-top: 0.35rem; opacity: 0.9; }
+  }
+</style>

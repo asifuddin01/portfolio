@@ -1,0 +1,87 @@
+/* ============================================================
+   tokens.css — the single source of colour, scale and rhythm.
+   Every other file reads these variables. No hex codes elsewhere.
+
+   CONTRAST NOTES (WCAG 2.1, computed against the mode's --paper):
+     --fundus  #A8551B on Vellum = 4.03:1  → FAILED, darkened to
+               #984A16 = 4.83:1, exactly as the brief instructs.
+     --brass   #94762F on Vellum = 3.28:1  → fails as TEXT. Kept
+               verbatim for rules/ornament (non-text, exempt) and
+               paired with --brass-text #6E571F = 5.27:1 for folio
+               numbers and labels.
+     --oxblood #A84455 on Nocturne = 3.25:1 → fails as TEXT. Kept
+               verbatim for borders/marks, paired with
+               --oxblood-text #C96877, which clears 4.5:1 against BOTH
+               --paper (5.14:1) and --paper-raised (4.73:1); the raised
+               card is the tighter of the two and is what sets the value.
+   ============================================================ */
+
+:root {
+  /* ---- Vellum (default, light) ---- */
+  --paper:        #E7E1CE;
+  --paper-raised: #F2EDDE;
+  --ink:          #191713;
+  --ink-soft:     #4A443A;
+  --fundus:       #984A16;
+  --oxblood:      #6B2230;
+  --oxblood-text: #6B2230;
+  --brass:        #94762F;
+  --brass-text:   #6E571F;
+  --verdigris:    #3A5549;
+
+  /* ---- Lesion set — data colours, identical in both modes ---- */
+  --lesion-ma:  #8C2F26;
+  --lesion-he:  #4E1E2C;
+  --lesion-ex:  #C9A227;
+  --lesion-cws: #93A98F;
+  --lesion-ves: #2F566D;
+
+  /* ---- Families ---- */
+  --font-display: 'Bodoni Moda Variable', 'Bodoni Moda', var(--fallback-display), serif;
+  --font-body:    'EB Garamond Variable', 'EB Garamond', var(--fallback-body), serif;
+  --font-mono:    'IBM Plex Mono', var(--fallback-mono), monospace;
+
+  /* Metric-matched fallbacks, declared in fonts.css, kill layout shift */
+  --fallback-display: 'Bodoni Fallback';
+  --fallback-body:    'Garamond Fallback';
+  --fallback-mono:    'Plex Fallback';
+
+  /* ---- Type scale (rem, root 16px) ---- */
+  --t-xs:   0.8125rem;
+  --t-sm:   0.875rem;
+  --t-base: 1rem;
+  --t-md:   1.1875rem;
+  --t-lg:   1.5rem;
+  --t-xl:   2rem;
+  --t-2xl:  2.75rem;
+  --t-3xl:  4rem;
+
+  /* ---- Rhythm ---- */
+  --measure: 68ch;
+  --body-size: 19px;
+  --body-leading: 1.75;
+  --rule: 0.5px;
+  --gutter: clamp(1.25rem, 5vw, 4rem);
+  --chapter-gap: clamp(5rem, 12vh, 9rem);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-ink: cubic-bezier(0.65, 0, 0.35, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme='nocturne'] {
+  --paper:        #131110;
+  --paper-raised: #1D1A16;
+  --ink:          #E4DCC7;
+  --ink-soft:     #9A917E;
+  --fundus:       #D98A45;
+  --oxblood:      #A84455;
+  --oxblood-text: #C96877;
+  --brass:        #C0A059;
+  --brass-text:   #C0A059;
+  --verdigris:    #7BA292;
+
+  color-scheme: dark;
+}

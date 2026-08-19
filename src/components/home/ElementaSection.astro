@@ -1,0 +1,106 @@
+---
+import Chapter from './Chapter.astro';
+import { getCollection } from 'astro:content';
+import { toRoman } from '../../consts';
+
+const all = await getCollection('elementa');
+const published = all.filter((e) => !import.meta.env.PROD || e.data.status === 'published');
+const recent = published
+  .sort((a, b) => b.data.updated.getTime() - a.data.updated.getTime())
+  .slice(0, 3);
+
+const BOOKS: ReadonlyArray<{ n: number; title: string; covers: string }> = [
+  { n: 1, title: 'Foundations',    covers: 'tokenisation, attention, the transformer block' },
+  { n: 2, title: 'Vision',         covers: 'ViT, DINOv2, self-supervised visual representation' },
+  { n: 3, title: 'Vision-language', covers: 'contrastive pretraining, fusion, VLM architectures' },
+  { n: 4, title: 'Practice',       covers: 'losses, training dynamics, evaluation' },
+];
+---
+<Chapter n={7} title="Elementa" id="elementa">
+  <p class="el-lede codex-measure" data-reveal>
+    A structured corpus on transformers, vision and vision-language models, built
+    to be read in order. Entries are propositions, not posts: each states a claim,
+    names the propositions it depends on, and carries one figure. If the figure
+    cannot be drawn, the proposition is not ready to be written.
+  </p>
+
+  <ol class="el-books" data-reveal-stagger>
+    {BOOKS.map((b) => (
+      <li class="el-book">
+        <span class="el-book-n">Book {toRoman(b.n)}</span>
+        <span class="el-book-t">{b.title}</span>
+        <span class="el-book-c">{b.covers}</span>
+      </li>
+    ))}
+  </ol>
+
+  {recent.length > 0 && (
+    <ul class="el-recent" data-reveal-stagger>
+      {recent.map((p) => (
+        <li class="el-recent-item">
+          <a class="el-recent-link" href={`/elementa/${p.id}`}>
+            <span class="el-recent-ref">
+              Book {toRoman(p.data.book)} · Prop. {p.data.proposition}
+            </span>
+            <span class="el-recent-st">{p.data.statement}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <p class="el-more" data-reveal>
+    <a class="link" href="/elementa">The whole corpus</a>
+    <span class="el-sep"> · </span>
+    <a class="link" href="/elementa/figures">The figure library</a>
+  </p>
+</Chapter>
+
+<style>
+  .el-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 2.2rem; }
+  .el-books {
+    list-style: none;
+    margin: 0 0 2.4rem;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    max-width: 62rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .el-book {
+    display: grid;
+    grid-template-columns: 7rem 12rem 1fr;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.75rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .el-book-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .el-book-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--ink); }
+  .el-book-c { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); line-height: 1.7; }
+
+  .el-recent { list-style: none; margin: 0 0 1.6rem; padding: 0; display: grid; gap: 0.9rem; max-width: 62rem; }
+  .el-recent-link { display: block; color: var(--ink); }
+  .el-recent-ref {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.2rem;
+  }
+  .el-recent-st { font-family: var(--font-display); font-size: var(--t-md); line-height: 1.4; }
+  .el-recent-link:hover .el-recent-st { color: var(--fundus); }
+  .el-sep { color: var(--brass-text); }
+
+  @media (max-width: 700px) {
+    .el-book { grid-template-columns: 1fr; gap: 0.15rem; }
+  }
+</style>

@@ -1,0 +1,110 @@
+---
+import ArtPlate from '../art/ArtPlate.astro';
+import { AUTHOR, LOCATION } from '../../consts';
+
+const EPIGRAPH = 'Correlation is cheap. Only an intervention costs anything.';
+const words = EPIGRAPH.split(' ');
+---
+<section class="fp" aria-labelledby="fp-h">
+  <div class="codex fp-inner">
+   <div class="fp-text">
+    <h1 class="fp-name" id="fp-h" data-intro="press">{AUTHOR}</h1>
+
+    <p class="fp-role" data-intro style="--d:180ms">
+      Deep learning researcher — medical imaging, vision-language
+      models, causal inference
+    </p>
+
+    <blockquote class="fp-epi">
+      <p class="fp-epi-text">
+        {words.map((w, i) => (
+          <span class="word" style={`--d:${420 + i * 55}ms`}>{w}&nbsp;</span>
+        ))}
+      </p>
+      <cite class="fp-epi-cite" data-intro style="--d:760ms">— the author</cite>
+    </blockquote>
+
+    <p class="fp-place" data-intro style="--d:900ms">{LOCATION}</p>
+   </div>
+
+   <div class="fp-art" data-intro style="--d:300ms">
+     <ArtPlate
+       slug="melencolia"
+       n={1}
+       eager={true}
+       depth={0.08}
+       sizes="(max-width: 999px) min(92vw, 26rem), 24rem"
+       gloss="Thought at rest, surrounded by instruments it will not use."
+     />
+   </div>
+  </div>
+</section>
+
+<style>
+  .fp {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: clamp(30rem, 82vh, 46rem);
+    padding-block: clamp(3rem, 9vh, 7rem);
+  }
+  .fp-inner { width: 100%; }
+  @media (min-width: 1000px) {
+    .fp-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: center;
+    }
+  }
+  @media (max-width: 999px) {
+    .fp-art { margin-top: 3rem; max-width: 26rem; }
+  }
+
+  .fp-name {
+    font-size: clamp(2.75rem, 9vw, 4rem);
+    letter-spacing: 0.02em;
+    line-height: 1.02;
+    color: var(--ink);
+    margin-bottom: 1.6rem;
+  }
+  .fp-role {
+    font-family: var(--font-body);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.13em;
+    font-size: var(--t-md);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 40ch;
+    margin-bottom: 3.2rem;
+  }
+  .fp-epi {
+    margin: 0 0 3rem;
+    padding-left: clamp(1rem, 6vw, 4.5rem);
+    border: 0;
+    max-width: 52ch;
+  }
+  .fp-epi-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--t-lg);
+    line-height: 1.45;
+    color: var(--ink);
+    margin: 0 0 0.75rem;
+  }
+  .fp-epi-cite {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-style: normal;
+    letter-spacing: 0.1em;
+    color: var(--brass-text);
+  }
+  .fp-place {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+</style>

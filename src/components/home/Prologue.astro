@@ -1,0 +1,70 @@
+---
+import Chapter from './Chapter.astro';
+import DropCap from '../ornament/DropCap.astro';
+---
+<Chapter n={2} title="Prologue" id="prologue">
+  <div class="codex-measure prose pr-body" data-reveal-stagger>
+    <p class="pr-first">
+      <DropCap letter="I" /><span class="sr-only">I</span>&#8202;spend most of my time
+      training models on images that doctors look at.
+    </p>
+
+    <p>
+      My undergraduate thesis, <em>HierarchiRetina</em>, grades diabetic retinopathy
+      severity from retinal photographs. It doesn&rsquo;t go straight from picture to
+      grade. It screens first, then runs five separate segmentation models for five
+      different things — microaneurysms, haemorrhages, hard exudates, cotton wool
+      spots, vessels — then feeds those masks alongside the raw image into a grading
+      model. The point is interpretability: when the system says &ldquo;severe,&rdquo;
+      you can see which lesions drove that.
+    </p>
+
+    <p>
+      Getting the data was its own project. I visited hospitals in person, emailed
+      researchers and institutions, and went through more than 37 published papers.
+      Every hospital request was declined. Most researcher emails were too. The FGADR
+      authors wrote back, which is why FGADR is in the pipeline.
+    </p>
+
+    <p>
+      Alongside the thesis I work with Niloy Farhan at BRAC on two problems. One is
+      open-world species recognition: what does a model do when it meets an organism
+      nobody trained it on, and where in the taxonomy does that organism belong? The
+      other is measuring kidney length automatically from thick-slice CT, where slices
+      sit 8mm apart and the kidney is tilted.
+    </p>
+
+    <p>
+      The newest one has pulled me somewhere different. Instead of asking which genes
+      correlate with Alzheimer&rsquo;s, it asks what would happen to a microglial cell
+      if you knocked a specific gene down, and then checks that answer against CRISPR
+      screens where somebody actually did knock it down.
+    </p>
+
+    <p>
+      Next is an MSc in Computer Science and Engineering at BRAC University, starting
+      Fall 2026. The proposal is already accepted. I want to keep doing research while
+      I build a career in AI and machine learning, not choose between them.
+    </p>
+
+    <p>
+      Outside computer science I read law and public policy, which turns out to be
+      less of a detour than it sounds.
+    </p>
+  </div>
+</Chapter>
+
+<style>
+  .pr-body { font-size: var(--body-size); }
+  /* No clearfix: the drop cap floats on, and the paragraphs that follow
+     wrap around it the way a printed page does. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

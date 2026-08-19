@@ -1,0 +1,166 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import KindMark from '../../components/marginalia/KindMark.astro';
+import { getMarginalia } from '../../lib/collections';
+import { toRoman } from '../../consts';
+
+const entries = await getMarginalia();
+const kinds = ['all', 'book', 'model', 'essay', 'note'] as const;
+const counts = Object.fromEntries(
+  kinds.map((k) => [k, k === 'all' ? entries.length : entries.filter((e) => e.data.kind === k).length])
+);
+---
+<BaseLayout
+  title="Marginalia — Md. Asif Uddin"
+  description="A commonplace book: reviews of books and models, essays and working notes, kept in the margins of the research."
+  folio="M"
+>
+  <div class="codex mg">
+    <header class="mg-head">
+      <p class="mg-kicker" data-reveal>The commonplace book</p>
+      <h1 class="mg-h1" data-press>Marginalia</h1>
+      <p class="mg-lede codex-measure" data-reveal>
+        Notes written in the margins of the work: what I thought of a book, what a
+        model actually does when you use it, and the occasional argument that did
+        not fit anywhere else. Kept in one ledger, numbered as they are written.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <div class="mg-filter" role="group" aria-label="Filter by kind">
+      {kinds.map((k) => (
+        <button
+          class="mg-fbtn"
+          type="button"
+          data-kind={k}
+          aria-pressed={k === 'all' ? 'true' : 'false'}
+        >{k}<span class="mg-count">{counts[k]}</span></button>
+      ))}
+    </div>
+
+    {entries.length === 0 ? (
+      <p class="mg-empty">Nothing written yet.</p>
+    ) : (
+      <ol class="mg-list" data-reveal-stagger>
+        {entries.map((e) => (
+          <li class="mg-item" data-kind={e.data.kind}>
+            <a class="mg-link" href={`/marginalia/${e.id}`}>
+              <span class="mg-num" aria-hidden="true">{toRoman(e.data.entry)}</span>
+              <span class="mg-main">
+                <span class="mg-meta">
+                  <KindMark kind={e.data.kind} />
+                  <span class="mg-subject">{e.data.subject}</span>
+                </span>
+                <span class="mg-title">{e.data.title}</span>
+                <span class="mg-summary">{e.data.summary}</span>
+              </span>
+              <time class="mg-date" datetime={e.data.updated.toISOString()}>
+                {e.data.updated.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' })}
+              </time>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )}
+    <p class="mg-none" hidden>Nothing of that kind yet.</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .mg { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .mg-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .mg-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .mg-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .mg-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.6rem; }
+  .mg-fbtn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: transparent;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 50%, transparent);
+    padding: 0.3em 0.7em 0.24em;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: baseline;
+  }
+  .mg-count { color: var(--brass-text); font-variant-numeric: lining-nums; }
+  .mg-fbtn[aria-pressed='true'] { color: var(--fundus); border-color: var(--fundus); }
+
+  .mg-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .mg-item { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .mg-item[hidden] { display: none; }
+  .mg-link {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.15rem 0;
+    color: var(--ink);
+  }
+  .mg-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+  }
+  .mg-main { display: block; }
+  .mg-meta { display: flex; gap: 0.9rem; align-items: baseline; flex-wrap: wrap; margin-bottom: 0.3rem; }
+  .mg-subject { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .mg-title { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .mg-link:hover .mg-title { color: var(--fundus); }
+  .mg-summary { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.25rem; line-height: 1.55; }
+  .mg-date { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); white-space: nowrap; }
+  .mg-empty, .mg-none { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  @media (max-width: 700px) {
+    .mg-link { grid-template-columns: 1fr; gap: 0.3rem; }
+    .mg-date { grid-row: 1; }
+  }
+</style>
+
+<script>
+  function bindFilter(): void {
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.mg-fbtn'));
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.mg-item'));
+    const none = document.querySelector<HTMLElement>('.mg-none');
+    if (buttons.length === 0) return;
+
+    for (const btn of buttons) {
+      if (btn.dataset.bound === '1') continue;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const kind = btn.dataset.kind ?? 'all';
+        for (const b of buttons) b.setAttribute('aria-pressed', String(b === btn));
+        let shown = 0;
+        for (const item of items) {
+          const match = kind === 'all' || item.dataset.kind === kind;
+          item.hidden = !match;
+          if (match) shown++;
+        }
+        if (none) none.hidden = shown > 0;
+      });
+    }
+  }
+  document.addEventListener('astro:page-load', bindFilter);
+  if (document.readyState !== 'loading') bindFilter();
+  else document.addEventListener('DOMContentLoaded', bindFilter);
+</script>

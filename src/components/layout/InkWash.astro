@@ -1,0 +1,34 @@
+---
+/** Slow-drifting ground behind the page. Two washes, very low opacity. */
+---
+<div class="ink-wash" aria-hidden="true"></div>
+<style>
+  .ink-wash {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .ink-wash::before,
+  .ink-wash::after {
+    content: '';
+    position: absolute;
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: 50%;
+    /* No blur filter: the gradients are soft on their own and blur(90px)
+       across two 70vmax layers cost more than it was worth. */
+    will-change: transform;
+  }
+  .ink-wash::before {
+    top: -22vmax;
+    left: -14vmax;
+    background: radial-gradient(circle, color-mix(in srgb, var(--fundus) 16%, transparent) 0%, transparent 72%);
+  }
+  .ink-wash::after {
+    bottom: -26vmax;
+    right: -16vmax;
+    background: radial-gradient(circle, color-mix(in srgb, var(--verdigris) 18%, transparent) 0%, transparent 72%);
+  }
+</style>

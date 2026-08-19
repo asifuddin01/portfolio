@@ -1,0 +1,61 @@
+---
+import { SITE, AUTHOR, ROLE, GITHUB, LINKEDIN } from '../../consts';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Route-level OG image, absolute or root-relative. */
+  image?: string;
+  type?: 'website' | 'article';
+}
+
+const { title, description, image = '/og.png', type = 'website' } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, SITE).href;
+const ogImage = new URL(image, SITE).href;
+
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: AUTHOR,
+  jobTitle: 'Deep learning researcher',
+  description: ROLE,
+  url: SITE,
+  sameAs: [GITHUB, LINKEDIN],
+  address: { '@type': 'PostalAddress', addressLocality: 'Dhaka', addressCountry: 'BD' },
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'BRAC University' },
+  knowsAbout: [
+    'Deep learning', 'Medical image analysis', 'Diabetic retinopathy',
+    'Vision-language models', 'Causal inference', 'Single-cell biology',
+  ],
+};
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="generator" content={Astro.generator} />
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="author" content={AUTHOR} />
+<link rel="canonical" href={canonical} />
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+
+<meta property="og:type" content={type} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:site_name" content={AUTHOR} />
+<meta property="og:locale" content="en_GB" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<meta name="theme-color" content="#E7E1CE" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#131110" media="(prefers-color-scheme: dark)" />
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(personLd)} />

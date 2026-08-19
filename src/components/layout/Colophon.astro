@@ -1,0 +1,52 @@
+---
+import LesionRule from '../ornament/LesionRule.astro';
+import { EMAIL, GITHUB, LINKEDIN } from '../../consts';
+---
+<footer class="cp">
+  <div class="codex">
+    <LesionRule />
+    <div class="cp-body" data-reveal>
+      <p class="cp-text">
+        Set in Bodoni Moda and EB Garamond. Built with Astro and Tailwind.
+        Models trained on an NVIDIA RTX A6000. Written in Dhaka, MMXXVI.
+        The author is an eternal learner and an occasional chef.
+      </p>
+      <ul class="cp-links">
+        <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
+        <li><a class="link" href={GITHUB} rel="me">github</a></li>
+        <li><a class="link" href={LINKEDIN} rel="me">linkedin</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .cp { padding-bottom: 4.5rem; }
+  .cp-body {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .cp-text {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.9;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin: 0;
+  }
+  .cp-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.03em;
+  }
+</style>

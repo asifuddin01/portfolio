@@ -1,0 +1,60 @@
+---
+/** Renders nothing at all when `metrics` is empty. No placeholder row,
+    no "results pending", no empty table. */
+interface Metric { label: string; value: string; note?: string }
+interface Props { metrics: Metric[] }
+const { metrics } = Astro.props;
+---
+{metrics.length > 0 && (
+  <div class="mt" data-reveal>
+    <h2 class="mt-label">Results</h2>
+    <div class="scroll-x">
+      <table class="mt-table">
+        <thead>
+          <tr><th scope="col">Measure</th><th scope="col">Value</th><th scope="col">Note</th></tr>
+        </thead>
+        <tbody>
+          {metrics.map((m) => (
+            <tr>
+              <th scope="row">{m.label}</th>
+              <td class="mt-val">{m.value}</td>
+              <td class="mt-note">{m.note ?? ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+<style>
+  .mt { margin: 3rem 0; }
+  .mt-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .mt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-variant-numeric: lining-nums tabular-nums;
+    min-width: 34rem;
+  }
+  .mt-table th, .mt-table td { text-align: left; padding: 0.62rem 1rem 0.62rem 0; vertical-align: top; }
+  .mt-table thead th {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brass-text);
+    font-weight: 400;
+    border-bottom: var(--rule) solid var(--brass);
+  }
+  .mt-table tbody th { font-weight: 400; color: var(--ink); }
+  .mt-table tbody tr { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent); }
+  .mt-val { color: var(--fundus); white-space: nowrap; }
+  .mt-note { color: var(--ink-soft); }
+</style>

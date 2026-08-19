@@ -1,0 +1,51 @@
+---
+plate: 4
+title: HCGT-PG
+fullTitle: >-
+  HCGT-PG: Hierarchical Counterfactual Graph Transformer, Perturbation-Grounded —
+  causal biomarker discovery in Alzheimer's disease microglia
+subtitle: What would happen if you knocked the gene down
+status: proposal-accepted
+disclosure: embargoed
+year: "2026"
+supervisors: ["Dr. Badhan Das"]
+coauthors: []
+datasets: ["Morabito et al. 2021 snRNA/snATAC multiome", "ROSMAP", "Dräger et al. 2022 CRISPRi/a CROP-seq", "Liu et al. 2025 epigenomic atlas"]
+abstract: "[SUPPLY]"
+citation: null
+paperUrl: null
+repoUrl: null
+metrics: []
+---
+
+## Correlation is cheap here
+
+Single-cell data makes correlation almost free. Thousands of genes track with
+Alzheimer's pathology, and nearly none of that tells you what would happen if you
+actually changed one. The question worth asking is interventional: *if you knocked
+this gene down in a microglial cell, what would happen to its disease state?*
+
+**This is not GWAS data.** Readers assume it is, and the assumption changes what
+they think the estimand is.
+
+## The estimand
+
+HCGT-PG estimates the causal effect of a gene knockdown on a microglial
+disease-state score — and then checks that estimate against CRISPR screens where
+the knockdown was really performed. The validation is the point: a causal claim
+that cannot be checked against an actual intervention is a correlation with better
+vocabulary.
+
+## The data
+
+- **Morabito et al. 2021** — paired snRNA-seq and snATAC-seq multiome.
+- **ROSMAP** — cohort-scale expression with neuropathology.
+- **Dräger et al. 2022** — CRISPRi/a CROP-seq screens in human microglia, the
+  ground truth for the interventional check.
+- **Liu et al. 2025** — epigenomic atlas.
+
+## Status
+
+The thesis proposal is accepted. The programme begins Fall 2026 at BRAC
+University under Dr. Badhan Das. There are no results yet; the design is the
+contribution.

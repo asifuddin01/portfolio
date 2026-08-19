@@ -1,0 +1,43 @@
+---
+import { toRoman } from '../../consts';
+
+interface Props {
+  n: number;
+  title: string;
+  id: string;
+  class?: string;
+}
+const { n, title, id, class: className = '' } = Astro.props;
+---
+<section id={id} class:list={['chapter', className]} aria-labelledby={`${id}-h`}>
+  <header class="ch-head" data-reveal>
+    <span class="ch-num" aria-hidden="true">{toRoman(n)}</span>
+    <h2 class="ch-title" id={`${id}-h`}>{title}</h2>
+  </header>
+  <slot />
+</section>
+
+<style>
+  .chapter { position: relative; scroll-margin-top: 5rem; }
+  .ch-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 2.25rem;
+  }
+  .ch-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    color: var(--brass-text);
+    font-variant-numeric: lining-nums;
+    padding-top: 0.2em;
+  }
+  .ch-title {
+    font-size: var(--t-xl);
+    color: var(--ink);
+  }
+  @media (max-width: 640px) {
+    .ch-title { font-size: var(--t-lg); }
+  }
+</style>

@@ -1,0 +1,32 @@
+---
+interface Props { citation: string | null; paperUrl: string | null; repoUrl: string | null }
+const { citation, paperUrl, repoUrl } = Astro.props;
+const hasAny = Boolean(citation) || Boolean(paperUrl) || Boolean(repoUrl);
+---
+{hasAny && (
+  <div class="cl" data-reveal>
+    {citation && <p class="cl-cite">{citation}</p>}
+    {(paperUrl || repoUrl) && (
+      <p class="cl-links">
+        {paperUrl && <a class="link" href={paperUrl}>Paper</a>}
+        {paperUrl && repoUrl && <span class="cl-sep"> · </span>}
+        {repoUrl && <a class="link" href={repoUrl}>Repository</a>}
+      </p>
+    )}
+  </div>
+)}
+<style>
+  .cl {
+    margin: 2rem 0;
+    padding-top: 1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.8;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+  }
+  .cl-cite { margin: 0 0 0.4rem; }
+  .cl-links { margin: 0; }
+  .cl-sep { color: var(--brass-text); }
+</style>
