@@ -8,11 +8,21 @@ import sitemap from '@astrojs/sitemap';
 import { SITE } from './src/consts.ts';
 
 /**
+ * @typedef {object} HastNode
+ * @property {string} type
+ * @property {string} [tagName]
+ * @property {Record<string, unknown>} [properties]
+ * @property {HastNode[]} [children]
+ */
+
+/**
  * Images dropped into a review through /admin are plain markdown, so they
  * miss the loading hints Astro's <Image> adds automatically.
  */
 function rehypeImageDefaults() {
+  /** @param {HastNode} tree */
   return (tree) => {
+    /** @param {HastNode} node */
     const walk = (node) => {
       if (node.type === 'element' && node.tagName === 'img') {
         node.properties = { loading: 'lazy', decoding: 'async', ...node.properties };
