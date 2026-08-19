@@ -1,15 +1,17 @@
 ---
 import Chapter from './Chapter.astro';
-import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../../consts';
+import { getContact } from '../../lib/collections';
+
+const { email, github, linkedin, location } = await getContact();
 ---
 <Chapter n={10} title="Correspondence" id="correspondence">
   <div class="co" data-reveal>
     <p class="co-to">To —</p>
     <address class="co-address">
-      <a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
-      <a class="link" href={GITHUB}>github.com/asifuddin01</a>
-      <a class="link" href={LINKEDIN}>linkedin.com/in/md-asif-uddin01</a>
-      <span class="co-place">{LOCATION}</span>
+      <a class="link" href={`mailto:${email}`}>{email}</a>
+      <a class="link" href={github}>{github.replace(/^https?:\/\//, '')}</a>
+      <a class="link" href={linkedin}>{linkedin.replace(/^https?:\/\//, '')}</a>
+      <span class="co-place">{location}</span>
     </address>
   </div>
 </Chapter>

@@ -1,23 +1,18 @@
 ---
 import Chapter from './Chapter.astro';
 import MarginalCite from '../ornament/MarginalCite.astro';
+import { getAxioms } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
-const AXIOMS: ReadonlyArray<{ text: string; cite: string }> = [
-  { text: 'A number nobody can compare to their own is not a result.', cite: 'HierarchiRetina, Stage III' },
-  { text: 'The test set is read once, and only after the threshold is locked.', cite: 'HierarchiRetina, Stage I' },
-  { text: 'When a model predicts nothing, the loss is usually right and the design is wrong.', cite: 'Cotton wool spots, v1' },
-  { text: 'Name the limitation before the reviewer does.', cite: 'HierarchiRetina, evaluation' },
-  { text: 'Ask until someone answers. One reply is a dataset.', cite: 'FGADR acquisition' },
-];
+const axioms = await getAxioms();
 ---
 <Chapter n={3} title="Axioms" id="axioms">
   <ol class="ax" data-reveal-stagger>
-    {AXIOMS.map((ax, i) => (
+    {axioms.map((ax, i) => (
       <li class="ax-item">
-        <MarginalCite>{ax.cite}</MarginalCite>
+        <MarginalCite>{ax.data.cite}</MarginalCite>
         <span class="ax-num" aria-hidden="true">{toRoman(i + 1)}</span>
-        <span class="ax-text">{ax.text}</span>
+        <span class="ax-text">{ax.data.text}</span>
       </li>
     ))}
   </ol>

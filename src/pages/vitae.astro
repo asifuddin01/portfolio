@@ -3,7 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import { getCollection, getEntry } from 'astro:content';
 import { getEducation, getProjects, getPapers } from '../lib/collections';
-import { AUTHOR, EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
+import { getContact } from '../lib/collections';
+import { AUTHOR } from '../consts';
 
 const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
 const education = await getEducation();
@@ -11,6 +12,7 @@ const projects = await getProjects();
 const papers = await getPapers();
 const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
+const { email, github, linkedin, location } = await getContact();
 
 ---
 <BaseLayout
@@ -34,10 +36,10 @@ const cvMeta = (await getEntry('site', 'cv'))?.data;
         </div>
       </div>
       <ul class="cv-contact" data-reveal>
-        <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
-        <li><a class="link" href={GITHUB}>github.com/asifuddin01</a></li>
-        <li><a class="link" href={LINKEDIN}>linkedin.com/in/md-asif-uddin01</a></li>
-        <li>{LOCATION}</li>
+        <li><a class="link" href={`mailto:${email}`}>{email}</a></li>
+        <li><a class="link" href={github}>{github.replace(/^https?:\/\//, '')}</a></li>
+        <li><a class="link" href={linkedin}>{linkedin.replace(/^https?:\/\//, '')}</a></li>
+        <li>{location}</li>
       </ul>
     </header>
 

@@ -117,6 +117,13 @@ const site = defineCollection({
     location: z.string().optional(),
     // Instrumentarium closing line.
     notYet: z.string().optional(),
+    // Chronicle.
+    coursework: z.string().optional(),
+    // Contact block. The single source for the address, the colophon links
+    // and the generated CV.
+    email: z.string().optional(),
+    github: optionalUrl,
+    linkedin: optionalUrl,
     // CV singleton.
     summary: z.string().optional(),
     languages: z.string().optional(),
@@ -254,7 +261,17 @@ const images = defineCollection({
     }),
 });
 
+/** The five maxims. Each carries the project it came from. */
+const axioms = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/axioms' }),
+  schema: z.object({
+    order: z.number(),
+    text: z.string(),
+    cite: z.string(),
+  }),
+});
+
 export const collections = {
   works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
-  papers, education, projects, images,
+  papers, education, projects, images, axioms,
 };

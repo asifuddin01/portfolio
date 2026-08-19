@@ -1,54 +1,34 @@
 ---
 import Chapter from './Chapter.astro';
+import { getEducation } from '../../lib/collections';
+import { getEntry } from 'astro:content';
 
-const ENTRIES: ReadonlyArray<{ when: string; place: string; where: string; lines: string[] }> = [
-  {
-    when: 'Fall 2026',
-    place: 'BRAC University',
-    where: 'Dhaka',
-    lines: [
-      'MSc, Computer Science and Engineering.',
-      'Thesis proposal accepted: HCGT-PG. Supervisor Dr. Badhan Das.',
-    ],
-  },
-  {
-    when: 'Fall 2021 – Summer 2026',
-    place: 'BRAC University',
-    where: 'Dhaka',
-    lines: ['BSc, Computer Science and Engineering.', 'CGPA 3.30. Thesis: HierarchiRetina.'],
-  },
-  {
-    when: '2020',
-    place: 'Uttara High School and College',
-    where: 'Dhaka',
-    lines: ['HSC. GPA 5.00 / 5.00.'],
-  },
-  {
-    when: '2018',
-    place: 'Ullapara Merchant Pilot High School',
-    where: 'Sirajganj',
-    lines: ['SSC. GPA 4.72 / 5.00.'],
-  },
-];
+const entries = await getEducation();
+const meta = await getEntry('site', 'chronicle');
+const coursework = meta?.data.coursework ?? '';
 ---
 <Chapter n={8} title="Chronicle" id="chronicle">
   <ol class="ch" data-reveal-stagger>
-    {ENTRIES.map((e) => (
+    {entries.map((e) => (
       <li class="ch-row">
-        <p class="ch-when">{e.when}</p>
+        <p class="ch-when">{e.data.period}</p>
         <div class="ch-what">
-          <h3 class="ch-place">{e.place}<span class="ch-where">, {e.where}</span></h3>
-          {e.lines.map((l) => <p class="ch-line">{l}</p>)}
+          <h3 class="ch-place">
+            {e.data.institution}<span class="ch-where">, {e.data.location}</span>
+          </h3>
+          <p class="ch-line">{e.data.degree}.</p>
+          {e.data.detail && <p class="ch-line">{e.data.detail}</p>}
         </div>
       </li>
     ))}
   </ol>
 
-  <p class="ch-course" data-reveal>
-    <span class="ch-course-label">Coursework</span>
-    machine learning, deep learning, compilers, theory of computation, DBMS,
-    operating systems, algorithms, software engineering.
-  </p>
+  {coursework && (
+    <p class="ch-course" data-reveal>
+      <span class="ch-course-label">Coursework</span>
+      {coursework}
+    </p>
+  )}
 </Chapter>
 
 <style>

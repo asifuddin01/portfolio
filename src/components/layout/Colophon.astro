@@ -1,7 +1,9 @@
 ---
 import LesionRule from '../ornament/LesionRule.astro';
 import { getEntry, render } from 'astro:content';
-import { EMAIL, GITHUB, LINKEDIN } from '../../consts';
+import { getContact } from '../../lib/collections';
+
+const { email, github, linkedin } = await getContact();
 
 const entry = await getEntry('site', 'colophon');
 const Colophon = entry ? (await render(entry)).Content : null;
@@ -12,9 +14,9 @@ const Colophon = entry ? (await render(entry)).Content : null;
     <div class="cp-body" data-reveal>
       <div class="cp-text">{Colophon && <Colophon />}</div>
       <ul class="cp-links">
-        <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
-        <li><a class="link" href={GITHUB} rel="me">github</a></li>
-        <li><a class="link" href={LINKEDIN} rel="me">linkedin</a></li>
+        <li><a class="link" href={`mailto:${email}`}>{email}</a></li>
+        <li><a class="link" href={github} rel="me">github</a></li>
+        <li><a class="link" href={linkedin} rel="me">linkedin</a></li>
         <li>
           <a class="link" href="/cv/Md-Asif-Uddin-CV.pdf" download>
             curriculum vitae (pdf)

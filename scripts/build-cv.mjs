@@ -37,10 +37,6 @@ const consts = await readFile('src/consts.ts', 'utf8');
 const constOf = (key) => (consts.match(new RegExp(`${key} = '([^']*)'`)) ?? [])[1] ?? '';
 
 const AUTHOR = constOf('AUTHOR');
-const EMAIL = constOf('EMAIL');
-const GITHUB = constOf('GITHUB');
-const LINKEDIN = constOf('LINKEDIN');
-const LOCATION = constOf('LOCATION');
 const SITE = constOf('SITE');
 
 const [siteEntries, works, papers, education, projects, skills] = await Promise.all([
@@ -53,6 +49,13 @@ const [siteEntries, works, papers, education, projects, skills] = await Promise.
 ]);
 
 const cvMeta = siteEntries.find((e) => e.id === 'cv')?.data ?? {};
+
+/* Contact comes from the same entry the site reads, with consts as fallback. */
+const contactData = siteEntries.find((e) => e.id === 'contact')?.data ?? {};
+const EMAIL = contactData.email ?? constOf('EMAIL');
+const GITHUB = contactData.github ?? constOf('GITHUB');
+const LINKEDIN = contactData.linkedin ?? constOf('LINKEDIN');
+const LOCATION = contactData.location ?? constOf('LOCATION');
 const byOrder = (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0);
 
 const STATE = {

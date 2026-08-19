@@ -1,4 +1,5 @@
-import { getCollection, type CollectionEntry } from 'astro:content';
+import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
+import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
 
 /** Draft entries are excluded from production builds, kept in dev. */
 const visible = <T extends { data: { status: 'draft' | 'published' } }>(e: T): boolean =>
@@ -125,4 +126,29 @@ export async function getProjects(): Promise<CollectionEntry<'projects'>[]> {
 export async function getImages(): Promise<CollectionEntry<'images'>[]> {
   const all = await getCollection('images');
   return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+}
+
+/** The maxims, in order. */
+export async function getAxioms(): Promise<CollectionEntry<'axioms'>[]> {
+  const all = await getCollection('axioms');
+  return all.sort((a, b) => a.data.order - b.data.order);
+}
+
+/**
+ * Contact details. Editable in /admin under Site text, with the values in
+ * consts.ts as a fallback so nothing breaks if the entry is removed.
+ */
+export async function getContact(): Promise<{
+  email: string;
+  github: string;
+  linkedin: string;
+  location: string;
+}> {
+  const e = await getEntry('site', 'contact');
+  return {
+    email: e?.data.email ?? EMAIL,
+    github: e?.data.github ?? GITHUB,
+    linkedin: e?.data.linkedin ?? LINKEDIN,
+    location: e?.data.location ?? LOCATION,
+  };
 }

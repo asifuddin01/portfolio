@@ -200,8 +200,9 @@ collections:
     label: Plates
     label_singular: Plate
     description: >-
-      The research plates. The plate number is both the sort order and the
-      numeral shown on the page, so keep them consecutive.
+      The research plates. These are what the Compendium on the home page
+      shows — add one here and a card appears there. The plate number is both
+      the sort order and the numeral on the page, so keep them consecutive.
     folder: src/content/works
     extension: mdx
     format: frontmatter
@@ -384,6 +385,30 @@ collections:
         name: body
         widget: markdown
         hint: "Where it came from, what is happening in it, why it is here."
+
+  # ------------------------------------------------------------------
+  - name: axioms
+    label: Axioms
+    label_singular: Axiom
+    description: >-
+      The maxims on the home page. Each names the project it came from. A
+      maxim that needs defending is not a maxim, so there is no room here for
+      an explanation.
+    folder: src/content/axioms
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: text
+    slug: "{{slug}}"
+    summary: "{{order}} · {{text}}"
+    sortable_fields: [order]
+    fields:
+      - { label: The maxim, name: text, widget: text }
+      - label: Where it came from
+        name: cite
+        widget: string
+        hint: "Set in the margin, e.g. HierarchiRetina, Stage III."
+      - { label: Order, name: order, widget: number, value_type: int, min: 1 }
 
   # ------------------------------------------------------------------
   - name: images
@@ -662,6 +687,25 @@ collections:
             widget: text
             hint: "The opening paragraph of the downloadable CV."
           - { label: Languages, name: languages, widget: text }
+      - name: contact
+        label: Contact details
+        file: src/content/site/contact.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - { label: Email, name: email, widget: string }
+          - { label: GitHub, name: github, widget: string }
+          - { label: LinkedIn, name: linkedin, widget: string }
+          - { label: Location, name: location, widget: string }
+      - name: chronicle
+        label: Chronicle coursework
+        file: src/content/site/chronicle.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - { label: Coursework, name: coursework, widget: text }
       - name: frontispiece
         label: Frontispiece
         file: src/content/site/frontispiece.mdx

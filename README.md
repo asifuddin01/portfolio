@@ -59,6 +59,7 @@ What you can edit there:
 | Marginalia | Book reviews, model reviews, essays, notes — with image upload |
 | Elementa | Propositions, including the `Given` dependency links |
 | Plates | Research plates — add, edit and delete |
+| Axioms | The five maxims and their marginal cites |
 | Imagines | Photographs — upload, caption, optional note |
 | Papers | Published papers and manuscripts — add one, paste the link |
 | Education | Degrees, shown on the Vitae page and in the CV |
@@ -155,6 +156,16 @@ one needs a developer. The `Figure` dropdown lists what is registered in
 as much of it as you like.
 That is the only one. Everything else — plates, tabulae, books, marginalia,
 propositions, the home-page sections — can be added and deleted from `/admin`.
+
+### Where the Compendium comes from
+
+The Compendium on the home page has no collection of its own — it renders the
+**Plates**. Add or edit a plate and its card appears there, on the Vitae page
+and in the CV. The same holds for the Chronicle, which renders **Education**,
+and the Appendix, which renders **Engineering projects**.
+
+Every section of the home page is CMS-backed. Nothing on it needs a code
+change any more.
 
 ### There are no roles
 
