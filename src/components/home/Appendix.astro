@@ -1,31 +1,16 @@
 ---
 import Chapter from './Chapter.astro';
+import { getProjects } from '../../lib/collections';
 
-const ITEMS: ReadonlyArray<{ title: string; body: string }> = [
-  {
-    title: 'CSMMS — Campus Student Management and Marketplace System',
-    body:
-      'FastAPI backend. Item CRUD with keyword, category, price-range and sort filtering plus pagination. Image upload to S3 with Pillow compression, delivered through CloudFront. Service priority levels and live-computed impact metrics — weighted student ratings, students served, completion rate. SQLAlchemy models, JWT auth, Alembic migrations.',
-  },
-  {
-    title: 'Compiler symbol table',
-    body:
-      'lex and yacc/bison. Hash table using sum-of-characters mod bucket count, scope stack via parent pointers, and a scope_started flag with mid-rule actions so function parameters land inside function scope while if and for blocks get their own. Made portable across macOS and Linux.',
-  },
-  {
-    title: 'Direct RE-to-DFA construction',
-    body:
-      'Syntax tree with leaf positions, nullable/firstpos/lastpos bottom-up, followpos via cat-node and star-node rules, then the transition table. Coursework.',
-  },
-];
+const items = await getProjects();
 ---
 <Chapter n={9} title="Appendix" id="appendix">
   <p class="ap-note codex-measure" data-reveal>Engineering work, set smaller than the research chapters.</p>
   <ol class="ap" data-reveal-stagger>
-    {ITEMS.map((it) => (
+    {items.map((it) => (
       <li class="ap-item">
-        <h3 class="ap-title">{it.title}</h3>
-        <p class="ap-body">{it.body}</p>
+        <h3 class="ap-title">{it.data.title}</h3>
+        <p class="ap-body">{it.data.summary}</p>
       </li>
     ))}
   </ol>

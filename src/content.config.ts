@@ -117,6 +117,9 @@ const site = defineCollection({
     location: z.string().optional(),
     // Instrumentarium closing line.
     notYet: z.string().optional(),
+    // CV singleton.
+    summary: z.string().optional(),
+    languages: z.string().optional(),
   }),
 });
 
@@ -187,6 +190,52 @@ const instrumenta = defineCollection({
   }),
 });
 
+/**
+ * Published papers and manuscripts. Separate from `works`: a plate is a
+ * research project with a chapter behind it, a paper is a citable artefact
+ * with a link.
+ */
+const papers = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/papers' }),
+  schema: z.object({
+    title: z.string(),
+    authors: z.array(z.string()).default([]),
+    venue: z.string().optional(),
+    year: z.string(),
+    state: z.enum(['published', 'preprint', 'under-review', 'in-preparation']),
+    url: optionalUrl,
+    doi: z.string().optional(),
+    summary: z.string(),
+    status: z.enum(['draft', 'published']).default('published'),
+  }),
+});
+
+/** Education, read by both the vitae page and the generated CV. */
+const education = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/education' }),
+  schema: z.object({
+    order: z.number(),
+    degree: z.string(),
+    institution: z.string(),
+    location: z.string(),
+    period: z.string(),
+    detail: z.string().default(''),
+  }),
+});
+
+/** Engineering work, shown in the Appendix and on the CV. */
+const projects = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/projects' }),
+  schema: z.object({
+    order: z.number(),
+    title: z.string(),
+    summary: z.string(),
+    /** Kept short on the CV, fuller in the Appendix. */
+    cvSummary: z.string().optional(),
+  }),
+});
+
 export const collections = {
   works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
+  papers, education, projects,
 };

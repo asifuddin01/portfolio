@@ -1,55 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
+import { getEducation, getProjects, getPapers } from '../lib/collections';
 import { AUTHOR, EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
 
 const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
+const education = await getEducation();
+const projects = await getProjects();
+const papers = await getPapers();
+const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
+const cvMeta = (await getEntry('site', 'cv'))?.data;
 
-const EDUCATION = [
-  {
-    when: 'Fall 2026 —',
-    what: 'MSc, Computer Science and Engineering',
-    where: 'BRAC University, Dhaka',
-    detail: 'Thesis proposal accepted: HCGT-PG. Supervisor: Dr. Badhan Das.',
-  },
-  {
-    when: 'Fall 2021 – Summer 2026',
-    what: 'BSc, Computer Science and Engineering',
-    where: 'BRAC University, Dhaka',
-    detail: 'CGPA 3.30. Thesis: HierarchiRetina.',
-  },
-  {
-    when: '2020',
-    what: 'Higher Secondary Certificate',
-    where: 'Uttara High School and College, Dhaka',
-    detail: 'GPA 5.00 / 5.00.',
-  },
-  {
-    when: '2018',
-    what: 'Secondary School Certificate',
-    where: 'Ullapara Merchant Pilot High School, Sirajganj',
-    detail: 'GPA 4.72 / 5.00.',
-  },
-];
-
-const SKILLS = [
-  { k: 'Languages', v: 'Python (primary), C' },
-  { k: 'Deep learning', v: 'PyTorch, timm, segmentation_models_pytorch; mixed-precision training, EMA, TTA, k-fold CV, class-imbalance handling, threshold calibration, ordinal regression (CORN), mixture-of-experts, cross-attention fusion, attention gates, ASPP, GeM pooling, deep supervision, Grad-CAM' },
-  { k: 'Architectures', v: 'ConvNeXtV2, SwinV2, DINOv2/v3, image-text encoders, EfficientNet, U-Net, UNet++, Attention U-Net, SwinHRUNetPP, HSMoE-AUNet' },
-  { k: 'Medical imaging', v: 'Fundus photography, non-contrast CT, NIfTI and DICOM, FOV masking, CLAHE, patch extraction and stitching, lesion-level evaluation, de-identification, report parsing' },
-  { k: 'Evaluation', v: 'QWK, ICC, AUC-ROC, AUC-PR, Dice, IoU, NMI, lesion- and image-level recall, per-dataset breakdowns, held-out test discipline, leakage assertions' },
-  { k: 'Causal / comp-bio', v: 'Causal graphs and DAGs, gene perturbation analysis, gene regulatory network inference, multi-omics integration, biomarker discovery' },
-  { k: 'Data', v: 'pandas, NumPy, Albumentations, OpenCV, Matplotlib, Seaborn, scikit-learn' },
-  { k: 'Backend', v: 'FastAPI, REST, SQLAlchemy, JWT, Alembic, AWS S3, CloudFront' },
-  { k: 'Other', v: 'Git, Jupyter, LaTeX, lex/yacc, CUDA-level debugging; NVIDIA RTX A6000' },
-];
-
-const ENGINEERING = [
-  { t: 'CSMMS — Campus Student Management and Marketplace System', d: 'FastAPI backend; filtered and paginated item CRUD, S3 image upload with Pillow compression via CloudFront, live-computed impact metrics, SQLAlchemy, JWT, Alembic.' },
-  { t: 'Compiler symbol table', d: 'lex and yacc/bison; hash table with scope stack via parent pointers and mid-rule actions for correct parameter scoping. Portable across macOS and Linux.' },
-  { t: 'Direct RE-to-DFA construction', d: 'Syntax tree with leaf positions, nullable/firstpos/lastpos, followpos, transition table.' },
-];
 ---
 <BaseLayout
   title={`Vitae — ${AUTHOR}`}
@@ -66,7 +28,10 @@ const ENGINEERING = [
             causal inference
           </p>
         </div>
-        <button class="cv-print" type="button" data-print>Print</button>
+        <div class="cv-actions">
+          <a class="cv-btn" href="/cv/Md-Asif-Uddin-CV.pdf" download>Download PDF</a>
+          <button class="cv-btn" type="button" data-print>Print</button>
+        </div>
       </div>
       <ul class="cv-contact" data-reveal>
         <li><a class="link" href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
@@ -107,45 +72,68 @@ const ENGINEERING = [
       </ol>
     </section>
 
+    {papers.length > 0 && (
+      <section class="cv-sec" aria-labelledby="cv-papers">
+        <h2 class="cv-h2" id="cv-papers">Papers and manuscripts</h2>
+        <ol class="cv-list">
+          {papers.map((p) => (
+            <li class="cv-item">
+              <div class="cv-item-head">
+                <h3 class="cv-item-t">
+                  {p.data.url ? <a class="link" href={p.data.url}>{p.data.title}</a> : p.data.title}
+                </h3>
+                <span class="cv-when">{p.data.year}</span>
+              </div>
+              <p class="cv-detail">
+                <span class="cv-tag">{p.data.state.replace(/-/g, ' ')}</span>
+                {p.data.venue ?? p.data.summary}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
     <section class="cv-sec" aria-labelledby="cv-education">
       <h2 class="cv-h2" id="cv-education">Education</h2>
       <ol class="cv-list">
-        {EDUCATION.map((e) => (
+        {education.map((e) => (
           <li class="cv-item">
             <div class="cv-item-head">
-              <h3 class="cv-item-t">{e.what}</h3>
-              <span class="cv-when">{e.when}</span>
+              <h3 class="cv-item-t">{e.data.degree}</h3>
+              <span class="cv-when">{e.data.period}</span>
             </div>
-            <p class="cv-detail">{e.where}. {e.detail}</p>
+            <p class="cv-detail">
+              {e.data.institution}, {e.data.location}. {e.data.detail}
+            </p>
           </li>
         ))}
       </ol>
-      <p class="cv-detail cv-course">
-        Coursework: machine learning, deep learning, compilers, theory of
-        computation, DBMS, operating systems, algorithms, software engineering.
-      </p>
+
     </section>
 
     <section class="cv-sec" aria-labelledby="cv-skills">
       <h2 class="cv-h2" id="cv-skills">Technical</h2>
       <dl class="cv-skills">
-        {SKILLS.map((s) => (
+        {skills.map((s) => (
           <div class="cv-skill">
-            <dt>{s.k}</dt>
-            <dd>{s.v}</dd>
+            <dt>{s.data.title}</dt>
+            <dd>{s.data.items}</dd>
           </div>
         ))}
       </dl>
-      <p class="cv-detail cv-notyet">Not yet: SQL, propensity score methods, Mendelian randomization.</p>
+      {cvMeta?.languages && (
+        <p class="cv-detail cv-notyet">Languages. {cvMeta.languages}</p>
+      )}
     </section>
 
     <section class="cv-sec" aria-labelledby="cv-eng">
       <h2 class="cv-h2" id="cv-eng">Engineering</h2>
       <ol class="cv-list">
-        {ENGINEERING.map((e) => (
+        {projects.map((e) => (
           <li class="cv-item">
-            <h3 class="cv-item-t">{e.t}</h3>
-            <p class="cv-detail">{e.d}</p>
+            <h3 class="cv-item-t">{e.data.title}</h3>
+            <p class="cv-detail">{e.data.cvSummary ?? e.data.summary}</p>
           </li>
         ))}
       </ol>
@@ -165,7 +153,8 @@ const ENGINEERING = [
     color: var(--ink-soft);
     max-width: 40ch;
   }
-  .cv-print {
+  .cv-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .cv-btn {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
     letter-spacing: 0.14em;
@@ -177,7 +166,7 @@ const ENGINEERING = [
     cursor: pointer;
     white-space: nowrap;
   }
-  .cv-print:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .cv-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
   .cv-contact {
     list-style: none;
     margin: 1.3rem 0 0;
@@ -243,7 +232,7 @@ const ENGINEERING = [
 <style is:global>
   @media print {
     :root { --paper: #fff; --paper-raised: #fff; --ink: #000; --ink-soft: #333; --brass: #666; --brass-text: #444; --fundus: #000; }
-    header.hd, footer.cp, .grain, .ink-wash, .cursor-lens, .folio, .cv-print, .lesion-rule { display: none !important; }
+    header.hd, footer.cp, .grain, .ink-wash, .cursor-lens, .folio, .cv-actions, .lesion-rule { display: none !important; }
     body { background: #fff !important; font-size: 10.5pt; }
     .cv { padding-top: 0; max-width: 100%; }
     .cv-sec { break-inside: avoid; page-break-inside: avoid; }

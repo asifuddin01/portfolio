@@ -1,0 +1,126 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getPapers } from '../../lib/collections';
+import { AUTHOR } from '../../consts';
+
+const papers = await getPapers();
+
+const LABEL: Record<string, string> = {
+  published: 'Published',
+  preprint: 'Preprint',
+  'under-review': 'Under review',
+  'in-preparation': 'In preparation',
+};
+---
+<BaseLayout
+  title={`Published papers — ${AUTHOR}`}
+  description="Papers and manuscripts, with links where they are available."
+  folio="P"
+>
+  <div class="codex pp">
+    <header class="pp-head">
+      <p class="pp-kicker" data-reveal>The record</p>
+      <h1 class="pp-h1" data-press>Published papers</h1>
+      <p class="pp-lede codex-measure" data-reveal>
+        Papers and manuscripts, with a link wherever there is one to give. What a
+        piece of work argues lives on its plate; this page is only the citation.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {papers.length === 0 ? (
+      <p class="pp-empty">Nothing published yet.</p>
+    ) : (
+      <ol class="pp-list" data-reveal-stagger>
+        {papers.map((p) => (
+          <li class="pp-item">
+            <div class="pp-top">
+              <span class="pp-state">{LABEL[p.data.state]}</span>
+              <span class="pp-year">{p.data.year}</span>
+            </div>
+            <h2 class="pp-title">
+              {p.data.url ? (
+                <a class="pp-link" href={p.data.url} rel="noopener">{p.data.title}</a>
+              ) : (
+                p.data.title
+              )}
+            </h2>
+            {p.data.authors.length > 0 && (
+              <p class="pp-authors">{p.data.authors.join(', ')}</p>
+            )}
+            {p.data.venue && <p class="pp-venue">{p.data.venue}</p>}
+            <p class="pp-summary">{p.data.summary}</p>
+            {(p.data.url || p.data.doi) && (
+              <p class="pp-refs">
+                {p.data.url && <a class="link" href={p.data.url} rel="noopener">Read it</a>}
+                {p.data.url && p.data.doi && <span class="pp-sep"> · </span>}
+                {p.data.doi && (
+                  <a class="link" href={`https://doi.org/${p.data.doi}`} rel="noopener">
+                    doi:{p.data.doi}
+                  </a>
+                )}
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .pp { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pp-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .pp-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .pp-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .pp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .pp-item {
+    padding: 1.5rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .pp-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.5rem;
+  }
+  .pp-title { font-size: var(--t-md); line-height: 1.35; margin-bottom: 0.4rem; max-width: 56ch; }
+  .pp-link { color: var(--ink); }
+  .pp-link:hover { color: var(--fundus); }
+  .pp-authors, .pp-venue {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0 0 0.2rem;
+  }
+  .pp-summary {
+    font-size: var(--t-base);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0.5rem 0 0;
+    max-width: var(--measure);
+  }
+  .pp-refs { margin: 0.6rem 0 0; font-family: var(--font-mono); font-size: var(--t-xs); }
+  .pp-sep { color: var(--brass-text); }
+  .pp-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+</style>

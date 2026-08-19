@@ -98,3 +98,25 @@ export async function getHomePlates(): Promise<{
 
   return { numeral, front, bySlot };
 }
+
+/** Papers, newest first, with the published ones ahead of the drafts. */
+export async function getPapers(): Promise<CollectionEntry<'papers'>[]> {
+  const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3 };
+  const all = await getCollection('papers');
+  return all
+    .filter(visible)
+    .sort(
+      (a, b) =>
+        RANK[a.data.state] - RANK[b.data.state] ||
+        b.data.year.localeCompare(a.data.year) ||
+        a.data.title.localeCompare(b.data.title)
+    );
+}
+
+export async function getEducation(): Promise<CollectionEntry<'education'>[]> {
+  return (await getCollection('education')).sort((a, b) => a.data.order - b.data.order);
+}
+
+export async function getProjects(): Promise<CollectionEntry<'projects'>[]> {
+  return (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+}

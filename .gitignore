@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # CMS bundle, copied from node_modules by scripts/sync-cms.mjs
 public/admin/sveltia-cms.js
+
+# CV, regenerated from content on every build
+public/cv/

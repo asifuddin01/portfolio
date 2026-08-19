@@ -22,6 +22,7 @@ npm run verify     # build + a11y audit + contrast check + typecheck
 | `/elementa` | Index of the teaching corpus |
 | `/elementa/[slug]` | One proposition |
 | `/elementa/figures` | The reusable figure library, with copy-SVG |
+| `/papers` | Published papers and manuscripts, with links |
 | `/tabulae` | The plate gallery — artwork, each with a note |
 | `/tabulae/[slug]` | One plate, with its historical background |
 | `/marginalia` | The commonplace book — reviews and notes |
@@ -57,6 +58,9 @@ What you can edit there:
 | Marginalia | Book reviews, model reviews, essays, notes — with image upload |
 | Elementa | Propositions, including the `Given` dependency links |
 | Plates | Research plates — add, edit and delete |
+| Papers | Published papers and manuscripts — add one, paste the link |
+| Education | Degrees, shown on the Vitae page and in the CV |
+| Engineering projects | Shown in the Appendix and on the CV |
 | Tabulae | Artwork — upload an image and write its history |
 | Elementa books | The books propositions are filed under — add your own |
 | Instrumentarium | The skill groups on the home page |
@@ -117,6 +121,22 @@ restart. `npm run dev` therefore runs `scripts/dev-auto.mjs`, which watches
 runs `npm run build` from a fresh checkout, and a cold build has no stale file
 list. Verified by cloning the repo and building from scratch. If you ever
 suspect a stale content cache, `npx astro build --force` clears it.
+
+### The CV regenerates itself
+
+`public/cv/Md-Asif-Uddin-CV.pdf` is built by `scripts/build-cv.mjs` before
+every `astro build`, reading the same content collections the site renders —
+education, works, papers, instrumentarium, projects, and the CV summary under
+Site text. Edit anything in `/admin` and the next deploy ships a matching CV.
+It is gitignored, because it is an artefact rather than source.
+
+Two deliberate choices in it:
+
+- **No phone number.** Your CV has one; this file is served publicly, which is
+  a different exposure from a CV handed to a person. Add `PHONE` to
+  `src/consts.ts` and the masthead line in the script if you want it.
+- **No results.** Research entries carry the title and what the work does.
+  Metrics live on the plate, where the caveats are next to them.
 
 ### Adding a book to the Elementa
 
@@ -187,6 +207,7 @@ duotone instead. Re-fetch with `npm run plates`.
 | `npm run audit` | heading order, alt text, landmarks, self-hosting |
 | `npm run contrast` | WCAG ratios for every token pair, both themes |
 | `npm run check:cms` | Parses config.yml; checks folders and relations resolve |
+| `npm run cv` | Regenerates the CV PDF on its own |
 | `npm run plates` | re-download the artwork |
 | `npm run og` | regenerate `public/og.png` |
 

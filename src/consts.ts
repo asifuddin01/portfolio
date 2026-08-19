@@ -12,6 +12,7 @@ export const LINKEDIN = 'https://linkedin.com/in/md-asif-uddin01';
 export const NAV = [
   { href: '/', label: 'Frontispiece' },
   { href: '/elementa', label: 'Elementa' },
+  { href: '/papers', label: 'Papers' },
   { href: '/tabulae', label: 'Tabulae' },
   { href: '/marginalia', label: 'Marginalia' },
   { href: '/vitae', label: 'Vitae' },

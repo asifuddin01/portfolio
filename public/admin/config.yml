@@ -386,6 +386,104 @@ collections:
         hint: "Where it came from, what is happening in it, why it is here."
 
   # ------------------------------------------------------------------
+  - name: papers
+    label: Published papers
+    label_singular: Paper
+    description: >-
+      Papers and manuscripts. Add one here when it goes out, and paste the link
+      when it appears. This drives the Papers page and the downloadable CV.
+    folder: src/content/papers
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{year}} · {{title}}"
+    sortable_fields: [year, title]
+    fields:
+      - { label: Title, name: title, widget: string }
+      - label: Authors
+        name: authors
+        widget: list
+        required: false
+        field: { label: Name, name: name, widget: string }
+      - label: State
+        name: state
+        widget: select
+        default: in-preparation
+        options:
+          - { label: "In preparation", value: in-preparation }
+          - { label: "Under review", value: under-review }
+          - { label: "Preprint", value: preprint }
+          - { label: "Published", value: published }
+      - { label: Year, name: year, widget: string, default: "2026" }
+      - label: Venue
+        name: venue
+        widget: string
+        required: false
+        hint: "Journal, conference or repository. Leave blank until there is one."
+      - label: Link
+        name: url
+        widget: string
+        required: false
+        hint: "Where to read it. The title becomes a link when this is filled in."
+      - { label: DOI, name: doi, widget: string, required: false }
+      - label: One line on what it does
+        name: summary
+        widget: text
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
+  - name: education
+    label: Education
+    label_singular: Entry
+    description: "Shown in the Chronicle, on the Vitae page and in the CV."
+    folder: src/content/education
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: degree
+    slug: "{{slug}}"
+    summary: "{{order}} · {{degree}}"
+    sortable_fields: [order]
+    fields:
+      - { label: Degree or certificate, name: degree, widget: string }
+      - { label: Institution, name: institution, widget: string }
+      - { label: Location, name: location, widget: string }
+      - { label: Period, name: period, widget: string, hint: "e.g. Fall 2021 – Summer 2026" }
+      - { label: Detail, name: detail, widget: text, required: false }
+      - { label: Order, name: order, widget: number, value_type: int, min: 1 }
+
+  # ------------------------------------------------------------------
+  - name: projects
+    label: Engineering projects
+    label_singular: Project
+    description: "Shown in the Appendix, and on the CV in shorter form."
+    folder: src/content/projects
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{order}} · {{title}}"
+    sortable_fields: [order, title]
+    fields:
+      - { label: Title, name: title, widget: string }
+      - { label: Description, name: summary, widget: text, hint: "The fuller version, shown in the Appendix." }
+      - label: Short version for the CV
+        name: cvSummary
+        widget: text
+        required: false
+        hint: "Leave blank to reuse the description."
+      - { label: Order, name: order, widget: number, value_type: int, min: 1 }
+
+  # ------------------------------------------------------------------
   - name: instrumentarium
     label: Instrumentarium
     label_singular: Group
@@ -497,6 +595,18 @@ collections:
         fields:
           - { label: Heading, name: title, widget: string }
           - { label: Colophon, name: body, widget: markdown }
+      - name: cv
+        label: CV summary
+        file: src/content/site/cv.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: Summary
+            name: summary
+            widget: text
+            hint: "The opening paragraph of the downloadable CV."
+          - { label: Languages, name: languages, widget: text }
       - name: frontispiece
         label: Frontispiece
         file: src/content/site/frontispiece.mdx
