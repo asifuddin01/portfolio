@@ -18,7 +18,8 @@
     "verify": "npm run build && npm run audit && npm run contrast && npm run check",
     "prebuild": "node scripts/sync-cms.mjs",
     "predev": "node scripts/sync-cms.mjs",
-    "deploy:manual": "npm run build && wrangler pages deploy dist --project-name=codex"
+    "deploy:manual": "npm run build && wrangler pages deploy dist --project-name=codex",
+    "dev:restart": "astro dev stop || true && astro dev"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",

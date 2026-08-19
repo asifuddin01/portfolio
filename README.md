@@ -75,6 +75,24 @@ Two options; the CMS offers both on its login screen.
 `local_backend: true` is also set, so running `npm run dev` and opening
 `/admin` lets you edit the files on disk directly with no login at all.
 
+### A new entry does not appear until you restart `astro dev`
+
+This catches everyone once. Astro's glob loader builds its file list when the
+dev server starts and **does not rescan for new files**. Verified behaviour:
+
+| Action, while `astro dev` runs | Appears? |
+|---|---|
+| Editing an existing entry | Yes, immediately |
+| Adding a new entry | **No — restart required** |
+
+```bash
+npm run dev:restart
+```
+
+This is a local-development limitation only. In production the CMS commits to
+GitHub, Cloudflare runs a clean `npm run build`, and new entries always appear —
+so once the site is deployed, this stops being a thing you have to think about.
+
 ### Two things the CMS cannot do
 
 - **Add a figure.** Figures are hand-written SVG components; a new one needs a

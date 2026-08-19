@@ -1,0 +1,44 @@
+---
+kind: model
+title: SigLIP 2
+subject: SigLIP 2
+summary: Models I actually use, and what annoys me about them.
+entry: 4
+status: published
+updated: 2026-08-19
+source: https://arxiv.org/abs/2502.14786
+---
+
+Everyone benchmarks vision encoders on ImageNet zero-shot. Almost nobody picks one that way.
+
+I keep coming back to SigLIP 2 for a boring reason: it's the encoder that costs the least to be wrong about.
+
+First, for anyone who's only touched the LLM side.
+
+SigLIP 2 is a vision encoder. It doesn't chat and it doesn't caption. You hand it an image, it hands back a vector. You hand it a short line of text, it hands back a vector in the same space. If the text describes the image, those two land near each other. That's the whole trick, and it buys you three things.
+
+Zero-shot classification. Write your labels as sentences, embed them, embed the image, pick the closest. No training data, no classifier head.
+
+Retrieval. Embed a million photos once, then search them with a sentence.
+
+And the one that matters most: it's the eye of a VLM. You take a pretrained encoder, take a pretrained LLM, train them together. PaliGemma does exactly this with a SigLIP encoder. Whatever your encoder can't see, your VLM can't see either.
+
+What changed in v2: Google DeepMind bolted three things onto pretraining. A caption decoder that predicts captions, boxes from captions, and captions from boxes. Self-distillation, where an EMA teacher sees the full image while the student only gets a crop. And masked prediction, where half the student's patches get hidden and it still has to match the teacher. The last two only switch on after 80% of training, because they're expensive.
+
+ViT-B/16 at 256px goes from 76.7% to 79.1% ImageNet zero-shot. That's the number that gets screenshotted. It isn't the one that decides anything.
+
+Against CLIP: the sigmoid loss is pairwise, so there's no softmax over the batch and no all-gather of an N x N similarity matrix across devices. Below a 16k batch it beats softmax outright. Fine-tuning on one GPU in a university lab, that property is the whole ballgame.
+
+Against DINOv3, don't. DINOv3 is still better at dense prediction and it isn't close. Its features just aren't language-aligned, which is why serious pipelines fuse both instead of picking a side.
+
+Now the parts that annoy me, because a post with only wins is an ad.
+
+The text tower caps at 64 tokens. Sixty-four. The authors' own advice is to chunk longer text and take the max or the mean of the scores, which works and also feels like a workaround you shouldn't need in 2026.
+
+The decoder is training-only. At inference you get two towers and a dot product, so there's no fine-grained cross-modal attention anywhere in the graph. Region-level work needs something bolted on top.
+
+I'll still start the next project on it. Nothing else is good at this many things at once.
+
+Paper: https://arxiv.org/abs/2502.14786
+
+Writeup and weights: https://huggingface.co/blog/siglip2
