@@ -1,0 +1,99 @@
+---
+kind: book
+title: The Machine Learning Guide to Causality
+subject: Elements of Causal Inference (Peters, Janzing and Scholkopf, 2017)
+summary: |-
+  MIT Press, 2017. It's open access, so the PDF is free, and there are companion Jupyter notebooks with coding exercises. 
+  This book connects machine learning with causal reasoning. It shows how algorithms can figure out cause and effect just by looking at regular data.
+entry: 7
+status: published
+updated: 2026-08-20
+source: https://people.math.ethz.ch/~jopeters/elements.html
+sourceLabel: Book, free PDF and notebooks
+---
+
+# **Where the graph comes from**
+
+**Elements of Causal Inference: Foundations and Learning Algorithms** Jonas Peters, Dominik Janzing and Bernhard Schölkopf MIT Press, 2017. Open access.
+
+Here is a claim that should not be true.
+
+You have two columns of numbers, X and Y. No experiment. No time ordering. No background knowledge, no expert to ask, nothing but the joint distribution of two variables. Every statistics course you have ever taken says you are finished before you start, because that joint distribution is symmetric. It cannot tell you whether X causes Y or Y causes X.
+
+_Elements of Causal Inference_ spends its first half arguing that this is wrong. Not wrong in general, but wrong in the specific and interesting sense that it is only true if you refuse to assume anything at all about how the world generates data. Assume a little, and the asymmetry appears. You can read the arrow off the numbers.
+
+That claim is the reason this book exists, and it is also the reason to be careful with it.
+
+## **Who wrote it, and why you can tell**
+
+Jonas Peters is a statistician. Dominik Janzing and Bernhard Schölkopf come out of the Max Planck Institute in Tübingen, and Schölkopf in particular spent a career building kernel methods before turning to causality. That biography is legible on every page. This is a book by machine learning people who arrived at causality, not by statisticians who arrived at machine learning, and the difference in instinct runs deeper than vocabulary.
+
+Pearl's project is identification. You are handed a causal graph, and the question is what that graph licenses you to compute from data. The graph is an input.
+
+This book treats the graph as the output. Given a distribution, which causal structures could have produced it, and can we tell them apart? That is a learning problem, and it is posed the way a machine learning researcher would pose it.
+
+It won the American Statistical Association's Causality in Statistics Education award in 2018. The PDF is free from MIT Press, and there are companion Jupyter notebooks with coding exercises. For a field where the standard references cost real money and ship without code, both of those facts matter more than they should.
+
+## **The organizing move**
+
+Most books on causal structure learning start with many variables and work down. This one starts with two and works up. Every topic gets the bivariate treatment first, then the multivariate one.
+
+That looks like pedagogical gentleness. It isn't. It is the hardest possible starting point, chosen deliberately.
+
+Classical structure learning runs on conditional independences. The PC algorithm and its descendants work by testing which variables become independent given which others, and carving up the space of graphs accordingly. Two variables have no conditional independences to test. There is nothing to condition on. The entire classical toolkit evaporates.
+
+So beginning with two variables strips away the method everyone relies on and forces the authors to find a different principle. Which they do, and that principle is the intellectual core of the book.
+
+## **Independence of cause and mechanism**
+
+The idea is this. The distribution of a cause and the mechanism that turns that cause into its effect are separate facts about the world, produced by separate processes. The distribution of altitudes across weather stations and the physics relating altitude to temperature have nothing to do with each other. Change the set of stations and the physics does not move. Change the physics, somehow, and the stations stay where they are.
+
+So in the causal direction, the marginal of the cause and the conditional of the effect given the cause contain no information about each other. They are independent in a sense the book makes precise in several ways, some probabilistic, some information-theoretic, some algorithmic.
+
+Run that backwards and the independence generally breaks. The marginal of the effect and the conditional of the cause given the effect were both shaped by the same forward process, so they are entangled. That entanglement is a fingerprint. Finding it tells you which direction you are looking at.
+
+The concrete version is the additive noise model. Suppose Y = f(X) + N with N independent of X. It turns out that, apart from a small and characterizable set of exceptions, you cannot also write X = g(Y) + M with M independent of Y. So you fit both directions, test the residuals for independence against the putative cause, and whichever direction passes is your answer.
+
+The book is scrupulous about the exceptions, and the biggest one deserves stating plainly. If f is linear and the noise is Gaussian, the model is exactly symmetric in both directions and you recover nothing. The method needs nonlinearity or non-Gaussianity to bite. Real data will not always oblige.
+
+## **The chapter that will change how you work**
+
+For anyone who does machine learning rather than causal inference, the payoff chapter is the one connecting the two.
+
+Predicting an effect from its cause is a causal learning problem. Predicting a cause from its effect is an anticausal one. Symptom to disease is anticausal. Disease to symptom is causal. Same two variables, same regression, and the authors argue the two situations behave differently in ways that show up in your validation curves.
+
+The sharpest example is semi-supervised learning. In the causal direction, the marginal distribution of the input tells you nothing about the mechanism, by the independence principle above. So unlabelled data, which only informs you about that marginal, should not help. In the anticausal direction there is no such guarantee, and unlabelled data can help.
+
+That is a testable prediction about when a standard machine learning technique works, derived from a claim about causal structure. I do not know another textbook that produces one.
+
+The applied high point is half-sibling regression, published in PNAS in 2016 and summarised in the book. Kepler light curves are contaminated by instrument systematics shared across many stars. A given star's actual transit signal is not shared. That difference in causal structure is enough to separate the two, and the method recovered planet signals from the noise. A causal argument that found exoplanets is a good advertisement for a causal argument.
+
+## **Where I would push back**
+
+The assumptions are load-bearing, and the book is honest about it without that honesty solving anything. Linear plus Gaussian kills you outright. Heteroscedastic noise complicates matters. Measurement error complicates them further. Every identifiability result here is a conditional promise, and the conditions are about the shape of mechanisms you cannot observe.
+
+The more serious problem arrived after publication, and it is the single most important thing to know before you use any of this.
+
+In 2021, Reisach, Seiler and Weichwald published a paper about the simulated benchmarks on which much of this literature was validated. They showed that in common simulation setups, the marginal variance of a variable tends to increase along the causal order. Which means that sorting variables by variance recovers the causal order, without doing any causal reasoning at all. A trivial baseline scores well. A meaningful chunk of the reported progress in continuous structure learning was, in part, measuring a property of the data generator rather than the merit of the method.
+
+That result postdates the book, so it is not a fault of the book. But it substantially changes how you should read the empirical claims in it, and there is no version of using this material responsibly that skips it. Read Reisach alongside, not afterwards.
+
+The real-data benchmark has its own difficulties. The Tübingen cause-effect pairs are few, hand-assembled, and performance on them has been argued to be sensitive to preprocessing choices. This is a field where the evaluation problem is genuinely unsolved, and the book is more confident than the evaluation situation warrants.
+
+Then the ordinary complaints. _Elements_ undersells the difficulty exactly as _Primer_ did for Pearl. Measure-theoretic care and information-theoretic argument appear without ceremony, and a reader who took "self-contained and concise" at face value will struggle. The multivariate chapters are competent and less original than the bivariate ones, which is a shame, because most real problems have a hundred variables rather than two. The notation is not Pearl's, so reading both costs you a translation tax.
+
+And it is 2017. Differentiable structure learning arrived the following year, score-based discovery after that, and the recent attempts to use language models as priors over structure are more recent still. The foundations hold up. The algorithm survey does not.
+
+## **Where I stand**
+
+My own work uses CRISPR perturbation screens to orient causal edges in single-cell data, which is to say I buy interventions rather than betting that functional assumptions hold. Reading this book made me take the observational route more seriously than I had. Reading Reisach made me glad I had not bet the project on it.
+
+That is not a criticism of the book so much as a description of what it is for. It shows you how much you can extract from observation alone, and it is scrupulous about the price. Whether the price is worth paying is a question about your data, not about the mathematics.
+
+## **Verdict**
+
+Read it if Pearl left you with the question this answers. Read it first if you came to causality from machine learning rather than statistics, because the framing will feel native in a way Pearl's does not. Do not read it as your first book on probability, and do not read the empirical chapters without Reisach open in another tab.
+
+5 out of 5, and free, which is a combination I have not had to write before.
+
+The best thing I can say about it is that it treats causal discovery as a problem rather than a preliminary. Three books by Pearl explain, beautifully, what follows once you have the graph. This one admits that getting the graph is the hard part and then spends three hundred pages taking that seriously. It does not fully succeed. Nobody has. But it is the book that stopped pretending the question was somebody else's problem.

@@ -43,7 +43,9 @@ const { Content } = await render(entry);
         </time>
       </div>
       {d.source && (
-        <p class="me-source"><a class="link" href={d.source}>Source</a></p>
+        <p class="me-source">
+          <a class="link" href={d.source} rel="noopener">{d.sourceLabel ?? 'Source'}</a>
+        </p>
       )}
     </header>
 

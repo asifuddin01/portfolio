@@ -1,30 +1,36 @@
 ---
-entry: 1
 kind: book
 title: The ladder is the argument
 subject: Judea Pearl & Dana Mackenzie — The Book of Why
 summary: A polemic disguised as a popular science book, and better for it.
+entry: 1
 status: published
 updated: 2026-08-02
-source: null
+source: ''
 ---
 
-The three-rung ladder — association, intervention, counterfactual — is the whole
-book, and everything else is illustration. That is not a criticism. Most
-statistics education stops at rung one and never tells you there are two more.
+The New Science of Cause and Effect, co-written with Dana Mackenzie. Filed as popular science, but really a manifesto with footnotes.
 
-What the book does well is refuse to be diplomatic. Pearl is arguing that a
-generation of statisticians treated causal language as unrigorous and thereby
-made it impossible to say true things. The historical chapters on Wright's path
-analysis and the tobacco debates are there to show the cost of that refusal in
-lives.
+Pearl won the Turing Award for Bayesian networks, then spent thirty years arguing the field he helped build was stuck. This book is that argument, without the math.
 
-Where it frustrates: the do-calculus is presented as more automatic than it is.
-In practice the hard part is never the algebra, it is defending the graph. Every
-arrow is an assumption you cannot test from the data, and the book is much
-lighter on how to earn those arrows than on what to do once you have them.
+The central claim is the Ladder of Causation. Three rungs. Association is seeing: what does this symptom tell me about that disease? Intervention is doing: what happens if I give the drug? Counterfactuals are imagining: would this patient have recovered anyway?
 
-I read it while starting HCGT-PG, where the graph is over genes and the
-intervention is a knockdown. The thing that stayed with me is rung two's demand:
-if you cannot say what experiment your estimate predicts, you have not made a
-causal claim. That sentence is doing a lot of work in my proposal.
+Almost all machine learning lives on rung one. Pearl's point is that no quantity of data or parameters moves you up. You climb only by adding assumptions the data cannot contain, drawn as a graph. That's the book.
+
+What it gets right is hard to overstate.
+
+His treatment of Simpson's paradox is the best I've read anywhere. Same numbers, and whether you aggregate the groups or split them flips the conclusion. The data cannot settle which is correct. You need a causal story from outside the data to know which table to read. I'd seen it explained a dozen times and never seen anyone say plainly that it isn't a statistics problem at all.
+
+The history is good too. Fisher, the finest statistician of the century, argued smoking might not cause cancer because a genetic confounder could explain it. He wasn't being stupid. The tools to answer him didn't exist yet.
+
+Now where I'd push back.
+
+It's cranky. Pearl is fighting a long war with statisticians and it bleeds through. The Neyman-Rubin potential outcomes framework, which most working statisticians and economists actually use, gets a few dismissive pages. You're reading one side of a live feud presented as settled history.
+
+Philosophers have also asked whether rungs two and three are really distinct, since an intervention is already defined counterfactually. Pearl's answer is technical and, by his own admission, not obvious from the book.
+
+And the gap I keep hitting in my own work: he shows beautifully what a causal graph buys you, and far less about where the graph comes from. That is the whole problem. My current project leans on CRISPR perturbation screens as interventional ground truth because observational data won't orient the edges. The book gave me the vocabulary for what I was already trying to do. Not the method.
+
+Verdict: 4.5 out of 5.
+
+Read it if you fit models to data and have ever said "correlation isn't causation" without being able to finish the sentence. Skip it if you want a textbook. This is a case, not a course.

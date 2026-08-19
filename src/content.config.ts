@@ -8,9 +8,19 @@ import { glob } from 'astro/loaders';
  * the first time anyone blanked a paper link the build would fail.
  */
 const optionalUrl = z
-  .union([z.url(), z.literal(''), z.null()])
+  .preprocess((v) => {
+    if (typeof v !== 'string') return v ?? null;
+    const raw = v.trim();
+    if (raw === '') return null;
+    // Somebody pasted a sentence with a link in it. Take the link.
+    const found = raw.match(/https?:\/\/[^\s<>"')\]]+/);
+    if (found) return found[0];
+    // A bare domain, e.g. example.com/page — assume https.
+    if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(raw)) return `https://${raw}`;
+    return raw;
+  }, z.union([z.url(), z.null()]))
   .optional()
-  .transform((v) => (v ? v : null));
+  .transform((v) => v ?? null);
 
 const optionalText = z
   .union([z.string(), z.null()])
@@ -98,6 +108,7 @@ const marginalia = defineCollection({
     status: z.enum(['draft', 'published']),
     updated: z.date(),
     source: optionalUrl,
+    sourceLabel: z.string().optional(),
   }),
 });
 

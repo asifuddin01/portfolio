@@ -6,14 +6,14 @@
 
 backend:
   name: github
-  repo: asifuddin01/portfolio          # ← change to your GitHub user/repo
+  repo: asifuddin01/portfolio # ← change to your GitHub user/repo
   branch: main
   # Uncomment once the auth worker in worker/ is deployed; that turns on the
   # one-click "Sign in with GitHub" button. Until then, use "Sign In Using
   # Access Token" with a fine-grained GitHub token.
   # base_url: https://codex-auth.YOUR-SUBDOMAIN.workers.dev
 
-# Lets you edit locally with `npm run dev` and no login at all.
+  # Lets you edit locally with `npm run dev` and no login at all.
 local_backend: true
 
 media_folder: "public/uploads"
@@ -28,8 +28,7 @@ collections:
     label: Marginalia
     label_singular: Entry
     description: >-
-      Book reviews, model reviews, essays and notes. Newest folio number
-      appears first on the site.
+      Book reviews, model reviews, essays and notes. Newest folio number appears first on the site.
     folder: src/content/marginalia
     extension: mdx
     format: frontmatter
@@ -37,7 +36,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{entry}} · {{kind}} — {{title}}"
-    sortable_fields: [entry, updated, title]
+    sortable_fields: [ entry, updated, title ]
     view_groups:
       - label: Kind
         field: kind
@@ -86,7 +85,15 @@ collections:
         name: source
         widget: string
         required: false
-        hint: "Optional. A full URL, or leave blank."
+        hint: "The address only. A sentence with a link in it will not be accepted here."
+        pattern:
+          - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+          - Paste the address only, e.g. https://example.com/page — not a sentence.
+      - label: Link text
+        name: sourceLabel
+        widget: string
+        required: false
+        hint: What the link should say, e.g. "Book, free PDF and notebooks". Defaults to "Source".
       - label: Review
         name: body
         widget: markdown
@@ -97,8 +104,7 @@ collections:
     label: Elementa books
     label_singular: Book
     description: >-
-      The books the propositions are filed under. Add one here first, then it
-      appears in the Book list when you write a proposition.
+      The books the propositions are filed under. Add one here first, then it appears in the Book list when you write a proposition.
     folder: src/content/books
     extension: mdx
     format: frontmatter
@@ -106,7 +112,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{order}} · {{title}}"
-    sortable_fields: [order, title]
+    sortable_fields: [ order, title ]
     fields:
       - label: Title
         name: title
@@ -122,16 +128,14 @@ collections:
         value_type: int
         min: 1
         hint: >-
-          Sort order only. Gaps are fine — the Book numeral on the page is
-          worked out from the running order, not from this value.
+          Sort order only. Gaps are fine — the Book numeral on the page is worked out from the running order, not from this value.
 
   # ------------------------------------------------------------------
   - name: elementa
     label: Elementa
     label_singular: Proposition
     description: >-
-      The teaching corpus. Every proposition needs a figure; if the figure
-      cannot be drawn, the proposition is not ready to be written.
+      The teaching corpus. Every proposition needs a figure; if the figure cannot be drawn, the proposition is not ready to be written.
     folder: src/content/elementa
     extension: mdx
     format: frontmatter
@@ -139,14 +143,14 @@ collections:
     identifier_field: statement
     slug: "{{fields.book}}-prop-{{fields.proposition}}"
     summary: "Book {{book}} · Prop {{proposition}} — {{statement}}"
-    sortable_fields: [book, proposition, updated]
+    sortable_fields: [ book, proposition, updated ]
     fields:
       - label: Book
         name: book
         widget: relation
         collection: books
-        search_fields: [title]
-        display_fields: [title]
+        search_fields: [ title ]
+        display_fields: [ title ]
         value_field: "{{slug}}"
         hint: "Add a new book under Elementa books first if the one you want is missing."
       - label: Proposition number
@@ -162,8 +166,8 @@ collections:
         name: given
         widget: relation
         collection: elementa
-        search_fields: [statement]
-        display_fields: [statement]
+        search_fields: [ statement ]
+        display_fields: [ statement ]
         value_field: "{{slug}}"
         multiple: true
         required: false
@@ -200,9 +204,7 @@ collections:
     label: Plates
     label_singular: Plate
     description: >-
-      The research plates. These are what the Compendium on the home page
-      shows — add one here and a card appears there. The plate number is both
-      the sort order and the numeral on the page, so keep them consecutive.
+      The research plates. These are what the Compendium on the home page shows — add one here and a card appears there. The plate number is both the sort order and the numeral on the page, so keep them consecutive.
     folder: src/content/works
     extension: mdx
     format: frontmatter
@@ -210,7 +212,7 @@ collections:
     delete: true
     identifier_field: title
     summary: "Plate {{plate}} — {{title}}"
-    sortable_fields: [plate]
+    sortable_fields: [ plate ]
     fields:
       - label: Plate number
         name: plate
@@ -218,8 +220,7 @@ collections:
         value_type: int
         min: 1
         hint: >-
-          Both the sort order and the numeral on the page — Plate 5 renders as
-          "Plate V". Keep them consecutive so the compendium reads cleanly.
+          Both the sort order and the numeral on the page — Plate 5 renders as "Plate V". Keep them consecutive so the compendium reads cleanly.
       - { label: Short title, name: title, widget: string }
       - { label: Full title, name: fullTitle, widget: text }
       - { label: Subtitle, name: subtitle, widget: string }
@@ -239,9 +240,7 @@ collections:
           - { label: "Embargoed — results stay off the page", value: embargoed }
           - { label: "Public — results may be shown", value: public }
         hint: >-
-          EMBARGOED plates must have an empty Results table. Adding a result to
-          an embargoed plate will deliberately fail the build so unpublished
-          numbers cannot leak.
+          EMBARGOED plates must have an empty Results table. Adding a result to an embargoed plate will deliberately fail the build so unpublished numbers cannot leak.
       - { label: Year, name: year, widget: string, default: "2026" }
       - label: Supervisors
         name: supervisors
@@ -255,8 +254,8 @@ collections:
         widget: text
         hint: "Verbatim from the paper. Never paraphrase or shorten it."
       - { label: Citation, name: citation, widget: text, required: false }
-      - { label: Paper URL, name: paperUrl, widget: string, required: false }
-      - { label: Repository URL, name: repoUrl, widget: string, required: false }
+      - { label: Paper URL, name: paperUrl, widget: string, required: false, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
+      - { label: Repository URL, name: repoUrl, widget: string, required: false, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
       - label: Results
         name: metrics
         widget: list
@@ -275,8 +274,7 @@ collections:
     label: Tabulae
     label_singular: Plate
     description: >-
-      The artwork interleaved between the chapters. Upload an image, say where
-      it came from, and write as much history as you like in the note.
+      The artwork interleaved between the chapters. Upload an image, say where it came from, and write as much history as you like in the note.
     folder: src/content/art
     extension: mdx
     format: frontmatter
@@ -284,7 +282,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{order}} · {{title}} — {{artist}}"
-    sortable_fields: [order, title, artist]
+    sortable_fields: [ order, title, artist ]
     # Relative to this collection's folder, so uploads land in
     # src/assets/plates and the saved path is one Astro can optimise.
     media_folder: "../../assets/plates"
@@ -311,9 +309,7 @@ collections:
         value_type: int
         min: 1
         hint: >-
-          Sort order only. Lowest sits on the frontispiece; the rest interleave
-          the chapters. Gaps are fine — the plate numbers on the page are
-          worked out from the running order, not from this value.
+          Sort order only. Lowest sits on the frontispiece; the rest interleave the chapters. Gaps are fine — the plate numbers on the page are worked out from the running order, not from this value.
       - label: Treatment
         name: treatment
         widget: select
@@ -322,8 +318,7 @@ collections:
           - { label: "Intaglio — line art, prints onto the page", value: intaglio }
           - { label: "Photograph — an object, toned instead", value: photograph }
         hint: >-
-          Engravings and drawings on white paper should be intaglio. Photographs
-          of sculpture or objects should be photograph, or they will go black.
+          Engravings and drawings on white paper should be intaglio. Photographs of sculpture or objects should be photograph, or they will go black.
       - label: Gloss
         name: gloss
         widget: text
@@ -342,6 +337,10 @@ collections:
         name: source
         widget: string
         required: false
+        pattern:
+          - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+          - Paste the address only, e.g. https://example.com/page — not a sentence.
+        hint: The address only. A sentence with a link in it will not be accepted here.
       - label: Position on the home page
         name: placement
         widget: select
@@ -365,15 +364,14 @@ collections:
         name: side
         widget: select
         default: right
-        options: [left, right]
+        options: [ left, right ]
         hint: "Which margin it hangs in on the home page."
       - label: Show on the home page
         name: onHome
         widget: boolean
         default: true
         hint: >-
-          The only switch that decides this. Off means it stays in the Tabulae
-          gallery but never appears on the home page.
+          The only switch that decides this. Off means it stays in the Tabulae gallery but never appears on the home page.
       - label: Status
         name: status
         widget: select
@@ -391,9 +389,7 @@ collections:
     label: Axioms
     label_singular: Axiom
     description: >-
-      The maxims on the home page. Each names the project it came from. A
-      maxim that needs defending is not a maxim, so there is no room here for
-      an explanation.
+      The maxims on the home page. Each names the project it came from. A maxim that needs defending is not a maxim, so there is no room here for an explanation.
     folder: src/content/axioms
     extension: mdx
     format: frontmatter
@@ -401,7 +397,7 @@ collections:
     identifier_field: text
     slug: "{{slug}}"
     summary: "{{order}} · {{text}}"
-    sortable_fields: [order]
+    sortable_fields: [ order ]
     fields:
       - { label: The maxim, name: text, widget: text }
       - label: Where it came from
@@ -415,8 +411,7 @@ collections:
     label: Imagines
     label_singular: Image
     description: >-
-      Photographs, shown on the Imagines page with a caption and, if you want
-      one, a longer note. For engravings and paintings use Tabulae instead.
+      Photographs, shown on the Imagines page with a caption and, if you want one, a longer note. For engravings and paintings use Tabulae instead.
     folder: src/content/images
     extension: mdx
     format: frontmatter
@@ -424,7 +419,7 @@ collections:
     identifier_field: caption
     slug: "{{slug}}"
     summary: "{{order}} · {{caption}}"
-    sortable_fields: [order, caption]
+    sortable_fields: [ order, caption ]
     media_folder: "../../assets/images"
     public_folder: "../../assets/images"
     fields:
@@ -470,8 +465,7 @@ collections:
     label: Published papers
     label_singular: Paper
     description: >-
-      Papers and manuscripts. Add one here when it goes out, and paste the link
-      when it appears. This drives the Papers page and the downloadable CV.
+      Papers and manuscripts. Add one here when it goes out, and paste the link when it appears. This drives the Papers page and the downloadable CV.
     folder: src/content/papers
     extension: mdx
     format: frontmatter
@@ -479,7 +473,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{year}} · {{title}}"
-    sortable_fields: [year, title]
+    sortable_fields: [ year, title ]
     fields:
       - { label: Title, name: title, widget: string }
       - label: Authors
@@ -506,7 +500,10 @@ collections:
         name: url
         widget: string
         required: false
-        hint: "Where to read it. The title becomes a link when this is filled in."
+        hint: "The address only. A sentence with a link in it will not be accepted here."
+        pattern:
+          - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+          - Paste the address only, e.g. https://example.com/page — not a sentence.
       - { label: DOI, name: doi, widget: string, required: false }
       - label: One line on what it does
         name: summary
@@ -531,7 +528,7 @@ collections:
     identifier_field: degree
     slug: "{{slug}}"
     summary: "{{order}} · {{degree}}"
-    sortable_fields: [order]
+    sortable_fields: [ order ]
     fields:
       - { label: Degree or certificate, name: degree, widget: string }
       - { label: Institution, name: institution, widget: string }
@@ -552,7 +549,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{order}} · {{title}}"
-    sortable_fields: [order, title]
+    sortable_fields: [ order, title ]
     fields:
       - { label: Title, name: title, widget: string }
       - { label: Description, name: summary, widget: text, hint: "The fuller version, shown in the Appendix." }
@@ -568,8 +565,7 @@ collections:
     label: Instrumentarium
     label_singular: Group
     description: >-
-      The instrument plate on the home page. Each group is a numbered figure.
-      No bars, no percentages, no logos — that is the point of it.
+      The instrument plate on the home page. Each group is a numbered figure. No bars, no percentages, no logos — that is the point of it.
     folder: src/content/instrumentarium
     extension: mdx
     format: frontmatter
@@ -577,7 +573,7 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{order}} · {{title}}"
-    sortable_fields: [order, title]
+    sortable_fields: [ order, title ]
     fields:
       - { label: Group, name: title, widget: string, hint: "Languages, Deep learning, Evaluation…" }
       - label: Contents
@@ -600,8 +596,7 @@ collections:
     label: Instrumenta propria
     label_singular: Entry
     description: >-
-      Architectures and losses written from scratch. Each entry states the
-      design problem, then the decision.
+      Architectures and losses written from scratch. Each entry states the design problem, then the decision.
     folder: src/content/instrumenta
     extension: mdx
     format: frontmatter
@@ -609,7 +604,7 @@ collections:
     identifier_field: name
     slug: "{{slug}}"
     summary: "{{order}} · {{name}}"
-    sortable_fields: [order, name]
+    sortable_fields: [ order, name ]
     fields:
       - { label: Name, name: name, widget: string }
       - label: The design problem
@@ -625,8 +620,7 @@ collections:
         required: false
         field: { label: What was rejected, name: item, widget: string }
         hint: >-
-          Things that made the result worse. Negative results are the part
-          nobody publishes and everybody respects — leave empty if there are none.
+          Things that made the result worse. Negative results are the part nobody publishes and everybody respects — leave empty if there are none.
       - label: Order
         name: order
         widget: number
@@ -665,8 +659,7 @@ collections:
             name: notYet
             widget: string
             hint: >-
-              The line admitting what is missing. A skills list that visibly
-              excludes things is more credible than one that does not.
+              The line admitting what is missing. A skills list that visibly excludes things is more credible than one that does not.
       - name: colophon
         label: Colophon
         file: src/content/site/colophon.mdx
@@ -695,8 +688,8 @@ collections:
         fields:
           - { label: Heading, name: title, widget: string }
           - { label: Email, name: email, widget: string }
-          - { label: GitHub, name: github, widget: string }
-          - { label: LinkedIn, name: linkedin, widget: string }
+          - { label: GitHub, name: github, widget: string, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
+          - { label: LinkedIn, name: linkedin, widget: string, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
           - { label: Location, name: location, widget: string }
       - name: chronicle
         label: Chronicle coursework
@@ -717,14 +710,12 @@ collections:
             name: kicker
             widget: string
             hint: >-
-              The small line above the title. Say what the subject is — a
-              visitor should not have to guess that this is about deep learning.
+              The small line above the title. Say what the subject is — a visitor should not have to guess that this is about deep learning.
           - label: On the Elementa page
             name: lede
             widget: text
             hint: >-
-              Avoid naming a number of books here — you can add more, and the
-              text would go stale.
+              Avoid naming a number of books here — you can add more, and the text would go stale.
           - { label: On the home page, name: homeIntro, widget: text }
       - name: frontispiece
         label: Frontispiece
