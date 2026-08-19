@@ -101,7 +101,7 @@ const marginalia = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/marginalia' }),
   schema: z.object({
     entry: z.number(),                       // running folio number
-    kind: z.enum(['book', 'model', 'essay', 'note']),
+    kind: z.enum(['book', 'paper', 'model', 'essay', 'note']),
     title: z.string(),
     subject: z.string(),                     // what is under review
     summary: z.string(),                     // one line, shown in the index

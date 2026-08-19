@@ -6,7 +6,7 @@ import { getMarginalia } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
 const entries = await getMarginalia();
-const kinds = ['all', 'book', 'model', 'essay', 'note'] as const;
+const kinds = ['all', 'book', 'paper', 'model', 'essay', 'note'] as const;
 const counts = Object.fromEntries(
   kinds.map((k) => [k, k === 'all' ? entries.length : entries.filter((e) => e.data.kind === k).length])
 );

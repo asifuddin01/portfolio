@@ -47,6 +47,7 @@ collections:
         default: book
         options:
           - { label: "Book review", value: book }
+          - { label: "Research paper review", value: paper }
           - { label: "Model review", value: model }
           - { label: "Essay", value: essay }
           - { label: "Note", value: note }

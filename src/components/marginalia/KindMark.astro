@@ -1,17 +1,18 @@
 ---
-interface Props { kind: 'book' | 'model' | 'essay' | 'note' }
+interface Props { kind: 'book' | 'paper' | 'model' | 'essay' | 'note' }
 const { kind } = Astro.props;
 /** Each kind borrows one of the lesion data colours — the palette is
     already the site's coding system, so nothing new is introduced. */
 const COLOUR: Record<Props['kind'], string> = {
   book:  'var(--lesion-ves)',
+  paper: 'var(--lesion-he)',
   model: 'var(--lesion-ma)',
   essay: 'var(--lesion-ex)',
   note:  'var(--lesion-cws)',
 };
 ---
 <span class="km">
-  <span class="km-dot" style={`background:${COLOUR[kind]}`} aria-hidden="true"></span>
+  <span class="km-dot" style={`--dot:${COLOUR[kind]}`} aria-hidden="true"></span>
   {kind}
 </span>
 <style>
@@ -25,5 +26,15 @@ const COLOUR: Record<Props['kind'], string> = {
     text-transform: uppercase;
     color: var(--brass-text);
   }
-  .km-dot { width: 7px; height: 7px; flex: 0 0 auto; }
+  /* The lesion colours span a wide range of lightness, so some vanish
+     against one ground or the other — haemorrhage red was 1.4:1 at night,
+     exudate gold 1.9:1 on vellum. Mixing each toward --ink pushes every dot
+     away from the page in whichever theme is active, because --ink is dark
+     on vellum and light at night. 70/30 puts the worst case at 3:1. */
+  .km-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    background: color-mix(in srgb, var(--dot) 70%, var(--ink) 30%);
+  }
 </style>
