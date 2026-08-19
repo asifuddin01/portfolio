@@ -706,6 +706,20 @@ collections:
         fields:
           - { label: Heading, name: title, widget: string }
           - { label: Coursework, name: coursework, widget: text }
+      - name: elementa
+        label: Elementa introductions
+        file: src/content/site/elementa.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: On the Elementa page
+            name: lede
+            widget: text
+            hint: >-
+              Avoid naming a number of books here — you can add more, and the
+              text would go stale.
+          - { label: On the home page, name: homeIntro, widget: text }
       - name: frontispiece
         label: Frontispiece
         file: src/content/site/frontispiece.mdx

@@ -1,5 +1,6 @@
 ---
 import Chapter from './Chapter.astro';
+import { getEntry } from 'astro:content';
 import { getPropositions, getBooks, getBookIndex } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
@@ -10,15 +11,13 @@ const recent = [...published]
   .sort((a, b) => b.data.updated.getTime() - a.data.updated.getTime())
   .slice(0, 3);
 const numeralFor = (id: string): string => toRoman(bookIndex.get(id)?.n ?? 0);
+const meta = await getEntry('site', 'elementa');
 
 ---
 <Chapter n={7} title="Elementa" id="elementa">
-  <p class="el-lede codex-measure" data-reveal>
-    A structured corpus on transformers, vision and vision-language models, built
-    to be read in order. Entries are propositions, not posts: each states a claim,
-    names the propositions it depends on, and carries one figure. If the figure
-    cannot be drawn, the proposition is not ready to be written.
-  </p>
+  {meta?.data.homeIntro && (
+    <p class="el-lede codex-measure" data-reveal>{meta.data.homeIntro}</p>
+  )}
 
   <ol class="el-books" data-reveal-stagger>
     {books.map((b, i) => (

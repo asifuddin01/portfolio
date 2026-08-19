@@ -1,50 +1,43 @@
 ---
 plate: 3
-title: Renal length from thick-slice CT
-fullTitle: >-
-  Automated Renal Length Measurement from Thick-Slice Non-Contrast CT:
-  A Principal-Axis Approach Validated Against Radiologist Reports
-subtitle: Measuring a tilted organ through 8mm slices
+title: Automated Renal Analysis
+fullTitle: Automated Renal Analysis and Report Generation from Thick-Slice Non-Contrast CT
+subtitle: Automated Renal Measurement, Kidney Stone and Cyst Segmentation, and Radiology Report Generation from Thick-Slice Non-Contrast CT
 status: in-preparation
 disclosure: embargoed
-year: "2026"
-supervisors: ["Niloy Farhan"]
+year: '2026'
+supervisors:
+  - Niloy Farhan
 coauthors: []
-datasets: ["1,062 KUB CT studies with paired radiologist reports"]
-abstract: "[SUPPLY]"
-citation: null
-paperUrl: null
-repoUrl: null
+datasets:
+  - 1,062 KUB CT studies with paired radiologist reports
+abstract: '[SUPPLY]'
+citation: ''
+paperUrl: ''
+repoUrl: ''
 metrics: []
 ---
 
 ## The problem
 
-Renal length is a routine clinical measurement and an awkward one to automate on
-thick-slice non-contrast CT. Voxels are anisotropic — slices sit 8mm apart — and
-kidneys are not axis-aligned. They sit at an angle, so counting axial slices
-measures the projection of the kidney onto the scanner's z-axis rather than the
-kidney.
+Renal measurement is a routine part of abdominal imaging, but it is difficult to automate reliably from thick-slice non-contrast CT. With slices spaced 8 mm apart, the voxels are highly anisotropic. The kidneys are also angled rather than aligned with the scanner axes, so measuring across axial slices captures a projection of the kidney rather than its true longitudinal extent.
 
 ## Approach
 
-Segment the kidneys with a pretrained model, then compute length as the
-**principal-axis extent of the mask in world-millimetre coordinates**. The
-measurement follows the organ's own long axis, and it is expressed in millimetres
-derived from the affine rather than in slices.
+The kidneys are first segmented using a pretrained model. Renal length is then calculated from the **principal-axis extent of the kidney mask in world-millimetre coordinates**. This allows the measurement to follow the kidney's own orientation rather than the scanner's axes. The final measurement is reported in millimetres using the image affine, rather than as a number of slices.
 
-Reference values were parsed from free-text radiologist reports. The validation
-cohort was stratified deliberately to over-represent the cases where the
-measurement is hard and matters: hydronephrosis, staghorn calculi, atrophic
-kidneys.
+The system is designed as a broader renal analysis pipeline, including **renal measurement, stone and cyst segmentation, and automated report generation** from thick-slice CT.
 
 ## The dataset is part of the contribution
 
-De-identified, with each case linking a volumetric NIfTI scan to its DICOM-derived
-metadata and its report, and carrying multi-label annotations for urolithiasis,
-hydronephrosis, renal cysts, pyelonephritis, cystitis, nephrocalcinosis, renal
-masses, and normal studies.
+The dataset is de-identified, with each case linking a volumetric NIfTI scan to its DICOM-derived metadata and radiologist report. It includes multi-label annotations for **urolithiasis, hydronephrosis, renal cysts, pyelonephritis, cystitis, nephrocalcinosis, renal masses, and normal studies**.
+
+Radiologist reports are also used as the reference source for renal measurements and automated report generation.
+
+## Validation
+
+The validation cohort was deliberately stratified to include more cases where renal measurement is particularly challenging and clinically relevant, including **hydronephrosis, staghorn calculi, and atrophic kidneys**.
 
 ## Status
 
-In preparation. Results are held until publication.
+**In preparation. Results are held until publication.**

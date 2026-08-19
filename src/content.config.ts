@@ -124,6 +124,9 @@ const site = defineCollection({
     email: z.string().optional(),
     github: optionalUrl,
     linkedin: optionalUrl,
+    // Elementa ledes.
+    lede: z.string().optional(),
+    homeIntro: z.string().optional(),
     // CV singleton.
     summary: z.string().optional(),
     languages: z.string().optional(),

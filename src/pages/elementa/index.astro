@@ -2,12 +2,14 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import PropositionCard from '../../components/elementa/PropositionCard.astro';
+import { getEntry } from 'astro:content';
 import { getPropositions, getBooks } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
 const props = await getPropositions();
 
 const books = await getBooks();
+const meta = await getEntry('site', 'elementa');
 ---
 <BaseLayout
   title="Elementa — Md. Asif Uddin"
@@ -18,12 +20,9 @@ const books = await getBooks();
     <header class="el-head">
       <p class="el-kicker" data-reveal>The teaching corpus</p>
       <h1 class="el-h1" data-press>Elementa</h1>
-      <p class="el-lede codex-measure" data-reveal>
-        Four books, read in order, like Euclid. Each entry is a proposition rather
-        than a post: it states a claim, names the propositions it depends on, and
-        carries one figure. If the figure cannot be drawn, the proposition is not
-        ready to be written.
-      </p>
+      {meta?.data.lede && (
+        <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>
+      )}
       <p class="el-figlink" data-reveal>
         <a class="link" href="/elementa/figures">Every figure, with permalinks →</a>
       </p>

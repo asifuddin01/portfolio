@@ -1,27 +1,80 @@
 ---
 plate: 1
 title: HierarchiRetina
-fullTitle: >-
-  HierarchiRetina: A Lesion-Aware Hierarchical Deep Learning Framework Enabling
-  Interpretable Diabetic Retinopathy Severity Assessment via Multi-Stage Retinal
-  Fundus Image Analysis
+fullTitle: 'HierarchiRetina: A Lesion-Aware Hierarchical Deep Learning Framework Enabling Interpretable Diabetic Retinopathy Severity Assessment via Multi-Stage Retinal Fundus Image Analysis'
 subtitle: Interpretable diabetic retinopathy grading from retinal photographs
 status: deposited
 disclosure: public
-year: "2026"
-supervisors: ["Rafeed Rahman", "Niloy Farhan", "Md. Golam Rabiul Alam"]
-coauthors: ["Hosni Rabbani", "Shahrin Tabassum"]
-datasets: ["EyePACS","APTOS 2019","Messidor-2","IDRiD","DDR","FGADR","DRIVE","STARE","MAPLES-DR","HRF","E-Ophtha"]
-abstract: "[SUPPLY — paste the thesis abstract verbatim]"
-citation: "[SUPPLY]"
-paperUrl: null
-repoUrl: null
+year: '2026'
+supervisors:
+  - Rafeed Rahman
+  - Niloy Farhan
+  - Md. Golam Rabiul Alam
+coauthors:
+  - Hosni Rabbani
+  - Shahrin Tabassum
+datasets:
+  - EyePACS
+  - APTOS 2019
+  - Messidor-2
+  - IDRiD
+  - DDR
+  - FGADR
+  - DRIVE
+  - STARE
+  - MAPLES-DR
+  - HRF
+  - E-Ophtha
+abstract: |-
+  Diabetic Retinopathy (DR) is a leading cause of preventable blindness. It affects
+  millions of people with diabetes, especially where eye care is hard to reach. Most
+  deep learning systems treat DR assessment as a single end-to-end classification task.
+  This approach does not reflect how the disease is handled in the clinic. It blends
+  screening with severity staging and it produces opaque predictions that doctors find
+  hard to trust.
+  We present HierarchiRetina, a three-stage framework that mirrors the way a clini-
+  cian works. Stage I uses a ConvNeXt V2 Large model to quickly separate healthy
+  retinas from diseased ones. Stage II runs only on diseased images. It produces pixel-
+  level masks for four lesion types, microaneurysms (MA), haemorrhages (HE), hard
+  exudates (EX) and cotton-wool spots (CWS), along with the retinal vessels. Stage
+  III is LG-DRG (Lesion-Guided DR-Grader). It fuses the original image with the five
+  masks and uses two heads: one for severity (Mild, Moderate, Severe, Proliferative)
+  and one for gradability, which routes unreadable images to a human reviewer.
+  Three design choices set this work apart. The lesion model uses experts of different
+  types, not copies of one block, so each lesion shape is handled by a specialist filter.
+  The grader lets the masks guide attention through a gate that starts switched off, so
+  the model learns to trust the masks only once they become reliable. The dual-head
+  split moves unreadable images off the severity scale instead of mis-ranking them on
+  it.
+  We evaluate HierarchiRetina on six public datasets at once (EyePACS, DDR, AP-
+  TOS 2019, Messidor-2, IDRiD, FGADR), under a strict end-to-end rule that counts
+  every screening miss as a final grading error. Even with a single early-stopped fold
+  and this harder protocol, our system sets a new state-of-the-art on the official DDR
+  test split, surpassing the strong published FA+KC-Net+R2 benchmark reported by
+  Tian and colleagues [50]. The lesion masks also make the system interpretable: a
+  clinician can see which lesions were detected, where they are and how they shaped
+  the final grade. Together, these results show that a staged, lesion-aware design can
+  match clinical reasoning, deliver strong grading accuracy and earn the trust needed
+  for real-world screening.
+citation: '[SUPPLY]'
+paperUrl: ''
+repoUrl: ''
 metrics:
-  - { label: "Macro-AUC", value: "0.9422" }
-  - { label: "Ungradable detection AUC", value: "0.9995" }
-  - { label: "DDR 5-class QWK, 5-fold ensemble", value: "0.8533", note: "n = 3,759; published benchmark on the same split, 0.8617" }
-  - { label: "End-to-end pipeline QWK", value: "0.7942" }
-  - { label: "Per-dataset QWK", value: "0.83 – 0.93", note: "FGADR to APTOS" }
+  - label: Macro-AUC
+    value: '0.9422'
+    note: ''
+  - label: Ungradable detection AUC
+    value: '0.9995'
+    note: ''
+  - label: DDR 5-class QWK, 5-fold ensemble
+    value: '0.8533'
+    note: n = 3,759; published benchmark on the same split, 0.8617
+  - label: End-to-end pipeline QWK
+    value: '0.7942'
+    note: ''
+  - label: Per-dataset QWK
+    value: 0.83 – 0.93
+    note: FGADR to APTOS
 ---
 
 ## The decision that set the number
@@ -38,8 +91,8 @@ head produced **0.8533** — lower, honest, and comparable to the 0.8617 benchma
 on the identical split.
 
 It is also the better clinical design. An ungradable photograph should be routed
-to a human, not assigned a fabricated grade. The pipeline now says *I cannot read
-this* instead of guessing, and that is a different and more useful failure.
+to a human, not assigned a fabricated grade. The pipeline now says \*I cannot read
+this\* instead of guessing, and that is a different and more useful failure.
 
 ## Stage I · Screening
 
@@ -89,7 +142,7 @@ ordinal regressor over grades 1–4. Gradability is a separate binary head, for 
 reason given at the top of this page. Final results come from a 5-fold ensemble.
 
 Because the masks are inputs rather than post-hoc explanations, the answer to
-*why did it say severe* is a set of segmentations you can look at.
+_why did it say severe_ is a set of segmentations you can look at.
 
 ## Limitations
 

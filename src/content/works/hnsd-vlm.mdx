@@ -1,20 +1,54 @@
 ---
 plate: 2
-title: HNSD-VLM
-fullTitle: >-
-  HNSD-VLM: Hierarchical Novel Species Discovery in Vision-Language Models,
-  Uncertainty-Guided Taxonomic Placement of Unknown Species
+title: Rank Radii Transfer as Quantiles
+fullTitle: |-
+  Rank Radii Transfer as Quantiles: Taxonomic Placement and
+  Sub-Taxonomy Construction for Unseen Species
 subtitle: Placing unseen species inside the taxonomy, not in flat clusters
 status: in-preparation
 disclosure: embargoed
-year: "2026"
-supervisors: ["Niloy Farhan"]
+year: '2026'
+supervisors:
+  - Niloy Farhan
 coauthors: []
-datasets: ["iNaturalist 2021 — 550 species, 11 supercategories"]
-abstract: "[SUPPLY]"
-citation: null
-paperUrl: null
-repoUrl: null
+datasets:
+  - iNaturalist 2021 — 550 species, 11 supercategories
+abstract: |-
+  A cluster is not a determination. Generalized category dis-
+  covery will sort unfamiliar images into clean groups, and
+  the groups are often correct, but a taxonomist reading them
+  still cannot say whether the third group is a new genus of a
+  known family or the first specimen of something nobody has
+  described. We recast novel species discovery as taxonomic
+  placement: name the deepest rank at which a new species can
+  defensibly be attached to the known taxonomy, or refuse.
+  Refusal is not an edge case. Across a 550-species bench-
+  mark built from iNaturalist-2021, only 4 of 45 novel species
+  have a congeneric relative in the reference set. Eighteen attach
+  at family, nineteen at order. A further 100 species come from
+  two clades withheld in full, and those have no ancestor at any
+  rank, so the only correct output is that no attachment exists.
+  The method follows from one property of the embedding.
+  Similarity between species falls monotonically with taxonomic
+  distance, so a rank behaves like a radius, and a dendrogram cut
+  at that radius recovers that rank. The radius does not survive
+  the move to a new clade. Densities differ, and a threshold
+  calibrated on known species merges 88 true genera down to
+  48. Its quantile does survive. Read as a position in the local
+  similarity distribution rather than as a similarity, the same
+  construction recovers all 88, with no taxon count supplied
+  at any rank, and 86 to 89 genera at a mean genus NMI of
+  0.973 ±0.004 across five independent clade hold-outs.
+  Placement into the existing taxonomy reaches hierarchical
+  F1 of 0.715 against 0.534 for nearest-neighbour attachment,
+  and cuts mean rank error from 1.511 to 0.467. Then it stops.
+  Six interventions failed to move parent accuracy, because
+  when a species’ own family is absent from the reference set, a
+  sister family in the same order is frequently the closer match.
+  That is a property of what images encode, not of the classifier.
+citation: ''
+paperUrl: ''
+repoUrl: ''
 metrics: []
 ---
 
@@ -23,11 +57,11 @@ metrics: []
 A closed-set classifier meeting an organism nobody trained it on will name it
 anyway, confidently and wrongly. The usual repair is open-set recognition, which
 detects the unknown and then drops it into an unlabelled cluster. For a biologist
-that is barely an improvement: *unknown* is not a useful answer when the question
-is *what is this, roughly*.
+that is barely an improvement: _unknown_ is not a useful answer when the question
+is _what is this, roughly_.
 
-HNSD-VLM detects species unseen during training and then places them **inside the
-taxonomic hierarchy** — this is a beetle of some kind, attaching at family level —
+HNSD-VLM detects species unseen during training and then places them **inside the**
+**taxonomic hierarchy** — this is a beetle of some kind, attaching at family level —
 rather than into a flat pile of rejects.
 
 ## Approach
