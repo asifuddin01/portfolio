@@ -120,3 +120,9 @@ export async function getEducation(): Promise<CollectionEntry<'education'>[]> {
 export async function getProjects(): Promise<CollectionEntry<'projects'>[]> {
   return (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 }
+
+/** Photographs, in display order. */
+export async function getImages(): Promise<CollectionEntry<'images'>[]> {
+  const all = await getCollection('images');
+  return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+}

@@ -235,7 +235,26 @@ const projects = defineCollection({
   }),
 });
 
+/**
+ * Photographs. Separate from `art`, which is the interleaved plate material
+ * with its own treatments and placements — these are simply pictures, shown
+ * as they are, with a caption and an optional note.
+ */
+const images = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/images' }),
+  schema: ({ image }) =>
+    z.object({
+      order: z.number().default(1),
+      image: image(),
+      caption: z.string(),
+      about: z.string().optional(),
+      alt: z.string().optional(),
+      credit: z.string().optional(),
+      status: z.enum(['draft', 'published']).default('published'),
+    }),
+});
+
 export const collections = {
   works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
-  papers, education, projects,
+  papers, education, projects, images,
 };

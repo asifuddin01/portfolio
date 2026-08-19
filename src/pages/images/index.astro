@@ -1,0 +1,118 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getImages } from '../../lib/collections';
+import { AUTHOR, toRoman } from '../../consts';
+
+const images = await getImages();
+---
+<BaseLayout
+  title={`Images — ${AUTHOR}`}
+  description="Photographs, each with a caption and, where there is more to say, a note."
+  folio="I"
+>
+  <div class="codex im">
+    <header class="im-head">
+      <p class="im-kicker" data-reveal>Photographs</p>
+      <h1 class="im-h1" data-press>Images</h1>
+      <p class="im-lede codex-measure" data-reveal>
+        Pictures rather than plates. The engravings and paintings live in the
+        <a class="link" href="/tabulae">Tabulae</a>; these are photographs, shown
+        as they are.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {images.length === 0 ? (
+      <p class="im-empty">No images yet.</p>
+    ) : (
+      <ol class="im-list">
+        {images.map((entry, i) => {
+          const d = entry.data;
+          return (
+            <li class="im-item" id={entry.id}>
+              <figure class="im-fig" data-reveal>
+                <div class="im-frame plate-art">
+                  <Image
+                    src={d.image}
+                    alt={d.alt && d.alt.trim() !== '' ? d.alt : d.caption}
+                    widths={[360, 640, 960]}
+                    sizes="(max-width: 700px) 92vw, 28rem"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    quality={80}
+                  />
+                </div>
+                <figcaption class="im-cap">
+                  <span class="im-n">{toRoman(i + 1)}</span>
+                  <span class="im-caption">{d.caption}</span>
+                  {d.credit && <span class="im-credit">{d.credit}</span>}
+                </figcaption>
+              </figure>
+              {d.about && <div class="im-about" data-reveal><p>{d.about}</p></div>}
+            </li>
+          );
+        })}
+      </ol>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .im { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .im-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .im-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .im-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .im-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4rem; }
+  .im-item {
+    display: grid;
+    gap: 2rem clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+    scroll-margin-top: 5rem;
+  }
+  @media (min-width: 860px) {
+    .im-item { grid-template-columns: minmax(0, 28rem) minmax(0, 1fr); }
+  }
+
+  .im-fig { margin: 0; display: grid; gap: 0.85rem; }
+  .im-frame {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    background: var(--paper-raised);
+    padding: clamp(0.6rem, 1.8vw, 1rem);
+    overflow: hidden;
+  }
+  /* Photographs are shown as they are — no blend mode, no toning. */
+  .im-frame :global(img) { width: 100%; height: auto; display: block; }
+
+  .im-cap {
+    display: grid;
+    gap: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.65;
+  }
+  .im-n { color: var(--brass-text); letter-spacing: 0.18em; }
+  .im-caption { color: var(--ink); font-style: italic; }
+  .im-credit { color: var(--ink-soft); }
+
+  .im-about {
+    font-size: var(--body-size);
+    line-height: var(--body-leading);
+    max-width: var(--measure);
+    color: var(--ink);
+  }
+  .im-about :global(p) { margin: 0 0 1em; }
+  .im-about :global(p:last-child) { margin-bottom: 0; }
+
+  .im-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+</style>

@@ -386,6 +386,61 @@ collections:
         hint: "Where it came from, what is happening in it, why it is here."
 
   # ------------------------------------------------------------------
+  - name: images
+    label: Images
+    label_singular: Image
+    description: >-
+      Photographs, shown on the Images page with a caption and, if you want
+      one, a longer note. For engravings and paintings use Tabulae instead.
+    folder: src/content/images
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: caption
+    slug: "{{slug}}"
+    summary: "{{order}} · {{caption}}"
+    sortable_fields: [order, caption]
+    media_folder: "../../assets/images"
+    public_folder: "../../assets/images"
+    fields:
+      - label: Image
+        name: image
+        widget: image
+        hint: "Uploaded images are optimised automatically."
+      - label: Caption
+        name: caption
+        widget: string
+        hint: "Shown under the picture. Required."
+      - label: About this image
+        name: about
+        widget: text
+        required: false
+        hint: "Optional. Where it was taken, what is happening, why it is here."
+      - label: Alt text
+        name: alt
+        widget: string
+        required: false
+        hint: "For screen readers. Leave blank to use the caption."
+      - label: Credit
+        name: credit
+        widget: string
+        required: false
+        hint: "Photographer or source, if there is one to name."
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
   - name: papers
     label: Published papers
     label_singular: Paper
