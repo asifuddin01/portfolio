@@ -25,6 +25,7 @@ npm run verify     # build + a11y audit + contrast check + typecheck
 | `/marginalia` | The commonplace book — reviews and notes |
 | `/marginalia/[slug]` | One entry |
 | `/vitae` | Printable CV (`@media print` styles included) |
+| `/admin` | Content manager — write and publish from the browser |
 
 ## The disclosure guard — read this before editing a plate
 
@@ -37,32 +38,56 @@ memory. Do not soften it to a warning, and do not remove it. To confirm it still
 works, add a metric to any embargoed plate and run `npm run build` — the build
 must fail with `Plate N is embargoed and must not carry metrics.`
 
-## Adding content
+## Editing the site
 
-**A marginalia entry** (book review, model review, essay, note) — create
-`src/content/marginalia/<slug>.mdx`:
+Everything you publish routinely is edited at **`/admin`** in the browser. No
+files, no terminal.
 
-```yaml
----
-entry: 4                      # running number; highest shows first
-kind: book                    # book | model | essay | note
-title: The ladder is the argument
-subject: Judea Pearl — The Book of Why
-summary: One line, shown in the index.
-status: published             # `draft` is hidden from production builds
-updated: 2026-08-20
-source: null                  # or a URL
----
-```
+Sveltia CMS commits MDX straight into this repository, so what you edit *is*
+what the site builds from — there is no separate database, and the whole history
+is in git. Saving triggers a Cloudflare Pages rebuild; the change is live in a
+minute or two.
 
-**A proposition** — create `src/content/elementa/book-<n>-prop-<m>.mdx`. Every
-proposition needs a figure; register the component in `src/lib/figures.ts` and
-name it in the `figure` frontmatter field. If the figure cannot be drawn, the
-proposition is not ready to be written.
+What you can edit there:
 
-**A figure** — add an `.astro` component under `src/components/figures/` using
-palette tokens only (never a hardcoded black or white, so it reads in both
-themes), then register it in `src/lib/figures.ts` to give it a permalink.
+| Section | What |
+|---|---|
+| Marginalia | Book reviews, model reviews, essays, notes — with image upload |
+| Elementa | Propositions, including the `Given` dependency links |
+| Plates | Abstracts, citations, paper and repo links, results |
+| Site text | The Prologue, and the frontispiece epigraph and role line |
+
+Images uploaded through the editor land in `public/uploads/` and are referenced
+as `/uploads/<name>`. They are framed like a plate by `.prose img`.
+
+### Signing in
+
+Two options; the CMS offers both on its login screen.
+
+1. **Access token** — no infrastructure. In GitHub, create a fine-grained
+   personal access token scoped to this repository only, with
+   *Contents: read and write*. Paste it into **Sign In Using Access Token**.
+   Stored in that browser only.
+2. **Sign in with GitHub** — a real button. Deploy the OAuth broker in
+   `worker/`, register a GitHub OAuth App, then uncomment `base_url` in
+   `public/admin/config.yml`. Setup is in the deployment guide.
+
+`local_backend: true` is also set, so running `npm run dev` and opening
+`/admin` lets you edit the files on disk directly with no login at all.
+
+### Two things the CMS cannot do
+
+- **Add a figure.** Figures are hand-written SVG components; a new one needs a
+  developer. The `Figure` dropdown lists what is registered in
+  `src/lib/figures.ts`.
+- **Add or delete a plate.** Plate numbers drive the whole compendium, so the
+  Plates collection is edit-only by design.
+
+### If a save does not appear on the site
+
+The build refused it. That is the guard below doing its job, and Cloudflare
+keeps serving the last good version in the meantime — the site never breaks.
+Check the Pages build log for the reason.
 
 ## Design system
 
@@ -115,8 +140,10 @@ Marked `[SUPPLY]` in the content files:
 - Repository URLs.
 - Elementa propositions beyond the three Book I seeds.
 
-The three `src/content/marginalia/*.mdx` entries are **seeds written to
-demonstrate the format** — edit or replace them with your own.
+All of the above are editable at `/admin` — none of it needs a code change.
+
+The three marginalia entries are **seeds written to demonstrate the format** —
+edit or replace them from `/admin`.
 
 Set the real domain in `src/consts.ts` (`SITE`) before deploying; it drives
 canonical URLs, the sitemap and Open Graph tags.

@@ -2,6 +2,21 @@ import { defineCollection } from 'astro:content';
 import { z } from 'zod';
 import { glob } from 'astro/loaders';
 
+/**
+ * Clearing an optional field in /admin writes an empty string rather than
+ * removing the key, and an empty string is not a valid URL. Without these,
+ * the first time anyone blanked a paper link the build would fail.
+ */
+const optionalUrl = z
+  .union([z.url(), z.literal(''), z.null()])
+  .optional()
+  .transform((v) => (v ? v : null));
+
+const optionalText = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => (v && v.trim() !== '' ? v : null));
+
 const works = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/works' }),
   schema: z.object({
@@ -16,9 +31,9 @@ const works = defineCollection({
     coauthors: z.array(z.string()).default([]),
     datasets: z.array(z.string()).default([]),
     abstract: z.string(),                    // verbatim from the paper
-    citation: z.string().nullable().default(null),
-    paperUrl: z.url().nullable().default(null),
-    repoUrl: z.url().nullable().default(null),
+    citation: optionalText,
+    paperUrl: optionalUrl,
+    repoUrl: optionalUrl,
     metrics: z.array(z.object({
       label: z.string(),
       value: z.string(),
@@ -31,7 +46,10 @@ const works = defineCollection({
     if (data.disclosure === 'embargoed' && data.metrics.length > 0) {
       ctx.addIssue({
         code: 'custom',
-        message: `Plate ${data.plate} is embargoed and must not carry metrics.`,
+        message:
+          `Plate ${data.plate} ("${data.title}") is embargoed and must not ` +
+          `carry metrics. Either remove every row from Results, or change ` +
+          `Disclosure to "public" if these numbers are genuinely publishable.`,
       });
     }
   }),
@@ -64,8 +82,25 @@ const marginalia = defineCollection({
     summary: z.string(),                     // one line, shown in the index
     status: z.enum(['draft', 'published']),
     updated: z.date(),
-    source: z.url().nullable().default(null),
+    source: optionalUrl,
   }),
 });
 
-export const collections = { works, elementa, marginalia };
+/**
+ * Editable page prose. These exist as content rather than as JSX so they can
+ * be changed from /admin without touching the codebase.
+ */
+const site = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/site' }),
+  schema: z.object({
+    title: z.string(),
+    dropCap: z.boolean().default(false),
+    // Frontispiece-only fields.
+    role: z.string().optional(),
+    epigraph: z.string().optional(),
+    attribution: z.string().optional(),
+    location: z.string().optional(),
+  }),
+});
+
+export const collections = { works, elementa, marginalia, site };

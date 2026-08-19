@@ -1,0 +1,253 @@
+# Sveltia CMS — the editing interface at /admin.
+#
+# Content is committed straight to the repository as MDX, so nothing here is a
+# separate database: what you edit is what the site is built from. Saving
+# triggers a rebuild on Cloudflare Pages, live in a minute or two.
+
+backend:
+  name: github
+  repo: asifuddin01/portfolio          # ← change to your GitHub user/repo
+  branch: main
+  # Uncomment once the auth worker in worker/ is deployed; that turns on the
+  # one-click "Sign in with GitHub" button. Until then, use "Sign In Using
+  # Access Token" with a fine-grained GitHub token.
+  # base_url: https://codex-auth.YOUR-SUBDOMAIN.workers.dev
+
+# Lets you edit locally with `npm run dev` and no login at all.
+local_backend: true
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+site_url: https://mdasifuddin.com
+display_url: https://mdasifuddin.com
+
+collections:
+  # ------------------------------------------------------------------
+  - name: marginalia
+    label: Marginalia
+    label_singular: Entry
+    description: >-
+      Book reviews, model reviews, essays and notes. Newest folio number
+      appears first on the site.
+    folder: src/content/marginalia
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{entry}} · {{kind}} — {{title}}"
+    sortable_fields: [entry, updated, title]
+    view_groups:
+      - label: Kind
+        field: kind
+    fields:
+      - label: Kind
+        name: kind
+        widget: select
+        default: book
+        options:
+          - { label: "Book review", value: book }
+          - { label: "Model review", value: model }
+          - { label: "Essay", value: essay }
+          - { label: "Note", value: note }
+      - label: Title
+        name: title
+        widget: string
+        hint: "The headline. Assert something — it becomes the page title."
+      - label: Subject
+        name: subject
+        widget: string
+        hint: "What is under review, e.g. 'Judea Pearl — The Book of Why'."
+      - label: Summary
+        name: summary
+        widget: text
+        hint: "One line. Shown under the title in the index."
+      - label: Folio number
+        name: entry
+        widget: number
+        value_type: int
+        min: 1
+        hint: "Running number. Use the next one up from the highest existing entry."
+      - label: Status
+        name: status
+        widget: select
+        default: draft
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+      - label: Date
+        name: updated
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - label: Source link
+        name: source
+        widget: string
+        required: false
+        hint: "Optional. A full URL, or leave blank."
+      - label: Review
+        name: body
+        widget: markdown
+        hint: "Use the image button in the toolbar to upload and place pictures."
+
+  # ------------------------------------------------------------------
+  - name: elementa
+    label: Elementa
+    label_singular: Proposition
+    description: >-
+      The teaching corpus. Every proposition needs a figure; if the figure
+      cannot be drawn, the proposition is not ready to be written.
+    folder: src/content/elementa
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: statement
+    slug: "book-{{fields.book}}-prop-{{fields.proposition}}"
+    summary: "Book {{book}} · Prop {{proposition}} — {{statement}}"
+    sortable_fields: [book, proposition, updated]
+    fields:
+      - label: Book
+        name: book
+        widget: select
+        value_type: int
+        options:
+          - { label: "I — Foundations", value: 1 }
+          - { label: "II — Vision", value: 2 }
+          - { label: "III — Vision-language", value: 3 }
+          - { label: "IV — Practice", value: 4 }
+      - label: Proposition number
+        name: proposition
+        widget: number
+        value_type: int
+        min: 1
+      - label: Statement
+        name: statement
+        widget: string
+        hint: "The claim, in one sentence. This is the page title."
+      - label: Given
+        name: given
+        widget: relation
+        collection: elementa
+        search_fields: [statement]
+        display_fields: [statement]
+        value_field: "{{slug}}"
+        multiple: true
+        required: false
+        hint: "Propositions this one depends on. Builds the dependency graph."
+      - label: Figure
+        name: figure
+        widget: select
+        required: false
+        options:
+          - FigTokenBoundary
+          - FigAttentionWeights
+          - FigPermutation
+          - FigPipelineHierarchiRetina
+        hint: "Registered in src/lib/figures.ts. A new figure needs a developer."
+      - label: Status
+        name: status
+        widget: select
+        default: draft
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+      - label: Updated
+        name: updated
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - label: Demonstration
+        name: body
+        widget: markdown
+
+  # ------------------------------------------------------------------
+  - name: works
+    label: Plates
+    label_singular: Plate
+    description: >-
+      The four research plates. You can edit these, but you cannot add or
+      delete them here — the plate numbers drive the whole compendium.
+    folder: src/content/works
+    extension: mdx
+    format: frontmatter
+    create: false
+    delete: false
+    identifier_field: title
+    summary: "Plate {{plate}} — {{title}}"
+    sortable_fields: [plate]
+    fields:
+      - { label: Plate number, name: plate, widget: number, value_type: int, min: 1 }
+      - { label: Short title, name: title, widget: string }
+      - { label: Full title, name: fullTitle, widget: text }
+      - { label: Subtitle, name: subtitle, widget: string }
+      - label: Status
+        name: status
+        widget: select
+        options: [deposited, in-preparation, proposal-accepted]
+      - label: Disclosure
+        name: disclosure
+        widget: select
+        options: [public, embargoed]
+        hint: >-
+          EMBARGOED plates must have an empty Results table. Adding a result to
+          an embargoed plate will deliberately fail the build so unpublished
+          numbers cannot leak.
+      - { label: Year, name: year, widget: string }
+      - { label: Supervisors, name: supervisors, widget: list, field: { label: Name, name: name, widget: string } }
+      - { label: Co-authors, name: coauthors, widget: list, required: false, field: { label: Name, name: name, widget: string } }
+      - { label: Datasets, name: datasets, widget: list, required: false, field: { label: Dataset, name: dataset, widget: string } }
+      - label: Abstract
+        name: abstract
+        widget: text
+        hint: "Verbatim from the paper. Never paraphrase or shorten it."
+      - { label: Citation, name: citation, widget: text, required: false }
+      - { label: Paper URL, name: paperUrl, widget: string, required: false }
+      - { label: Repository URL, name: repoUrl, widget: string, required: false }
+      - label: Results
+        name: metrics
+        widget: list
+        required: false
+        label_singular: Result
+        summary: "{{fields.label}} — {{fields.value}}"
+        hint: "Leave completely empty for embargoed plates. The build enforces this."
+        fields:
+          - { label: Measure, name: label, widget: string }
+          - { label: Value, name: value, widget: string }
+          - { label: Note, name: note, widget: string, required: false }
+      - { label: Chapter body, name: body, widget: markdown }
+
+  # ------------------------------------------------------------------
+  - name: site
+    label: Site text
+    description: Prose that appears on the home page.
+    files:
+      - name: prologue
+        label: Prologue
+        file: src/content/site/prologue.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: Drop cap
+            name: dropCap
+            widget: boolean
+            default: true
+            hint: "Sets the first letter three lines deep, as a printed book does."
+          - label: Prologue
+            name: body
+            widget: markdown
+            hint: "Use the image button in the toolbar to add pictures."
+      - name: frontispiece
+        label: Frontispiece
+        file: src/content/site/frontispiece.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - { label: Role line, name: role, widget: text }
+          - { label: Epigraph, name: epigraph, widget: text }
+          - { label: Attributed to, name: attribution, widget: string }
+          - { label: Location, name: location, widget: string }

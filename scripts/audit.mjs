@@ -15,6 +15,10 @@ let fail = 0;
 const problems = [];
 
 for await (const file of walk('dist')) {
+  // /admin is the CMS shell, not a page of the book: no <main>, no h1,
+  // and it is noindexed. The public-site rules do not apply to it.
+  if (file.includes(`dist${path.sep}admin${path.sep}`)) continue;
+
   const html = await readFile(file, 'utf8');
   const page = file.replace(/^dist/, '').replace(/index\.html$/, '') || '/';
 

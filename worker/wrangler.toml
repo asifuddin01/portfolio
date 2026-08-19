@@ -1,0 +1,15 @@
+name = "codex-auth"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+workers_dev = true
+
+[vars]
+# Every origin permitted to receive a token. Add your real domain here.
+ALLOWED_ORIGINS = "https://mdasifuddin.com,http://localhost:4321"
+
+# "public_repo" suits a public repository. Change to "repo" if yours is private.
+GITHUB_SCOPE = "public_repo"
+
+# Secrets are NOT stored here. Set them once with:
+#   npx wrangler secret put GITHUB_CLIENT_ID
+#   npx wrangler secret put GITHUB_CLIENT_SECRET

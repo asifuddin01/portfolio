@@ -1,0 +1,28 @@
+---
+/**
+ * The content manager.
+ *
+ * A real Astro route rather than a file in public/, so `/admin` resolves in
+ * `astro dev` as well as on Cloudflare Pages. The bundle and config.yml stay
+ * in public/admin/ and are served as static assets.
+ */
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Codex — content manager</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      body { margin: 0; background: #E7E1CE; }
+      @media (prefers-color-scheme: dark) { body { background: #131110; } }
+    </style>
+  </head>
+  <body>
+    <!-- Vendored by scripts/sync-cms.mjs; never loaded from a CDN, because
+         this script holds a token with write access to the repository. -->
+    <script is:inline type="module" src="/admin/sveltia-cms.js"></script>
+  </body>
+</html>

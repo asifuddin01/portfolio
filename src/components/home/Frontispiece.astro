@@ -1,19 +1,21 @@
 ---
 import ArtPlate from '../art/ArtPlate.astro';
+import { getEntry } from 'astro:content';
 import { AUTHOR, LOCATION } from '../../consts';
 
-const EPIGRAPH = 'Correlation is cheap. Only an intervention costs anything.';
-const words = EPIGRAPH.split(' ');
+const fp = await getEntry('site', 'frontispiece');
+const role = fp?.data.role ?? '';
+const epigraph = fp?.data.epigraph ?? '';
+const attribution = fp?.data.attribution ?? 'the author';
+const location = fp?.data.location ?? LOCATION;
+const words = epigraph.split(' ').filter(Boolean);
 ---
 <section class="fp" aria-labelledby="fp-h">
   <div class="codex fp-inner">
    <div class="fp-text">
     <h1 class="fp-name" id="fp-h" data-intro="press">{AUTHOR}</h1>
 
-    <p class="fp-role" data-intro style="--d:180ms">
-      Deep learning researcher — medical imaging, vision-language
-      models, causal inference
-    </p>
+    <p class="fp-role" data-intro style="--d:180ms">{role}</p>
 
     <blockquote class="fp-epi">
       <p class="fp-epi-text">
@@ -21,10 +23,10 @@ const words = EPIGRAPH.split(' ');
           <span class="word" style={`--d:${420 + i * 55}ms`}>{w}&nbsp;</span>
         ))}
       </p>
-      <cite class="fp-epi-cite" data-intro style="--d:760ms">— the author</cite>
+      <cite class="fp-epi-cite" data-intro style="--d:760ms">— {attribution}</cite>
     </blockquote>
 
-    <p class="fp-place" data-intro style="--d:900ms">{LOCATION}</p>
+    <p class="fp-place" data-intro style="--d:900ms">{location}</p>
    </div>
 
    <div class="fp-art" data-intro style="--d:300ms">

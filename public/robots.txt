@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /uploads/
+
+Sitemap: https://mdasifuddin.com/sitemap-index.xml
