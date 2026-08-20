@@ -6,12 +6,11 @@
 
 backend:
   name: github
-  repo: asifuddin01/portfolio # ← change to your GitHub user/repo
+  repo: asifuddin01/portfolio
   branch: main
-  # Uncomment once the auth worker in worker/ is deployed; that turns on the
-  # one-click "Sign in with GitHub" button. Until then, use "Sign In Using
-  # Access Token" with a fine-grained GitHub token.
-  # base_url: https://codex-auth.YOUR-SUBDOMAIN.workers.dev
+  # The auth worker in worker/. Deployed, so the "Sign in with GitHub"
+  # button works on the live site.
+  base_url: https://codex-auth.asif-uddin-r1.workers.dev
 
   # Lets you edit locally with `npm run dev` and no login at all.
 local_backend: true
