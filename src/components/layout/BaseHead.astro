@@ -13,7 +13,11 @@ interface Props {
 const { title, description, image = '/og.png', type = 'website' } = Astro.props;
 
 const { github, linkedin } = await getContact();
-const canonical = new URL(Astro.url.pathname, SITE).href;
+// Astro's pathname keeps a trailing slash; the links and the served URL do
+// not. A canonical that names a different address than the one linked is a
+// canonical pointing at a redirect.
+const path = Astro.url.pathname.replace(/(.+)\/$/, '$1');
+const canonical = new URL(path, SITE).href;
 const ogImage = new URL(image, SITE).href;
 
 const personLd = {

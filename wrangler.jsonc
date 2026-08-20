@@ -14,7 +14,11 @@
     // Astro's build output.
     "directory": "./dist",
     // Serve the prerendered 404 page rather than a bare Cloudflare error.
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Every internal link is written without a trailing slash. The default
+    // redirects those to the slashed form, costing a round trip on each
+    // navigation, so serve them directly instead.
+    "html_handling": "drop-trailing-slash"
   },
   "observability": {
     "enabled": true

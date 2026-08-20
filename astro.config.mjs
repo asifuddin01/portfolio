@@ -58,7 +58,7 @@ function rehypeProseDefaults() {
 // https://astro.build/config
 export default defineConfig({
   site: SITE,
-  trailingSlash: 'ignore',
+  trailingSlash: 'never',
   build: { inlineStylesheets: 'auto' },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {
@@ -73,6 +73,16 @@ export default defineConfig({
     mdx(),
     // The editor is noindex'd, but listing it in the sitemap invites crawlers
     // to it anyway.
-    sitemap({ filter: (page) => !page.includes('/admin') }),
+    sitemap({
+      filter: (page) => !page.includes('/admin'),
+      // Match the canonical, slash-less form the links use.
+      serialize: (item) => {
+        // Strip the trailing slash so the sitemap names the same address the
+        // links and canonicals do — but never reduce the root to a bare origin.
+        const u = new URL(item.url);
+        if (u.pathname !== '/') u.pathname = u.pathname.replace(/\/$/, '');
+        return { ...item, url: u.href };
+      },
+    }),
   ],
 });
