@@ -35,6 +35,34 @@ function allowedOrigins(env) {
     .filter(Boolean);
 }
 
+/**
+ * Resolve whatever the CMS sent as `site_id` to one of the allowed origins.
+ *
+ * Sveltia follows the Netlify convention and sends a bare hostname
+ * ("asifuddin.com"), while the allowlist is written as full origins so the
+ * token can be postMessage'd to an exact target. Comparing the two directly
+ * rejects every legitimate sign-in, so match on hostname and return the
+ * configured origin.
+ */
+function resolveSite(value, origins) {
+  if (!value) return origins[0] ?? null;
+  let host = String(value).trim();
+  try {
+    host = new URL(host.includes('://') ? host : `https://${host}`).hostname;
+  } catch {
+    return null;
+  }
+  return (
+    origins.find((o) => {
+      try {
+        return new URL(o).hostname === host;
+      } catch {
+        return false;
+      }
+    }) ?? null
+  );
+}
+
 /** The token is postMessage'd to a single, explicitly allowed origin. */
 function closingPage(payload, targetOrigin) {
   const json = JSON.stringify(payload);
@@ -60,8 +88,8 @@ export default {
     const origins = allowedOrigins(env);
 
     if (url.pathname === '/auth') {
-      const site = url.searchParams.get('site_id') ?? origins[0];
-      if (!origins.includes(site)) {
+      const site = resolveSite(url.searchParams.get('site_id'), origins);
+      if (!site) {
         return htmlResponse('<h1>400</h1><p>That origin is not allowed to sign in.</p>', 400);
       }
 
@@ -96,6 +124,8 @@ export default {
         ?.slice(COOKIE.length + 1);
 
       if (!code || !state || state !== cookie || !origins.includes(site)) {
+        // `site` here came from our own signed state, so it is already an
+        // allowed origin; the includes() check is a belt-and-braces guard.
         return htmlResponse('<h1>400</h1><p>Sign-in could not be verified. Try again.</p>', 400);
       }
 

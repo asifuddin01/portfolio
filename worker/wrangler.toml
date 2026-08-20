@@ -8,7 +8,7 @@ workers_dev = true
 ALLOWED_ORIGINS = "https://asifuddin.com,https://www.asifuddin.com,http://localhost:4321"
 
 # "public_repo" suits a public repository. Change to "repo" if yours is private.
-GITHUB_SCOPE = "public_repo"
+GITHUB_SCOPE = "public_repo,read:user"
 
 # Secrets are NOT stored here. Set them once with:
 #   npx wrangler secret put GITHUB_CLIENT_ID
