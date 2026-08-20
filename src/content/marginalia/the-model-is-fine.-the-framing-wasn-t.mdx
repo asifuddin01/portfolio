@@ -1,0 +1,82 @@
+---
+kind: model
+title: The model is fine. The framing wasn't
+subject: Geneformer
+summary: |-
+  What Geneformer actually is
+  Geneformer is a bidirectional encoder, BERT in shape, pretrained on Genecorpus-30M and later extended to around 95 million cells. The interesting design decision is the input representation.
+  Single-cell expression data is a problem for tokenization. Counts are sparse, noisy, and vary in scale between cells for reasons that have nothing to do with biology. Feeding raw values invites the model to learn sequencing depth.
+  Geneformer's answer is rank value encoding. Within each cell, genes are ranked by expression, but normalized first by that gene's median expression across the entire corpus. A gene that is highly expressed everywhere gets demoted. A gene that is unusually high in this particular cell rises. The result is a ranked list per cell where position encodes something closer to cell identity than to library size.
+  Then the standard masked objective. Hide some genes in the ranking, predict them from the rest.
+entry: 8
+status: published
+updated: 2026-08-20
+source: https://www.nature.com/articles/s41586-023-06139-9
+sourceLabel: ''
+---
+
+# **The model is fine. The framing wasn't.**
+
+**Geneformer** Theodoris et al., _Transfer learning enables predictions in network biology_, Nature 618:616-624, 2023
+
+In June 2026 a benchmark called VCBench reported that on perturbation response prediction, a trivial additive baseline scores 0.890, Geneformer scores 0.627, scGPT scores 0.545, and TranscriptFormer goes negative at -0.165.
+
+The additive baseline is close to the simplest thing you could write down. Take the average effect of perturbation A, take the average effect of perturbation B, add them. That is the method beating a transformer pretrained on thirty million cells.
+
+It would be easy to read this as a story about a bad model. It isn't, and getting that distinction right matters more than the numbers.
+
+## **What the paper demonstrated**
+
+The Nature paper is a transfer learning paper, and the claims are careful.
+
+The demonstration that got attention was in-silico perturbation. Delete a gene from the encoding, run the model, observe how the predicted cell state shifts. Applied to cardiomyopathy, this surfaced candidate therapeutic targets, and the authors followed up with experimental validation.
+
+That is a good result. It has not been overturned. Anyone dismissing Geneformer wholesale should sit with the fact that a pretrained transformer proposed targets that held up at the bench.
+
+Note what the setup requires, though. Fine-tuning on the task. Domain expertise to interpret the shift. Wet-lab follow-up. The model is one component of a pipeline, not an oracle you query.
+
+## **What happened instead**
+
+"Foundation model" carries an implication, and the implication is zero-shot use. Download the weights, embed your cells, cluster them, and skip the traditional pipeline.
+
+Kedzierska and colleagues tested that assumption directly, published in Genome Biology in 2025. They evaluated Geneformer and scGPT zero-shot against three ordinary baselines: highly variable gene selection, scVI, and Harmony. On cell clustering, the foundation models were inconsistent and often worse.
+
+The follow-up question in that paper is the one worth reading. If the embeddings are poor, is it because masked language modelling produces bad cell representations, or because the models never learned the pretraining task properly? They tested reconstruction directly to separate the two. That is careful work, and it is the sort of thing that should have accompanied the original releases rather than arriving two years later.
+
+VCBench extended the finding in June 2026, with pre-registered baselines across five capability dimensions: perturbation response, cross-species universality, gene regulatory network inference, modality integration, and temporal dynamics. Baselines matched or exceeded every foundation model on four of the five. Only TranscriptFormer beat the strongest baseline anywhere, on RNA-to-protein prediction, and the authors flag a contamination caveat on that result.
+
+## **Where I would actually push back**
+
+Not at the model. At the gap between what a paper claims and what a field does with it.
+
+Geneformer's paper is about fine-tuning and says so. The evaluations that embarrassed it were of zero-shot use, which the paper does not promise. Somewhere between Nature and the average analysis notebook, "pretrain then fine-tune" became "just use the embeddings," and for two years the baseline comparison that would have caught it did not get run.
+
+That is a failure of the field, not the authors. But it is worth naming, because the same thing is happening right now with every model marketed as a virtual cell.
+
+The second thing I would push on is the perturbation result specifically. An additive baseline at 0.890 against 0.627 is not a small margin. It suggests that for many perturbation benchmarks, most of the signal is captured by main effects, and the interaction structure the models were supposed to learn contributes little that is measurable. Either the models are not learning interactions, or the benchmarks cannot detect whether they have. Both are serious, and they demand different fixes.
+
+## **What to do with it**
+
+If you work with single-cell data, the practical guidance is unglamorous.
+
+Run the baseline first, and run it properly. Highly variable genes plus PCA. scVI if you need batch correction. An additive model if you are predicting perturbation effects. Establish that number before you touch a foundation model, and be honest when the gap is small.
+
+If you use Geneformer, fine-tune it. That is what it was built for and where the evidence supports it. Zero-shot embeddings from it are not currently defensible as a default.
+
+And if you are building in this space, pre-register your baselines. VCBench did, and that is a large part of why its findings are credible.
+
+## **Verdict**
+
+A good model attached to a bad expectation.
+
+Geneformer earned its Nature paper. The rank value encoding is a genuinely clever answer to a real representation problem, and the cardiomyopathy work stands. What did not survive is the ambient assumption that pretraining on thirty million cells produces embeddings you can use for anything without further work.
+
+Read it as a transfer learning paper, which is what it says on the cover. The disappointment came from everyone who read the word "foundation" and supplied their own promises
+
+***
+
+**References**
+
+- Theodoris et al., Geneformer: https://www.nature.com/articles/s41586-023-06139-9
+- Kedzierska et al., zero-shot evaluation: https://link.springer.com/article/10.1186/s13059-025-03574-x
+- VCBench: https://www.biorxiv.org/content/10.64898/2026.06.18.733146v1
