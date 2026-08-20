@@ -242,6 +242,12 @@ const education = defineCollection({
     location: z.string(),
     period: z.string(),
     detail: z.string().default(''),
+    /**
+     * Grades. Kept apart from `detail` because they appear on the CV and the
+     * vitae page but not in the Chronicle on the home page — a timeline reads
+     * better without them, and they belong where someone is assessing you.
+     */
+    result: z.string().optional(),
   }),
 });
 

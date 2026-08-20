@@ -106,7 +106,9 @@ const { email, github, linkedin, location } = await getContact();
               <span class="cv-when">{e.data.period}</span>
             </div>
             <p class="cv-detail">
-              {e.data.institution}, {e.data.location}. {e.data.detail}
+              {e.data.institution}, {e.data.location}.
+              {e.data.result && <span class="cv-result">{e.data.result}.</span>}
+              {e.data.detail}
             </p>
           </li>
         ))}
@@ -225,6 +227,7 @@ const { email, github, linkedin, location } = await getContact();
   }
   .cv-skill dd { margin: 0; font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); }
   .cv-course, .cv-notyet { margin-top: 0.9rem; font-style: italic; }
+  .cv-result { color: var(--ink); }
   @media (max-width: 640px) {
     .cv-skill { grid-template-columns: 1fr; gap: 0.15rem; }
     .cv-name { font-size: var(--t-xl); }

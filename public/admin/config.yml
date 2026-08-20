@@ -535,6 +535,13 @@ collections:
       - { label: Location, name: location, widget: string }
       - { label: Period, name: period, widget: string, hint: "e.g. Fall 2021 – Summer 2026" }
       - { label: Detail, name: detail, widget: text, required: false }
+      - label: Result
+        name: result
+        widget: string
+        required: false
+        hint: >-
+          CGPA or GPA. Appears on the Vitae page and in the downloadable CV,
+          but not in the Chronicle on the home page.
       - { label: Order, name: order, widget: number, value_type: int, min: 1 }
 
   # ------------------------------------------------------------------

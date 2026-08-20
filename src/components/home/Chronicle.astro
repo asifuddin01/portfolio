@@ -16,6 +16,7 @@ const coursework = meta?.data.coursework ?? '';
           <h3 class="ch-place">
             {e.data.institution}<span class="ch-where">, {e.data.location}</span>
           </h3>
+          {/* Grades are deliberately absent here; they live on the CV. */}
           <p class="ch-line">{e.data.degree}.</p>
           {e.data.detail && <p class="ch-line">{e.data.detail}</p>}
         </div>

@@ -179,7 +179,8 @@ if (education.length) {
   sectionRule('Education');
   for (const e of [...education].sort(byOrder)) {
     twoCol(`${e.data.degree} — ${e.data.institution}, ${e.data.location}`, e.data.period, { font: serifBold, size: 9.4 });
-    if (e.data.detail) para(e.data.detail, { size: 8.8, colour: SOFT, lead: 11.4 });
+    const line = [e.data.result, e.data.detail].filter(Boolean).join('. ').replace(/\.\./g, '.');
+    if (line) para(line, { size: 8.8, colour: SOFT, lead: 11.4 });
     y -= 4;
   }
 }
