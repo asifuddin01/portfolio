@@ -1,0 +1,22 @@
+{
+  // Deploys the built site as a Worker serving static assets.
+  //
+  // The site is 35 prerendered pages with no server code, so there is no
+  // `main` entry — Cloudflare serves ./dist directly from its edge.
+  //
+  // Note: the CMS auth worker is a separate deployment and keeps its own
+  // config. Deploy that one explicitly with:
+  //   npx wrangler deploy -c worker/wrangler.toml
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    // Astro's build output.
+    "directory": "./dist",
+    // Serve the prerendered 404 page rather than a bare Cloudflare error.
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
