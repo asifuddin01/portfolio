@@ -5,7 +5,7 @@ workers_dev = true
 
 [vars]
 # Every origin permitted to receive a token. Add your real domain here.
-ALLOWED_ORIGINS = "https://mdasifuddin.com,http://localhost:4321"
+ALLOWED_ORIGINS = "https://asifuddin.com,https://www.asifuddin.com,http://localhost:4321"
 
 # "public_repo" suits a public repository. Change to "repo" if yours is private.
 GITHUB_SCOPE = "public_repo"
