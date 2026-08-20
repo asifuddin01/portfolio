@@ -69,5 +69,10 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  integrations: [mdx(), sitemap()],
+  integrations: [
+    mdx(),
+    // The editor is noindex'd, but listing it in the sitemap invites crawlers
+    // to it anyway.
+    sitemap({ filter: (page) => !page.includes('/admin') }),
+  ],
 });

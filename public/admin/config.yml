@@ -19,8 +19,8 @@ local_backend: true
 media_folder: "public/uploads"
 public_folder: "/uploads"
 
-site_url: https://mdasifuddin.com
-display_url: https://mdasifuddin.com
+site_url: https://asifuddin.com
+display_url: https://asifuddin.com
 
 collections:
   # ------------------------------------------------------------------

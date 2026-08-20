@@ -12,7 +12,10 @@ async function* walk(dir) {
 }
 
 /** Our own origin; a self-referential canonical tag is not "external". */
-const SITE_ORIGIN = 'https://mdasifuddin.com';
+/* Read from consts so the audit cannot disagree with the built pages. */
+const SITE_ORIGIN = (
+  await readFile('src/consts.ts', 'utf8')
+).match(/SITE = '([^']*)'/)?.[1] ?? '';
 
 let fail = 0;
 const problems = [];

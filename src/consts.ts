@@ -1,5 +1,5 @@
 /** Single source of site-wide constants. Change SITE after the domain is bought. */
-export const SITE = 'https://mdasifuddin.com';
+export const SITE = 'https://asifuddin.com';
 
 export const AUTHOR = 'Md. Asif Uddin';
 export const ROLE =

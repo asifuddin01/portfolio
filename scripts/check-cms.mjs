@@ -25,6 +25,15 @@ for (const key of ['backend', 'media_folder', 'collections']) {
   if (!config[key]) problems.push(`missing top-level "${key}"`);
 }
 
+// The editor's site_url is a second copy of the domain and drifted silently
+// when the real one changed. Keep it tied to consts.ts.
+const SITE = (await readFile('src/consts.ts', 'utf8')).match(/SITE = '([^']*)'/)?.[1];
+for (const key of ['site_url', 'display_url']) {
+  if (config[key] && SITE && config[key].replace(/\/$/, '') !== SITE.replace(/\/$/, '')) {
+    problems.push(`${key} is "${config[key]}" but SITE in consts.ts is "${SITE}"`);
+  }
+}
+
 const exists = async (p) => {
   try { await access(p); return true; } catch { return false; }
 };
