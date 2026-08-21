@@ -1,0 +1,41 @@
+---
+/**
+ * Book I, Ch. V, Prop. 2 — one vector, three projections. Q, K and V are three
+ * different questions put to the same row of the residual stream.
+ */
+const ROLES = [
+  { y: 62,  n: 'Q', t: 'query', q: 'what am I looking for?', cls: 'a1' },
+  { y: 138, n: 'K', t: 'key',   q: 'what do I advertise?',   cls: 'a2' },
+  { y: 214, n: 'V', t: 'value', q: 'what do I hand over?',   cls: 'a3' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="qk-t qk-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="qk-t">Query, key and value as three projections of one vector</title>
+  <desc id="qk-d">
+    A single token vector on the left fans out into three learned projections.
+    The query asks what the token is looking for, the key advertises what it
+    offers, and the value is what gets passed on once a match is found.
+  </desc>
+
+  <rect x="0" y="118" width="96" height="60" class="bx-fill" />
+  <text x="48" y="146" class="t-md" text-anchor="middle">x</text>
+  <text x="48" y="166" class="t-sm" text-anchor="middle">one token</text>
+
+  {ROLES.map((r) => (
+    <g>
+      <line x1="100" y1="148" x2="176" y2={r.y + 24} class="wire" />
+      <polygon points={`176,${r.y + 19} 188,${r.y + 24} 176,${r.y + 29}`} class="head" />
+      <text x={132} y={(148 + r.y + 24) / 2 - 6} class="t-key" text-anchor="middle">W{r.n}</text>
+
+      <rect x="200" y={r.y} width="118" height="48" class="bx" />
+      <rect x="200" y={r.y} width="118" height="3" class={r.cls} />
+      <text x="259" y={r.y + 30} class="t-md" text-anchor="middle">{r.n}</text>
+
+      <text x="342" y={r.y + 22} class="t-md">{r.t}</text>
+      <text x="342" y={r.y + 42} class="t-sm">{r.q}</text>
+    </g>
+  ))}
+
+  <line x1="200" y1="272" x2="700" y2="272" class="wire-soft" />
+  <text x="200" y="294" class="t-sm">Q and K decide the weights. V is the only one that reaches the output.</text>
+</svg>

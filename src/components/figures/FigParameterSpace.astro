@@ -1,0 +1,45 @@
+---
+/**
+ * Book I, Ch. I, Prop. 3 — learning is a walk in parameter space. The path is
+ * a fixed sample rather than anything computed, so the drawing is honest about
+ * being a schematic of the idea and not of a particular run.
+ */
+const PATH = [
+  [96, 232], [150, 200], [188, 168], [236, 150], [268, 122], [312, 112],
+  [346, 96], [388, 92], [420, 84], [452, 82],
+];
+const d = PATH.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ');
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ps-t ps-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="ps-t">Training as a path through parameter space</title>
+  <desc id="ps-d">
+    Two parameter axes with a sequence of points joined into a path, starting at
+    a randomly initialised point and ending at a settled one. Every point on the
+    path is the same model with different numbers in it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">parameter space</text>
+
+  <line x1="64" y1="264" x2="560" y2="264" class="axis" />
+  <line x1="64" y1="264" x2="64" y2="52" class="axis" />
+  <text x="560" y="286" class="t-sm" text-anchor="end">θ₁</text>
+  <text x="52" y="58" class="t-sm" text-anchor="end">θ₂</text>
+
+  {[0, 1, 2, 3, 4].map((i) => (
+    <line x1="64" y1={264 - i * 44} x2="560" y2={264 - i * 44} class="grid" />
+  ))}
+
+  <path d={d} class="s1" stroke-width="1.4" />
+  {PATH.map((p, i) => (
+    <circle cx={p[0]} cy={p[1]} r={i === 0 || i === PATH.length - 1 ? 5 : 2.6}
+            class={i === PATH.length - 1 ? 'a2' : 'a1'} />
+  ))}
+
+  <text x="96" y="256" class="t-key" text-anchor="middle">θ₀</text>
+  <text x="466" y="72" class="t-key">θ*</text>
+
+  <text x="596" y="120" class="t-sm">Same architecture</text>
+  <text x="596" y="138" class="t-sm">at every point.</text>
+  <text x="596" y="166" class="t-sm">Only the numbers</text>
+  <text x="596" y="184" class="t-sm">move.</text>
+</svg>

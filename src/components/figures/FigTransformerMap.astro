@@ -1,0 +1,71 @@
+---
+/**
+ * Book I closing — the whole of Book I on one plate, from characters to logits,
+ * with the chapter that covers each stage named beside it.
+ */
+const STAGES = [
+  { t: 'text',                 ch: '',            cls: '' },
+  { t: 'tokeniser',            ch: 'Ch. III',     cls: 'a1' },
+  { t: 'token ids',            ch: 'Ch. III',     cls: 'a1' },
+  { t: 'embedding + position', ch: 'Ch. III, VI', cls: 'a3' },
+];
+const BLOCK = [
+  { t: 'norm',                 ch: 'Ch. VII' },
+  { t: 'multi-head attention', ch: 'Ch. V, VII' },
+  { t: 'residual add',         ch: 'Ch. VII' },
+  { t: 'norm',                 ch: 'Ch. VII' },
+  { t: 'feed-forward',         ch: 'Ch. II, VII' },
+  { t: 'residual add',         ch: 'Ch. VII' },
+];
+---
+<svg class="fig" viewBox="0 0 720 620" role="img" aria-labelledby="tm-t tm-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="tm-t">The whole of Book I on one plate</title>
+  <desc id="tm-d">
+    A vertical map from raw text to output logits. Text is tokenised, embedded
+    and given position, then passed through a stack of transformer blocks, each
+    containing normalisation, attention, a residual addition, a second
+    normalisation and a feed-forward network. The final state is unembedded to
+    logits. Each stage is labelled with the chapter that covers it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">from characters to logits</text>
+
+  {STAGES.map((s, i) => (
+    <g>
+      <rect x="120" y={44 + i * 62} width="290" height="42" class={i === 0 ? 'bx' : 'bx-fill'} />
+      {s.cls && <rect x="120" y={44 + i * 62} width="290" height="3" class={s.cls} />}
+      <text x="265" y={71 + i * 62} class="t-md" text-anchor="middle">{s.t}</text>
+      <text x="428" y={71 + i * 62} class="t-key">{s.ch}</text>
+      <line x1="265" y1={86 + i * 62} x2="265" y2={94 + i * 62} class="wire" />
+      <polygon points={`260,${94 + i * 62} 265,${104 + i * 62} 270,${94 + i * 62}`} class="head" />
+    </g>
+  ))}
+
+  <rect x="96" y="292" width="338" height="228" class="bx-soft" />
+  <text x="106" y="312" class="t-key">× N blocks</text>
+
+  {BLOCK.map((b, i) => (
+    <g>
+      <rect x="120" y={322 + i * 32} width="290" height="26" class={b.t.includes('residual') ? 'bx' : 'bx-fill'} />
+      <text x="265" y={340 + i * 32} class="t-md" text-anchor="middle">{b.t}</text>
+      <text x="428" y={340 + i * 32} class="t-key">{b.ch}</text>
+    </g>
+  ))}
+
+  <line x1="106" y1="322" x2="106" y2="510" class="s3" stroke-width="2" />
+  <text x="80" y="420" class="t-key" text-anchor="middle">stream</text>
+
+  <line x1="265" y1="520" x2="265" y2="536" class="wire" />
+  <polygon points="260,536 265,546 270,536" class="head" />
+  <rect x="120" y="548" width="290" height="42" class="bx-fill" />
+  <rect x="120" y="548" width="290" height="3" class="a2" />
+  <text x="265" y="575" class="t-md" text-anchor="middle">unembed → logits</text>
+  <text x="428" y="575" class="t-key">Ch. I, VIII</text>
+
+  <text x="470" y="180" class="t-sm">Everything in Book I is</text>
+  <text x="470" y="200" class="t-sm">on this plate. If a stage</text>
+  <text x="470" y="220" class="t-sm">here is not one you could</text>
+  <text x="470" y="240" class="t-sm">explain to somebody else,</text>
+  <text x="470" y="260" class="t-sm">that is the chapter to</text>
+  <text x="470" y="280" class="t-sm">read again.</text>
+</svg>

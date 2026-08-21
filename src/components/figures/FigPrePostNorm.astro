@@ -1,0 +1,64 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 4 — the same two components in two orders. Whether the
+ * normalisation sits on the residual path or beside it decides whether the
+ * shortcut is clean.
+ */
+const PANELS = [
+  {
+    x: 0, lab: 'post-norm', note: 'the shortcut passes through a norm',
+    boxes: [['sublayer', 'bx-fill'], ['+', 'bx'], ['norm', 'bx']],
+    verdict: 'needs a warm-up; deep stacks are fragile',
+  },
+  {
+    x: 380, lab: 'pre-norm', note: 'the shortcut is untouched',
+    boxes: [['norm', 'bx'], ['sublayer', 'bx-fill'], ['+', 'bx']],
+    verdict: 'trains from a flat start; stacks deeply',
+  },
+];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="pn-t pn-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="pn-t">Post-norm and pre-norm</title>
+  <desc id="pn-d">
+    Two arrangements of the same sublayer and normalisation. In post-norm the
+    residual addition is followed by a normalisation, so the shortcut passes
+    through it. In pre-norm the normalisation happens before the sublayer and
+    the shortcut runs clean from input to output.
+  </desc>
+
+  {PANELS.map((p) => (
+    <g>
+      <text x={p.x} y="24" class="t-lab">{p.lab}</text>
+      <text x={p.x} y="46" class="t-sm">{p.note}</text>
+
+      {p.boxes.map((b, i) => (
+        <g>
+          <rect x={p.x + 20} y={72 + i * 66} width="180" height="44" class={b[1]} />
+          <text x={p.x + 110} y={100 + i * 66} class="t-md" text-anchor="middle">{b[0]}</text>
+          {i < p.boxes.length - 1 && (
+            <g>
+              <line x1={p.x + 110} y1={118 + i * 66} x2={p.x + 110} y2={128 + i * 66} class="wire" />
+              <polygon points={`${p.x + 105},${128 + i * 66} ${p.x + 110},${138 + i * 66} ${p.x + 115},${128 + i * 66}`} class="head" />
+            </g>
+          )}
+        </g>
+      ))}
+
+      <path
+        d={p.lab === 'post-norm'
+          ? `M${p.x + 250},62 L${p.x + 250},182 L${p.x + 204},182`
+          : `M${p.x + 250},62 L${p.x + 250},248 L${p.x + 204},248`}
+        class="s3" stroke-width="1.8" />
+      <polygon
+        points={p.lab === 'post-norm'
+          ? `${p.x + 212},177 ${p.x + 200},182 ${p.x + 212},187`
+          : `${p.x + 212},243 ${p.x + 200},248 ${p.x + 212},253`}
+        fill="var(--lesion-ex)" />
+      <text x={p.x + 258} y="120" class="t-key">shortcut</text>
+
+      <text x={p.x + 20} y="298" class="t-sm">{p.verdict}</text>
+    </g>
+  ))}
+
+  <line x1="352" y1="14" x2="352" y2="306" class="grid" />
+</svg>

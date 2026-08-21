@@ -1,0 +1,38 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 3 — the stream as the object of study. Layers read
+ * from it and write back into it; nothing replaces it.
+ */
+const LAYERS = [1, 2, 3, 4, 5];
+const X0 = 76, DX = 124;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rr-t rr-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="rr-t">The residual stream</title>
+  <desc id="rr-d">
+    A single horizontal line running the width of the figure, from the embedding
+    to the output head. Five blocks sit beside it; each reads from the line and
+    adds its result back onto it rather than replacing it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the residual stream</text>
+
+  <line x1="20" y1="150" x2="700" y2="150" class="s3" stroke-width="2.4" />
+  <text x="20" y="140" class="t-key">embed</text>
+  <text x="700" y="140" class="t-key" text-anchor="end">unembed</text>
+
+  {LAYERS.map((l, i) => (
+    <g>
+      <line x1={X0 + i * DX} y1="148" x2={X0 + i * DX} y2="98" class="wire-soft" />
+      <rect x={X0 + i * DX - 46} y="52" width="92" height="46" class="bx-fill" />
+      <text x={X0 + i * DX} y="80" class="t-md" text-anchor="middle">block {l}</text>
+      <line x1={X0 + i * DX + 26} y1="100" x2={X0 + i * DX + 26} y2="140" class="wire" />
+      <polygon points={`${X0 + i * DX + 21},140 ${X0 + i * DX + 26},152 ${X0 + i * DX + 31},140`} class="head" />
+      <text x={X0 + i * DX - 54} y="122" class="t-xs" text-anchor="end">read</text>
+      <text x={X0 + i * DX + 34} y="122" class="t-xs">write</text>
+    </g>
+  ))}
+
+  <text x="0" y="212" class="t-sm">Because every block adds, the gradient reaches layer one along a path of additions, not a product.</text>
+  <text x="0" y="234" class="t-sm">And because every block writes into the same space, a vector taken partway up the stack can be read</text>
+  <text x="0" y="256" class="t-sm">with the output head — which is what makes a transformer legible from the inside at all.</text>
+</svg>

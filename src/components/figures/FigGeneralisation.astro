@@ -1,0 +1,37 @@
+---
+/**
+ * Book I, Ch. I, Prop. 5 — training and held-out error part company. The curves
+ * are schematic; the point is the gap and where it opens, not the numbers.
+ */
+const train = 'M70,110 C130,168 200,214 300,238 C400,258 500,266 600,270';
+const test  = 'M70,112 C130,170 200,206 280,214 C380,222 470,196 600,150';
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="gn-t gn-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="gn-t">Training error and held-out error</title>
+  <desc id="gn-d">
+    Two curves against training time. Training error falls steadily. Held-out
+    error falls with it, reaches a minimum, then rises. The vertical distance
+    between the curves after that point is the memorised part.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">error against training time</text>
+
+  <line x1="70" y1="286" x2="640" y2="286" class="axis" />
+  <line x1="70" y1="286" x2="70" y2="60" class="axis" />
+  <text x="640" y="308" class="t-sm" text-anchor="end">epochs</text>
+  <text x="58" y="66" class="t-sm" text-anchor="end">error</text>
+
+  <path d={train} class="s1" stroke-width="1.6" />
+  <path d={test} class="s2" stroke-width="1.6" />
+
+  <line x1="280" y1="214" x2="280" y2="286" class="dash" />
+  <text x="280" y="306" class="t-key" text-anchor="middle">best held-out</text>
+
+  <line x1="600" y1="150" x2="600" y2="270" class="wire-soft" />
+  <text x="614" y="196" class="t-key">the gap:</text>
+  <text x="614" y="214" class="t-key">what was</text>
+  <text x="614" y="232" class="t-key">memorised</text>
+
+  <text x="96" y="120" class="t-sm" fill="var(--lesion-ves)">training</text>
+  <text x="300" y="196" class="t-sm" fill="var(--lesion-ma)">held out</text>
+</svg>

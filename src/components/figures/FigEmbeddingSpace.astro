@@ -1,0 +1,54 @@
+---
+/**
+ * Book I, Ch. III, Prop. 3 — the table and the space it induces. Left: the
+ * lookup, which is all the operation is. Right: what the rows come to mean.
+ */
+const ROWS = [
+  { id: '4711', tok: 'king',  cls: 'a1' },
+  { id: '1204', tok: 'queen', cls: 'a2' },
+  { id: '0987', tok: 'city',  cls: 'a3' },
+];
+const PTS = [
+  { x: 470, y: 96,  t: 'king',  cls: 'a1' },
+  { x: 556, y: 132, t: 'queen', cls: 'a2' },
+  { x: 500, y: 214, t: 'man',   cls: 'a4' },
+  { x: 586, y: 250, t: 'woman', cls: 'a5' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="es-t es-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="es-t">The embedding table and the space it induces</title>
+  <desc id="es-d">
+    On the left a table mapping token ids to rows of numbers, with an arrow
+    picking out one row. On the right, four of those rows drawn as points, with
+    the offset between king and queen matching the offset between man and woman.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">a lookup</text>
+  <text x="420" y="22" class="t-lab">and what the rows come to mean</text>
+
+  <rect x="0" y="46" width="330" height="196" class="bx-soft" />
+  {ROWS.map((r, i) => (
+    <g>
+      <text x="16" y={92 + i * 54} class="t-md">{r.id}</text>
+      <rect x="76" y={74 + i * 54} width="238" height="26" class="bx" />
+      <rect x="76" y={74 + i * 54} width="4" height="26" class={r.cls} />
+      <text x="196" y={92 + i * 54} class="t-sm" text-anchor="middle">d numbers, learned</text>
+      <text x="330" y={92 + i * 54} class="t-key" text-anchor="start"> </text>
+    </g>
+  ))}
+  <text x="0" y="264" class="t-sm">One row per vocabulary entry. Retrieval is indexing, not computation.</text>
+
+  <line x1="342" y1="128" x2="404" y2="128" class="wire" />
+  <polygon points="404,123 416,128 404,133" class="head" />
+
+  {PTS.map((p) => (
+    <g>
+      <circle cx={p.x} cy={p.y} r="5" class={p.cls} />
+      <text x={p.x + 12} y={p.y + 4} class="t-sm">{p.t}</text>
+    </g>
+  ))}
+  <line x1="470" y1="96" x2="556" y2="132" class="dash" />
+  <line x1="500" y1="214" x2="586" y2="250" class="dash" />
+  <text x="420" y="270" class="t-sm">The geometry is a consequence of</text>
+  <text x="420" y="288" class="t-sm">training, not of the lookup.</text>
+</svg>

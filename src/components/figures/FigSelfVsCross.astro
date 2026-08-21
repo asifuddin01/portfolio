@@ -1,0 +1,49 @@
+---
+/**
+ * Book I, Ch. V, Prop. 4 — the same operation, two wirings. Only where K and V
+ * come from changes.
+ */
+const PANELS = [
+  { x: 0,   lab: 'self-attention',  qs: 'the sequence', kvs: 'the same sequence' },
+  { x: 380, lab: 'cross-attention', qs: 'the decoder',  kvs: 'the encoder' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sc-t sc-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="sc-t">Self-attention and cross-attention are one operation</title>
+  <desc id="sc-d">
+    Two identical attention blocks. In the first, queries, keys and values all
+    come from the same sequence. In the second, the queries come from one
+    sequence and the keys and values from another. The block itself is unchanged.
+  </desc>
+
+  {PANELS.map((p) => (
+    <g>
+      <text x={p.x} y="24" class="t-lab">{p.lab}</text>
+
+      <rect x={p.x} y="52" width="130" height="44" class="bx" />
+      <rect x={p.x} y="52" width="130" height="3" class="a1" />
+      <text x={p.x + 65} y="80" class="t-md" text-anchor="middle">{p.qs}</text>
+
+      <rect x={p.x + 176} y="52" width="150" height="44" class="bx" />
+      <rect x={p.x + 176} y="52" width="150" height="3" class="a2" />
+      <text x={p.x + 251} y="80" class="t-md" text-anchor="middle">{p.kvs}</text>
+
+      <line x1={p.x + 65} y1="100" x2={p.x + 110} y2="156" class="wire" />
+      <polygon points={`${p.x + 105},152 ${p.x + 116},164 ${p.x + 114},149`} class="head" />
+      <text x={p.x + 60} y="134" class="t-key" text-anchor="end">Q</text>
+
+      <line x1={p.x + 251} y1="100" x2={p.x + 206} y2="156" class="wire" />
+      <polygon points={`${p.x + 211},152 ${p.x + 200},164 ${p.x + 202},149`} class="head" />
+      <text x={p.x + 262} y="134" class="t-key">K, V</text>
+
+      <rect x={p.x + 96} y="168" width="124" height="52" class="bx-fill" />
+      <text x={p.x + 158} y="199" class="t-md" text-anchor="middle">attention</text>
+
+      <line x1={p.x + 158} y1="222" x2={p.x + 158} y2="256" class="wire" />
+      <polygon points={`${p.x + 153},256 ${p.x + 158},268 ${p.x + 163},256`} class="head" />
+      <text x={p.x + 158} y="290" class="t-sm" text-anchor="middle">one vector per query</text>
+    </g>
+  ))}
+
+  <line x1="352" y1="40" x2="352" y2="280" class="grid" />
+</svg>

@@ -1,0 +1,43 @@
+---
+/** Book I, Ch. I, Prop. 1 — a model is a function with a second argument. */
+---
+<svg class="fig" viewBox="0 0 720 260" role="img" aria-labelledby="mf-t mf-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="mf-t">A model as a parameterised function</title>
+  <desc id="mf-d">
+    An input enters a box marked f of x semicolon theta and an output leaves it.
+    A second arrow enters the box from below carrying the parameters theta,
+    drawn as a stack of adjustable values. The input arrives from the world; the
+    parameters are chosen by training.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the world supplies</text>
+  <text x="470" y="22" class="t-lab">the model returns</text>
+
+  <rect x="0" y="86" width="120" height="52" class="bx" />
+  <rect x="0" y="86" width="120" height="3" class="a1" />
+  <text x="60" y="117" class="t-md" text-anchor="middle">x</text>
+  <text x="60" y="160" class="t-sm" text-anchor="middle">input</text>
+
+  <line x1="128" y1="112" x2="256" y2="112" class="wire" />
+  <polygon points="256,107 268,112 256,117" class="head" />
+
+  <rect x="276" y="70" width="168" height="84" class="bx-fill" />
+  <text x="360" y="106" class="t-md" text-anchor="middle">f( x ; θ )</text>
+  <text x="360" y="130" class="t-sm" text-anchor="middle">fixed form</text>
+
+  <line x1="452" y1="112" x2="580" y2="112" class="wire" />
+  <polygon points="580,107 592,112 580,117" class="head" />
+
+  <rect x="600" y="86" width="120" height="52" class="bx" />
+  <rect x="600" y="86" width="120" height="3" class="a3" />
+  <text x="660" y="117" class="t-md" text-anchor="middle">ŷ</text>
+  <text x="660" y="160" class="t-sm" text-anchor="middle">prediction</text>
+
+  <line x1="360" y1="228" x2="360" y2="166" class="wire" />
+  <polygon points="355,166 360,154 365,166" class="head" />
+  <text x="360" y="252" class="t-key" text-anchor="middle">θ — the parameters, and the only thing training may change</text>
+
+  {[0, 1, 2, 3, 4, 5].map((i) => (
+    <rect x={256 + i * 36} y={200} width="24" height="10" class="bx" />
+  ))}
+</svg>

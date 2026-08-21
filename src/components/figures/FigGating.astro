@@ -1,0 +1,45 @@
+---
+/**
+ * Book I, Ch. IV, Prop. 3 — a gated cell. The cell line runs straight through
+ * with only multiplication and addition on it, which is the point: the
+ * gradient has a road home that does not pass through a weight matrix.
+ */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="gt-t gt-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="gt-t">A gated cell and its uninterrupted carry line</title>
+  <desc id="gt-d">
+    A horizontal line across the top carries the cell state from left to right,
+    crossed only by one multiplication and one addition. Below it, a forget gate
+    and an input gate produce the numbers that do the multiplying and adding.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the carry line</text>
+
+  <line x1="20" y1="70" x2="700" y2="70" class="s3" stroke-width="2" />
+  <text x="20" y="58" class="t-key">c(t−1)</text>
+  <text x="700" y="58" class="t-key" text-anchor="end">c(t)</text>
+
+  <circle cx="250" cy="70" r="14" class="bx-fill" />
+  <text x="250" y="76" class="t-md" text-anchor="middle">×</text>
+  <circle cx="470" cy="70" r="14" class="bx-fill" />
+  <text x="470" y="76" class="t-md" text-anchor="middle">+</text>
+
+  <rect x="180" y="160" width="140" height="52" class="bx-fill" />
+  <text x="250" y="184" class="t-md" text-anchor="middle">forget gate</text>
+  <text x="250" y="202" class="t-sm" text-anchor="middle">σ → [0, 1]</text>
+  <line x1="250" y1="158" x2="250" y2="96" class="wire" />
+  <polygon points="245,96 250,84 255,96" class="head" />
+
+  <rect x="400" y="160" width="140" height="52" class="bx-fill" />
+  <text x="470" y="184" class="t-md" text-anchor="middle">input gate</text>
+  <text x="470" y="202" class="t-sm" text-anchor="middle">what to write</text>
+  <line x1="470" y1="158" x2="470" y2="96" class="wire" />
+  <polygon points="465,96 470,84 475,96" class="head" />
+
+  <line x1="20" y1="250" x2="700" y2="250" class="wire-soft" />
+  <text x="20" y="244" class="t-sm">h(t−1), x(t) — both gates read the same two things</text>
+  <line x1="250" y1="248" x2="250" y2="216" class="wire-soft" />
+  <line x1="470" y1="248" x2="470" y2="216" class="wire-soft" />
+
+  <text x="0" y="288" class="t-sm">With the forget gate near one the carry line is near the identity, and a gradient crossing it barely decays.</text>
+</svg>

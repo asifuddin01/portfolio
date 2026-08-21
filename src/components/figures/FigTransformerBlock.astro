@@ -1,0 +1,55 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 1 — one block. Attention moves information between
+ * positions; the MLP does the work within a position. Both are wrapped in a
+ * residual connection.
+ */
+---
+<svg class="fig" viewBox="0 0 720 340" role="img" aria-labelledby="tb2-t tb2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 560px">
+  <title id="tb2-t">One transformer block</title>
+  <desc id="tb2-d">
+    A block with two sublayers. The first normalises, applies multi-head
+    attention across positions and adds the result back to the input. The second
+    normalises, applies a position-wise feed-forward network and adds again.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">mix across positions</text>
+  <text x="0" y="192" class="t-lab">then compute within one</text>
+
+  <line x1="60" y1="46" x2="60" y2="316" class="s3" stroke-width="2" />
+  <text x="34" y="42" class="t-key" text-anchor="middle">x</text>
+  <text x="34" y="330" class="t-key" text-anchor="middle">out</text>
+
+  <g>
+    <rect x="150" y="52" width="120" height="36" class="bx" />
+    <text x="210" y="76" class="t-md" text-anchor="middle">norm</text>
+    <rect x="300" y="52" width="200" height="36" class="bx-fill" />
+    <text x="400" y="76" class="t-md" text-anchor="middle">multi-head attention</text>
+    <line x1="62" y1="70" x2="142" y2="70" class="wire" />
+    <polygon points="142,65 152,70 142,75" class="head" />
+    <line x1="272" y1="70" x2="292" y2="70" class="wire" />
+    <line x1="502" y1="70" x2="600" y2="70" class="wire" />
+    <circle cx="616" cy="70" r="14" class="bx-fill" />
+    <text x="616" y="76" class="t-md" text-anchor="middle">+</text>
+    <path d="M616,86 L616,132 L60,132" class="wire" />
+    <polygon points="68,127 56,132 68,137" class="head" />
+    <text x="400" y="112" class="t-sm" text-anchor="middle">the residual path — the block edits, it does not replace</text>
+  </g>
+
+  <g>
+    <rect x="150" y="222" width="120" height="36" class="bx" />
+    <text x="210" y="246" class="t-md" text-anchor="middle">norm</text>
+    <rect x="300" y="222" width="200" height="36" class="bx-fill" />
+    <text x="400" y="246" class="t-md" text-anchor="middle">feed-forward (per token)</text>
+    <line x1="62" y1="240" x2="142" y2="240" class="wire" />
+    <polygon points="142,235 152,240 142,245" class="head" />
+    <line x1="272" y1="240" x2="292" y2="240" class="wire" />
+    <line x1="502" y1="240" x2="600" y2="240" class="wire" />
+    <circle cx="616" cy="240" r="14" class="bx-fill" />
+    <text x="616" y="246" class="t-md" text-anchor="middle">+</text>
+    <path d="M616,256 L616,300 L60,300" class="wire" />
+    <polygon points="68,295 56,300 68,305" class="head" />
+  </g>
+
+  <text x="300" y="284" class="t-sm" text-anchor="middle">no token sees another here</text>
+</svg>

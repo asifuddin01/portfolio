@@ -1,0 +1,39 @@
+---
+/**
+ * Book I, Ch. IV, Prop. 1 — a recurrence unrolled. Everything the network has
+ * read is squeezed through one fixed-width state at every step.
+ */
+const T = ['x₁', 'x₂', 'x₃', 'x₄', 'x₅'];
+const X0 = 40, DX = 132;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rs-t rs-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="rs-t">A recurrence unrolled over five steps</title>
+  <desc id="rs-d">
+    Five inputs entering five copies of the same cell, each passing a
+    fixed-width hidden state to the next. Everything read so far has to fit
+    through that one state, whose width does not grow with the sequence.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the same cell, five times</text>
+
+  {T.map((t, i) => (
+    <g>
+      <text x={X0 + i * DX + 30} y="252" class="t-md" text-anchor="middle">{t}</text>
+      <line x1={X0 + i * DX + 30} y1="234" x2={X0 + i * DX + 30} y2="182" class="wire" />
+      <polygon points={`${X0 + i * DX + 25},182 ${X0 + i * DX + 30},170 ${X0 + i * DX + 35},182`} class="head" />
+      <rect x={X0 + i * DX} y="112" width="60" height="58" class="bx-fill" />
+      <text x={X0 + i * DX + 30} y="147" class="t-md" text-anchor="middle">f</text>
+      {i < T.length - 1 && (
+        <g>
+          <line x1={X0 + i * DX + 62} y1="141" x2={X0 + (i + 1) * DX - 12} y2="141" class="s1" stroke-width="1.5" />
+          <polygon points={`${X0 + (i + 1) * DX - 12},136 ${X0 + (i + 1) * DX - 2},141 ${X0 + (i + 1) * DX - 12},146`} fill="var(--lesion-ves)" />
+          <text x={X0 + i * DX + 96} y="130" class="t-key" text-anchor="middle">h{i + 1}</text>
+        </g>
+      )}
+      <line x1={X0 + i * DX + 30} y1="110" x2={X0 + i * DX + 30} y2="72" class="wire-soft" />
+      <text x={X0 + i * DX + 30} y="64" class="t-sm" text-anchor="middle">y{i + 1}</text>
+    </g>
+  ))}
+
+  <text x="0" y="292" class="t-sm">The state has a fixed width. Step 5 reaches step 1 only through everything between it and step 1.</text>
+</svg>

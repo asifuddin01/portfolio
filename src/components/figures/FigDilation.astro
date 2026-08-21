@@ -1,0 +1,42 @@
+---
+/**
+ * Book I, Ch. IV, Prop. 4 — receptive field growth. Stacking convolutions
+ * widens the window, but the width is a budget you pay depth for.
+ *
+ * Fifteen positions is exactly what three layers of width three reach at
+ * dilations 1, 2 and 4, so the row is sized to the argument rather than
+ * trailing empty positions past the edge.
+ */
+const N = 15;
+const X0 = 96, DX = 34, CENTRE = 7;
+const LAYERS = [
+  { y: 226, span: 0, reach: 0, lab: 'input',   dil: '' },
+  { y: 170, span: 1, reach: 1, lab: 'layer 1', dil: 'dil 1 · sees 3' },
+  { y: 114, span: 2, reach: 3, lab: 'layer 2', dil: 'dil 2 · sees 7' },
+  { y: 58,  span: 4, reach: 7, lab: 'layer 3', dil: 'dil 4 · sees 15' },
+];
+const cx = (i: number) => X0 + i * DX;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="dl-t dl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="dl-t">Receptive field growth under stacked dilated convolutions</title>
+  <desc id="dl-d">
+    Four rows of positions. Each layer reads three positions from the row below
+    at a spacing that doubles, so the window seen by the top unit widens from
+    three positions to fifteen across three layers.
+  </desc>
+
+  {LAYERS.map((L, li) => (
+    <g>
+      <text x="0" y={L.y + 4} class="t-sm">{L.lab}</text>
+      {Array.from({ length: N }, (_, i) => Math.abs(i - CENTRE) <= L.reach).map((lit, i) => (
+        <circle cx={cx(i)} cy={L.y} r="4" class={lit ? 'a1' : 'a4'} opacity={lit ? 1 : 0.28} />
+      ))}
+      {li > 0 && [-1, 0, 1].map((k) => (
+        <line x1={cx(CENTRE)} y1={L.y + 6} x2={cx(CENTRE + k * L.span)} y2={LAYERS[li - 1].y - 6} class="wire-soft" />
+      ))}
+      {L.dil && <text x={cx(N - 1) + 20} y={L.y + 4} class="t-key">{L.dil}</text>}
+    </g>
+  ))}
+
+  <text x="0" y="284" class="t-sm">Range grows exponentially with depth, and every position is computed at once.</text>
+</svg>

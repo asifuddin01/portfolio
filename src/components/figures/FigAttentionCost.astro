@@ -1,0 +1,39 @@
+---
+/**
+ * Book I, Ch. V, Prop. 5 — the score matrix is the cost. Doubling the sequence
+ * quadruples the area, and the area is what has to be held in memory.
+ */
+const SQ = [
+  { n: 4,  s: 56,  lab: 'n = 4' },
+  { n: 8,  s: 96,  lab: 'n = 8' },
+  { n: 16, s: 168, lab: 'n = 16' },
+];
+let x = 30;
+const PLACED = SQ.map((q) => { const at = x; x += q.s + 54; return { ...q, x: at }; });
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ac-t ac-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="ac-t">The attention score matrix at three sequence lengths</title>
+  <desc id="ac-d">
+    Three square grids of scores, for sequences of four, eight and sixteen
+    tokens. Each doubling of the sequence length quadruples the number of
+    scores, because every token is compared against every other.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one score per pair of positions</text>
+
+  {PLACED.map((q) => (
+    <g>
+      <rect x={q.x} y={232 - q.s} width={q.s} height={q.s} class="bx-fill" />
+      {Array.from({ length: q.n - 1 }, (_, i) => (
+        <g>
+          <line x1={q.x} y1={232 - q.s + ((i + 1) * q.s) / q.n} x2={q.x + q.s} y2={232 - q.s + ((i + 1) * q.s) / q.n} class="grid" />
+          <line x1={q.x + ((i + 1) * q.s) / q.n} y1={232 - q.s} x2={q.x + ((i + 1) * q.s) / q.n} y2="232" class="grid" />
+        </g>
+      ))}
+      <text x={q.x + q.s / 2} y="254" class="t-md" text-anchor="middle">{q.lab}</text>
+      <text x={q.x + q.s / 2} y="274" class="t-sm" text-anchor="middle">{q.n * q.n} scores</text>
+    </g>
+  ))}
+
+  <text x="0" y="296" class="t-sm">Path length is constant — any token reaches any other in one step — and the square is what it costs.</text>
+</svg>

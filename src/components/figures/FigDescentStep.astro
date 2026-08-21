@@ -1,0 +1,36 @@
+---
+/**
+ * Book I, Ch. II, Prop. 4 — one gradient step under three learning rates. The
+ * middle case converges; the outer two are the two ways it fails.
+ */
+const bowl = (cx: number) =>
+  `M${cx - 120},70 Q${cx},290 ${cx + 120},70`;
+const PANELS = [
+  { cx: 130, label: 'too small', pts: [[46, 216], [62, 250], [74, 266]], note: 'creeps' },
+  { cx: 370, label: 'well chosen', pts: [[286, 216], [340, 274], [370, 286]], note: 'arrives' },
+  { cx: 590, label: 'too large', pts: [[506, 216], [676, 200], [484, 150]], note: 'diverges' },
+];
+---
+<svg class="fig" viewBox="0 0 720 340" role="img" aria-labelledby="ds-t ds-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="ds-t">One step, three learning rates</title>
+  <desc id="ds-d">
+    The same quadratic bowl drawn three times. With too small a step the
+    parameters creep toward the minimum. With a well-chosen step they reach it.
+    With too large a step they overshoot the minimum and climb the far wall.
+  </desc>
+
+  {PANELS.map((p) => (
+    <g>
+      <text x={p.cx} y="26" class="t-lab" text-anchor="middle">{p.label}</text>
+      <path d={bowl(p.cx)} class="grid" />
+      {p.pts.map((pt, i) => (
+        <circle cx={pt[0]} cy={pt[1]} r="4" class={i === p.pts.length - 1 ? 'a2' : 'a1'} />
+      ))}
+      {p.pts.slice(0, -1).map((pt, i) => (
+        <line x1={pt[0]} y1={pt[1]} x2={p.pts[i + 1][0]} y2={p.pts[i + 1][1]} class="wire" />
+      ))}
+      <circle cx={p.cx} cy="288" r="3" class="a3" />
+      <text x={p.cx} y="322" class="t-sm" text-anchor="middle">{p.note}</text>
+    </g>
+  ))}
+</svg>

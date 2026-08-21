@@ -1,0 +1,41 @@
+---
+/**
+ * Book I, Ch. VIII, Prop. 2 — warm-up then decay. The rise is short and the
+ * fall is long, and both parts are doing different work.
+ */
+const X0 = 60, X1 = 660, Y0 = 240, PEAK = 70;
+const WARM = 140;
+const pts = Array.from({ length: 121 }, (_, i) => {
+  const x = X0 + (i * (X1 - X0)) / 120;
+  const y = x < WARM + X0
+    ? Y0 - ((x - X0) / WARM) * (Y0 - PEAK)
+    : PEAK + (Y0 - PEAK) * (1 - Math.cos((Math.PI * (x - X0 - WARM)) / (X1 - X0 - WARM))) / 2;
+  return `${x},${y}`;
+}).join(' ');
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sd-t sd-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="sd-t">Warm-up followed by cosine decay</title>
+  <desc id="sd-d">
+    Learning rate against training step. The rate rises linearly from zero over
+    a short warm-up, reaches a peak, then decays along a cosine curve to near
+    zero by the end of training.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">learning rate against step</text>
+
+  <line x1={X0} y1={Y0} x2={X1} y2={Y0} class="axis" />
+  <line x1={X0} y1={Y0} x2={X0} y2="52" class="axis" />
+  <polyline points={pts} class="s1" stroke-width="1.8" />
+
+  <line x1={X0 + WARM} y1={PEAK} x2={X0 + WARM} y2={Y0} class="dash" />
+  <text x={X0 + WARM / 2} y="264" class="t-key" text-anchor="middle">warm-up</text>
+  <text x={(X0 + WARM + X1) / 2} y="264" class="t-key" text-anchor="middle">decay</text>
+
+  <text x={X0 + 10} y="62" class="t-sm">peak rate</text>
+  <text x={X0 + WARM + 14} y="106" class="t-sm">the rise exists because the first steps are taken</text>
+  <text x={X0 + WARM + 14} y="126" class="t-sm">by an optimiser with no statistics yet</text>
+  <text x={X0 + WARM + 14} y="180" class="t-sm">the fall exists because a large step near the end</text>
+  <text x={X0 + WARM + 14} y="200" class="t-sm">throws away what the previous ones found</text>
+
+  <text x="0" y="292" class="t-sm">Changing the step count changes the whole curve. A schedule tuned for one budget is not valid for another.</text>
+</svg>

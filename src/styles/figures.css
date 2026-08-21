@@ -1,0 +1,55 @@
+/*
+ * The drawing vocabulary shared by every figure in the Elementa.
+ *
+ * Book I alone carries nearly forty figures. Repeating the same eight rules in
+ * each of them would guarantee they drift apart, so the vocabulary lives here
+ * once and the components are pure markup. Colours are token-derived, which is
+ * what lets a figure drawn for Vellum read correctly in Nocturne without a
+ * second palette: --ink is dark on paper and light in the dark, and every
+ * stroke here is mixed from it.
+ *
+ * A figure sets its own minimum drawing width with --fig-min when the default
+ * would crush it; the frame around it scrolls horizontally below that.
+ */
+
+.fig {
+  width: 100%;
+  height: auto;
+  min-width: var(--fig-min, 560px);
+  color: var(--ink);
+}
+
+/* ---- strokes ------------------------------------------------------- */
+.fig .bx      { fill: none; stroke: color-mix(in srgb, var(--brass) 85%, transparent); }
+.fig .bx-soft { fill: none; stroke: color-mix(in srgb, var(--brass) 45%, transparent); }
+.fig .bx-fill { fill: color-mix(in srgb, var(--brass) 10%, transparent);
+                stroke: color-mix(in srgb, var(--brass) 85%, transparent); }
+.fig .wire    { stroke: color-mix(in srgb, var(--ink) 55%, transparent); fill: none; }
+.fig .wire-soft { stroke: color-mix(in srgb, var(--ink) 26%, transparent); fill: none; }
+.fig .head    { fill: color-mix(in srgb, var(--ink) 55%, transparent); }
+.fig .dash    { stroke: color-mix(in srgb, var(--ink) 40%, transparent);
+                stroke-dasharray: 4 4; fill: none; }
+.fig .grid    { stroke: color-mix(in srgb, var(--brass) 30%, transparent); fill: none; }
+.fig .axis    { stroke: color-mix(in srgb, var(--ink) 60%, transparent); fill: none; }
+
+/* ---- lettering ----------------------------------------------------- */
+.fig text { font-family: var(--font-mono); }
+.fig .t-lab { font-size: 12px; fill: var(--brass-text); letter-spacing: 0.14em;
+              text-transform: uppercase; }
+.fig .t-md  { font-size: 13px; fill: currentColor; }
+.fig .t-sm  { font-size: 11px; fill: var(--ink-soft); }
+.fig .t-xs  { font-size: 10px; fill: var(--ink-soft); }
+.fig .t-key { font-size: 11px; fill: var(--brass-text); letter-spacing: 0.06em; }
+.fig .t-em  { font-family: var(--font-display); font-size: 14px; fill: var(--fundus);
+              font-style: italic; }
+
+/* ---- the five plate inks, used as accents -------------------------- */
+.fig .a1 { fill: var(--lesion-ves); }
+.fig .a2 { fill: var(--lesion-ma);  }
+.fig .a3 { fill: var(--lesion-ex);  }
+.fig .a4 { fill: var(--lesion-cws); }
+.fig .a5 { fill: var(--lesion-he);  }
+.fig .s1 { stroke: var(--lesion-ves); fill: none; }
+.fig .s2 { stroke: var(--lesion-ma);  fill: none; }
+.fig .s3 { stroke: var(--lesion-ex);  fill: none; }
+.fig .s4 { stroke: var(--lesion-cws); fill: none; }

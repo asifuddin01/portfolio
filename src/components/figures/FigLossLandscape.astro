@@ -1,0 +1,40 @@
+---
+/**
+ * Book I, Ch. I, Prop. 4 — a loss turns an objective into a surface. Contours
+ * are drawn as nested closed curves around one minimum, with a second, shallower
+ * basin: the picture should not imply that the surface is convex.
+ */
+const RINGS = [
+  { rx: 168, ry: 96 }, { rx: 132, ry: 74 }, { rx: 96, ry: 54 },
+  { rx: 62, ry: 34 }, { rx: 30, ry: 17 },
+];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="ll-t ll-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="ll-t">A loss surface, drawn as contours</title>
+  <desc id="ll-d">
+    Nested contour rings around a deep minimum on the left and a shallower one on
+    the right, with a saddle between them. A dashed line runs from a starting
+    point downhill into the nearer basin, not necessarily the better one.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">loss surface over two parameters</text>
+
+  {RINGS.map((r) => (
+    <ellipse cx="240" cy="180" rx={r.rx} ry={r.ry} class="grid" />
+  ))}
+  {RINGS.slice(2).map((r) => (
+    <ellipse cx="546" cy="150" rx={r.rx * 0.62} ry={r.ry * 0.62} class="grid" />
+  ))}
+
+  <circle cx="240" cy="180" r="5" class="a2" />
+  <circle cx="546" cy="150" r="5" class="a3" />
+  <text x="240" y="206" class="t-key" text-anchor="middle">global</text>
+  <text x="546" y="176" class="t-key" text-anchor="middle">local</text>
+
+  <path d="M636,268 C560,258 520,222 512,192" class="dash" />
+  <polygon points="512,192 506,204 518,203" class="head" />
+  <circle cx="636" cy="268" r="4" class="a1" />
+  <text x="656" y="272" class="t-sm">start</text>
+
+  <text x="0" y="300" class="t-sm">The loss is the only statement of the objective the optimiser can read. What it omits is not optimised.</text>
+</svg>

@@ -1,0 +1,47 @@
+---
+/**
+ * Book I, Ch. II, Prop. 3 — the same graph traversed twice. Forward values go
+ * left to right along the top; the partial derivatives come back right to left
+ * underneath, which is all backpropagation is.
+ */
+const NODES = [
+  { x: 40,  t: 'x' }, { x: 190, t: 'u = Wx' }, { x: 348, t: 'h = σ(u)' },
+  { x: 512, t: 'ŷ = Vh' }, { x: 640, t: 'L' },
+];
+---
+<svg class="fig" viewBox="0 0 720 280" role="img" aria-labelledby="cg-t cg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="cg-t">One graph, traversed forwards then backwards</title>
+  <desc id="cg-d">
+    Five nodes in a row: input, a linear step, an activation, a second linear
+    step and the loss. Arrows along the top run left to right carrying values.
+    Arrows underneath run right to left carrying partial derivatives, each one
+    multiplied into the next by the chain rule.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">forward — values</text>
+  <text x="0" y="266" class="t-lab">backward — gradients</text>
+
+  {NODES.map((n) => (
+    <g>
+      <rect x={n.x} y="96" width={n.t.length * 9 + 26} height="46" class="bx-fill" />
+      <text x={n.x + (n.t.length * 9 + 26) / 2} y="124" class="t-md" text-anchor="middle">{n.t}</text>
+    </g>
+  ))}
+
+  {NODES.slice(0, -1).map((n, i) => {
+    const x1 = n.x + n.t.length * 9 + 26;
+    const x2 = NODES[i + 1].x;
+    return (
+      <g>
+        <line x1={x1 + 4} y1="108" x2={x2 - 12} y2="108" class="wire" />
+        <polygon points={`${x2 - 12},103 ${x2 - 2},108 ${x2 - 12},113`} class="head" />
+        <line x1={x2 - 4} y1="134" x2={x1 + 12} y2="134" class="s2" stroke-width="1.2" />
+        <polygon points={`${x1 + 12},129 ${x1 + 2},134 ${x1 + 12},139`} fill="var(--lesion-ma)" />
+        <text x={(x1 + x2) / 2} y="164" class="t-key" text-anchor="middle">∂L/∂·</text>
+      </g>
+    );
+  })}
+
+  <text x="0" y="196" class="t-sm">Each backward arrow is one local derivative multiplied into what arrived from the right.</text>
+  <text x="0" y="216" class="t-sm">The cost of the backward pass is the cost of the forward pass, within a small constant.</text>
+</svg>

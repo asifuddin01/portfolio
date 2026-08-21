@@ -1,0 +1,40 @@
+---
+/**
+ * Book I, Ch. IV, Prop. 5 — the lineage read as a table of two costs. Each
+ * architecture is placed by what it gives up, which is why the last row won.
+ */
+const ROWS = [
+  { t: 'RNN',         path: 'O(n)',   par: 'sequential', cls: 'a5' },
+  { t: 'LSTM / GRU',  path: 'O(n)',   par: 'sequential', cls: 'a2' },
+  { t: 'CNN',         path: 'O(log n)', par: 'parallel', cls: 'a3' },
+  { t: 'Attention',   path: 'O(1)',   par: 'parallel',   cls: 'a1' },
+];
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="sl-t sl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="sl-t">Four ways to read a sequence, by path length and parallelism</title>
+  <desc id="sl-d">
+    A table of four architectures. Recurrent models connect distant positions
+    through a path that grows with distance and cannot be parallelised.
+    Convolution shortens the path logarithmically and parallelises. Attention
+    connects any two positions in one step, in parallel, at quadratic cost.
+  </desc>
+
+  <text x="0" y="24" class="t-lab">architecture</text>
+  <text x="300" y="24" class="t-lab">path between two positions</text>
+  <text x="540" y="24" class="t-lab">over the sequence</text>
+
+  <line x1="0" y1="38" x2="700" y2="38" class="wire-soft" />
+
+  {ROWS.map((r, i) => (
+    <g>
+      <rect x="0" y={58 + i * 52} width="6" height="30" class={r.cls} />
+      <text x="20" y={80 + i * 52} class="t-md">{r.t}</text>
+      <text x="300" y={80 + i * 52} class="t-md">{r.path}</text>
+      <text x="540" y={80 + i * 52} class="t-md">{r.par}</text>
+      <line x1="0" y1={98 + i * 52} x2="700" y2={98 + i * 52} class="grid" />
+    </g>
+  ))}
+
+  <text x="0" y="290" class="t-sm">Attention is not a better idea than recurrence in the abstract. It is the trade that pays when the</text>
+  <text x="0" y="310" class="t-sm">hardware is parallel and the sequences are short enough to afford n².</text>
+</svg>

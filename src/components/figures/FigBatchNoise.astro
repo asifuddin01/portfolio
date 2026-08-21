@@ -1,0 +1,37 @@
+---
+/**
+ * Book I, Ch. VIII, Prop. 1 — the batch as an estimator. A small batch gives a
+ * noisy direction; a large one gives a clean direction and fewer of them.
+ */
+const TRUE = { x1: 60, y1: 220, x2: 260, y2: 90 };
+const SMALL = [[-38, -6], [26, -40], [-14, 34], [44, 10], [-28, -34], [10, 42]];
+const LARGE = [[-10, -4], [8, -9], [-5, 7], [11, 3], [-7, -8], [3, 10]];
+const PANELS = [
+  { x: 0,   lab: 'batch of 8',   spread: SMALL, note: 'noisy direction, many cheap steps' },
+  { x: 380, lab: 'batch of 512', spread: LARGE, note: 'clean direction, few costly steps' },
+];
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="bn-t bn-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="bn-t">The batch gradient as an estimate</title>
+  <desc id="bn-d">
+    Two panels, each showing the true gradient direction as a solid arrow and
+    several batch estimates around it. With a small batch the estimates scatter
+    widely; with a large batch they cluster near the true direction.
+  </desc>
+
+  {PANELS.map((p) => (
+    <g>
+      <text x={p.x} y="24" class="t-lab">{p.lab}</text>
+      {p.spread.map((s) => (
+        <line x1={p.x + TRUE.x1} y1={TRUE.y1} x2={p.x + TRUE.x2 + s[0]} y2={TRUE.y2 + s[1]} class="wire-soft" />
+      ))}
+      <line x1={p.x + TRUE.x1} y1={TRUE.y1} x2={p.x + TRUE.x2} y2={TRUE.y2} class="s2" stroke-width="2" />
+      <polygon points={`${p.x + TRUE.x2 - 2},${TRUE.y2 + 12} ${p.x + TRUE.x2 + 6},${TRUE.y2 - 4} ${p.x + TRUE.x2 - 12},${TRUE.y2 + 4}`} fill="var(--lesion-ma)" />
+      <circle cx={p.x + TRUE.x1} cy={TRUE.y1} r="4" class="a1" />
+      <text x={p.x} y="264" class="t-sm">{p.note}</text>
+    </g>
+  ))}
+
+  <text x="0" y="290" class="t-sm">Noise in the estimate is not purely a defect: it is also what lets a small batch escape a shallow</text>
+  <text x="0" y="310" class="t-sm">basin that a large one would settle into.</text>
+</svg>

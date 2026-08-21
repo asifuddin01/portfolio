@@ -1,0 +1,46 @@
+---
+/** Book I, Ch. I, Prop. 2 — a tensor carries its meaning in its shape. */
+const AXES = [
+  { name: 'batch',    n: 'B', note: 'independent examples', y: 60,  cls: 'a1' },
+  { name: 'sequence', n: 'T', note: 'positions in time',    y: 108, cls: 'a2' },
+  { name: 'feature',  n: 'D', note: 'learned dimensions',   y: 156, cls: 'a3' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ts-t ts-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="ts-t">The axes of a tensor and what each one means</title>
+  <desc id="ts-d">
+    A block of shape batch by sequence by feature, drawn in three dimensions,
+    beside a legend naming each axis. The same numbers arranged along different
+    axes are different data; the shape is what says which is which.
+  </desc>
+
+  <text x="0" y="24" class="t-lab">shape (B, T, D)</text>
+
+  <g>
+    <polygon points="60,84 220,84 268,52 108,52" class="bx-fill" />
+    <polygon points="220,84 220,220 268,188 268,52" class="bx-fill" />
+    <rect x="60" y="84" width="160" height="136" class="bx-fill" />
+    {[0, 1, 2, 3].map((i) => (
+      <line x1="60" y1={84 + i * 34} x2="220" y2={84 + i * 34} class="bx-soft" />
+    ))}
+    {[0, 1, 2, 3, 4].map((i) => (
+      <line x1={60 + i * 32} y1="84" x2={60 + i * 32} y2="220" class="bx-soft" />
+    ))}
+  </g>
+
+  <text x="140" y="248" class="t-key" text-anchor="middle">T — rows</text>
+  <text x="140" y="266" class="t-key" text-anchor="middle">D — columns</text>
+  <text x="292" y="60" class="t-key">B — depth</text>
+
+  {AXES.map((a) => (
+    <g>
+      <rect x="400" y={a.y - 14} width="14" height="14" class={a.cls} />
+      <text x="426" y={a.y - 2} class="t-md">{a.n} · {a.name}</text>
+      <text x="426" y={a.y + 16} class="t-sm">{a.note}</text>
+    </g>
+  ))}
+
+  <line x1="400" y1="196" x2="700" y2="196" class="wire-soft" />
+  <text x="400" y="222" class="t-sm">Transpose two axes and the numbers survive;</text>
+  <text x="400" y="240" class="t-sm">the meaning does not.</text>
+</svg>

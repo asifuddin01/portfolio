@@ -1,0 +1,51 @@
+---
+/**
+ * Book I, Ch. VI, Prop. 3 — rotary encoding. Each position rotates q and k by
+ * an angle proportional to its index, so their inner product depends only on
+ * the difference of the two angles.
+ */
+const POS = [
+  { i: 2, a: 40,  cls: 'a1' },
+  { i: 5, a: 100, cls: 'a2' },
+  { i: 9, a: 180, cls: 'a3' },
+];
+const CX = 170, CY = 160, R = 82;
+const pt = (deg: number, r = R) => [
+  CX + r * Math.cos((deg * Math.PI) / 180),
+  CY - r * Math.sin((deg * Math.PI) / 180),
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rp-t rp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="rp-t">Rotary position embedding</title>
+  <desc id="rp-d">
+    A circle with three vectors drawn at angles proportional to their positions
+    in the sequence. Because both the query and the key are rotated, the angle
+    between any two of them depends only on how far apart the positions are.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">position becomes an angle</text>
+
+  <circle cx={CX} cy={CY} r={R} class="grid" />
+  <line x1={CX - R - 16} y1={CY} x2={CX + R + 16} y2={CY} class="grid" />
+  <line x1={CX} y1={CY - R - 16} x2={CX} y2={CY + R + 16} class="grid" />
+
+  {POS.map((p) => {
+    const [x, y] = pt(p.a);
+    return (
+      <g>
+        <line x1={CX} y1={CY} x2={x} y2={y} stroke="currentColor" stroke-width="1.4" />
+        <circle cx={x} cy={y} r="4" class={p.cls} />
+        <text x={x + (x > CX ? 10 : -10)} y={y - 8} class="t-key" text-anchor={x > CX ? 'start' : 'end'}>m = {p.i}</text>
+      </g>
+    );
+  })}
+
+  <text x="330" y="82" class="t-md">⟨ R(mθ)q , R(nθ)k ⟩</text>
+  <text x="330" y="112" class="t-md">= ⟨ q , R((n−m)θ)k ⟩</text>
+  <line x1="330" y1="130" x2="690" y2="130" class="wire-soft" />
+  <text x="330" y="158" class="t-sm">The absolute indices cancel. What survives</text>
+  <text x="330" y="178" class="t-sm">the inner product is n − m, the distance.</text>
+  <text x="330" y="216" class="t-sm">Nothing is added to the embedding, so the</text>
+  <text x="330" y="236" class="t-sm">residual stream is left alone; only q and k</text>
+  <text x="330" y="256" class="t-sm">are turned, inside each head.</text>
+</svg>

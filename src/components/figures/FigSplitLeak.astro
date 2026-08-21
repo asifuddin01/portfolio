@@ -1,0 +1,69 @@
+---
+/**
+ * Book I, Ch. VIII, Prop. 5 — where a split goes wrong. Six images from three
+ * patients, two each. Split naively and the same patient lands on both sides,
+ * which is the arrangement that reports the best number.
+ */
+const IMGS = [
+  { id: 1, p: 1, cls: 'a1' }, { id: 2, p: 1, cls: 'a1' },
+  { id: 3, p: 2, cls: 'a2' }, { id: 4, p: 2, cls: 'a2' },
+  { id: 5, p: 3, cls: 'a3' }, { id: 6, p: 3, cls: 'a3' },
+];
+/* By image: every second one is held out, so each patient straddles the split.
+   By patient: patient 3 is held out whole. */
+const PANELS = [
+  {
+    x: 0,
+    lab: 'split by image',
+    held: (im: typeof IMGS[number]) => im.id % 2 === 0,
+    verdict: 'patients 1, 2 and 3 all appear on both sides',
+    reads: 'measures recall of patients already seen',
+    tone: 'var(--lesion-ma)',
+  },
+  {
+    x: 380,
+    lab: 'split by patient',
+    held: (im: typeof IMGS[number]) => im.p === 3,
+    verdict: 'no patient appears on both sides',
+    reads: 'measures what happens on a new patient',
+    tone: 'var(--lesion-cws)',
+  },
+];
+const CELL = 44;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sp-t sp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="sp-t">Two ways to split the same six images</title>
+  <desc id="sp-d">
+    Six images from three patients, two each. Split by image, every patient
+    appears on both sides of the split and the held-out score is inflated. Split
+    by patient, no patient appears on both sides and the score is honest.
+  </desc>
+
+  {PANELS.map((p) => {
+    const train = IMGS.filter((im) => !p.held(im));
+    const held = IMGS.filter((im) => p.held(im));
+    const row = (items: typeof IMGS, y: number) =>
+      items.map((im, i) => (
+        <g>
+          <rect x={p.x + 84 + i * CELL} y={y} width="34" height="28" class="bx" />
+          <rect x={p.x + 84 + i * CELL} y={y} width="34" height="3" class={im.cls} />
+          <text x={p.x + 84 + i * CELL + 17} y={y + 20} class="t-xs" text-anchor="middle">p{im.p}</text>
+        </g>
+      ));
+    return (
+      <g>
+        <text x={p.x} y="24" class="t-lab">{p.lab}</text>
+        <text x={p.x} y="76" class="t-sm">train</text>
+        {row(train, 56)}
+        <text x={p.x} y="146" class="t-sm">held out</text>
+        {row(held, 126)}
+        <text x={p.x} y="200" class="t-sm" fill={p.tone}>{p.verdict}</text>
+        <text x={p.x} y="222" class="t-sm">{p.reads}</text>
+      </g>
+    );
+  })}
+
+  <line x1="352" y1="14" x2="352" y2="240" class="grid" />
+  <text x="0" y="270" class="t-sm">The unit of the split has to be the unit the claim is about — patient, site, scanner, study. Get it</text>
+  <text x="0" y="290" class="t-sm">wrong and every other measure of rigour is decoration: the number was decided before training began.</text>
+</svg>

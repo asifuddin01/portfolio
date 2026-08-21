@@ -1,0 +1,40 @@
+---
+/**
+ * Book I, Ch. VI, Prop. 2 — the sinusoidal encoding as a bank of clocks. Fast
+ * dimensions resolve neighbours; slow ones separate distant regions.
+ */
+const WAVES = [
+  { period: 26,  y: 76,  lab: 'fast — separates neighbours', cls: 's1' },
+  { period: 78,  y: 158, lab: 'middle',                      cls: 's3' },
+  { period: 234, y: 240, lab: 'slow — separates regions',    cls: 's2' },
+];
+const W = 560, X0 = 60;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sn-t sn-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="sn-t">Sinusoidal position encoding as a bank of clocks</title>
+  <desc id="sn-d">
+    Three sine waves of geometrically increasing wavelength plotted against
+    position. Together they give every position a distinct signature: the fast
+    wave distinguishes adjacent positions, the slow one distinguishes distant
+    regions of the sequence.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one dimension per wavelength</text>
+
+  {WAVES.map((w) => {
+    const pts = Array.from({ length: 113 }, (_, i) => {
+      const x = X0 + (i * W) / 112;
+      return `${x},${w.y + 26 * Math.sin((2 * Math.PI * (i * W / 112)) / w.period)}`;
+    }).join(' ');
+    return (
+      <g>
+        <line x1={X0} y1={w.y} x2={X0 + W} y2={w.y} class="grid" />
+        <polyline points={pts} class={w.cls} stroke-width="1.5" />
+        <text x="0" y={w.y - 30} class="t-sm">{w.lab}</text>
+      </g>
+    );
+  })}
+
+  <line x1="196" y1="46" x2="196" y2="276" class="dash" />
+  <text x="204" y="290" class="t-key">one position, read off every clock at once</text>
+</svg>

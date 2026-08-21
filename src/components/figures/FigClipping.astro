@@ -1,0 +1,40 @@
+---
+/**
+ * Book I, Ch. VIII, Prop. 3 — two different guards. Decay pulls on the
+ * parameters every step; clipping only ever touches the rare enormous update.
+ */
+const STEPS = [22, 18, 26, 20, 24, 118, 21, 19, 25, 23, 17, 96, 22, 20];
+const CLIP = 40;
+const X0 = 40, BW = 26, Y0 = 200;
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="cl-t cl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="cl-t">Weight decay and gradient clipping guard different things</title>
+  <desc id="cl-d">
+    A bar chart of gradient norms over fourteen steps, mostly small with two
+    enormous spikes. A horizontal clipping threshold cuts only the two spikes.
+    Beneath, a separate note shows weight decay acting on every step regardless.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">gradient norm per step</text>
+
+  <line x1={X0} y1={Y0} x2={X0 + STEPS.length * (BW + 8)} y2={Y0} class="axis" />
+  {STEPS.map((s, i) => (
+    <g>
+      <rect x={X0 + i * (BW + 8)} y={Y0 - Math.min(s, CLIP)} width={BW} height={Math.min(s, CLIP)} class="a1" />
+      {s > CLIP && (
+        <g>
+          <rect x={X0 + i * (BW + 8)} y={Y0 - s} width={BW} height={s - CLIP} class="a2" opacity="0.35" />
+          <line x1={X0 + i * (BW + 8)} y1={Y0 - s} x2={X0 + i * (BW + 8) + BW} y2={Y0 - s} class="s2" stroke-width="1.4" />
+        </g>
+      )}
+    </g>
+  ))}
+  <line x1={X0 - 10} y1={Y0 - CLIP} x2={X0 + STEPS.length * (BW + 8) + 40} y2={Y0 - CLIP} class="dash" />
+  <text x={X0 + STEPS.length * (BW + 8) + 48} y={Y0 - CLIP + 4} class="t-key">clip threshold</text>
+
+  <text x={X0} y="234" class="t-sm">Clipping is a rare intervention: on almost every step it does nothing at all.</text>
+
+  <line x1="0" y1="256" x2="700" y2="256" class="wire-soft" />
+  <text x="0" y="282" class="t-sm">Weight decay is the opposite: a small constant pull toward zero, applied on every step to every</text>
+  <text x="0" y="302" class="t-sm">parameter, whatever the gradient is doing. One bounds the step, the other bounds where they land.</text>
+</svg>

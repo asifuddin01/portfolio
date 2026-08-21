@@ -1,0 +1,54 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 6 — the three arrangements side by side. The only
+ * difference is what each stack is permitted to look at.
+ */
+const PANELS = [
+  { x: 0,   lab: 'encoder-only',   sees: 'the whole input', use: 'classify, embed, segment' },
+  { x: 244, lab: 'decoder-only',   sees: 'the past only',   use: 'generate' },
+  { x: 488, lab: 'encoder–decoder', sees: 'both, joined',   use: 'translate, caption' },
+];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="ed-t ed-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ed-t">Encoder, decoder, and the two joined</title>
+  <desc id="ed-d">
+    Three arrangements of the same block. An encoder attends over the whole
+    input. A decoder attends only over what precedes each position. An
+    encoder-decoder runs both and joins them with a cross-attention layer.
+  </desc>
+
+  {PANELS.map((p) => (
+    <g>
+      <text x={p.x} y="24" class="t-lab">{p.lab}</text>
+
+      {p.lab !== 'decoder-only' && (
+        <g>
+          <rect x={p.x} y="52" width="96" height="140" class="bx-fill" />
+          <text x={p.x + 48} y="128" class="t-md" text-anchor="middle">encoder</text>
+          <rect x={p.x} y="52" width="96" height="3" class="a1" />
+        </g>
+      )}
+
+      {p.lab !== 'encoder-only' && (
+        <g>
+          <rect x={p.x + (p.lab === 'decoder-only' ? 0 : 120)} y="52" width="96" height="140" class="bx-fill" />
+          <text x={p.x + (p.lab === 'decoder-only' ? 48 : 168)} y="128" class="t-md" text-anchor="middle">decoder</text>
+          <rect x={p.x + (p.lab === 'decoder-only' ? 0 : 120)} y="52" width="96" height="3" class="a2" />
+        </g>
+      )}
+
+      {p.lab === 'encoder–decoder' && (
+        <g>
+          <line x1={p.x + 98} y1="122" x2={p.x + 110} y2="122" class="wire" />
+          <polygon points={`${p.x + 110},117 ${p.x + 120},122 ${p.x + 110},127`} class="head" />
+          <text x={p.x + 108} y="212" class="t-key" text-anchor="middle">cross-attention</text>
+        </g>
+      )}
+
+      <text x={p.x} y="248" class="t-sm">sees: {p.sees}</text>
+      <text x={p.x} y="270" class="t-sm">used for: {p.use}</text>
+    </g>
+  ))}
+
+  <text x="0" y="308" class="t-sm">Same block, same maths. The masks and the wiring are the whole of the difference.</text>
+</svg>

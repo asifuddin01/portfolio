@@ -1,0 +1,38 @@
+---
+/**
+ * Book I, Ch. VIII, Prop. 4 — the range problem. fp16 has plenty of precision
+ * where it has any range at all; the gradients live below its floor.
+ */
+const BANDS = [
+  { lab: 'fp32', x: 40,  w: 600, cls: 'a4' },
+  { lab: 'fp16', x: 250, w: 250, cls: 'a2' },
+  { lab: 'bf16', x: 46,  w: 590, cls: 'a1' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pr-t pr-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="pr-t">Representable range in three float formats</title>
+  <desc id="pr-d">
+    Three horizontal bands on a logarithmic magnitude axis. Half precision
+    covers a narrow band; brain float and single precision cover a wide one. A
+    marked region of small gradient magnitudes falls below the half-precision
+    floor and rounds to zero.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">magnitude, log scale</text>
+
+  {BANDS.map((b, i) => (
+    <g>
+      <text x="0" y={78 + i * 56} class="t-md">{b.lab}</text>
+      <rect x={b.x} y={60 + i * 56} width={b.w} height="24" class={b.cls} opacity="0.32" />
+      <rect x={b.x} y={60 + i * 56} width={b.w} height="24" class="bx" />
+    </g>
+  ))}
+
+  <rect x="150" y="46" width="86" height="196" class="dash" />
+  <text x="193" y="264" class="t-key" text-anchor="middle">where gradients live</text>
+  <text x="193" y="284" class="t-key" text-anchor="middle">late in training</text>
+
+  <text x="400" y="240" class="t-sm">Loss scaling multiplies the loss by a large</text>
+  <text x="400" y="260" class="t-sm">constant so the gradients land inside the band,</text>
+  <text x="400" y="280" class="t-sm">then divides it back out before the update.</text>
+</svg>

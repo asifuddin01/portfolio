@@ -1,0 +1,38 @@
+---
+/**
+ * Book I, Ch. II, Prop. 2 — depth without non-linearity collapses. Left: two
+ * linear maps composed, which is one line. Right: the same depth with a ReLU
+ * between, which is a piecewise fold.
+ */
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="df-t df-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="df-t">Composition with and without a non-linearity</title>
+  <desc id="df-d">
+    On the left, two linear layers composed produce a single straight line: the
+    stack collapses to one layer. On the right, the same two layers with a
+    rectifier between them produce a piecewise-linear curve with three segments.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">linear ∘ linear</text>
+  <text x="392" y="22" class="t-lab">linear ∘ relu ∘ linear</text>
+
+  <g>
+    <line x1="30" y1="270" x2="330" y2="270" class="axis" />
+    <line x1="30" y1="270" x2="30" y2="60" class="axis" />
+    <line x1="42" y1="256" x2="318" y2="82" class="s1" stroke-width="1.6" />
+    <text x="180" y="304" class="t-sm" text-anchor="middle">one line, whatever the depth</text>
+  </g>
+
+  <g>
+    <line x1="392" y1="270" x2="692" y2="270" class="axis" />
+    <line x1="392" y1="270" x2="392" y2="60" class="axis" />
+    <polyline points="404,254 480,254 566,140 680,96" class="s2" stroke-width="1.6" fill="none" />
+    <circle cx="480" cy="254" r="3.4" class="a2" />
+    <circle cx="566" cy="140" r="3.4" class="a2" />
+    <line x1="480" y1="254" x2="480" y2="278" class="dash" />
+    <line x1="566" y1="140" x2="566" y2="278" class="dash" />
+    <text x="480" y="294" class="t-key" text-anchor="middle">kink</text>
+    <text x="566" y="294" class="t-key" text-anchor="middle">kink</text>
+    <text x="542" y="316" class="t-sm" text-anchor="middle">each unit contributes a fold</text>
+  </g>
+</svg>

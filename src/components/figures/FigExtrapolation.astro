@@ -1,0 +1,37 @@
+---
+/**
+ * Book I, Ch. VI, Prop. 4 — what happens past the training length. A learned
+ * table simply has no row; a periodic scheme has a value but no experience.
+ */
+const TRAIN = 380, X0 = 40, END = 660;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ex-t ex-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="ex-t">Beyond the training length</title>
+  <desc id="ex-d">
+    A position axis with a marked training length. A learned absolute encoding
+    is drawn as a row of slots that simply stops at that boundary. A sinusoidal
+    or rotary encoding continues past it, but into a region the model has never
+    been trained on.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">learned absolute</text>
+  {Array.from({ length: 14 }, (_, i) => (
+    <rect x={X0 + i * 24} y="42" width="18" height="26" class={X0 + i * 24 < TRAIN ? 'bx-fill' : 'bx-soft'} />
+  ))}
+  <text x={TRAIN + 12} y="62" class="t-sm">no row exists — the table ends here</text>
+
+  <text x="0" y="128" class="t-lab">sinusoidal / rotary</text>
+  {(() => {
+    const pts = Array.from({ length: 156 }, (_, i) => {
+      const x = X0 + (i * (END - X0)) / 155;
+      return `${x},${170 + 22 * Math.sin(x / 15)}`;
+    }).join(' ');
+    return <polyline points={pts} class="s1" stroke-width="1.5" />;
+  })()}
+  <text x={TRAIN + 12} y="216" class="t-sm">defined, but never trained at these distances</text>
+
+  <line x1={TRAIN} y1="34" x2={TRAIN} y2="240" class="dash" />
+  <text x={TRAIN} y="258" class="t-key" text-anchor="middle">training length</text>
+
+  <text x="0" y="292" class="t-sm">A long-context claim is a claim about what was trained, not about what the encoding can be evaluated at.</text>
+</svg>

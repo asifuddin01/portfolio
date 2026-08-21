@@ -1,0 +1,45 @@
+---
+/**
+ * Book I, Ch. III, Prop. 4 — one token, two sentences. The embedding is the
+ * same vector in both; only what surrounds it differs.
+ */
+const A = ['the', 'river', 'bank', 'flooded'];
+const B = ['the', 'central', 'bank', 'raised'];
+const W = 96;
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="cx-t cx-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="cx-t">One embedding, two contexts</title>
+  <desc id="cx-d">
+    Two sentences that share the word bank. In both, the token enters the model
+    as the identical vector from the embedding table. After a layer of attention
+    the two copies have moved apart, because each has read a different context.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">at the input — identical</text>
+
+  {[A, B].map((row, ri) => (
+    <g>
+      {row.map((t, i) => (
+        <g>
+          <rect x={20 + i * (W + 10)} y={44 + ri * 56} width={W} height="34"
+                class={t === 'bank' ? 'bx-fill' : 'bx'} />
+          {t === 'bank' && <rect x={20 + i * (W + 10)} y={44 + ri * 56} width={W} height="3" class="a2" />}
+          <text x={20 + i * (W + 10) + W / 2} y={66 + ri * 56} class="t-md" text-anchor="middle">{t}</text>
+        </g>
+      ))}
+    </g>
+  ))}
+
+  <line x1="234" y1="158" x2="234" y2="196" class="wire" />
+  <polygon points="229,196 234,208 239,196" class="head" />
+  <text x="252" y="186" class="t-key">one layer of attention</text>
+
+  <text x="0" y="248" class="t-lab">after — separated</text>
+
+  <circle cx="140" cy="286" r="6" class="a2" />
+  <text x="156" y="290" class="t-sm">bank (river)</text>
+  <circle cx="386" cy="286" r="6" class="a2" />
+  <text x="402" y="290" class="t-sm">bank (finance)</text>
+  <line x1="152" y1="286" x2="374" y2="286" class="dash" />
+  <text x="264" y="272" class="t-key" text-anchor="middle">context supplied the difference</text>
+</svg>

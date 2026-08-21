@@ -1,0 +1,49 @@
+---
+/** Book I, Ch. II, Prop. 1 — one unit of a linear layer, written out. */
+const IN = [
+  { y: 76,  t: 'x₁', w: 'w₁' },
+  { y: 128, t: 'x₂', w: 'w₂' },
+  { y: 180, t: 'x₃', w: 'w₃' },
+];
+---
+<svg class="fig" viewBox="0 0 720 280" role="img" aria-labelledby="nu-t nu-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="nu-t">A single unit: weighted sum, bias, activation</title>
+  <desc id="nu-d">
+    Three inputs each multiplied by a weight and summed, with a bias added, then
+    passed through an activation function to produce one output. The weighted sum
+    and bias are the affine part; only the last box is non-linear.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one unit</text>
+
+  {IN.map((i) => (
+    <g>
+      <text x="16" y={i.y + 5} class="t-md">{i.t}</text>
+      <line x1="44" y1={i.y} x2="236" y2="128" class="wire" />
+      <text x={120} y={i.y === 128 ? i.y - 8 : (i.y + 128) / 2 - 6} class="t-key">{i.w}</text>
+    </g>
+  ))}
+
+  <circle cx="264" cy="128" r="30" class="bx-fill" />
+  <text x="264" y="134" class="t-md" text-anchor="middle">Σ</text>
+
+  <line x1="264" y1="222" x2="264" y2="164" class="wire" />
+  <polygon points="259,164 264,152 269,164" class="head" />
+  <text x="264" y="242" class="t-key" text-anchor="middle">b — bias</text>
+
+  <line x1="296" y1="128" x2="392" y2="128" class="wire" />
+  <polygon points="392,123 404,128 392,133" class="head" />
+
+  <rect x="414" y="98" width="112" height="60" class="bx-fill" />
+  <text x="470" y="126" class="t-md" text-anchor="middle">σ</text>
+  <text x="470" y="146" class="t-sm" text-anchor="middle">activation</text>
+
+  <line x1="534" y1="128" x2="616" y2="128" class="wire" />
+  <polygon points="616,123 628,128 616,133" class="head" />
+  <text x="644" y="134" class="t-md">a</text>
+
+  <line x1="14" y1="46" x2="404" y2="46" class="wire-soft" />
+  <text x="14" y="40" class="t-key">affine: a fixed shape, only the numbers learned</text>
+  <line x1="414" y1="46" x2="628" y2="46" class="wire-soft" />
+  <text x="414" y="40" class="t-key">the only non-linear step</text>
+</svg>

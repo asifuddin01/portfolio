@@ -1,0 +1,46 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 5 — the mask as a triangle. Everything above the
+ * diagonal is set to minus infinity before the softmax, not after.
+ */
+const N = 7;
+const S = 34, X0 = 96, Y0 = 56;
+const TOK = ['the', 'cat', 'sat', 'on', 'the', 'warm', 'mat'];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="cm-t cm-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="cm-t">The causal mask</title>
+  <desc id="cm-d">
+    A square grid of attention scores for seven tokens. The lower triangle,
+    including the diagonal, is open: each token may attend to itself and to
+    everything before it. The upper triangle is closed, because those positions
+    lie in the future.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">query row attends to key column</text>
+
+  {Array.from({ length: N }, (_, r) => (
+    <g>
+      <text x={X0 - 10} y={Y0 + r * S + 22} class="t-xs" text-anchor="end">{TOK[r]}</text>
+      {Array.from({ length: N }, (_, c) => (
+        <g>
+          <rect x={X0 + c * S} y={Y0 + r * S} width={S} height={S}
+                class={c <= r ? 'bx-fill' : 'bx-soft'} />
+          {c > r && <text x={X0 + c * S + S / 2} y={Y0 + r * S + S / 2 + 4} class="t-xs" text-anchor="middle">−∞</text>}
+        </g>
+      ))}
+    </g>
+  ))}
+
+  {TOK.map((t, c) => (
+    <text x={X0 + c * S + S / 2} y={Y0 - 8} class="t-xs" text-anchor="middle">{t}</text>
+  ))}
+
+  <text x="400" y="112" class="t-sm">Set before the softmax, so the</text>
+  <text x="400" y="132" class="t-sm">masked entries receive exactly</text>
+  <text x="400" y="152" class="t-sm">zero weight rather than a small one.</text>
+  <text x="400" y="192" class="t-sm">This is what lets every position be</text>
+  <text x="400" y="212" class="t-sm">trained at once on the same sequence:</text>
+  <text x="400" y="232" class="t-sm">n prediction problems, one forward pass.</text>
+
+  <text x="0" y="306" class="t-sm">Remove the triangle and the same weights become an encoder. Nothing else about the block changes.</text>
+</svg>

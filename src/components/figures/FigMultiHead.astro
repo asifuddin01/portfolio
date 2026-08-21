@@ -1,0 +1,46 @@
+---
+/**
+ * Book I, Ch. VII, Prop. 2 — the width is split, not multiplied. Four heads of
+ * width d/4 cost what one head of width d costs.
+ */
+const HEADS = [
+  { t: 'head 1', note: 'previous token', cls: 'a1' },
+  { t: 'head 2', note: 'the subject',    cls: 'a2' },
+  { t: 'head 3', note: 'matching quote', cls: 'a3' },
+  { t: 'head 4', note: 'nothing useful', cls: 'a4' },
+];
+---
+<svg class="fig" viewBox="0 0 720 342" role="img" aria-labelledby="mh-t mh-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="mh-t">One attention budget, divided into four heads</title>
+  <desc id="mh-d">
+    A vector of width d split into four slices of width d over four. Each slice
+    runs its own attention and attends to a different relation. The four outputs
+    are concatenated back to width d and mixed by an output projection.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one vector, width d</text>
+  <rect x="0" y="38" width="608" height="30" class="bx" />
+  {HEADS.map((h, i) => (
+    <rect x={i * 152} y="38" width="152" height="3" class={h.cls} />
+  ))}
+  {[1, 2, 3].map((i) => <line x1={i * 152} y1="38" x2={i * 152} y2="68" class="bx" />)}
+
+  {HEADS.map((h, i) => (
+    <g>
+      <line x1={i * 152 + 76} y1="70" x2={i * 152 + 76} y2="106" class="wire" />
+      <polygon points={`${i * 152 + 71},106 ${i * 152 + 76},118 ${i * 152 + 81},106`} class="head" />
+      <rect x={i * 152 + 8} y="122" width="136" height="52" class="bx-fill" />
+      <text x={i * 152 + 76} y="146" class="t-md" text-anchor="middle">{h.t}</text>
+      <text x={i * 152 + 76} y="164" class="t-sm" text-anchor="middle">d / 4</text>
+      <text x={i * 152 + 76} y="200" class="t-key" text-anchor="middle">{h.note}</text>
+      <line x1={i * 152 + 76} y1="212" x2={i * 152 + 76} y2="238" class="wire" />
+      <polygon points={`${i * 152 + 71},238 ${i * 152 + 76},250 ${i * 152 + 81},238`} class="head" />
+    </g>
+  ))}
+
+  <rect x="0" y="254" width="608" height="30" class="bx-fill" />
+  <text x="304" y="274" class="t-md" text-anchor="middle">concatenate, then W_O</text>
+
+  <text x="0" y="310" class="t-sm">Heads are cheap because they are slices. What they buy is several relations at once;</text>
+  <text x="0" y="330" class="t-sm">what they cost is resolution inside each.</text>
+</svg>

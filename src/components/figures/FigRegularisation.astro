@@ -1,0 +1,34 @@
+---
+/**
+ * Book I, Ch. II, Prop. 5 — the same points fitted twice. The exact fit is the
+ * one that will do worse on the next point, which is the whole argument.
+ */
+const PTS = [[80, 232], [136, 196], [190, 214], [246, 160], [300, 176], [356, 124], [412, 142]];
+const wiggly = 'M80,232 C110,150 130,262 190,214 C224,186 224,120 246,160 C270,204 282,120 300,176 C318,232 334,96 356,124 C378,150 396,176 412,142';
+const smooth = 'M80,236 C170,206 260,178 412,138';
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rg-t rg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="rg-t">An exact fit and a constrained one</title>
+  <desc id="rg-d">
+    Seven data points fitted by a curve that passes exactly through every one,
+    and by a straighter curve that misses all of them slightly. A held-out point
+    lies far from the exact curve and close to the constrained one.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the same seven points, fitted twice</text>
+
+  <path d={wiggly} class="s2" stroke-width="1.5" />
+  <path d={smooth} class="s1" stroke-width="1.5" />
+  {PTS.map((p) => <circle cx={p[0]} cy={p[1]} r="4" class="a5" />)}
+
+  <circle cx="468" cy="128" r="5" class="a3" />
+  <text x="484" y="132" class="t-key">held out</text>
+
+  <text x="120" y="278" class="t-sm" fill="var(--lesion-ma)">passes through every point</text>
+  <text x="120" y="296" class="t-sm" fill="var(--lesion-ves)">passes through none of them</text>
+
+  <text x="470" y="196" class="t-sm">Regularisation does not</text>
+  <text x="470" y="214" class="t-sm">improve the fit. It decides</text>
+  <text x="470" y="232" class="t-sm">which fit you get when</text>
+  <text x="470" y="250" class="t-sm">several are available.</text>
+</svg>

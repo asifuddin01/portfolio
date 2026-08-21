@@ -1,0 +1,45 @@
+---
+/**
+ * Book I, Ch. V, Prop. 3 — the same logits, scaled and unscaled. Unscaled, the
+ * distribution collapses onto one key and the gradient through it goes flat.
+ */
+const LOGITS = [1.6, 0.4, 1.2, -0.6, 0.9, -1.1, 0.2, 1.4];
+function soft(xs: number[], s: number) {
+  const e = xs.map((x) => Math.exp(x * s));
+  const z = e.reduce((a, b) => a + b, 0);
+  return e.map((v) => v / z);
+}
+const PANELS = [
+  { s: 1, lab: 'scaled by 1/√d', x0: 40, cls: 'a1' },
+  { s: 8, lab: 'unscaled — logits grow with d', x0: 400, cls: 'a2' },
+];
+const BW = 30;
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="sm-t sm-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="sm-t">The same attention logits, scaled and unscaled</title>
+  <desc id="sm-d">
+    Two bar charts of attention weights over eight keys. Scaled, the weights are
+    spread across several keys. Unscaled, almost all the weight lands on one key
+    and the remaining bars are invisible, which is where the gradient dies.
+  </desc>
+
+  {PANELS.map((p) => {
+    const w = soft(LOGITS, p.s);
+    return (
+      <g>
+        <text x={p.x0} y="24" class="t-lab">{p.lab}</text>
+        <line x1={p.x0} y1="220" x2={p.x0 + 8 * (BW + 8)} y2="220" class="axis" />
+        {w.map((v, i) => (
+          <g>
+            <rect x={p.x0 + i * (BW + 8)} y={220 - v * 168} width={BW} height={Math.max(v * 168, 0.6)} class={p.cls} />
+            <text x={p.x0 + i * (BW + 8) + BW / 2} y="238" class="t-xs" text-anchor="middle">k{i + 1}</text>
+          </g>
+        ))}
+        <text x={p.x0} y="266" class="t-sm">max weight {(Math.max(...w) * 100).toFixed(0)}%</text>
+      </g>
+    );
+  })}
+
+  <text x="0" y="292" class="t-sm">For unit-variance q and k the dot product has variance d, so the logits grow with the head width.</text>
+  <text x="0" y="312" class="t-sm">Dividing by √dₖ restores it, whatever the width.</text>
+</svg>
