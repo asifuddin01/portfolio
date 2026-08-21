@@ -26,32 +26,45 @@ import { SITE } from './src/consts.ts';
  *    second <h1> on the page, so body headings are demoted one level.
  */
 function rehypeProseDefaults() {
-  const DEMOTE = { h1: 'h2', h2: 'h3', h3: 'h4', h4: 'h5', h5: 'h6' };
-
+  /**
+   * Rewrite body headings so they descend one level at a time beneath the
+   * page's own <h1>.
+   *
+   * Demoting each heading by a fixed step preserved whatever jumps the author
+   * wrote: a body going "# A" then "### B" became h2 then h4, which is an
+   * invalid outline. Tracking the previous depth means going deeper only ever
+   * adds one, whatever the source did.
+   */
   /** @param {HastNode} tree */
   return (tree) => {
-    let sawH1 = false;
-    /** @param {HastNode} node */
-    const scan = (node) => {
-      if (node.type === 'element' && node.tagName === 'h1') sawH1 = true;
-      for (const child of node.children ?? []) scan(child);
-    };
-    scan(tree);
+    /** @type {HastNode[]} */
+    const headings = [];
 
     /** @param {HastNode} node */
-    const walk = (node) => {
+    const collect = (node) => {
       if (node.type === 'element') {
         if (node.tagName === 'img') {
           node.properties = { loading: 'lazy', decoding: 'async', ...node.properties };
         }
-        const tag = node.tagName;
-        if (sawH1 && tag && tag in DEMOTE) {
-          node.tagName = DEMOTE[/** @type {keyof typeof DEMOTE} */ (tag)];
-        }
+        if (node.tagName && /^h[1-6]$/.test(node.tagName)) headings.push(node);
       }
-      for (const child of node.children ?? []) walk(child);
+      for (const child of node.children ?? []) collect(child);
     };
-    walk(tree);
+    collect(tree);
+
+    let prevSource = 0;
+    let prevOutput = 1; // the page's own <h1>
+
+    for (const node of headings) {
+      const source = Number(String(node.tagName).slice(1));
+      let output;
+      if (source > prevSource) output = Math.min(prevOutput + 1, 6);
+      else if (source === prevSource) output = prevOutput;
+      else output = Math.max(2, prevOutput - (prevSource - source));
+      node.tagName = `h${output}`;
+      prevSource = source;
+      prevOutput = output;
+    }
   };
 }
 
