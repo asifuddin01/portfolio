@@ -1,0 +1,51 @@
+---
+chapter: foundations--sequences
+proposition: 4
+statement: A convolution over a sequence buys parallelism and pays for range with depth.
+claim: "Every position is computed at once, but the window is fixed. Widening it needs more layers, so range becomes a depth budget rather than a running state."
+given:
+  - recurrence-compresses-a-sequence-into-a-state
+figure: FigDilation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "WaveNet: A Generative Model for Raw Audio"
+    url: https://arxiv.org/abs/1609.03499
+  - title: "Convolutional Sequence to Sequence Learning"
+    url: https://arxiv.org/abs/1705.03122
+---
+
+## Demonstration
+
+Apply a one-dimensional convolution along the sequence axis. Each output
+position is a function of a fixed window of inputs around it, and because no
+output depends on another output, they are all computable simultaneously. The
+sequential bottleneck of Proposition 1 disappears.
+
+What is given up is unbounded range. A kernel of width *k* sees *k* positions;
+stacking *L* such layers sees about *L(k − 1) + 1*. Range grows linearly with
+depth, which is expensive. Dilation fixes that: skip positions in the kernel by
+a factor that doubles each layer, and the receptive field grows exponentially
+instead — three layers of width three at dilations 1, 2, 4 see fifteen
+positions. That is WaveNet's construction, and it is what made autoregressive
+audio at sample rate feasible.
+
+So the three architectures line up on two axes, and the table in the figure is
+the whole comparison:
+
+- **Recurrence** — path length *O(n)*, sequential.
+- **Convolution** — path length *O(log n)* with dilation, fully parallel.
+- **Attention** — path length *O(1)*, fully parallel, quadratic in memory.
+
+Convolution is the intermediate step in both senses: chronologically it came
+between, and in its trade-offs it sits between. It is still the right choice
+when the useful structure is genuinely local and the sequences are long, which
+is why it survives in audio front-ends and in the patch-embedding stem of vision
+models.
+
+## Corollary
+
+Notice what each of the three spends to shorten the path. Recurrence spends
+nothing and gets a long path. Convolution spends depth. Attention spends memory,
+quadratically. There is no arrangement here that shortens the path for free, and
+the choice between them is a choice about which resource is scarce.

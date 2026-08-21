@@ -1,0 +1,59 @@
+---
+chapter: foundations--transformer
+proposition: 5
+statement: A causal mask is what turns a transformer into a language model.
+claim: "Setting the future to minus infinity before the softmax lets every position in a sequence be trained as its own prediction problem, in a single forward pass."
+given:
+  - attention-is-a-weighted-average
+figure: FigCausalMask
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Improving Language Understanding by Generative Pre-Training (GPT)"
+    url: https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+---
+
+## Demonstration
+
+Add a matrix *M* to the scores before the softmax, where *M*<sub>ij</sub> = 0
+for *j* ≤ *i* and −∞ otherwise:
+
+```
+A = softmax( QKᵀ/√d + M )
+```
+
+`exp(−∞)` is zero, so masked positions receive exactly zero weight — not a small
+weight, zero. Two details matter. It is added *before* the softmax, because
+zeroing weights afterwards would leave the remaining ones un-normalised. And in
+practice a large negative constant is used rather than true −∞, to avoid `NaN`
+in rows where everything is masked.
+
+What this buys is the reason decoder-only models dominate. Without a mask, a
+model trained to predict the next token could read that token, and the task
+would be trivial. Masking makes the task honest at every position
+simultaneously: a sequence of *n* tokens becomes *n* separate prediction
+problems, all trained in one forward pass, sharing all the computation. The
+training signal per unit of compute is enormous compared with a scheme that
+predicts one token per sequence.
+
+At inference the same mask makes caching correct. Position *i* never attends to
+anything after *i*, so the keys and values already computed for earlier positions
+remain valid as generation proceeds — nothing needs recomputing. The KV cache of
+Chapter V, Proposition 5 depends on causality; it would be invalid in a
+bidirectional model.
+
+The masked-language-model alternative, BERT's, corrupts a fraction of the tokens
+and predicts those, keeping bidirectional context. It gives better
+representations per token for classification, and a training signal on perhaps
+15% of positions rather than all of them. That difference in efficiency, more
+than any argument about representation quality, is why the field went the way it
+did.
+
+## Corollary
+
+Encoder and decoder are the same weights under different masks. A transformer is
+not intrinsically generative or intrinsically bidirectional — it is whichever
+the mask makes it, and the mask is a matrix of zeros and negative infinities
+added to the scores.

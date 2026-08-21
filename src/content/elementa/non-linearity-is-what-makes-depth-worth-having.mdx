@@ -1,0 +1,55 @@
+---
+chapter: foundations--neural-networks
+proposition: 2
+statement: Non-linearity is what makes depth worth having.
+claim: "Without an activation between them, stacked layers collapse into one. The activation is not a detail of the architecture — it is the reason the architecture has layers."
+given:
+  - a-linear-layer-is-an-affine-map
+figure: FigDepthFolds
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Rectified Linear Units Improve Restricted Boltzmann Machines"
+    url: https://www.cs.toronto.edu/~fritz/absps/reluICML.pdf
+  - title: "Multilayer Feedforward Networks are Universal Approximators"
+    url: https://doi.org/10.1016/0893-6080(89)90020-8
+---
+
+## Demonstration
+
+Proposition 1 showed that affine maps compose into affine maps. Insert any
+non-linear function between them and the collapse stops:
+
+```
+h = σ(W₁x + b₁)
+y = W₂h + b₂
+```
+
+There is no *W′* for which this equals *W′x + b′*, and the reason is worth
+seeing geometrically rather than algebraically. Take the rectifier, `relu(z) =
+max(0, z)`. Each unit divides input space with a hyperplane and zeroes
+everything on one side of it. A layer of *k* units draws *k* hyperplanes, and
+the space is carved into regions; inside each region the network is affine, and
+the pieces are stitched together at the boundaries.
+
+Depth compounds this. A second layer draws its hyperplanes in the space the
+first has already folded, so the regions multiply rather than add. This is the
+sense in which depth is efficient: some functions need exponentially more units
+to express with one hidden layer than with several.
+
+The universal approximation theorem is often quoted here and usually
+overinterpreted. It says a single hidden layer of sufficient width can
+approximate any continuous function on a compact set. It says nothing about how
+wide, nothing about whether gradient descent will find the weights, and nothing
+about how many examples the fitting would need. It establishes that the family
+is rich enough. Everything of practical interest lies in the parts it does not
+address.
+
+## Corollary
+
+The choice of activation matters less than its presence, but it is not free.
+`relu` is cheap and its gradient is exactly one where it is non-zero, which is
+kind to deep stacks; the cost is that a unit pushed permanently negative stops
+receiving gradient at all. `gelu` and `silu` smooth the corner and are what
+transformers generally use. Sigmoids saturate at both ends and are the reason
+deep networks were once thought untrainable.

@@ -1,0 +1,62 @@
+---
+chapter: foundations--transformer
+proposition: 4
+statement: Where the normalisation sits decides whether the shortcut is clean.
+claim: "Post-norm places a normalisation on the residual path and needs a warm-up to train deeply. Pre-norm leaves the path untouched and trains from a flat start. Same components, different order."
+given:
+  - the-residual-stream-is-what-layers-edit
+figure: FigPrePostNorm
+status: published
+updated: 2026-08-22
+sources:
+  - title: "On Layer Normalization in the Transformer Architecture"
+    url: https://arxiv.org/abs/2002.04745
+  - title: "Root Mean Square Layer Normalization"
+    url: https://arxiv.org/abs/1910.07467
+---
+
+## Demonstration
+
+The original transformer normalised *after* the residual addition:
+
+```
+x ← Norm(x + Sublayer(x))          post-norm
+```
+
+Current models normalise *before* the sublayer and leave the addition last:
+
+```
+x ← x + Sublayer(Norm(x))          pre-norm
+```
+
+The difference is whether the identity path passes through a normalisation. In
+post-norm it does, so the clean gradient path of the previous proposition is
+interrupted at every layer — the *I* term acquires the Jacobian of the norm.
+Xiong and colleagues showed that this makes the expected gradient at
+initialisation scale badly with depth, which is precisely why the original
+recipe required a learning-rate warm-up and why deep post-norm stacks were
+temperamental. In pre-norm the shortcut runs from input to output with nothing
+on it, the gradients are well-behaved at initialisation, and warm-up becomes
+helpful rather than necessary.
+
+Post-norm is not simply worse. When it trains, it often reaches slightly better
+final quality, because normalising the output of every block keeps the stream's
+scale controlled — under pre-norm the stream grows monotonically with depth,
+since every layer only ever adds. Some large models normalise in both places for
+that reason.
+
+What the normalisation does is a separate question. LayerNorm subtracts the mean
+and divides by the standard deviation across the feature axis, then applies a
+learned scale and shift. RMSNorm drops the mean subtraction and divides by the
+root mean square alone. It is cheaper, and it works as well, which is a mild
+embarrassment for the recentring story and is now the common choice.
+
+Note that both normalise across features *within one position*. Nothing here
+mixes tokens; Proposition 1's division of labour is intact.
+
+## Corollary
+
+Warm-up, normalisation placement and the stream's growing scale are one topic
+rather than three. A recipe copied from a post-norm paper into a pre-norm model
+carries a schedule tuned for a problem the new model does not have — which is
+one reason Chapter VIII, Proposition 2 insists that a schedule is not portable.

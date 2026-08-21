@@ -1,0 +1,50 @@
+---
+chapter: foundations--computation
+proposition: 3
+statement: Learning changes parameters, not rules.
+claim: "Training does not write new logic. It moves numbers inside a structure that was fixed before the first example arrived, which is why the architecture decides what is learnable at all."
+given:
+  - a-model-is-a-parameterised-function
+figure: FigParameterSpace
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Learning — LeCun, Bengio and Hinton (Nature, 2015)"
+    url: https://www.nature.com/articles/nature14539
+---
+
+## Demonstration
+
+The phrase *the model learned to do X* invites a picture of a system acquiring
+a rule, in something like the way a person acquires one. The mechanism is
+narrower than that, and the narrowness is the useful part.
+
+At initialisation the model already has its full structure: every layer, every
+connection, every operation in its final arrangement. Training changes none of
+it. What training does is move a point through the space of possible parameter
+settings — the same architecture, at every step, holding different numbers.
+
+So when a network appears to acquire a rule, the rule was always expressible;
+the search merely found the region where it is expressed. And when a network
+cannot acquire a rule, there are two quite different explanations, and telling
+them apart is the whole job:
+
+1. **No setting of the parameters expresses it.** A single linear layer cannot
+   express `xor` at any *θ*. More data will not help. More training will not
+   help. The family is wrong.
+2. **Some setting expresses it, but the search did not arrive.** The
+   architecture is adequate and the optimisation, the data or the objective is
+   not.
+
+The first is a statement about the architecture, and it is usually provable. The
+second is a statement about a training run, and it is usually only testable.
+Practitioners spend a great deal of time on the second while the answer lies in
+the first.
+
+## Corollary
+
+Inductive bias is what this proposition makes precise. A convolution shares
+weights across positions and so cannot learn a position-specific rule the way a
+dense layer can — that is not a limitation discovered during training but a
+decision made before it. Choosing an architecture is choosing what will be easy,
+what will be hard, and what will be impossible.

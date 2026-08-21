@@ -1,0 +1,62 @@
+---
+chapter: foundations--neural-networks
+proposition: 3
+statement: Backpropagation is the chain rule with the intermediate results kept.
+claim: "There is no separate learning algorithm inside a network. There is a graph, one traversal forwards to compute values, and one backwards to accumulate derivatives."
+given:
+  - a-linear-layer-is-an-affine-map
+figure: FigComputationalGraph
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Learning Representations by Back-propagating Errors (Rumelhart, Hinton, Williams)"
+    url: https://www.nature.com/articles/323533a0
+  - title: "Automatic Differentiation in Machine Learning: a Survey"
+    url: https://arxiv.org/abs/1502.05767
+---
+
+## Demonstration
+
+Take a small network as a chain of operations:
+
+```
+u = Wx        h = σ(u)        ŷ = Vh        L = ℓ(ŷ, y)
+```
+
+The forward pass evaluates these left to right, keeping each intermediate.
+Backpropagation evaluates the derivative of *L* with respect to each parameter,
+right to left, by the chain rule:
+
+```
+∂L/∂V = (∂L/∂ŷ)(∂ŷ/∂V)
+∂L/∂W = (∂L/∂ŷ)(∂ŷ/∂h)(∂h/∂u)(∂u/∂W)
+```
+
+Every factor in those products is local — it depends only on one operation and
+the values that operation saw. So the algorithm is: walk backwards, and at each
+node multiply the derivative arriving from above by the node's own local
+derivative. Nothing more.
+
+Two consequences are worth stating because they explain most of what training
+costs.
+
+**The backward pass costs about what the forward pass costs.** Each node does a
+comparable amount of arithmetic in each direction. Training is roughly three
+times inference, not a thousand times.
+
+**The intermediates must be stored.** `∂h/∂u` needs *u*. That is why memory
+during training scales with depth times batch times width, why activation
+checkpointing exists — recompute intermediates rather than store them — and why
+a model that runs comfortably at inference may not train on the same hardware.
+
+The name *automatic differentiation* is the accurate one. Reverse-mode AD is a
+general technique for any composition of differentiable operations, and neural
+networks are simply one place it is applied. There is no learning in it.
+
+## Corollary
+
+If a gradient is zero where it should not be, the fault is at one node, and the
+chain rule says which: the product is zero if any factor is. A saturated
+sigmoid, a rectifier stuck negative, a detached tensor or an in-place operation
+that destroyed a stored intermediate — each shows up as one factor going to
+zero, and the backward pass is short enough to check by hand.

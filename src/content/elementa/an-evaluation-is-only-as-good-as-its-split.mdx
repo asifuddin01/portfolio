@@ -1,0 +1,59 @@
+---
+chapter: foundations--training
+proposition: 5
+statement: A number means what the split lets it mean.
+claim: "The unit of the split has to be the unit the claim is about. Split below that unit and the held-out score measures recall of things already seen, however carefully everything else was done."
+given:
+  - generalisation-is-not-memorisation
+figure: FigSplitLeak
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Leakage in Data Mining: Formulation, Detection, and Avoidance"
+    url: https://dl.acm.org/doi/10.1145/2020408.2020496
+  - title: "Deep Learning for Chest Radiograph Diagnosis: External Validation"
+    url: https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002683
+---
+
+## Demonstration
+
+Take a retinal dataset with several photographs per patient. Split at random by
+image and each patient's photographs land on both sides of the boundary. The
+held-out score is then a measure of how well the model recognises *another
+photograph of an eye it has already seen* — which is a real capability, and not
+the one the paper claims.
+
+The rule generalises: **the unit of the split must be at least the unit the
+claim is about.** If the claim is about new patients, split by patient. If it is
+about new hospitals, split by site. If it is about next month, split by time and
+put the future on the held-out side.
+
+The failure has a family of relatives, all of which produce optimistic numbers
+that survive review:
+
+**Preprocessing before splitting.** Normalisation statistics, feature selection
+or resampling computed over the whole dataset carry information from the
+held-out set into training. Fit them on the training split only.
+
+**Temporal leakage.** Random splits of time series put the future in the
+training set. Almost any forecasting model looks excellent under this arrangement.
+
+**Test-set reuse.** Each consultation of the test set to make a decision leaks a
+little, and the leak accumulates in the flattering direction. Three splits exist
+for a reason: train to fit, validation to choose, test to report once.
+
+**Duplicates.** Near-identical records — the same study submitted twice, an image
+and its crop — straddle the split without any obvious sign.
+
+External validation is what settles it. A model evaluated on data from a site
+that contributed nothing to training has been asked the question the claim is
+about. The literature on chest radiograph models is instructive: several systems
+with strong internal numbers degraded substantially on external cohorts, and the
+degradation was a property of the evaluation rather than of the models.
+
+## Corollary
+
+This is the last proposition of Book I because it constrains all the others. An
+architecture, a loss, a schedule and a precision policy are all judged by a
+number, and the number is only worth what the split makes it worth. Establish
+the split first; everything else is a refinement on top of it.

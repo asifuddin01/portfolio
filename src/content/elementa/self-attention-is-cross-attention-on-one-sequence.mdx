@@ -1,0 +1,49 @@
+---
+chapter: foundations--attention
+proposition: 4
+statement: Self-attention and cross-attention are one operation under two wirings.
+claim: "The block is identical. Only the source of the keys and values changes — the same sequence as the queries, or a different one."
+given:
+  - query-key-value-are-three-questions
+figure: FigSelfVsCross
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+  - title: "Perceiver: General Perception with Iterative Attention"
+    url: https://arxiv.org/abs/2103.03206
+---
+
+## Demonstration
+
+Write the operation with its two sequences explicit:
+
+```
+Attention(Q from A, K from B, V from B)
+```
+
+When *A* and *B* are the same sequence, it is called self-attention. When they
+differ, it is called cross-attention. There is no third case, and no difference
+in the arithmetic — the same kernels, the same scaling, the same softmax.
+
+What changes is the shape of the score matrix. Self-attention over *n* positions
+produces *n* × *n*. Cross-attention from *n* queries to *m* keys produces *n* ×
+*m*, and the asymmetry is useful: a decoder of 20 tokens attending to an encoder
+of 5000 pays 20 × 5000, not 5000². Architectures that exploit this deliberately
+— a small set of learned latent queries attending to a very large input — turn a
+quadratic cost into a linear one, which is the entire idea behind Perceiver-style
+models.
+
+The framing is also what makes multimodal architectures unsurprising. A
+vision–language model that lets text queries attend to image keys is not doing
+anything new; it is cross-attention where *A* is text and *B* is a grid of image
+patches. The only requirement is that the two live in spaces of compatible
+width, which a linear projection can always arrange.
+
+## Corollary
+
+Whenever an architecture diagram shows two towers joined by a box, the question
+to ask is which side supplies the queries. That single fact determines the shape
+of the cost, which representation is being enriched, and which is merely being
+read.

@@ -1,0 +1,56 @@
+---
+chapter: foundations--sequences
+proposition: 2
+statement: A gradient carried through many steps is a long product, and long products do not survive.
+claim: "Backpropagating through a recurrence multiplies the same Jacobian repeatedly. Below one it decays to nothing; above one it grows without bound. Only exactly one is stable, and nothing holds it there."
+given:
+  - recurrence-compresses-a-sequence-into-a-state
+  - backpropagation-is-the-chain-rule-over-a-graph
+figure: FigVanishingGradient
+status: published
+updated: 2026-08-22
+sources:
+  - title: "On the Difficulty of Training Recurrent Neural Networks"
+    url: https://arxiv.org/abs/1211.5063
+  - title: "Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)"
+    url: https://doi.org/10.1162/neco.1997.9.8.1735
+---
+
+## Demonstration
+
+Unroll the recurrence and apply the chain rule from Proposition 3 of Chapter II.
+The gradient of the loss at step *T* with respect to the state at step *t* is a
+product of Jacobians, one per intervening step:
+
+```
+∂L_T/∂h_t  =  ∏(k = t..T−1)  ∂h_{k+1}/∂h_k
+```
+
+If the magnitude of each factor is around *r*, the product is around *r^(T−t)*.
+For *r* = 0.7 and a gap of thirty steps that is about 2 × 10⁻⁵ — the gradient
+reaching the early steps is numerically indistinguishable from zero. For *r* =
+1.3 it is about 2600, and the update is large enough to destroy the parameters
+in a single step.
+
+The exponent is the distance. This is why the failure is specifically about
+*long-range* dependence: the model learns local structure perfectly well, and
+its inability to connect a pronoun to an antecedent forty words back is not a
+lack of capacity but a lack of gradient reaching that far.
+
+Nothing about this is peculiar to recurrence. It is a fact about repeated
+multiplication, and it is the same fact that made very deep feed-forward
+networks untrainable before residual connections gave the gradient an additive
+path — Chapter VII, Proposition 3, is the same argument in the other direction.
+
+The two ends of the failure are not symmetric in practice. Exploding gradients
+are loud: the loss becomes `NaN`, and clipping the gradient norm fixes them
+directly. Vanishing gradients are silent. The loss decreases, the model trains,
+and the only symptom is that some dependency is never learned — which looks like
+a property of the problem rather than of the optimisation.
+
+## Corollary
+
+Whenever a model handles the near and fails at the far, ask about path length
+before asking about capacity. The question is how many multiplications separate
+the two positions in the computational graph, and the answer is a property of
+the architecture, available before any training is run.

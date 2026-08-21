@@ -1,0 +1,54 @@
+---
+chapter: foundations--position
+proposition: 4
+statement: Beyond the training length there is no row, and no experience either.
+claim: "A learned position table simply ends. A periodic scheme continues, but into a region the model was never trained on. Long context is a claim about training, not about the encoding."
+given:
+  - sinusoidal-encoding-is-a-bank-of-clocks
+figure: FigExtrapolation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation (ALiBi)"
+    url: https://arxiv.org/abs/2108.12409
+  - title: "Extending Context Window of Large Language Models via Position Interpolation"
+    url: https://arxiv.org/abs/2306.15595
+---
+
+## Demonstration
+
+The two failures are different in kind and it is worth keeping them apart.
+
+**A learned absolute encoding has no answer.** The table has *L* rows. Position
+*L* + 1 indexes past the end. There is no graceful degradation available,
+because there is nothing there — the model is not wrong about long sequences, it
+is undefined on them.
+
+**A periodic encoding has an answer it has never been graded on.** Sinusoidal
+and rotary schemes are defined at every position, so the forward pass completes
+and produces something. But every gradient the model ever received came from
+distances inside the training range. Beyond it the attention logits take values
+the model has no calibration for, and quality falls off sharply — often to
+incoherence within a few hundred tokens past the boundary.
+
+This is why the practical approaches to long context are all forms of *making
+the long case look like the trained case*, rather than trusting extrapolation.
+
+**Position interpolation** scales positions down so that a 2× longer sequence
+maps into the angles the model already knows, then fine-tunes briefly. Distances
+are compressed rather than novel.
+
+**ALiBi** discards positional vectors entirely and adds a linear penalty to the
+attention logits proportional to distance, with a different slope per head. The
+penalty is defined at any distance and behaves the same way at every scale,
+which is why it extrapolates where the others do not.
+
+**Just train longer.** Expensive, and the only approach with no caveat attached.
+
+## Corollary
+
+When a model is advertised with a context length, the question is what fraction
+of training actually contained sequences of that length. A window enlarged by
+interpolation without fine-tuning, or by simply raising a configuration value,
+is a claim about the buffer rather than about the model — and it is testable in
+about ten minutes by putting the answer at the far end of the window.

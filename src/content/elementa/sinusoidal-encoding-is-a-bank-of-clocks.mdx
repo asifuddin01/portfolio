@@ -1,0 +1,56 @@
+---
+chapter: foundations--position
+proposition: 2
+statement: A sinusoidal encoding is a bank of clocks at geometrically spaced rates.
+claim: "Each dimension is a sine of position at a different wavelength. Fast dimensions separate neighbours, slow ones separate regions, and together they give every position a distinct signature."
+given:
+  - attention-is-permutation-invariant
+figure: FigSinusoid
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+---
+
+## Demonstration
+
+The original construction, for position *pos* and dimension *i*:
+
+```
+PE(pos, 2i)   = sin(pos / 10000^(2i/d))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d))
+```
+
+The wavelengths form a geometric progression from about 2π to about 10000·2π.
+Read as a clock face: the first dimensions tick quickly and distinguish adjacent
+positions, the last tick slowly and distinguish one end of a long document from
+the other. Reading all *d* hands at once identifies a position uniquely, in the
+same way that hours, minutes and seconds together identify a moment that none of
+them identifies alone.
+
+Two properties motivated the choice.
+
+**Relative position is linearly available.** For a fixed offset *k*, PE(*pos* +
+*k*) is a linear function of PE(*pos*) — a rotation by a fixed angle in each
+sine–cosine pair. So a model can in principle learn to attend to "three
+positions back" as a single linear operation, without needing a separate
+parameter per absolute position.
+
+**It is defined at every position.** Nothing in the formula stops at the
+training length, which was the paper's stated hope for extrapolation. In
+practice this hope was not borne out, and Proposition 4 is about why.
+
+The alternative — a learned table with one row per position — is simpler, often
+marginally better within the training length, and has no value at all beyond it.
+The two were compared in the original paper and found nearly equivalent; the
+sinusoidal version was kept for the extrapolation argument.
+
+## Corollary
+
+Adding the encoding to the embedding, rather than concatenating it, is a real
+choice and a slightly uncomfortable one: it superimposes position onto the same
+dimensions that carry content. It works because the network can learn to use
+different subspaces for the two, but it is the reason the relative and rotary
+schemes of the next proposition, which never touch the residual stream, are now
+preferred.

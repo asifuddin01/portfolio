@@ -1,0 +1,52 @@
+---
+chapter: foundations--computation
+proposition: 5
+statement: Generalisation is not memorisation, and the training loss cannot tell them apart.
+claim: "A model that fits its training data perfectly has demonstrated capacity, not understanding. Only performance on data the model has never influenced is evidence of anything."
+given:
+  - a-loss-is-where-the-objective-is-stated
+figure: FigGeneralisation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Understanding Deep Learning Requires Rethinking Generalization"
+    url: https://arxiv.org/abs/1611.03530
+---
+
+## Demonstration
+
+A sufficiently large network can fit a training set whose labels have been
+replaced with random noise. Zhang and colleagues demonstrated this directly:
+the same architecture that reaches strong test accuracy on real labels will also
+drive the training loss to zero on labels that carry no information whatsoever.
+
+The consequence is exact. A training loss near zero tells you the model had
+enough capacity to store the training set. It tells you nothing at all about
+whether it found any structure, because storing and understanding produce the
+same number on that measurement.
+
+So the only evidence that means anything comes from data the model has never
+influenced — and *influenced* is stronger than *trained on*. A held-out set that
+was used to pick the learning rate has influenced the model. A test set consulted
+twice has influenced it, a little, through you. The influence accumulates
+silently and always in the flattering direction.
+
+The gap between training and held-out performance is therefore the quantity
+worth watching, rather than either number alone:
+
+```
+train 0.99 / test 0.98   →   the model found structure
+train 0.99 / test 0.71   →   the model found the training set
+train 0.72 / test 0.71   →   the model found neither; look at capacity or the loss
+```
+
+None of this is settled by how modern the architecture is. The question is
+always whether the thing being measured was available to the fitting procedure.
+
+## Corollary
+
+*Overfitting* is a misleadingly gentle word for the most common way a result
+becomes worthless. It is not a phase a model passes through — it is a property
+of a claim, and the claim is only as good as the separation between what was
+fitted and what was measured. Chapter VIII returns to this as a question about
+how the split was drawn.

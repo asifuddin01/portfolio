@@ -1,0 +1,53 @@
+---
+chapter: foundations--transformer
+proposition: 6
+statement: Encoder, decoder and encoder–decoder differ only in what each stack may look at.
+claim: "The block is unchanged in all three. What differs is the mask, and whether a second stack supplies the keys and values."
+given:
+  - causal-masking-makes-a-language-model
+  - self-attention-is-cross-attention-on-one-sequence
+figure: FigEncoderDecoder
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5)"
+    url: https://arxiv.org/abs/1910.10683
+  - title: "BERT: Pre-training of Deep Bidirectional Transformers"
+    url: https://arxiv.org/abs/1810.04805
+---
+
+## Demonstration
+
+Three arrangements, one block.
+
+**Encoder-only.** Unmasked self-attention: every position sees every other,
+including those after it. Suited to tasks where the whole input is available at
+once and the output is not a sequence — classification, retrieval embeddings,
+token labelling, segmentation. BERT and its descendants; also the vision
+transformer, which has no notion of a future patch to hide.
+
+**Decoder-only.** Causally masked self-attention, as in the previous
+proposition. Suited to generation, and — because any task can be written as text
+in and text out — to almost everything else, which is the empirical finding that
+reshaped the field.
+
+**Encoder–decoder.** An unmasked encoder over the input and a causally masked
+decoder over the output, joined by a cross-attention sublayer in every decoder
+block whose queries come from the decoder and whose keys and values come from
+the encoder's final states. The decoder block therefore has three sublayers
+rather than two. Suited to tasks with a clear asymmetry between a fixed input
+and a generated output — translation, summarisation, captioning.
+
+The encoder–decoder is the original architecture and remains the best-motivated
+one for translation, where the source is genuinely a different object from the
+target. Decoder-only won for general-purpose models because concatenating input
+and output into one sequence achieves the same effect with half the machinery,
+and because a single stack is simpler to scale.
+
+## Corollary
+
+When reading a new multimodal architecture, the useful questions are: which
+stack is masked, and which supplies the keys and values to which. Nearly every
+such diagram resolves into one of these three arrangements with a different
+encoder bolted to the front, and the modality of the encoder rarely changes
+anything above it.

@@ -1,0 +1,64 @@
+---
+chapter: foundations--training
+proposition: 3
+statement: Weight decay and gradient clipping guard different failures and do not substitute for each other.
+claim: "Clipping bounds the size of a step and does nothing on almost every one. Decay pulls every parameter toward zero on every step. One is about the update, the other about where the parameters end up."
+given:
+  - regularisation-decides-which-fit-you-get
+  - long-recurrences-vanish-or-explode
+figure: FigClipping
+status: published
+updated: 2026-08-22
+sources:
+  - title: "On the Difficulty of Training Recurrent Neural Networks"
+    url: https://arxiv.org/abs/1211.5063
+  - title: "Decoupled Weight Decay Regularization (AdamW)"
+    url: https://arxiv.org/abs/1711.05101
+---
+
+## Demonstration
+
+The two are routinely listed together as "regularisation", which obscures that
+they act on different objects at different times.
+
+**Gradient clipping** rescales the gradient when its norm exceeds a threshold:
+
+```
+if ‖g‖ > c:  g ← g · c / ‖g‖
+```
+
+Note that it rescales rather than truncates, so the *direction* is preserved and
+only the length changes. On a well-behaved step it does nothing at all. Its
+purpose is to survive the rare enormous gradient — a pathological batch, a
+numerical edge case, the exploding regime of Chapter IV, Proposition 2 — that
+would otherwise move the parameters somewhere unrecoverable in one update. In
+large-scale language model training a loss spike followed by divergence is a
+familiar failure, and clipping is the standard defence.
+
+**Weight decay** adds a constant pull toward zero, applied to every parameter on
+every step, whatever the gradient is doing:
+
+```
+θ ← θ − η(∇L + λθ)
+```
+
+Its purpose is the preference of Chapter II, Proposition 5 — small weights,
+smooth functions. It has nothing to say about any individual step and everything
+to say about the region the parameters settle in.
+
+The AdamW distinction matters here. Adding λ‖θ‖² to the loss puts the penalty
+through Adam's adaptive denominator, so parameters with small gradient variance
+are decayed harder than intended. Decoupling it — applying the decay directly to
+the parameters, outside the adaptive scaling — restores the intended uniform
+pull, and is the reason AdamW rather than Adam is the default for transformers.
+
+One more practical point: decay is normally excluded from biases and from
+normalisation gains. Those parameters are not weights whose magnitude should be
+penalised, and shrinking them is simply damage.
+
+## Corollary
+
+If training diverges, clip. If training converges to something that does not
+generalise, look at decay. Reaching for the wrong one wastes a run: clipping a
+model that is overfitting changes nothing at all, since the gradients were never
+large.

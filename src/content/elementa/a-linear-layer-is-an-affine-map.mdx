@@ -1,0 +1,58 @@
+---
+chapter: foundations--neural-networks
+proposition: 1
+statement: A linear layer performs an affine transformation, and nothing more.
+claim: "A dense layer multiplies by a matrix and adds a vector. Every property of it — what it can express, how it composes, why it needs help — follows from that one sentence."
+given:
+  - a-tensor-carries-its-meaning-in-its-shape
+figure: FigNeuron
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Learning — Goodfellow, Bengio and Courville, ch. 6"
+    url: https://www.deeplearningbook.org/contents/mlp.html
+---
+
+## Demonstration
+
+The whole operation:
+
+```
+y = Wx + b
+```
+
+*W* is a matrix of shape (out, in) and *b* a vector of length out. Reading it
+row by row, output *j* is the dot product of the *j*-th row of *W* with the
+input, plus a bias. That dot product is a similarity measure, which gives the
+row an interpretation: it is a direction in input space, and the output says how
+much of the input lies along it.
+
+Two things follow immediately.
+
+**The map is affine, not linear.** Without *b* the origin would be pinned:
+*W*·0 = 0 always. The bias is what lets the layer place its decision boundary
+somewhere other than through zero, which is why removing biases is a decision
+and not a simplification.
+
+**It composes into itself.** Two layers back to back:
+
+```
+W₂(W₁x + b₁) + b₂  =  (W₂W₁)x + (W₂b₁ + b₂)  =  W′x + b′
+```
+
+A single affine map. Not approximately — exactly. A hundred stacked linear
+layers have precisely the expressive power of one, with a hundred times the
+parameters and a hundred times the opportunity for numerical trouble. Depth
+alone buys nothing.
+
+That last fact is the reason the next proposition exists, and it is worth
+noticing that it is a theorem rather than an empirical finding. No amount of
+training data changes it.
+
+## Corollary
+
+When a layer's output is described as a *feature*, the concrete meaning is: the
+projection of the input onto a learned direction, offset by a learned constant.
+Everything the layer knows is in those directions. Inspecting them — their
+norms, their angles to one another — is a legitimate way to read a model, and
+one of the few that requires no interpretation machinery at all.

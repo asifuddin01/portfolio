@@ -1,0 +1,56 @@
+---
+chapter: foundations--training
+proposition: 1
+statement: The batch size is a statement about gradient noise, not only about speed.
+claim: "A batch gradient is an estimate of the true one, with variance falling as one over the batch size. Choosing a batch is choosing how noisy each step is, and the noise is not purely a defect."
+given:
+  - optimisation-follows-the-gradient
+figure: FigBatchNoise
+status: published
+updated: 2026-08-22
+sources:
+  - title: "An Empirical Model of Large-Batch Training"
+    url: https://arxiv.org/abs/1812.06162
+  - title: "Don't Decay the Learning Rate, Increase the Batch Size"
+    url: https://arxiv.org/abs/1711.00489
+---
+
+## Demonstration
+
+The gradient you want is over the whole dataset. The gradient you compute is
+over *B* examples drawn from it — an unbiased estimate whose variance falls as
+1/*B*. Quadrupling the batch halves the standard error and costs four times the
+arithmetic, which is the first thing to notice: the returns are square-root, not
+linear.
+
+There are three consequences worth holding together.
+
+**Noise interacts with the learning rate.** Halving the noise permits a larger
+step. The linear scaling heuristic — multiply the learning rate by the same
+factor as the batch — holds over a useful range and breaks down at large batch
+sizes, where the gradient is already near-exact and further averaging buys
+nothing. McCandlish and colleagues formalised the boundary as a *critical batch
+size*, above which additional examples per step barely accelerate training in
+wall-clock terms while consuming proportionally more compute.
+
+**Noise is partly useful.** A noisy gradient does not settle into a narrow basin
+that a clean one would descend into and stay in. Small-batch training has a mild
+regularising effect that large-batch training loses, which is part of why very
+large batches sometimes generalise slightly worse at matched steps.
+
+**Decaying the rate and growing the batch are near-substitutes.** Both reduce
+the effective noise late in training, which is a useful thing to know when
+compute is elastic and wall-clock time is not.
+
+There is also a hardware reality underneath all of it. Gradient accumulation —
+several forward and backward passes before one update — makes the *effective*
+batch independent of what fits in memory, at no cost but time. So the batch size
+in the configuration file and the batch size in the mathematics are different
+numbers, and only the second one is a modelling decision.
+
+## Corollary
+
+A batch size chosen because it was the largest that fit is a hyperparameter set
+by the hardware. That is often fine, but it should be a known fact about the
+experiment rather than an invisible one — particularly when comparing runs on
+different machines.

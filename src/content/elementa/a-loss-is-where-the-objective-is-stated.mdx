@@ -1,0 +1,54 @@
+---
+chapter: foundations--computation
+proposition: 4
+statement: The loss is the only place the objective is actually stated.
+claim: "An optimiser reads the loss and nothing else. Whatever the objective fails to mention is not optimised, however clearly it was intended."
+given:
+  - learning-changes-parameters-not-rules
+figure: FigLossLandscape
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Concrete Problems in AI Safety"
+    url: https://arxiv.org/abs/1606.06565
+---
+
+## Demonstration
+
+A loss function maps a prediction and a target to a single number, and that
+number is the entirety of what the optimiser knows about what you want. Not the
+paper, not the docstring, not the intention: the scalar.
+
+Two properties are required of it and they pull in different directions. It has
+to be **differentiable**, so that a gradient exists — which rules out the thing
+you usually care about, since accuracy, an F-score and a clinician's judgement
+are all piecewise constant and have zero gradient almost everywhere. And it has
+to be **faithful**, in that lowering it corresponds to the outcome improving.
+
+Cross-entropy is the standard compromise for classification. It is smooth, it is
+the negative log-likelihood under a categorical model, and it happens to
+correlate with accuracy well enough to be useful. It is not accuracy, and the
+gap between them is where a great deal goes wrong.
+
+The gap has a name in every field that has met it. Optimise dice on a
+segmentation task with a rare lesion and the model can score respectably by
+predicting almost nothing, because a tiny structure contributes almost nothing
+to the mean. Optimise per-pixel accuracy on the same task and it is worse. In
+both cases the model did exactly what was asked; the asking was wrong.
+
+```
+what you want:        fewer missed lesions in screening
+what you wrote:       mean cross-entropy over all pixels
+what it optimises:    the majority class, which is background
+```
+
+This is not a failure of the optimiser. It is the optimiser working correctly on
+a misstatement.
+
+## Corollary
+
+When results are disappointing, read the loss before reading the architecture.
+A weighting, a class balance or a reduction over the wrong axis is more often
+the cause than the model, and it is far cheaper to fix. The question to ask is
+never *is the loss decreasing* but *what exactly is decreasing, and is it the
+thing I would have wanted decreased*.

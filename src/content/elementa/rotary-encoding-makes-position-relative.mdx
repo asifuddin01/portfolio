@@ -1,0 +1,59 @@
+---
+chapter: foundations--position
+proposition: 3
+statement: Rotary encoding turns position into an angle, so the absolute indices cancel.
+claim: "Rotating the query and the key by angles proportional to their positions leaves an inner product that depends only on the difference between them. Relative position falls out of the algebra rather than being added on."
+given:
+  - sinusoidal-encoding-is-a-bank-of-clocks
+  - query-key-value-are-three-questions
+figure: FigRoPE
+status: published
+updated: 2026-08-22
+sources:
+  - title: "RoFormer: Enhanced Transformer with Rotary Position Embedding"
+    url: https://arxiv.org/abs/2104.09864
+  - title: "Self-Attention with Relative Position Representations"
+    url: https://arxiv.org/abs/1803.02155
+---
+
+## Demonstration
+
+Take the query and key as sequences of two-dimensional pairs. Rotate the pair at
+position *m* by angle *mθ*, and the pair at position *n* by *nθ*. Then
+
+```
+⟨ R(mθ)q , R(nθ)k ⟩  =  ⟨ q , R((n − m)θ)k ⟩
+```
+
+because a rotation is orthogonal and rotations compose by adding angles. The
+absolute positions *m* and *n* cancel; what survives is *n* − *m*, the distance.
+
+This is a genuinely different move from the previous proposition. A sinusoidal
+or learned encoding *adds* a position-dependent vector to the token embedding,
+so position enters the residual stream and every subsequent operation sees it
+mixed into the content. Rotary encoding adds nothing. It rotates *q* and *k*
+inside each attention head, at the point of comparison, and leaves the residual
+stream untouched.
+
+Three practical consequences follow, and they explain why it is now the default
+in most open language models.
+
+**Relative by construction, not by learning.** The model does not have to
+discover that positions are comparable by difference; the arithmetic guarantees
+it.
+
+**No table, no length ceiling in the parameters.** There is nothing to run out
+of, which makes the various context-extension methods possible at all: scaling
+θ down at inference (position interpolation) compresses a longer sequence into
+the range of angles the model was trained on.
+
+**Decay with distance, for free.** Because different pairs rotate at different
+rates, the inner product between distant positions averages toward zero across
+dimensions — a mild locality bias that nobody had to specify.
+
+## Corollary
+
+The rotation is applied per head, after the projections of Chapter V,
+Proposition 2 and before the dot product. Getting that placement wrong — before
+the projection, or on the values as well — is a common implementation error, and
+it produces a model that trains and is merely worse, rather than one that fails.

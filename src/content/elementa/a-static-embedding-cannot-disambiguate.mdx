@@ -1,0 +1,51 @@
+---
+chapter: foundations--tokenisation
+proposition: 4
+statement: A static embedding gives one vector per token, so context has to supply the rest.
+claim: "The embedding table cannot distinguish two senses of a word, because it is indexed by the token alone. Everything that separates them is done by the layers above."
+given:
+  - an-embedding-is-a-learned-lookup-table
+figure: FigContextualisation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Contextualized Word Representations (ELMo)"
+    url: https://arxiv.org/abs/1802.05365
+  - title: "BERT: Pre-training of Deep Bidirectional Transformers"
+    url: https://arxiv.org/abs/1810.04805
+---
+
+## Demonstration
+
+*The river bank flooded.* *The central bank raised rates.* The token `bank` is
+the same integer in both, so it retrieves the same row of *E* in both. At the
+input to the network the two are indistinguishable — not approximately, but
+exactly, bit for bit.
+
+This is a hard limit on the embedding table and it cannot be trained away. A
+single vector must serve every sense of the token, so what it converges to is
+something like a frequency-weighted compromise between them: close to neither
+sense, and closest to whichever dominated the corpus.
+
+What resolves it is everything above the table. One layer of attention lets each
+position read its neighbours and add what it finds to its own representation, so
+after that layer the two copies of `bank` occupy different points — the first
+having absorbed something from `river`, the second from `central`. The vector at
+layer *k* is a function of the whole context, and this is the precise sense in
+which a transformer's representations are *contextual* while its embeddings are
+not.
+
+The historical order is worth keeping. word2vec and GloVe produced static
+vectors, one per word type, and they were a genuine advance over one-hot
+encodings. ELMo produced vectors that depended on the sentence, using a
+bidirectional LSTM. BERT and its successors made the contextual representation
+the object of interest and the static table merely the starting point. The
+progression is not from worse embeddings to better ones but from *embedding as
+the representation* to *embedding as the first row of a computation*.
+
+## Corollary
+
+Asking what a transformer "thinks a word means" is under-specified until a layer
+is named. At layer zero the answer is a corpus-wide average that belongs to the
+token. At the last layer it is a point that belongs to this occurrence in this
+sentence and to nothing else.

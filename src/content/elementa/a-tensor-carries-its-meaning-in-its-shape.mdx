@@ -1,0 +1,53 @@
+---
+chapter: foundations--computation
+proposition: 2
+statement: A tensor carries its meaning in its shape.
+claim: "A tensor is an array with named axes. The numbers alone say nothing; the shape is the claim about what those numbers are, and every bug in a pipeline is a disagreement about it."
+given:
+  - a-model-is-a-parameterised-function
+figure: FigTensorShape
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Tensor Considered Harmful — Alexander Rush, on named axes"
+    url: https://nlp.seas.harvard.edu/NamedTensor
+---
+
+## Demonstration
+
+A tensor is a rectangular block of numbers. That definition is complete and
+almost useless, because it omits the part that carries the meaning.
+
+Consider a tensor of shape `(32, 128, 768)`. The numbers in it are just numbers.
+The shape says: thirty-two independent examples, each a sequence of a hundred
+and twenty-eight positions, each position described by seven hundred and
+sixty-eight learned dimensions. Change nothing but the order of the axes and you
+have made a different claim about the same numbers:
+
+```python
+x.shape          # (32, 128, 768)  batch, time, features
+x.transpose(0,1) # (128, 32, 768)  time, batch, features — same numbers
+```
+
+Both are valid tensors. Only one of them is your data. Nothing in the array
+itself will tell you which, and no runtime error is raised until the shapes
+happen to be incompatible somewhere downstream — which, for square-ish tensors,
+may be never.
+
+This is why the axes have conventional names and why the conventions are worth
+learning: **B** for batch, **T** for time or sequence position, **C** or **D**
+for channels or features, **H** and **W** for image height and width. An
+operation is almost always doing one of three things — reducing over an axis,
+broadcasting along one, or reinterpreting the boundary between two. Say which,
+and the operation stops being opaque.
+
+The most common silent failure in a research pipeline is a reduction over the
+wrong axis. Averaging over the batch when you meant to average over the sequence
+produces a tensor of exactly the right shape, a loss that decreases, and a model
+that has learned something other than the task.
+
+## Corollary
+
+Before debugging a model, print the shapes. Most of what looks like a modelling
+problem is an axis disagreement between two pieces of code that were each
+correct on their own terms.

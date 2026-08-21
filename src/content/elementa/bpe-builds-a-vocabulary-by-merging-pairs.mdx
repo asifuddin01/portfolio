@@ -1,0 +1,53 @@
+---
+chapter: foundations--tokenisation
+proposition: 2
+statement: A subword vocabulary is built by compression, not by linguistics.
+claim: "Byte-pair encoding repeatedly merges the most frequent adjacent pair in a corpus. The resulting vocabulary reflects the frequencies of that corpus and nothing about morphology."
+given:
+  - tokenisation-fixes-distinctions
+figure: FigBPEMerge
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Neural Machine Translation of Rare Words with Subword Units (BPE)"
+    url: https://arxiv.org/abs/1508.07909
+  - title: "Subword Regularization and the Unigram Language Model"
+    url: https://arxiv.org/abs/1804.10959
+---
+
+## Demonstration
+
+The algorithm is four lines. Start with every word split into characters. Count
+every adjacent pair across the corpus. Merge the most frequent pair into a
+single symbol, everywhere. Repeat until the vocabulary reaches the size you
+asked for.
+
+That is all of it. There is no grammar in the procedure, no morphology, no
+notion of a meaningful unit. `ing` becomes a token because it is common in
+English text, not because it is a suffix — and in a corpus where it were rare it
+would not appear at all, however meaningful it remained.
+
+Two consequences follow, and both are practical rather than theoretical.
+
+**The vocabulary encodes the training corpus.** A tokeniser fitted on
+English-dominated web text spends most of its budget on English. The same
+sentence in Bengali or Amharic may take three or four times as many tokens,
+which means the model has fewer effective positions of context for that
+language, costs more per sentence to serve, and — since attention is quadratic
+in length, Chapter V — is disproportionately expensive to train on.
+
+**Unigram tokenisation optimises a different objective.** Rather than merging
+greedily, it starts from a large candidate vocabulary and prunes the pieces
+whose removal costs least under a unigram language model. It produces
+segmentations that are probabilistic rather than deterministic, which allows
+sampling different segmentations of the same string as a form of augmentation.
+It is the default in SentencePiece and generally kinder to morphologically rich
+languages.
+
+## Corollary
+
+*Vocabulary size* is a budget spread across everything the model will ever read.
+Enlarging it shortens sequences and enlarges the embedding table; shrinking it
+does the reverse. Where the budget is spent is decided by the corpus the
+tokeniser was fitted on, which is a decision taken before any model exists and
+is almost never revisited afterwards.

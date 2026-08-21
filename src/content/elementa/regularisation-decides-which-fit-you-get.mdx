@@ -1,0 +1,59 @@
+---
+chapter: foundations--neural-networks
+proposition: 5
+statement: Regularisation does not improve the fit; it decides which fit you get.
+claim: "When many parameter settings explain the training data equally well, regularisation is the statement of which of them to prefer. It is an assumption about the world, expressed as a penalty."
+given:
+  - generalisation-is-not-memorisation
+  - optimisation-follows-the-gradient
+figure: FigRegularisation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Dropout: A Simple Way to Prevent Neural Networks from Overfitting"
+    url: https://jmlr.org/papers/v15/srivastava14a.html
+  - title: "Understanding Deep Learning Requires Rethinking Generalization"
+    url: https://arxiv.org/abs/1611.03530
+---
+
+## Demonstration
+
+A modern network has more parameters than training examples, so the system is
+underdetermined: many settings of *θ* fit the data exactly. Training will return
+one of them. Regularisation is how you say which.
+
+Each technique is a different preference, and it is clearer to read them as
+assumptions than as tricks.
+
+**Weight decay** — prefer small weights. The assumption is that the function
+should be smooth, that a small change in input should not produce a large change
+in output. It is a statement about the world, and it is wrong for problems where
+the truth genuinely is sharp.
+
+**Dropout** — prefer functions that survive the loss of any given unit. Zeroing
+units at random during training makes co-adaptation between them costly, so the
+representation is pushed toward redundancy. At inference nothing is dropped and
+the activations are rescaled to match.
+
+**Early stopping** — prefer the function reachable in *k* steps from the
+initialisation. Under some conditions this is provably close to an L2 penalty,
+which is a satisfying fact: stopping early and shrinking weights are the same
+preference expressed twice.
+
+**Data augmentation** — prefer functions invariant to transformations you know
+do not change the label. A rotated retinal photograph is the same eye. This is
+the strongest form of regularisation available, because it encodes a true fact
+about the domain rather than a generic preference for simplicity.
+
+The framing matters because it makes the failure mode predictable. If the
+assumption is false — if the target really is spiky, if the augmentation changes
+the label, if the informative signal really does live in a few large weights —
+then the regulariser is not a safety net but a source of bias, and it will cost
+accuracy in a way that no amount of additional data repairs.
+
+## Corollary
+
+Augmentation is worth more than any generic penalty when a genuine invariance
+is available, because it is the only one carrying information about the specific
+problem. Everything else on the list is a preference for simplicity, and
+simplicity is a guess.

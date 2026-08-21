@@ -1,0 +1,55 @@
+---
+chapter: foundations--sequences
+proposition: 5
+statement: Attention was the answer to a specific bottleneck, not a general improvement.
+claim: "It gives constant path length between any two positions with full parallelism, and pays for both in memory. Read as a trade rather than an advance, it explains what it is good for."
+given:
+  - convolution-buys-parallelism-with-range
+  - gating-is-a-learned-memory
+figure: FigSequenceLineage
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Neural Machine Translation by Jointly Learning to Align and Translate"
+    url: https://arxiv.org/abs/1409.0473
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+---
+
+## Demonstration
+
+The history is short and instructive. Bahdanau and colleagues added attention to
+an encoder–decoder recurrent translator in 2014, for the narrow purpose of
+relieving the fixed-width bottleneck of Proposition 1: instead of compressing
+the source sentence into one vector, let the decoder look back at every source
+position and take a weighted combination. It was a patch on a recurrent model,
+and it worked.
+
+Three years later the recurrence was removed and the patch kept. *Attention Is
+All You Need* is a claim about the recurrence being unnecessary, and it can be
+read entirely as a table of trade-offs — which is exactly how the paper argues
+it, in a section on maximum path length.
+
+The trade, stated plainly:
+
+**Bought.** Any position reaches any other in one step. There is no distance
+over which the gradient decays, because there is no long product to decay along.
+And every position is computed at once, which turns training into large
+matrix multiplications — the operation modern accelerators are built for.
+
+**Paid.** Every pair of positions gets a score, so time and memory grow as *n²*.
+And the operation is blind to order, which has to be repaired separately, at
+some cost in elegance — the whole of Chapter VI.
+
+Neither column is a free lunch, and the balance depends on the machine. On
+hardware where parallelism is cheap and memory bandwidth is the constraint, the
+trade is good for sequences of a few thousand tokens and progressively worse
+beyond. That is why the long-context literature is largely an attempt to keep
+the first column while paying less of the second.
+
+## Corollary
+
+The lineage is not a story of successively better ideas. Each architecture is
+the right answer under a different cost model, and stating the cost model is
+what makes the comparison meaningful. When the hardware changes, expect the
+ranking to change with it.

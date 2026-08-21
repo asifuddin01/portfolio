@@ -1,0 +1,62 @@
+---
+chapter: foundations--neural-networks
+proposition: 4
+statement: The gradient supplies the direction and never the distance.
+claim: "Descent knows which way is downhill locally and nothing about how far downhill continues. The learning rate is the missing half, and no optimiser removes the need to choose it."
+given:
+  - backpropagation-is-the-chain-rule-over-a-graph
+  - a-loss-is-where-the-objective-is-stated
+figure: FigDescentStep
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Adam: A Method for Stochastic Optimization"
+    url: https://arxiv.org/abs/1412.6980
+  - title: "Decoupled Weight Decay Regularization (AdamW)"
+    url: https://arxiv.org/abs/1711.05101
+---
+
+## Demonstration
+
+The update rule:
+
+```
+θ ← θ − η ∇θ L
+```
+
+The gradient is a statement about an infinitesimal neighbourhood: it gives the
+direction of steepest increase *at the current point*, and says nothing about
+whether the surface continues that way for one step or a thousand. The step size
+*η* is where that missing information has to be supplied, and it is supplied by
+you.
+
+Three regimes, all visible in the figure. Too small and the parameters creep,
+spending the compute budget without arriving. Too large and the step overshoots
+the minimum and lands higher up the far wall, where the next gradient is larger
+still — divergence, usually within a few dozen steps and unmistakable in the
+loss. Between them is a band, and it is often narrower than a factor of three.
+
+The named optimisers are attempts to widen that band by using more than the
+current gradient.
+
+**Momentum** accumulates a running average of past gradients, so the update
+follows the consistent component and cancels the oscillating one. It is what
+makes a narrow ravine traversable.
+
+**Adam** keeps a running estimate of both the mean and the variance of the
+gradient per parameter, and divides by the square root of the second. The effect
+is a per-parameter step size: a parameter with consistently small gradients gets
+a proportionally larger step. This is why Adam is comparatively forgiving about
+the choice of *η* — and why the forgiveness is often mistaken for its absence.
+
+**AdamW** separates weight decay from the gradient. In Adam, an L2 penalty added
+to the loss is scaled by the same adaptive denominator as everything else, so it
+decays parameters unevenly; decoupling it restores the intended behaviour. This
+is the default for transformer training and the reason is this single detail.
+
+## Corollary
+
+No optimiser makes the learning rate unimportant, and any result that changes
+character when the rate moves by a factor of two was never about the
+architecture. This is also why the schedule — Chapter VIII, Proposition 2 —
+matters as much as the peak value.

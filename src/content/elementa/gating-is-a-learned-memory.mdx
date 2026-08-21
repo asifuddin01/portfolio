@@ -1,0 +1,53 @@
+---
+chapter: foundations--sequences
+proposition: 3
+statement: A gate gives the gradient a road home that no weight matrix stands on.
+claim: "The LSTM cell state passes through multiplication and addition only. With the forget gate near one, the path is close to the identity, and a gradient crossing it is barely attenuated."
+given:
+  - long-recurrences-vanish-or-explode
+figure: FigGating
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)"
+    url: https://doi.org/10.1162/neco.1997.9.8.1735
+  - title: "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling"
+    url: https://arxiv.org/abs/1412.3555
+---
+
+## Demonstration
+
+The LSTM's contribution is not complexity but a particular *shape*. Alongside
+the hidden state it carries a second vector, the cell state *c*, and the only
+operations on the line that carries it are these:
+
+```
+cₜ = fₜ ⊙ cₜ₋₁  +  iₜ ⊙ c̃ₜ
+```
+
+An elementwise multiply by the forget gate, and an elementwise add of what the
+input gate admits. No matrix multiplication anywhere on that path.
+
+Now take the derivative along the carry line: ∂cₜ/∂cₜ₋₁ = *fₜ*. The Jacobian
+of the long product from the previous proposition is a diagonal of gate values
+rather than a full weight matrix. With the gates near one the product is near
+one, and the gradient reaches back across hundreds of steps essentially intact.
+With the gates near zero the model has deliberately discarded that history, and
+the gradient stopping there is correct rather than pathological.
+
+That is the whole idea, and it is why the initialisation of the forget-gate bias
+to a positive value is a standard trick: it starts the network in the
+remembering regime and lets it learn to forget, rather than the reverse.
+
+The GRU reaches the same place with fewer parts — one gate interpolating between
+the old state and a candidate, no separate cell line. Empirically the two
+perform comparably on most tasks, which suggests the specific arrangement
+matters less than the presence of a multiplicative path that can be set near
+one.
+
+## Corollary
+
+The lesson generalises past recurrence. Whenever a deep computation trains
+badly, ask whether there is an additive or near-identity path from the loss back
+to the early parameters. Gating, residual connections and highway networks are
+three answers to that one question, and the transformer takes the second.

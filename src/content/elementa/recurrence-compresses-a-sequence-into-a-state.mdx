@@ -1,0 +1,58 @@
+---
+chapter: foundations--sequences
+proposition: 1
+statement: A recurrent network compresses everything it has read into one fixed-width state.
+claim: "A recurrence carries a vector forward one step at a time. Its width does not grow with the sequence, so the whole of the past has to fit through it at every step."
+given:
+  - a-tensor-carries-its-meaning-in-its-shape
+figure: FigRecurrentState
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Finding Structure in Time (Elman, 1990)"
+    url: https://doi.org/10.1207/s15516709cog1402_1
+  - title: "Sequence to Sequence Learning with Neural Networks"
+    url: https://arxiv.org/abs/1409.3215
+---
+
+## Demonstration
+
+The recurrence, in full:
+
+```
+hₜ = f(hₜ₋₁, xₜ)
+```
+
+One function, applied repeatedly. The same weights at every step, which is what
+lets the model handle sequences of any length: there is no per-position
+parameter to run out of.
+
+Two properties fall out, and they are the two that decided the field.
+
+**The state is a bottleneck of fixed width.** Whatever the model has read —
+three tokens or three thousand — is represented in a vector of the same size.
+Early sequence-to-sequence translation systems encoded an entire source sentence
+into one such vector and decoded from it, and their quality degraded with
+sentence length in exactly the way this predicts. Attention was introduced,
+originally, as a way around this specific bottleneck rather than as a general
+architecture.
+
+**The path between distant positions is long.** For position *t* to be
+influenced by position *s*, the signal must pass through *t − s* applications of
+*f*. Path length grows with distance, and the next proposition is about what
+happens to a gradient travelling along it.
+
+There is a third property that is about hardware rather than mathematics, and it
+turned out to matter most. Because *hₜ* requires *hₜ₋₁*, the steps cannot be
+computed in parallel. On a processor built for thousands of simultaneous
+multiplications, a model that insists on doing one thing at a time is using a
+small fraction of the machine. This is the constraint that attention removes,
+and removing it is most of why transformers won.
+
+## Corollary
+
+Recurrence is not obsolete; it is differently priced. Constant memory per step
+and no quadratic term make it attractive for streaming and for very long
+sequences, which is why state-space models revisit the same structure with
+parallel-scan training. What was abandoned was the sequential training loop, not
+the idea of a carried state.

@@ -1,0 +1,54 @@
+---
+chapter: foundations--attention
+proposition: 2
+statement: Query, key and value are three different questions put to the same vector.
+claim: "One token vector is projected three ways. The query is what it is looking for, the key is what it advertises, the value is what it hands over once matched — and only the value reaches the output."
+given:
+  - attention-is-a-weighted-average
+figure: FigQKV
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+  - title: "A Mathematical Framework for Transformer Circuits"
+    url: https://transformer-circuits.pub/2021/framework/index.html
+---
+
+## Demonstration
+
+Three learned matrices, applied to the same input:
+
+```
+Q = XWQ        K = XWK        V = XWV
+```
+
+Nothing about *X* differs between the three lines. What differs is what each
+projection is used for, and the roles are worth naming because the algebra hides
+them.
+
+**The query** is what a position is looking for. It is compared against keys and
+never appears in the output. **The key** is what a position advertises about
+itself to anyone searching. It, too, never appears in the output. **The value**
+is what a position contributes once somebody has matched it — and it is the only
+one of the three that reaches the next layer.
+
+The division matters because it decouples *matching* from *transmitting*. A
+token can advertise something quite different from what it carries: the key can
+say "I am a verb in the past tense" while the value carries the semantic content
+the attending position actually needs. If a single vector had to do both jobs,
+every match would be a similarity in content, and attention could only ever
+gather things resembling the query.
+
+This also explains why the circuits literature separates the pair
+*W*<sub>Q</sub>*W*<sub>K</sub>ᵀ from *W*<sub>V</sub>*W*<sub>O</sub>. The first
+pair determines *where* a head reads — it produces the attention pattern and
+nothing else. The second determines *what* it writes into the residual stream
+once it has read. A head can be characterised almost entirely by describing
+those two products, and they can be studied independently.
+
+## Corollary
+
+When a head's attention pattern looks sensible but the output is not useful,
+the fault is in the value–output pair, not the query–key pair. They are separate
+matrices trained by the same loss, and they fail separately.

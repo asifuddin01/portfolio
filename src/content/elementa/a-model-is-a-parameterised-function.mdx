@@ -1,0 +1,49 @@
+---
+chapter: foundations--computation
+proposition: 1
+statement: A model is a function with a second argument.
+claim: "A model is a map from inputs to outputs that also takes a set of parameters. Fixing the parameters gives you a particular function; training is the search for which one."
+given: []
+figure: FigModelAsFunction
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Learning — Goodfellow, Bengio and Courville"
+    url: https://www.deeplearningbook.org
+---
+
+## Demonstration
+
+Write it down and most of the mystery leaves:
+
+```
+ŷ = f(x ; θ)
+```
+
+Two arguments, not one. The first, *x*, comes from the world and the model has
+no say in it. The second, *θ*, is a list of numbers the model carries around,
+and it is the only thing training is permitted to touch.
+
+Fix *θ* and you have an ordinary function — deterministic, inspectable, no more
+mysterious than a polynomial. Vary *θ* and you have a *family* of functions,
+one per setting of the numbers. The architecture is the shape of that family;
+training is a search inside it.
+
+This is worth being pedantic about, because almost every confused question
+about deep learning is a confusion about which of the two arguments is which.
+"Why did the model answer that?" is a question about *x* and about which member
+of the family got selected. "Why can't the model do this at all?" is usually a
+question about the family — about what no setting of *θ* could express.
+
+A useful consequence: nothing in the definition requires *f* to be complicated.
+Linear regression fits it exactly. So does a lookup table with a billion rows.
+The interesting choices are which family you pick and how you search it, and
+neither is settled by calling something a model.
+
+## Corollary
+
+Two claims that sound similar are entirely different in this frame. *This model
+cannot do X* is a claim about the family, and is falsified by exhibiting a *θ*
+that works. *This training run did not learn X* is a claim about the search, and
+is falsified by a better run. Keep them apart and most arguments about capability
+become tractable.

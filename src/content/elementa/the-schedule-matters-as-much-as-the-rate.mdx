@@ -1,0 +1,52 @@
+---
+chapter: foundations--training
+proposition: 2
+statement: A schedule is tuned to a step count, and does not survive being copied.
+claim: "The learning rate rises because the optimiser starts with no statistics and falls because a large step near the end discards what the earlier ones found. Both parts depend on the total budget."
+given:
+  - optimisation-follows-the-gradient
+  - normalisation-placement-decides-warmup
+figure: FigSchedule
+status: published
+updated: 2026-08-22
+sources:
+  - title: "SGDR: Stochastic Gradient Descent with Warm Restarts"
+    url: https://arxiv.org/abs/1608.03983
+  - title: "Training Compute-Optimal Large Language Models (Chinchilla)"
+    url: https://arxiv.org/abs/2203.15556
+---
+
+## Demonstration
+
+The standard shape is a short linear warm-up to a peak, then a cosine decay to
+near zero. Each half exists for a specific reason.
+
+**The warm-up.** Adam's per-parameter step depends on running estimates of the
+gradient's mean and variance. At step one those estimates are built from a
+single sample and are badly wrong; the bias correction helps but does not
+eliminate the problem. Taking full-size steps on such estimates can move the
+parameters somewhere the model does not recover from. The warm-up buys time for
+the statistics to become meaningful. Post-norm architectures need it more, for
+the reason in Chapter VII, Proposition 4 — which is why the same recipe can look
+essential in one codebase and optional in another.
+
+**The decay.** Late in training the parameters are near a good region, and the
+gradient noise of the previous proposition is the dominant term in each step. A
+large step at that stage is mostly noise, and it undoes the refinement. Decaying
+to near zero lets the trajectory settle.
+
+The part that is most often got wrong: **the cosine is parameterised by the
+total number of steps.** A schedule written for 100,000 steps and stopped at
+50,000 leaves the model at half the peak rate, having never had the settling
+phase at all. That model is not "the same training, run for less time" — it is a
+different and worse experiment. The Chinchilla work makes this explicit, and it
+is why cosine schedules are awkward for runs whose length is not known in
+advance, and why constant-plus-cooldown schedules have become popular for
+open-ended training.
+
+## Corollary
+
+Copying a schedule from a paper without matching the step budget is copying a
+number and discarding what the number meant. If the budget differs, the schedule
+must be re-derived — the peak rate is the transferable part, and the shape is
+not.

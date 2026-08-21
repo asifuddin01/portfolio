@@ -1,0 +1,54 @@
+---
+chapter: foundations--transformer
+proposition: 3
+statement: Layers write into a shared stream rather than replacing it.
+claim: "Every sublayer adds its output to the running representation. This is why gradients reach the first layer, and why a state from partway up the stack can be read with the output head."
+given:
+  - a-transformer-block-mixes-then-computes
+  - backpropagation-is-the-chain-rule-over-a-graph
+figure: FigResidualStream
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Residual Learning for Image Recognition"
+    url: https://arxiv.org/abs/1512.03385
+  - title: "A Mathematical Framework for Transformer Circuits"
+    url: https://transformer-circuits.pub/2021/framework/index.html
+---
+
+## Demonstration
+
+The addition in `x ← x + f(Norm(x))` looks like a minor architectural
+convenience. It is the load-bearing element of the whole design, for two
+separate reasons.
+
+**The gradient has an additive path.** Differentiate: ∂*x*<sub>out</sub>/∂*x* =
+*I* + ∂*f*/∂*x*. The identity term means the gradient arriving at a layer is
+passed back undiminished, plus a correction. Compare this with Chapter IV,
+Proposition 2, where the path was a *product* of Jacobians and decayed
+exponentially with depth. Here the path is a sum, and ninety-six layers is not
+qualitatively harder than twelve. Residual connections are why deep stacks train
+at all.
+
+**The stream is a single shared space.** Because every block reads from and adds
+to the same vector, all layers communicate in one basis. Nothing overwrites; the
+representation at layer *k* is the embedding plus the sum of every sublayer
+output so far. This makes a transformer unusually legible from the inside: the
+logit lens takes the stream at an intermediate layer, applies the final
+normalisation and the unembedding, and reads out what the model would predict if
+it stopped there. That this produces sensible, progressively refining
+distributions is a direct consequence of the additive structure, and it would be
+meaningless in an architecture where each layer replaced its input.
+
+The circuits framing follows from the same fact. Heads in early layers write
+information into the stream that heads in later layers read out, forming
+compositions that can be traced. The stream is the communication channel, and
+its width — *d* — is the total bandwidth every component competes for.
+
+## Corollary
+
+The width *d* is a shared resource, not a per-layer one. Every head and every
+MLP in every layer reads from and writes to the same *d* dimensions, which is
+one explanation for superposition: with far more features to represent than
+dimensions to represent them in, the model packs them into overlapping
+directions rather than dedicating one each.

@@ -1,0 +1,54 @@
+---
+chapter: foundations--transformer
+proposition: 2
+statement: Heads are slices of one budget, not copies of one mechanism.
+claim: "Multi-head attention splits the width into parts and runs attention in each. It costs what single-head attention costs, and buys several relations at once at the price of resolution inside each."
+given:
+  - query-key-value-are-three-questions
+figure: FigMultiHead
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+  - title: "Analyzing Multi-Head Self-Attention: Specialized Heads Do the Heavy Lifting"
+    url: https://arxiv.org/abs/1905.09418
+---
+
+## Demonstration
+
+With *h* heads and model width *d*, each head works at width *d*/*h*. The
+projections *W*<sub>Q</sub>, *W*<sub>K</sub>, *W*<sub>V</sub> are (*d*, *d*/*h*)
+per head; the outputs are concatenated back to *d* and mixed by *W*<sub>O</sub>.
+Total parameters and total arithmetic are the same as one head of width *d* —
+the budget is partitioned, not multiplied.
+
+What that partition buys is independence. A single attention distribution is one
+weighted average, so a position can gather one thing. Eight heads give eight
+distributions, and a position can gather the previous token, the subject of the
+clause, the matching bracket and five other things at once, without any of them
+competing for the same softmax.
+
+Studies of trained models find heads that specialise legibly — positional heads
+attending to fixed offsets, syntactic heads tracking dependency relations, rare
+heads that carry most of the load for a given behaviour. They also find that a
+large fraction can be pruned after training with little loss, which suggests the
+budget is not evenly used.
+
+The cost of the split is resolution. At *d* = 512 with eight heads, each works
+in 64 dimensions, and the rank of what any one head can express is bounded by
+that. This is the trade: more heads means more simultaneous relations, each
+described more coarsely. It is also why Chapter V, Proposition 3 matters here —
+the scaling divisor is √(*d*/*h*), not √*d*.
+
+Inference-time variants change the split asymmetrically. **Multi-query
+attention** keeps *h* query heads but one shared key–value pair; **grouped-query
+attention** shares each key–value pair across a small group of query heads. Both
+exist to shrink the KV cache, and both accept slightly less expressive matching
+to do it.
+
+## Corollary
+
+"How many heads" is not a question with a general answer, because it is a
+question about how *d* should be divided. Doubling the heads at fixed width
+halves the head dimension, which is a different model rather than a larger one.

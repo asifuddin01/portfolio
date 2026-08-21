@@ -1,0 +1,57 @@
+---
+chapter: foundations--training
+proposition: 4
+statement: Mixed precision is a question of range before it is a question of speed.
+claim: "Half precision has ample precision and a narrow exponent. Small gradients fall through its floor and round to zero, which is what loss scaling exists to prevent."
+given:
+  - the-schedule-matters-as-much-as-the-rate
+figure: FigPrecision
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Mixed Precision Training"
+    url: https://arxiv.org/abs/1710.03740
+  - title: "BFLOAT16: The Secret to High Performance on Cloud TPUs"
+    url: https://cloud.google.com/blog/products/ai-machine-learning/bfloat16-the-secret-to-high-performance-on-cloud-tpus
+---
+
+## Demonstration
+
+The three formats differ in how they divide their bits between exponent and
+mantissa, and the exponent is what decides the range:
+
+```
+fp32   8 exponent bits, 23 mantissa   range ≈ 10⁻³⁸ … 10³⁸
+fp16   5 exponent bits, 10 mantissa   range ≈ 6×10⁻⁵ … 65504
+bf16   8 exponent bits,  7 mantissa   range as fp32, less precision
+```
+
+`fp16` is not short of precision for this purpose — ten mantissa bits is roughly
+three decimal digits, which is more than a gradient estimate deserves. It is
+short of *range*. Late in training, gradient magnitudes commonly sit around
+10⁻⁷ or below, comfortably beneath the smallest normal `fp16` value. They round
+to zero, the parameter receives no update, and nothing announces it.
+
+**Loss scaling** is the fix: multiply the loss by a large constant *S* before the
+backward pass, so every gradient is scaled by *S* and lands inside the
+representable band; divide by *S* before the optimiser step. Dynamic loss
+scaling adjusts *S* automatically — raise it while no overflow occurs, halve it
+and skip the step when an `inf` appears.
+
+`bf16` sidesteps the whole apparatus by keeping `fp32`'s exponent and paying in
+mantissa bits. Gradients do not underflow, no loss scaling is required, and the
+lost precision turns out not to matter for training. This is why `bf16` is the
+default wherever the hardware supports it, and why the mixed-precision recipe of
+2017 is now largely a historical detail.
+
+Some things stay in `fp32` regardless: a master copy of the weights, the
+optimiser's moment estimates, and the accumulations inside normalisation and
+softmax. Small updates repeatedly added to large parameters vanish otherwise —
+the same underflow, on the parameter side.
+
+## Corollary
+
+"Half precision" is not one decision. Which tensors are half, which
+accumulations are single, and whether a master copy of the weights is kept are
+three separate choices, and a training run that silently produces worse results
+under mixed precision usually got one of the latter two wrong.

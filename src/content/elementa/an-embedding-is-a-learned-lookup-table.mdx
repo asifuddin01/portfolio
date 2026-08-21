@@ -1,0 +1,55 @@
+---
+chapter: foundations--tokenisation
+proposition: 3
+statement: An embedding is a lookup table whose contents are learned.
+claim: "The operation is indexing, not computation. Everything interesting about an embedding space is a consequence of training, not of the retrieval."
+given:
+  - tokenisation-fixes-distinctions
+  - a-tensor-carries-its-meaning-in-its-shape
+figure: FigEmbeddingSpace
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Efficient Estimation of Word Representations in Vector Space (word2vec)"
+    url: https://arxiv.org/abs/1301.3781
+  - title: "GloVe: Global Vectors for Word Representation"
+    url: https://nlp.stanford.edu/pubs/glove.pdf
+---
+
+## Demonstration
+
+An embedding layer holds a matrix *E* of shape (vocabulary, d). Given token id
+*i* it returns row *i*. That is the entire forward pass — a memory read.
+
+It is sometimes written as a matrix multiplication by a one-hot vector, which is
+mathematically identical and computationally absurd; every implementation does
+the indexing. Worth knowing only because it explains the gradient: the backward
+pass writes into exactly the rows that were used and leaves the rest untouched.
+A token that never appears in training keeps its initialisation forever.
+
+The geometry that makes embeddings interesting is not in the lookup. It arrives
+because the rows are trained through a loss that depends on how tokens are used,
+and tokens used in similar contexts receive similar updates. The familiar
+parallelogram — *king* − *man* + *woman* landing near *queen* — is a consequence
+of that shared training signal, and it is worth being sober about: the
+regularities are real but partial, they hold better for frequent tokens than
+rare ones, and the nearest-neighbour demonstrations that popularised them were
+selected.
+
+Two design points recur in transformer implementations.
+
+**Tying the input and output embeddings.** Using *E* again, transposed, to
+produce the output logits saves a large matrix and usually helps: the same
+notion of similarity governs reading a token and predicting it.
+
+**Scale at initialisation.** Embeddings are typically multiplied by √d before
+the first layer so that they and the positional signal are of comparable
+magnitude. Skipping it is a common and quiet bug.
+
+## Corollary
+
+Because retrieval is indexing, an embedding table is the one part of a model
+that can be inspected without any interpretability machinery: take a row, take
+the nearest rows by cosine similarity, and read them. It is also the part that
+scales with the vocabulary rather than with depth, which is why a large
+vocabulary is expensive in parameters even in a small model.
