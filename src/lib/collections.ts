@@ -8,25 +8,138 @@ const visible = <T extends { data: { status: 'draft' | 'published' } }>(e: T): b
 /** Books in reading order. */
 export async function getBooks(): Promise<CollectionEntry<'books'>[]> {
   const all = await getCollection('books');
-  return all.sort((a, b) => a.data.order - b.data.order);
+  return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+}
+
+/** Chapters, in book order then chapter order. */
+export async function getChapters(): Promise<CollectionEntry<'chapters'>[]> {
+  const [chapters, books] = await Promise.all([getCollection('chapters'), getBooks()]);
+  const rank = new Map(books.map((b, i) => [b.id, i]));
+  return chapters
+    .filter(visible)
+    .sort(
+      (a, b) =>
+        (rank.get(a.data.book.id) ?? 999) - (rank.get(b.data.book.id) ?? 999) ||
+        a.data.order - b.data.order
+    );
 }
 
 /**
- * Book numerals come from position, not from the `order` value, so adding or
- * renumbering a book can never leave a gap in the sequence.
+ * Every proposition in reading order: by book, then chapter, then its number
+ * within that chapter. This is the sequence the previous/next links follow and
+ * the order the progress count is measured against.
  */
-export async function getBookIndex(): Promise<Map<string, { n: number; entry: CollectionEntry<'books'> }>> {
-  const books = await getBooks();
-  return new Map(books.map((entry, i) => [entry.id, { n: i + 1, entry }]));
+export async function getPropositions(): Promise<CollectionEntry<'elementa'>[]> {
+  const [props, chapters] = await Promise.all([
+    getCollection('elementa'),
+    getChapters(),
+  ]);
+  const rank = new Map(chapters.map((c, i) => [c.id, i]));
+  return props
+    .filter(visible)
+    .sort(
+      (a, b) =>
+        (rank.get(a.data.chapter.id) ?? 999) - (rank.get(b.data.chapter.id) ?? 999) ||
+        a.data.proposition - b.data.proposition
+    );
 }
 
-export async function getPropositions(): Promise<CollectionEntry<'elementa'>[]> {
-  const all = await getCollection('elementa');
-  const index = await getBookIndex();
-  const rank = (e: CollectionEntry<'elementa'>) => index.get(e.data.book.id)?.n ?? 999;
-  return all
-    .filter(visible)
-    .sort((a, b) => rank(a) - rank(b) || a.data.proposition - b.data.proposition);
+export interface ElementaChapter {
+  chapter: CollectionEntry<'chapters'>;
+  propositions: CollectionEntry<'elementa'>[];
+  n: number;
+}
+
+export interface ElementaBook {
+  book: CollectionEntry<'books'>;
+  chapters: ElementaChapter[];
+  propositions: CollectionEntry<'elementa'>[];
+  n: number;
+}
+
+/** Books, their chapters and the propositions inside them, in reading order. */
+export async function getElementaTree(): Promise<ElementaBook[]> {
+  const [books, chapters, props] = await Promise.all([
+    getBooks(),
+    getChapters(),
+    getPropositions(),
+  ]);
+  return books.map((book, bi) => {
+    const own = chapters.filter((c) => c.data.book.id === book.id);
+    const tree = own.map((chapter, ci) => ({
+      chapter,
+      n: ci + 1,
+      propositions: props.filter((p) => p.data.chapter.id === chapter.id),
+    }));
+    return {
+      book,
+      n: bi + 1,
+      chapters: tree,
+      propositions: tree.flatMap((c) => c.propositions),
+    };
+  });
+}
+
+export interface PropositionContext {
+  entry: CollectionEntry<'elementa'>;
+  book: CollectionEntry<'books'>;
+  chapter: CollectionEntry<'chapters'>;
+  bookN: number;
+  chapterN: number;
+  /** Position in the whole corpus, for "proposition 4 of 24". */
+  index: number;
+  total: number;
+  previous: CollectionEntry<'elementa'> | null;
+  next: CollectionEntry<'elementa'> | null;
+  given: CollectionEntry<'elementa'>[];
+  /** Propositions that name this one as a prerequisite. */
+  usedBy: CollectionEntry<'elementa'>[];
+}
+
+/**
+ * Everything a proposition page needs to place itself: where it sits, what it
+ * depends on, and what depends on it. The reverse index is derived rather than
+ * declared, so a dependency can never be recorded on one side only.
+ */
+export async function getPropositionContexts(): Promise<PropositionContext[]> {
+  const [tree, props] = await Promise.all([getElementaTree(), getPropositions()]);
+
+  const chapterOf = new Map<string, { chapter: CollectionEntry<'chapters'>; chapterN: number; book: CollectionEntry<'books'>; bookN: number }>();
+  for (const b of tree) {
+    for (const c of b.chapters) {
+      chapterOf.set(c.chapter.id, {
+        chapter: c.chapter,
+        chapterN: c.n,
+        book: b.book,
+        bookN: b.n,
+      });
+    }
+  }
+
+  const byId = new Map(props.map((p) => [p.id, p]));
+  const usedBy = new Map<string, CollectionEntry<'elementa'>[]>();
+  for (const p of props) {
+    for (const g of p.data.given) {
+      if (!usedBy.has(g.id)) usedBy.set(g.id, []);
+      usedBy.get(g.id)!.push(p);
+    }
+  }
+
+  return props.map((entry, i) => {
+    const place = chapterOf.get(entry.data.chapter.id)!;
+    return {
+      entry,
+      ...place,
+      index: i + 1,
+      total: props.length,
+      previous: props[i - 1] ?? null,
+      next: props[i + 1] ?? null,
+      given: entry.data.given
+        .map((g) => byId.get(g.id))
+        .filter((g): g is CollectionEntry<'elementa'> => Boolean(g)),
+      usedBy: usedBy.get(entry.id) ?? [],
+    };
+  });
 }
 
 export async function getMarginalia(): Promise<CollectionEntry<'marginalia'>[]> {

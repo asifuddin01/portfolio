@@ -1,11 +1,18 @@
 ---
-book: foundations
-proposition: 7
+chapter: foundations--position
+proposition: 1
 statement: Attention is permutation-invariant, and positional encoding is the repair.
-given: ["book-1-prop-4"]
+given:
+  - attention-is-a-weighted-average
 figure: FigPermutation
 status: published
 updated: 2026-08-09
+claim: "Self-attention is permutation-equivariant: reorder the input and the output is merely reordered. Positional encoding is what makes order visible to the model."
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+  - title: "RoFormer: Enhanced Transformer with Rotary Position Embedding"
+    url: https://arxiv.org/abs/2104.09864
 ---
 
 ## Demonstration

@@ -1,18 +1,23 @@
 ---
 import Chapter from './Chapter.astro';
 import { getEntry } from 'astro:content';
-import { getPropositions, getBooks, getBookIndex } from '../../lib/collections';
+import { getElementaTree, getPropositionContexts } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
-const published = await getPropositions();
-const bookIndex = await getBookIndex();
-const books = await getBooks();
-const recent = [...published]
-  .sort((a, b) => b.data.updated.getTime() - a.data.updated.getTime())
-  .slice(0, 3);
-const numeralFor = (id: string): string => toRoman(bookIndex.get(id)?.n ?? 0);
+const tree = await getElementaTree();
 const meta = await getEntry('site', 'elementa');
 
+/* The three most recently updated propositions, with the path to reach them. */
+const recent = (await getPropositionContexts())
+  .sort((a, b) => b.entry.data.updated.getTime() - a.entry.data.updated.getTime())
+  .slice(0, 3)
+  .map((c) => ({
+    href: `/elementa/${c.book.id}/${c.chapter.id.split('--')[1]}/${c.entry.id}`,
+    bookN: c.bookN,
+    chapterN: c.chapterN,
+    statement: c.entry.data.statement,
+    proposition: c.entry.data.proposition,
+  }));
 ---
 <Chapter n={7} title="Elementa" id="elementa">
   {meta?.data.homeIntro && (
@@ -20,11 +25,13 @@ const meta = await getEntry('site', 'elementa');
   )}
 
   <ol class="el-books" data-reveal-stagger>
-    {books.map((b, i) => (
+    {tree.map((b) => (
       <li class="el-book">
-        <span class="el-book-n">Book {toRoman(i + 1)}</span>
-        <span class="el-book-t">{b.data.title}</span>
-        <span class="el-book-c">{b.data.covers}</span>
+        <a class="el-book-row" href={`/elementa/${b.book.id}`}>
+          <span class="el-book-n">Book {toRoman(b.n)}</span>
+          <span class="el-book-t">{b.book.data.title}</span>
+          <span class="el-book-c">{b.book.data.covers}</span>
+        </a>
       </li>
     ))}
   </ol>
@@ -33,11 +40,11 @@ const meta = await getEntry('site', 'elementa');
     <ul class="el-recent" data-reveal-stagger>
       {recent.map((p) => (
         <li class="el-recent-item">
-          <a class="el-recent-link" href={`/elementa/${p.id}`}>
+          <a class="el-recent-link" href={p.href}>
             <span class="el-recent-ref">
-              Book {numeralFor(p.data.book.id)} · Prop. {p.data.proposition}
+              Book {toRoman(p.bookN)} · Chapter {toRoman(p.chapterN)} · Prop. {p.proposition}
             </span>
-            <span class="el-recent-st">{p.data.statement}</span>
+            <span class="el-recent-st">{p.statement}</span>
           </a>
         </li>
       ))}
@@ -62,14 +69,16 @@ const meta = await getEntry('site', 'elementa');
     max-width: 62rem;
     border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
   }
-  .el-book {
+  .el-book-row {
     display: grid;
+    color: var(--ink);
     grid-template-columns: 7rem 12rem 1fr;
     gap: 1rem;
     align-items: baseline;
     padding: 0.75rem 0;
-    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
   }
+  .el-book { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .el-book-row:hover .el-book-t { color: var(--fundus); }
   .el-book-n {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

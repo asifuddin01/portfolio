@@ -1,0 +1,201 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
+import { getElementaTree } from '../../../../lib/collections';
+import type { CollectionEntry } from 'astro:content';
+import { toRoman } from '../../../../consts';
+
+export async function getStaticPaths() {
+  const tree = await getElementaTree();
+  return tree.flatMap((b) =>
+    b.chapters.map((c, i) => ({
+      params: { book: b.book.id, chapter: c.chapter.id.split('--')[1]! },
+      props: {
+        book: b.book,
+        bookN: b.n,
+        chapter: c.chapter,
+        chapterN: c.n,
+        propositions: c.propositions,
+        next: b.chapters[i + 1] ?? null,
+      },
+    }))
+  );
+}
+
+interface Props {
+  book: CollectionEntry<'books'>;
+  bookN: number;
+  chapter: CollectionEntry<'chapters'>;
+  chapterN: number;
+  propositions: CollectionEntry<'elementa'>[];
+  next: { chapter: CollectionEntry<'chapters'>; n: number } | null;
+}
+const { book, bookN, chapter, chapterN, propositions, next } = Astro.props;
+const base = `/elementa/${book.id}`;
+const here = `${base}/${chapter.id.split('--')[1]}`;
+---
+<BaseLayout
+  title={`Chapter ${toRoman(chapterN)} · ${chapter.data.title} — Elementa`}
+  description={chapter.data.summary}
+  folio={`${bookN}.${chapterN}`}
+>
+  <div class="codex ch">
+    <Breadcrumb
+      bookN={bookN} bookTitle={book.data.title} bookHref={base}
+      chapterN={chapterN} chapterTitle={chapter.data.title} chapterHref={here}
+    />
+
+    <header class="ch-head">
+      <p class="ch-n" data-reveal>Chapter {toRoman(chapterN)}</p>
+      <h1 class="ch-h1" data-press>{chapter.data.title}</h1>
+      <p class="ch-summary codex-measure" data-reveal>{chapter.data.summary}</p>
+    </header>
+
+    {chapter.data.topics.length > 0 && (
+      <section class="ch-topics" data-reveal aria-labelledby="ch-topics-h">
+        <h2 class="ch-label" id="ch-topics-h">What this chapter covers</h2>
+        <ul class="ch-topic-list">
+          {chapter.data.topics.map((t) => <li>{t}</li>)}
+        </ul>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <section aria-labelledby="ch-props-h">
+      <h2 class="ch-label" id="ch-props-h">Propositions</h2>
+      {propositions.length === 0 ? (
+        <p class="ch-empty">
+          Not yet written. The topics above are the plan for this chapter; each
+          will become a proposition with its own figure.
+        </p>
+      ) : (
+        <ol class="ch-props" data-reveal-stagger>
+          {propositions.map((p) => (
+            <li class="ch-prop">
+              <a class="ch-prop-link" href={`${here}/${p.id}`}>
+                <span class="ch-prop-n">Prop. {p.data.proposition}</span>
+                <span class="ch-prop-body">
+                  <span class="ch-prop-st">{p.data.statement}</span>
+                  {p.data.claim && <span class="ch-prop-claim">{p.data.claim}</span>}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+
+    <LesionRule />
+
+    <nav class="ch-next" aria-label="Next chapter">
+      <a
+        class="ch-next-link"
+        href={next ? `${base}/${next.chapter.id.split('--')[1]}` : base}
+        data-magnet
+      >
+        <span class="ch-next-label">
+          {next ? `Next — Chapter ${toRoman(next.n)}` : `Back to Book ${toRoman(bookN)}`}
+        </span>
+        <span class="ch-next-t">{next ? next.chapter.data.title : book.data.title}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .ch { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .ch-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .ch-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .ch-summary { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .ch-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.9rem;
+  }
+  .ch-topics { margin-top: 2rem; }
+  .ch-topic-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.9rem;
+    max-width: 60rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .ch-topic-list li::after { content: ' ·'; color: var(--brass-text); }
+  .ch-topic-list li:last-child::after { content: ''; }
+
+  .ch-props {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .ch-prop { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .ch-prop-link {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.1rem 0;
+    color: var(--ink);
+  }
+  .ch-prop-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .ch-prop-st { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .ch-prop-link:hover .ch-prop-st { color: var(--fundus); }
+  .ch-prop-claim {
+    display: block;
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-top: 0.3rem;
+    max-width: 60ch;
+  }
+  .ch-empty {
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    line-height: 1.6;
+  }
+
+  .ch-next { margin-bottom: 2rem; }
+  .ch-next-link { display: inline-block; }
+  .ch-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .ch-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 640px) {
+    .ch-prop-link { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>

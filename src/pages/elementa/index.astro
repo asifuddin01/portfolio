@@ -1,64 +1,52 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
-import PropositionCard from '../../components/elementa/PropositionCard.astro';
+import Progress from '../../components/elementa/Progress.astro';
 import { getEntry } from 'astro:content';
-import { getPropositions, getBooks } from '../../lib/collections';
+import { getElementaTree } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
-const props = await getPropositions();
-
-const books = await getBooks();
+const tree = await getElementaTree();
 const meta = await getEntry('site', 'elementa');
+const written = tree.reduce((n, b) => n + b.propositions.length, 0);
+const chapters = tree.reduce((n, b) => n + b.chapters.length, 0);
 ---
 <BaseLayout
   title="Elementa — Md. Asif Uddin"
-  description="A structured corpus on transformers, vision and vision-language models, written as numbered propositions and meant to be read in order."
+  description="A course in deep learning written as a sequence of propositions, from foundations through vision, language and causal inference to practice."
   folio="E"
 >
   <div class="codex el">
     <header class="el-head">
       {meta?.data.kicker && <p class="el-kicker" data-reveal>{meta.data.kicker}</p>}
       <h1 class="el-h1" data-press>Elementa</h1>
-      {meta?.data.lede && (
-        <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>
-      )}
-      <p class="el-figlink" data-reveal>
-        <a class="link" href="/elementa/figures">Every figure, with permalinks →</a>
-      </p>
+      {meta?.data.lede && <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>}
+      <div class="el-meta" data-reveal>
+        <Progress done={written} label={`${tree.length} books · ${chapters} chapters`} />
+        <p class="el-figlink"><a class="link" href="/elementa/figures">Every figure, with permalinks →</a></p>
+      </div>
     </header>
 
     <LesionRule />
 
-    {books.map((b, bi) => {
-      const inBook = props.filter((p) => p.data.book.id === b.id);
-      return (
-        <section class="el-book" aria-labelledby={`book-${b.id}`}>
-          <header class="el-book-head">
-            <h2 class="el-book-h" id={`book-${b.id}`}>
-              <span class="el-book-n">Book {toRoman(bi + 1)}</span>
-              {b.data.title}
-            </h2>
-            <p class="el-book-c">{b.data.covers}</p>
-          </header>
-          {inBook.length === 0 ? (
-            <p class="el-empty">Not yet written.</p>
-          ) : (
-            <div class="el-list" data-reveal-stagger>
-              {inBook.map((p) => (
-                <PropositionCard
-                  bookNumeral={toRoman(bi + 1)}
-                  proposition={p.data.proposition}
-                  statement={p.data.statement}
-                  slug={p.id}
-                  status={p.data.status}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      );
-    })}
+    <ol class="el-books" data-reveal-stagger>
+      {tree.map((b) => (
+        <li class="el-book">
+          <a class="el-book-link" href={`/elementa/${b.book.id}`}>
+            <span class="el-book-n">Book {toRoman(b.n)}</span>
+            <span class="el-book-body">
+              <span class="el-book-t">{b.book.data.title}</span>
+              <span class="el-book-c">{b.book.data.covers}</span>
+              {b.book.data.goal && <span class="el-book-goal">{b.book.data.goal}</span>}
+            </span>
+            <span class="el-book-count">
+              {b.chapters.length} {b.chapters.length === 1 ? 'chapter' : 'chapters'}
+              <em>{b.propositions.length} written</em>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
   </div>
 </BaseLayout>
 
@@ -73,11 +61,26 @@ const meta = await getEntry('site', 'elementa');
     margin-bottom: 0.8rem;
   }
   .el-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
-  .el-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1rem; }
-  .el-figlink { font-family: var(--font-mono); font-size: var(--t-xs); }
-  .el-book { margin-bottom: 3.2rem; }
-  .el-book-head { margin-bottom: 0.6rem; }
-  .el-book-h { font-size: var(--t-lg); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.9rem; }
+  .el-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1.6rem; }
+  .el-meta { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; align-items: end; }
+  .el-figlink { font-family: var(--font-mono); font-size: var(--t-xs); margin: 0; }
+
+  .el-books {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .el-book { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .el-book-link {
+    display: grid;
+    grid-template-columns: 7rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.4rem 0;
+    color: var(--ink);
+  }
   .el-book-n {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -85,7 +88,35 @@ const meta = await getEntry('site', 'elementa');
     text-transform: uppercase;
     color: var(--brass-text);
   }
-  .el-book-c { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0.3rem 0 0; }
-  .el-list { max-width: 62rem; border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent); }
-  .el-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); padding-top: 0.8rem; border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); max-width: 62rem; }
+  .el-book-body { display: block; }
+  .el-book-t { display: block; font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.2; }
+  .el-book-link:hover .el-book-t { color: var(--fundus); }
+  .el-book-c {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin-top: 0.25rem;
+  }
+  .el-book-goal {
+    display: block;
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-top: 0.45rem;
+    max-width: 52ch;
+  }
+  .el-book-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .el-book-count em { display: block; font-style: normal; color: var(--ink-soft); margin-top: 0.2rem; }
+
+  @media (max-width: 720px) {
+    .el-book-link { grid-template-columns: 1fr; gap: 0.3rem; }
+    .el-book-count { text-align: left; }
+  }
 </style>

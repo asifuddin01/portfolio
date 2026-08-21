@@ -75,18 +75,47 @@ const books = defineCollection({
     order: z.number(),
     title: z.string(),
     covers: z.string(),
+    /** What the reader can do once the book is finished. */
+    goal: z.string().optional(),
+    /** Books that should be read first, by slug. */
+    prerequisites: z.array(z.string()).default([]),
+    status: z.enum(['draft', 'published']).default('published'),
+  }),
+});
+
+/**
+ * Chapters sit between a book and its propositions. A proposition names its
+ * chapter and the book follows from that, so a proposition can never disagree
+ * with its own book about where it lives.
+ */
+const chapters = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/chapters' }),
+  schema: z.object({
+    book: reference('books'),
+    order: z.number(),
+    title: z.string(),
+    summary: z.string(),
+    /** What the chapter covers, shown before any proposition is written. */
+    topics: z.array(z.string()).default([]),
+    status: z.enum(['draft', 'published']).default('published'),
   }),
 });
 
 const elementa = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/elementa' }),
   schema: z.object({
-    // A reference, so a proposition pointing at a book that does not exist
-    // fails the build instead of rendering a blank heading.
-    book: reference('books'),
+    // References, so a proposition pointing at a chapter or a prerequisite
+    // that does not exist fails the build rather than rendering a dead link.
+    chapter: reference('chapters'),
     proposition: z.number(),
     statement: z.string(),                   // the claim, asserted
-    given: z.array(z.string()).default([]),  // slugs of prerequisite props
+    /** One or two sentences stating the claim plainly. */
+    claim: z.string().optional(),
+    given: z.array(reference('elementa')).default([]),
+    /** Primary papers and references behind the proposition. */
+    sources: z
+      .array(z.object({ title: z.string(), url: optionalUrl }))
+      .default([]),
     figure: z.string().nullable().default(null), // figure component name
     status: z.enum(['draft', 'published']),
     updated: z.date(),
@@ -289,5 +318,5 @@ const axioms = defineCollection({
 
 export const collections = {
   works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
-  papers, education, projects, images, axioms,
+  papers, education, projects, images, axioms, chapters,
 };

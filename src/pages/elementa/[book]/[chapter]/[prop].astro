@@ -1,0 +1,200 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
+import FigureFrame from '../../../../components/elementa/FigureFrame.astro';
+import { getPropositionContexts, type PropositionContext } from '../../../../lib/collections';
+import { FIGURES, isFigureName } from '../../../../lib/figures';
+
+
+export async function getStaticPaths() {
+  const contexts = await getPropositionContexts();
+  const href = (c: PropositionContext) =>
+    `/elementa/${c.book.id}/${c.chapter.id.split('--')[1]}/${c.entry.id}`;
+  return contexts.map((ctx) => ({
+    params: {
+      book: ctx.book.id,
+      chapter: ctx.chapter.id.split('--')[1]!,
+      prop: ctx.entry.id,
+    },
+    props: { ctx, hrefs: Object.fromEntries(contexts.map((c) => [c.entry.id, href(c)])) },
+  }));
+}
+
+interface Props { ctx: PropositionContext; hrefs: Record<string, string> }
+const { ctx, hrefs } = Astro.props;
+const { entry, book, chapter, bookN, chapterN, index, total, previous, next, given, usedBy } = ctx;
+const d = entry.data;
+const { Content } = await render(entry);
+
+const base = `/elementa/${book.id}`;
+const chapterHref = `${base}/${chapter.id.split('--')[1]}`;
+
+const figName = d.figure && isFigureName(d.figure) ? d.figure : null;
+const fig = figName ? FIGURES[figName] : null;
+const Figure = fig?.component;
+---
+<BaseLayout
+  title={`${d.statement} — Elementa`}
+  description={d.claim ?? d.statement}
+  folio={`${bookN}.${chapterN}.${d.proposition}`}
+  type="article"
+>
+  <article class="codex pp">
+    <Breadcrumb
+      bookN={bookN} bookTitle={book.data.title} bookHref={base}
+      chapterN={chapterN} chapterTitle={chapter.data.title} chapterHref={chapterHref}
+      proposition={d.proposition}
+    />
+
+    <header class="pp-head">
+      <p class="pp-ref" data-reveal>
+        Proposition {d.proposition}
+        <span class="pp-of">{index} of {total} in the corpus</span>
+        {d.status === 'draft' && <span class="pp-draft">draft</span>}
+      </p>
+      <h1 class="pp-st" data-press>{d.statement}</h1>
+      {d.claim && <p class="pp-claim codex-measure" data-reveal>{d.claim}</p>}
+    </header>
+
+    <section class="pp-given" data-reveal aria-labelledby="pp-given-h">
+      <h2 class="pp-label" id="pp-given-h">Depends on</h2>
+      {given.length === 0 ? (
+        <p class="pp-none">Nothing. This proposition stands on its own.</p>
+      ) : (
+        <ul class="pp-list">
+          {given.map((g) => (
+            <li><a class="link" href={hrefs[g.id]}>Prop. {g.data.proposition} — {g.data.statement}</a></li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    {Figure && fig && (
+      <div class="fig-draw" data-reveal>
+        <FigureFrame n={d.proposition} numeral="arabic" caption={fig.caption} id={figName ?? undefined}>
+          <Figure />
+        </FigureFrame>
+      </div>
+    )}
+
+    <div class="prose pp-body"><Content /></div>
+
+    {d.sources.length > 0 && (
+      <section class="pp-sources" data-reveal aria-labelledby="pp-src-h">
+        <h2 class="pp-label" id="pp-src-h">Sources</h2>
+        <ul class="pp-list">
+          {d.sources.map((s) => (
+            <li>{s.url ? <a class="link" href={s.url} rel="noopener">{s.title}</a> : s.title}</li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {usedBy.length > 0 && (
+      <section class="pp-usedby" data-reveal aria-labelledby="pp-used-h">
+        <h2 class="pp-label" id="pp-used-h">Used by</h2>
+        <ul class="pp-list">
+          {usedBy.map((u) => (
+            <li><a class="link" href={hrefs[u.id]}>Prop. {u.data.proposition} — {u.data.statement}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <nav class="pp-nav" aria-label="Adjacent propositions">
+      <div class="pp-nav-side">
+        {previous && (
+          <a class="pp-nav-link" href={hrefs[previous.id]}>
+            <span class="pp-nav-label">← Previous</span>
+            <span class="pp-nav-t">{previous.data.statement}</span>
+          </a>
+        )}
+      </div>
+      <div class="pp-nav-side pp-nav-right">
+        <a class="pp-nav-link" href={next ? hrefs[next.id] : chapterHref} data-magnet>
+          <span class="pp-nav-label">{next ? 'Next →' : 'Back to the chapter'}</span>
+          <span class="pp-nav-t">{next ? next.data.statement : chapter.data.title}</span>
+        </a>
+      </div>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .pp { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pp-head { margin-bottom: 1.6rem; }
+  .pp-ref {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .pp-of { color: var(--ink-soft); letter-spacing: 0.08em; text-transform: none; }
+  .pp-draft {
+    color: var(--oxblood-text);
+    border: var(--rule) solid var(--oxblood);
+    padding: 0.05em 0.4em;
+  }
+  .pp-st { font-size: var(--t-xl); line-height: 1.15; max-width: 24ch; }
+  .pp-claim {
+    font-size: var(--body-size);
+    line-height: var(--body-leading);
+    color: var(--ink-soft);
+    margin-top: 1rem;
+  }
+
+  .pp-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .pp-given, .pp-sources, .pp-usedby {
+    margin: 2rem 0;
+    padding-top: 1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    max-width: var(--measure);
+  }
+  .pp-none { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+  .pp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .pp-list li { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 1.7; }
+  .pp-body { margin-top: 2rem; }
+
+  .pp-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  .pp-nav-right { text-align: right; }
+  .pp-nav-link { display: inline-block; max-width: 30ch; }
+  .pp-nav-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .pp-nav-t { font-family: var(--font-display); font-size: var(--t-base); color: var(--fundus); line-height: 1.35; }
+
+  @media (max-width: 640px) {
+    .pp-st { font-size: var(--t-lg); }
+    .pp-nav { grid-template-columns: 1fr; gap: 1.4rem; }
+    .pp-nav-right { text-align: left; }
+  }
+</style>

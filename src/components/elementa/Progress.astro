@@ -1,0 +1,57 @@
+---
+/**
+ * Intellectual progress rather than gamification: a count, and marks only
+ * where there is something to measure against. No points, no streaks.
+ *
+ * Pass `total` when a target exists — propositions read out of a chapter, say.
+ * With only `done`, it states the count plainly, because "3 of 3" measured
+ * against itself tells the reader nothing.
+ */
+interface Props { done: number; total?: number; label?: string; noun?: string }
+const { done, total, label, noun = 'proposition' } = Astro.props;
+
+const plural = (n: number) => (n === 1 ? noun : `${noun}s`);
+const hasTarget = typeof total === 'number' && total > 0 && total !== done;
+const marks = hasTarget ? Math.min(total, 24) : 0;
+const filled = hasTarget ? Math.round((done / total) * marks) : 0;
+---
+<div class="pr">
+  <p class="pr-count">
+    {label && <span class="pr-label">{label}</span>}
+    {hasTarget ? `${done} of ${total} ${plural(total)}` : `${done} ${plural(done)} written`}
+  </p>
+  {hasTarget && (
+    <p class="pr-marks" aria-hidden="true">
+      {Array.from({ length: marks }, (_, i) => (
+        <span class:list={['pr-mark', { 'is-done': i < filled }]}></span>
+      ))}
+    </p>
+  )}
+</div>
+
+<style>
+  .pr { display: grid; gap: 0.5rem; }
+  .pr-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 0;
+    font-variant-numeric: lining-nums;
+  }
+  .pr-label {
+    color: var(--brass-text);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-right: 0.7rem;
+  }
+  .pr-marks { display: flex; gap: 0.34rem; margin: 0; flex-wrap: wrap; }
+  .pr-mark {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: var(--rule) solid var(--brass);
+    opacity: 0.55;
+  }
+  .pr-mark.is-done { background: var(--brass); opacity: 1; }
+</style>

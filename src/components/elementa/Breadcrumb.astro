@@ -1,0 +1,64 @@
+---
+/**
+ * Where the reader is. Every Elementa page shows its own position, so the
+ * corpus reads as a structure rather than a pile of pages.
+ */
+import { toRoman } from '../../consts';
+
+interface Props {
+  bookN?: number;
+  bookTitle?: string;
+  bookHref?: string;
+  chapterN?: number;
+  chapterTitle?: string;
+  chapterHref?: string;
+  proposition?: number;
+}
+const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposition } =
+  Astro.props;
+---
+<nav class="bc" aria-label="Position in the corpus">
+  <a class="bc-root" href="/elementa">Elementa</a>
+  {bookTitle && (
+    <>
+      <span class="bc-sep" aria-hidden="true">·</span>
+      <a class="bc-step" href={bookHref}>
+        <span class="bc-n">Book {toRoman(bookN ?? 0)}</span> {bookTitle}
+      </a>
+    </>
+  )}
+  {chapterTitle && (
+    <>
+      <span class="bc-sep" aria-hidden="true">·</span>
+      <a class="bc-step" href={chapterHref}>
+        <span class="bc-n">Chapter {toRoman(chapterN ?? 0)}</span> {chapterTitle}
+      </a>
+    </>
+  )}
+  {proposition !== undefined && (
+    <>
+      <span class="bc-sep" aria-hidden="true">·</span>
+      <span class="bc-step bc-here">Proposition {proposition}</span>
+    </>
+  )}
+</nav>
+
+<style>
+  .bc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    letter-spacing: 0.06em;
+    margin-bottom: 1.4rem;
+  }
+  .bc-root { color: var(--brass-text); text-transform: uppercase; letter-spacing: 0.16em; }
+  .bc-sep { color: var(--brass-text); opacity: 0.6; }
+  .bc-step { color: var(--ink-soft); }
+  a.bc-step:hover { color: var(--fundus); }
+  .bc-n { color: var(--brass-text); text-transform: uppercase; letter-spacing: 0.12em; }
+  .bc-here { color: var(--ink); }
+</style>

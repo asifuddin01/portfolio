@@ -155,12 +155,20 @@ Two deliberate choices in it:
 - **No results.** Research entries carry the title and what the work does.
   Metrics live on the plate, where the caveats are next to them.
 
-### Adding a book to the Elementa
+### The shape of the Elementa
 
-Books are a collection, not a fixed list. Add one under **Elementa books**
-first — causal inference, bioinformatics, whatever — and it appears in the
-Book dropdown when you write a proposition. A proposition pointing at a book
-that does not exist fails the build rather than rendering a blank heading.
+Three levels: **Book → Chapter → Proposition**, at
+`/elementa/<book>/<chapter>/<proposition>`. A proposition names its chapter
+and the book follows from that, so the two can never disagree about where it
+lives. Both are typed references, so pointing at something that does not
+exist fails the build rather than rendering a dead link.
+
+Write in that order: book, then chapter, then propositions. A chapter with no
+propositions still renders — it shows its topic list, which is the plan for
+what will be written there.
+
+`given` is also a reference, and the "used by" list on each proposition is
+derived from it. Record a dependency once and both directions appear.
 
 ### One thing the CMS cannot do
 

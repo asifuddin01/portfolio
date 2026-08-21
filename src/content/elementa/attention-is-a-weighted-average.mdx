@@ -1,11 +1,16 @@
 ---
-book: foundations
-proposition: 4
+chapter: foundations--attention
+proposition: 1
 statement: Attention is a weighted average whose weights are computed from content.
-given: ["book-1-prop-1"]
+given:
+  - tokenisation-fixes-distinctions
 figure: FigAttentionWeights
 status: published
 updated: 2026-07-28
+claim: "Attention outputs a convex combination of value vectors, weighted by how well each key matches the query. The weights come from content; the position of a token plays no part."
+sources:
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
 ---
 
 ## Demonstration

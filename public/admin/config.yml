@@ -122,6 +122,21 @@ collections:
         name: covers
         widget: string
         hint: "The short line under the title, e.g. DAGs, interventions, counterfactuals."
+      - label: Goal
+        name: goal
+        widget: text
+        required: false
+        hint: "What the reader can do once the book is finished."
+      - label: Prerequisites
+        name: prerequisites
+        widget: relation
+        collection: books
+        search_fields: [title]
+        display_fields: [title]
+        value_field: "{{slug}}"
+        multiple: true
+        required: false
+        hint: "Books that should be read first."
       - label: Reading order
         name: order
         widget: number
@@ -129,6 +144,56 @@ collections:
         min: 1
         hint: >-
           Sort order only. Gaps are fine — the Book numeral on the page is worked out from the running order, not from this value.
+
+  # ------------------------------------------------------------------
+  - name: chapters
+    label: Elementa chapters
+    label_singular: Chapter
+    description: >-
+      Chapters sit between a book and its propositions. Create the chapter
+      first; a proposition then picks it from a list, and its book follows.
+    folder: src/content/chapters
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{fields.book}}--{{slug}}"
+    summary: "{{book}} · {{order}} · {{title}}"
+    sortable_fields: [order, title]
+    fields:
+      - label: Book
+        name: book
+        widget: relation
+        collection: books
+        search_fields: [title]
+        display_fields: [title]
+        value_field: "{{slug}}"
+      - { label: Title, name: title, widget: string }
+      - label: Summary
+        name: summary
+        widget: text
+        hint: "One line. What the chapter is for."
+      - label: Topics
+        name: topics
+        widget: list
+        required: false
+        field: { label: Topic, name: topic, widget: string }
+        hint: >-
+          What the chapter will cover. Shown before any proposition exists, so
+          a reader can see the plan for a chapter that is not written yet.
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        hint: "Position within the book. Chapter numerals come from the running order."
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
   - name: elementa
@@ -141,7 +206,7 @@ collections:
     format: frontmatter
     create: true
     identifier_field: statement
-    slug: "{{fields.book}}-prop-{{fields.proposition}}"
+    slug: "{{slug}}"
     summary: "Book {{book}} · Prop {{proposition}} — {{statement}}"
     sortable_fields: [ book, proposition, updated ]
     fields:
@@ -162,6 +227,25 @@ collections:
         name: statement
         widget: string
         hint: "The claim, in one sentence. This is the page title."
+      - label: The claim
+        name: claim
+        widget: text
+        required: false
+        hint: "One or two sentences stating the claim plainly, beneath the title."
+      - label: Sources
+        name: sources
+        widget: list
+        required: false
+        fields:
+          - { label: Title, name: title, widget: string }
+          - label: Link
+            name: url
+            widget: string
+            required: false
+            pattern:
+              - "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$"
+              - "Paste the address only, e.g. https://example.com/page — not a sentence."
+        hint: "Primary papers and references behind the proposition."
       - label: Given
         name: given
         widget: relation

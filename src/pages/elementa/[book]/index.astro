@@ -1,0 +1,151 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
+import Progress from '../../../components/elementa/Progress.astro';
+import { getElementaTree, type ElementaBook } from '../../../lib/collections';
+import { toRoman } from '../../../consts';
+
+export async function getStaticPaths() {
+  const tree = await getElementaTree();
+  return tree.map((node, i) => ({
+    params: { book: node.book.id },
+    props: { node, next: tree[i + 1] ?? null },
+  }));
+}
+
+interface Props { node: ElementaBook; next: ElementaBook | null }
+const { node, next } = Astro.props;
+const { book, chapters, propositions, n } = node;
+---
+<BaseLayout
+  title={`Book ${toRoman(n)} · ${book.data.title} — Elementa`}
+  description={book.data.goal ?? book.data.covers}
+  folio={`${n}`}
+>
+  <div class="codex bk">
+    <Breadcrumb bookN={n} bookTitle={book.data.title} bookHref={`/elementa/${book.id}`} />
+
+    <header class="bk-head">
+      <p class="bk-n" data-reveal>Book {toRoman(n)}</p>
+      <h1 class="bk-h1" data-press>{book.data.title}</h1>
+      <p class="bk-covers" data-reveal>{book.data.covers}</p>
+      {book.data.goal && <p class="bk-goal codex-measure" data-reveal>{book.data.goal}</p>}
+      <div class="bk-progress" data-reveal>
+        <Progress done={propositions.length} label={`${chapters.length} chapters`} />
+      </div>
+    </header>
+
+    <LesionRule />
+
+    <ol class="bk-chapters" data-reveal-stagger>
+      {chapters.map((c) => (
+        <li class="bk-chapter">
+          <a class="bk-chapter-link" href={`/elementa/${book.id}/${c.chapter.id.split('--')[1]}`}>
+            <span class="bk-chapter-n">Chapter {toRoman(c.n)}</span>
+            <span class="bk-chapter-body">
+              <span class="bk-chapter-t">{c.chapter.data.title}</span>
+              <span class="bk-chapter-s">{c.chapter.data.summary}</span>
+              {c.chapter.data.topics.length > 0 && (
+                <span class="bk-topics">{c.chapter.data.topics.join(' · ')}</span>
+              )}
+            </span>
+            <span class="bk-chapter-count">
+              {c.propositions.length > 0
+                ? `${c.propositions.length} written`
+                : 'not yet written'}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+
+    <LesionRule />
+
+    <nav class="bk-next" aria-label="Next book">
+      <a class="bk-next-link" href={next ? `/elementa/${next.book.id}` : '/elementa'} data-magnet>
+        <span class="bk-next-label">
+          {next ? `Next — Book ${toRoman(next.n)}` : 'Back to the corpus'}
+        </span>
+        <span class="bk-next-t">{next ? next.book.data.title : 'Elementa'}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .bk { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .bk-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .bk-h1 { font-size: var(--t-2xl); margin-bottom: 0.8rem; }
+  .bk-covers { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin-bottom: 1rem; }
+  .bk-goal { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1.4rem; }
+  .bk-progress { margin-bottom: 0.4rem; }
+
+  .bk-chapters {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .bk-chapter { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .bk-chapter-link {
+    display: grid;
+    grid-template-columns: 8rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.15rem 0;
+    color: var(--ink);
+  }
+  .bk-chapter-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .bk-chapter-t { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.3; }
+  .bk-chapter-link:hover .bk-chapter-t { color: var(--fundus); }
+  .bk-chapter-s { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.5; }
+  .bk-topics {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    opacity: 0.75;
+    margin-top: 0.4rem;
+    line-height: 1.7;
+  }
+  .bk-chapter-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .bk-next { margin-bottom: 2rem; }
+  .bk-next-link { display: inline-block; }
+  .bk-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .bk-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 720px) {
+    .bk-chapter-link { grid-template-columns: 1fr; gap: 0.25rem; }
+    .bk-chapter-count { text-align: left; }
+  }
+</style>
