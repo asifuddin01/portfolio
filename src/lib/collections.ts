@@ -40,24 +40,28 @@ export async function getTabulae(): Promise<CollectionEntry<'art'>[]> {
   return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
 }
 
-/** The chapters a plate can sit after, in page order. */
+/**
+ * The positions a plate can occupy on the home page, in the order they appear.
+ * Position 1 is the frontispiece, beside the name; the rest follow a chapter
+ * each, down the scroll.
+ */
 export const PLATE_SLOTS = [
-  'prologue', 'axioms', 'instrumentarium', 'compendium', 'instrumenta',
-  'elementa', 'marginalia', 'chronicle', 'appendix', 'correspondence',
+  'frontispiece', 'prologue', 'axioms', 'instrumentarium', 'compendium',
+  'instrumenta', 'elementa', 'marginalia', 'chronicle', 'appendix',
+  'correspondence',
 ] as const;
 
 export type PlateSlot = (typeof PLATE_SLOTS)[number];
 
 /**
- * Works out where the plates go on the home scroll.
+ * Lays the plates onto the home page.
  *
- * `onHome` is the only thing that decides WHETHER a plate appears. Placement
- * decides only WHERE, and a plate without one takes the next free position
- * rather than silently vanishing — the earlier version required both to
- * agree, so switching a plate on left it nowhere to go.
- *
- * Shared by the page and the frontispiece so the two cannot disagree about
- * which plate is the hero.
+ * `onHome` decides whether a plate appears at all; `homePosition` decides the
+ * order. The plates are sorted by that number and dealt into the positions in
+ * turn, so the numbers only have to be in the right sequence — they need not
+ * be consecutive, and a gap or a duplicate costs nothing. If there are more
+ * plates than positions, the surplus stacks in the last one rather than
+ * disappearing.
  */
 export async function getHomePlates(): Promise<{
   numeral: Map<string, number>;
@@ -66,37 +70,25 @@ export async function getHomePlates(): Promise<{
 }> {
   const all = await getTabulae();
   const numeral = new Map(all.map((t, i) => [t.id, i + 1]));
-  const shown = all.filter((t) => t.data.onHome);
 
-  const front = shown.find((t) => t.data.placement === 'frontispiece') ?? shown[0];
-  const rest = shown.filter((t) => t.id !== front?.id);
+  const shown = all
+    .filter((t) => t.data.onHome)
+    .sort(
+      (a, b) =>
+        a.data.homePosition - b.data.homePosition ||
+        a.data.order - b.data.order
+    );
 
   const bySlot = new Map<PlateSlot, CollectionEntry<'art'>[]>(
     PLATE_SLOTS.map((s) => [s, []])
   );
 
-  const claimed = new Set<PlateSlot>();
-  const queue: CollectionEntry<'art'>[] = [];
+  shown.forEach((entry, i) => {
+    const slot = PLATE_SLOTS[Math.min(i, PLATE_SLOTS.length - 1)]!;
+    bySlot.get(slot)!.push(entry);
+  });
 
-  for (const t of rest) {
-    const p = t.data.placement as PlateSlot;
-    if (PLATE_SLOTS.includes(p) && !claimed.has(p)) {
-      bySlot.get(p)!.push(t);
-      claimed.add(p);
-    } else {
-      queue.push(t);
-    }
-  }
-
-  // Anything left over fills the gaps; once the slots are full, extras stack
-  // in the last one rather than disappearing.
-  for (const t of queue) {
-    const free = PLATE_SLOTS.find((s) => !claimed.has(s));
-    const target = free ?? PLATE_SLOTS[PLATE_SLOTS.length - 1]!;
-    bySlot.get(target)!.push(t);
-    if (free) claimed.add(free);
-  }
-
+  const front = bySlot.get('frontispiece')?.[0];
   return { numeral, front, bySlot };
 }
 

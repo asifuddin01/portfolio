@@ -173,17 +173,12 @@ const art = defineCollection({
       treatment: z.enum(['intaglio', 'photograph']).default('intaglio'),
       side: z.enum(['left', 'right']).default('right'),
       /**
-       * Which chapter the plate follows on the home scroll. `frontispiece`
-       * puts it beside the name; `none` keeps it in the gallery only. Two
-       * plates claiming the same slot is harmless — the first one wins.
+       * Where the plate sits on the home page: 1 appears first, beside the
+       * name, then 2, 3 and so on down the scroll. Only consulted when
+       * onHome is true. Gaps and duplicates are harmless — the plates are
+       * sorted by this and laid into the available positions in turn.
        */
-      placement: z
-        .enum([
-          'frontispiece', 'prologue', 'axioms', 'instrumentarium',
-          'compendium', 'instrumenta', 'elementa', 'marginalia',
-          'chronicle', 'appendix', 'correspondence', 'none',
-        ])
-        .default('none'),
+      homePosition: z.number().default(99),
       onHome: z.boolean().default(true),
       status: z.enum(['draft', 'published']).default('published'),
     }),

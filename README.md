@@ -90,6 +90,12 @@ the page with a blend mode so the paper white becomes vellum, or `photograph`
 for objects, which are toned instead. **Choosing `intaglio` for a photograph
 will render it nearly black.**
 
+Two numbers, doing different jobs. **Plate order** is the gallery sequence and
+sets the Tabula numeral. **Position on the home page** is where it falls on
+the front page: 1 sits beside the name, 2 next, and so on. Only the plates
+with the switch on are laid out, in that order, so the numbers need only be
+in sequence — gaps cost nothing and a tie is broken by plate order.
+
 ### Signing in
 
 Two options; the CMS offers both on its login screen.

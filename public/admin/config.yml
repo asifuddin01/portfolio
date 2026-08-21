@@ -342,24 +342,15 @@ collections:
           - Paste the address only, e.g. https://example.com/page — not a sentence.
         hint: The address only. A sentence with a link in it will not be accepted here.
       - label: Position on the home page
-        name: placement
-        widget: select
-        default: none
-        options:
-          - { label: "Anywhere — take the next free position", value: none }
-          - { label: "Frontispiece — beside the name", value: frontispiece }
-          - { label: "After the Prologue", value: prologue }
-          - { label: "After the Axioms", value: axioms }
-          - { label: "After the Instrumentarium", value: instrumentarium }
-          - { label: "After the Compendium", value: compendium }
-          - { label: "After Instrumenta propria", value: instrumenta }
-          - { label: "After the Elementa", value: elementa }
-          - { label: "After the Marginalia", value: marginalia }
-          - { label: "After the Chronicle", value: chronicle }
-          - { label: "After the Appendix", value: appendix }
-          - { label: "After the Correspondence", value: correspondence }
+        name: homePosition
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
         hint: >-
-          Only decides where. Whether it appears at all is the switch below.
+          1 appears first, beside your name at the top; 2 next, and so on down
+          the page. Only used when the switch below is on. The numbers just
+          have to be in the right order — gaps are fine.
       - label: Side
         name: side
         widget: select
