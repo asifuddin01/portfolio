@@ -92,9 +92,17 @@ will render it nearly black.**
 
 Two numbers, doing different jobs. **Plate order** is the gallery sequence and
 sets the Tabula numeral. **Position on the home page** is where it falls on
-the front page: 1 sits beside the name, 2 next, and so on. Only the plates
-with the switch on are laid out, in that order, so the numbers need only be
-in sequence — gaps cost nothing and a tie is broken by plate order.
+the front page: 1 sits beside the name, 2 next, and so on.
+
+To put a plate between two others, use a half. `3.5` lands it straight after
+3 and pushes everything below down. Typing a number another plate already
+holds is not an error, but the plate already there stays in front — the half
+is what actually inserts.
+
+`npm run tidy:plates` renumbers everything back to 1, 2, 3… so the number you
+type matches the position you see. Worth running after hiding a few plates,
+which otherwise leaves holes: hide four and the plate showing fourth might
+still be stored as 8.
 
 ### Signing in
 

@@ -21,7 +21,8 @@
     "deploy:manual": "npm run build && wrangler pages deploy dist --project-name=codex",
     "dev:plain": "astro dev",
     "check:cms": "node scripts/check-cms.mjs",
-    "cv": "node scripts/build-cv.mjs"
+    "cv": "node scripts/build-cv.mjs",
+    "tidy:plates": "node scripts/tidy-plates.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",

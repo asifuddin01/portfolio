@@ -344,13 +344,16 @@ collections:
       - label: Position on the home page
         name: homePosition
         widget: number
-        value_type: int
-        min: 1
+        value_type: float
+        step: 0.5
+        min: 0
         default: 1
         hint: >-
           1 appears first, beside your name at the top; 2 next, and so on down
-          the page. Only used when the switch below is on. The numbers just
-          have to be in the right order — gaps are fine.
+          the page. To slot a plate between two others, use a half — 3.5 puts
+          it straight after 3 and moves everything below it down. Typing a
+          number another plate already has leaves that one in front, so use
+          the half instead.
       - label: Side
         name: side
         widget: select
