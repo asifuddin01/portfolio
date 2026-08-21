@@ -74,9 +74,72 @@ for (const c of config.collections ?? []) {
   }
 }
 
+/**
+ * Field drift. The editor writes exactly the fields configured here, so a
+ * schema key with no matching field means anything created from /admin fails
+ * the build — which is how the proposition editor came to write `book:` after
+ * the content schema had moved to `chapter:`. Comparing the config against the
+ * frontmatter of files already on disk catches it without duplicating the Zod
+ * schemas in a second place.
+ */
+const { readdir } = await import('node:fs/promises');
+for (const c of config.collections ?? []) {
+  if (!c.folder || !(await exists(c.folder))) continue;
+  const configured = new Set((c.fields ?? []).map((f) => f.name));
+  let files;
+  try {
+    files = (await readdir(c.folder, { recursive: true })).filter((f) => /\.mdx?$/.test(f));
+  } catch { continue; }
+
+  const seen = new Map();                 // key → the first file that used it
+  for (const rel of files.slice(0, 200)) {
+    const text = await readFile(path.join(c.folder, rel), 'utf8');
+    const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (!fm) continue;
+    for (const line of fm[1].split(/\r?\n/)) {
+      const key = line.match(/^([A-Za-z_][\w-]*):/)?.[1];
+      if (key && !seen.has(key)) seen.set(key, rel);
+    }
+  }
+  for (const [key, rel] of seen) {
+    if (!configured.has(key)) {
+      problems.push(
+        `collection "${c.name}": ${rel} has frontmatter "${key}" but the editor has no such field — ` +
+        `anything created from /admin will be missing it`
+      );
+    }
+  }
+}
+
+/**
+ * The figure picker is a hand-written list of names that has to match the
+ * registry, or /admin offers a figure that does not render.
+ */
+const registry = (await readFile('src/lib/figures.ts', 'utf8'))
+  .match(/^  (Fig\w+): \{$/gm)
+  ?.map((m) => m.trim().replace(/: \{$/, '')) ?? [];
+for (const c of config.collections ?? []) {
+  for (const f of c.fields ?? []) {
+    if (f.name !== 'figure' && f.name !== 'closingFigure') continue;
+    for (const opt of f.options ?? []) {
+      if (!registry.includes(opt)) {
+        problems.push(`collection "${c.name}", field "${f.name}": "${opt}" is not in src/lib/figures.ts`);
+      }
+    }
+    for (const name of registry) {
+      if (!(f.options ?? []).includes(name)) {
+        problems.push(`collection "${c.name}", field "${f.name}": "${name}" is registered but not offered in /admin`);
+      }
+    }
+  }
+}
+
 if (problems.length) {
   console.error('✗ CMS configuration problems:');
   for (const p of problems) console.error('  ✗ ' + p);
   process.exit(1);
 }
-console.log(`✓ CMS config valid — ${config.collections.length} collections, all folders and relations resolve`);
+console.log(
+  `✓ CMS config valid — ${config.collections.length} collections; folders, relations, ` +
+  `fields and ${registry.length} figures all resolve`
+);

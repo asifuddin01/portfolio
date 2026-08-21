@@ -144,6 +144,117 @@ collections:
         min: 1
         hint: >-
           Sort order only. Gaps are fine — the Book numeral on the page is worked out from the running order, not from this value.
+      - label: Closing plate
+        name: closingFigure
+        widget: select
+        required: false
+        options:
+          - FigPipelineHierarchiRetina
+          - FigModelAsFunction
+          - FigTensorShape
+          - FigParameterSpace
+          - FigLossLandscape
+          - FigGeneralisation
+          - FigNeuron
+          - FigDepthFolds
+          - FigComputationalGraph
+          - FigDescentStep
+          - FigRegularisation
+          - FigTokenBoundary
+          - FigBPEMerge
+          - FigEmbeddingSpace
+          - FigContextualisation
+          - FigRecurrentState
+          - FigVanishingGradient
+          - FigGating
+          - FigDilation
+          - FigSequenceLineage
+          - FigAttentionWeights
+          - FigQKV
+          - FigSoftmaxTemperature
+          - FigSelfVsCross
+          - FigAttentionCost
+          - FigPermutation
+          - FigSinusoid
+          - FigRoPE
+          - FigExtrapolation
+          - FigTransformerBlock
+          - FigMultiHead
+          - FigResidualStream
+          - FigPrePostNorm
+          - FigCausalMask
+          - FigEncoderDecoder
+          - FigBatchNoise
+          - FigSchedule
+          - FigClipping
+          - FigPrecision
+          - FigSplitLeak
+          - FigTransformerMap
+        hint: "The one drawing that holds the whole book. Shown at the top of the closing page."
+      - label: Closing
+        name: closing
+        widget: object
+        required: false
+        collapsed: true
+        hint: >-
+          The apparatus at the end of the book, published at /elementa/<book>/closing. Every part is optional — leave a list empty and its section simply does not appear.
+        fields:
+          - label: Key equations
+            name: equations
+            widget: list
+            required: false
+            fields:
+              - { label: Name, name: name, widget: string }
+              - label: Formula
+                name: formula
+                widget: string
+                hint: "Plain text, set in the mono face."
+              - { label: Note, name: note, widget: text, required: false }
+          - label: Vocabulary
+            name: vocabulary
+            widget: list
+            required: false
+            fields:
+              - { label: Term, name: term, widget: string }
+              - { label: Definition, name: definition, widget: text }
+          - label: Misconceptions
+            name: misconceptions
+            widget: list
+            required: false
+            hint: "Stated the way it is usually said, then corrected. Both halves are the point."
+            fields:
+              - { label: What is said, name: wrong, widget: text }
+              - { label: What is true, name: right, widget: text }
+          - label: Exercises
+            name: exercises
+            widget: list
+            required: false
+            fields:
+              - { label: Task, name: task, widget: text }
+              - { label: Note, name: note, widget: text, required: false }
+          - label: Recommended papers
+            name: papers
+            widget: list
+            required: false
+            fields:
+              - { label: Title, name: title, widget: string }
+              - label: Link
+                name: url
+                widget: string
+                required: false
+                pattern:
+                  - "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$"
+                  - "Paste the address only, e.g. https://example.com/page — not a sentence."
+              - { label: Note, name: note, widget: text, required: false }
+          - label: Bridge to the next books
+            name: bridge
+            widget: text
+            required: false
+            hint: "What the books after this one do with it."
+      - label: Closing prose
+        name: body
+        widget: markdown
+        hint: "Opens the closing page, above the plate."
 
   # ------------------------------------------------------------------
   - name: chapters
@@ -207,22 +318,24 @@ collections:
     create: true
     identifier_field: statement
     slug: "{{slug}}"
-    summary: "Book {{book}} · Prop {{proposition}} — {{statement}}"
-    sortable_fields: [ book, proposition, updated ]
+    summary: "{{chapter}} · Prop {{proposition}} — {{statement}}"
+    sortable_fields: [ chapter, proposition, updated ]
     fields:
-      - label: Book
-        name: book
+      - label: Chapter
+        name: chapter
         widget: relation
-        collection: books
+        collection: chapters
         search_fields: [ title ]
         display_fields: [ title ]
         value_field: "{{slug}}"
-        hint: "Add a new book under Elementa books first if the one you want is missing."
+        hint: >-
+          The book follows from the chapter, so a proposition can never disagree with its own book about where it lives. Add the chapter under Elementa chapters first if it is missing.
       - label: Proposition number
         name: proposition
         widget: number
         value_type: int
         min: 1
+        hint: "Numbered within the chapter, so every chapter starts again at 1."
       - label: Statement
         name: statement
         widget: string
@@ -261,11 +374,48 @@ collections:
         widget: select
         required: false
         options:
-          - FigTokenBoundary
-          - FigAttentionWeights
-          - FigPermutation
           - FigPipelineHierarchiRetina
-        hint: "Registered in src/lib/figures.ts. A new figure needs a developer."
+          - FigModelAsFunction
+          - FigTensorShape
+          - FigParameterSpace
+          - FigLossLandscape
+          - FigGeneralisation
+          - FigNeuron
+          - FigDepthFolds
+          - FigComputationalGraph
+          - FigDescentStep
+          - FigRegularisation
+          - FigTokenBoundary
+          - FigBPEMerge
+          - FigEmbeddingSpace
+          - FigContextualisation
+          - FigRecurrentState
+          - FigVanishingGradient
+          - FigGating
+          - FigDilation
+          - FigSequenceLineage
+          - FigAttentionWeights
+          - FigQKV
+          - FigSoftmaxTemperature
+          - FigSelfVsCross
+          - FigAttentionCost
+          - FigPermutation
+          - FigSinusoid
+          - FigRoPE
+          - FigExtrapolation
+          - FigTransformerBlock
+          - FigMultiHead
+          - FigResidualStream
+          - FigPrePostNorm
+          - FigCausalMask
+          - FigEncoderDecoder
+          - FigBatchNoise
+          - FigSchedule
+          - FigClipping
+          - FigPrecision
+          - FigSplitLeak
+          - FigTransformerMap
+        hint: "Registered in src/lib/figures.ts, and checked against it by `npm run check:cms`. A new figure needs a developer."
       - label: Status
         name: status
         widget: select
