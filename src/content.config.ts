@@ -79,6 +79,39 @@ const books = defineCollection({
     goal: z.string().optional(),
     /** Books that should be read first, by slug. */
     prerequisites: z.array(z.string()).default([]),
+    /** The plate for the closing page — the whole book on one drawing. */
+    closingFigure: z.string().nullable().default(null),
+    /**
+     * The closing apparatus, rendered at /elementa/<book>/closing. Every part
+     * is optional and an empty list simply omits its section, so a book can
+     * grow a closing one piece at a time rather than needing all of it at once.
+     */
+    closing: z
+      .object({
+        equations: z
+          .array(z.object({
+            name: z.string(),
+            formula: z.string(),
+            note: optionalText,
+          }))
+          .default([]),
+        vocabulary: z
+          .array(z.object({ term: z.string(), definition: z.string() }))
+          .default([]),
+        /** Stated wrongly, then corrected. Both halves are the point. */
+        misconceptions: z
+          .array(z.object({ wrong: z.string(), right: z.string() }))
+          .default([]),
+        exercises: z
+          .array(z.object({ task: z.string(), note: optionalText }))
+          .default([]),
+        papers: z
+          .array(z.object({ title: z.string(), url: optionalUrl, note: optionalText }))
+          .default([]),
+        /** What the next books do with this one. */
+        bridge: optionalText,
+      })
+      .optional(),
     status: z.enum(['draft', 'published']).default('published'),
   }),
 });

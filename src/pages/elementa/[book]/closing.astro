@@ -1,0 +1,296 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
+import FigureFrame from '../../../components/elementa/FigureFrame.astro';
+import { getElementaTree, type ElementaBook } from '../../../lib/collections';
+import { FIGURES, isFigureName } from '../../../lib/figures';
+import { toRoman } from '../../../consts';
+
+export async function getStaticPaths() {
+  const tree = await getElementaTree();
+
+  /**
+   * This file claims /elementa/<book>/closing, which would otherwise belong to
+   * a chapter of that slug. Astro resolves the static segment first, so the
+   * chapter would silently 404 rather than collide — fail the build instead.
+   */
+  for (const node of tree) {
+    const clash = node.chapters.find((c) => c.chapter.id.split('--')[1] === 'closing');
+    if (clash) {
+      throw new Error(
+        `Chapter "${clash.chapter.id}" would be shadowed by the closing page at ` +
+        `/elementa/${node.book.id}/closing. Rename the chapter.`
+      );
+    }
+  }
+
+  return tree
+    .filter((node) => node.book.data.closing)
+    .map((node, _i, all) => ({
+      params: { book: node.book.id },
+      props: { node, next: all.length > 1 ? tree[tree.indexOf(node) + 1] ?? null : null },
+    }));
+}
+
+interface Props { node: ElementaBook; next: ElementaBook | null }
+const { node, next } = Astro.props;
+const { book, chapters, propositions, n } = node;
+const c = book.data.closing!;
+
+const figName = book.data.closingFigure && isFigureName(book.data.closingFigure)
+  ? book.data.closingFigure
+  : null;
+const fig = figName ? FIGURES[figName] : null;
+const Figure = fig?.component;
+
+const { Content } = await render(book);
+const base = `/elementa/${book.id}`;
+---
+<BaseLayout
+  title={`Book ${toRoman(n)} · Closing — ${book.data.title}`}
+  description={`The closing of Book ${toRoman(n)}: the map, the equations, the vocabulary, the misconceptions and the exercises.`}
+  folio={`${n}.omega`}
+>
+  <div class="codex cl">
+    <Breadcrumb bookN={n} bookTitle={book.data.title} bookHref={base} />
+
+    <header class="cl-head">
+      <p class="cl-n" data-reveal>Book {toRoman(n)} · Closing</p>
+      <h1 class="cl-h1" data-press>{book.data.title}, gathered</h1>
+      <p class="cl-meta codex-measure" data-reveal>
+        {chapters.length} chapters · {propositions.length} propositions
+      </p>
+    </header>
+
+    <div class="prose cl-intro"><Content /></div>
+
+    {Figure && fig && (
+      <div data-reveal>
+        <FigureFrame n="—" numeral="arabic" caption={fig.caption} id={figName ?? undefined}>
+          <Figure />
+        </FigureFrame>
+      </div>
+    )}
+
+    {c.equations.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-eq">
+        <h2 class="cl-label" id="cl-eq">The equations</h2>
+        <ol class="cl-eqs">
+          {c.equations.map((e) => (
+            <li class="cl-eq">
+              <p class="cl-eq-n">{e.name}</p>
+              <pre class="cl-eq-f scroll-x"><code>{e.formula}</code></pre>
+              {e.note && <p class="cl-eq-note">{e.note}</p>}
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {c.vocabulary.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-vo">
+        <h2 class="cl-label" id="cl-vo">The vocabulary</h2>
+        <dl class="cl-voc">
+          {c.vocabulary.map((v) => (
+            <div class="cl-voc-row">
+              <dt>{v.term}</dt>
+              <dd>{v.definition}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    )}
+
+    {c.misconceptions.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-mi">
+        <h2 class="cl-label" id="cl-mi">Where it is usually got wrong</h2>
+        <ul class="cl-mis">
+          {c.misconceptions.map((m) => (
+            <li class="cl-mis-item">
+              <p class="cl-wrong"><span class="cl-tag">said</span> {m.wrong}</p>
+              <p class="cl-right"><span class="cl-tag cl-tag-ok">in fact</span> {m.right}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {c.exercises.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-ex">
+        <h2 class="cl-label" id="cl-ex">Exercises</h2>
+        <ol class="cl-exs">
+          {c.exercises.map((e) => (
+            <li class="cl-ex">
+              <p class="cl-ex-t">{e.task}</p>
+              {e.note && <p class="cl-ex-n">{e.note}</p>}
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {c.papers.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-pa">
+        <h2 class="cl-label" id="cl-pa">Read these</h2>
+        <ul class="cl-papers">
+          {c.papers.map((p) => (
+            <li class="cl-paper">
+              {p.url
+                ? <a class="link cl-paper-t" href={p.url} rel="noopener">{p.title}</a>
+                : <span class="cl-paper-t">{p.title}</span>}
+              {p.note && <span class="cl-paper-n">{p.note}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {c.bridge && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-br">
+        <h2 class="cl-label" id="cl-br">What comes next</h2>
+        <p class="cl-bridge codex-measure">{c.bridge}</p>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <nav class="cl-nav" aria-label="Where to go next">
+      <a class="cl-nav-link" href={base}>
+        <span class="cl-nav-label">← Back</span>
+        <span class="cl-nav-t">Book {toRoman(n)}</span>
+      </a>
+      <a class="cl-nav-link cl-nav-right" href={next ? `/elementa/${next.book.id}` : '/elementa'} data-magnet>
+        <span class="cl-nav-label">{next ? `Next — Book ${toRoman(next.n)}` : 'Back to the corpus'}</span>
+        <span class="cl-nav-t">{next ? next.book.data.title : 'Elementa'}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .cl { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .cl-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .cl-h1 { font-size: var(--t-2xl); margin-bottom: 0.8rem; }
+  .cl-meta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .cl-intro { margin: 2rem 0 1rem; }
+
+  .cl-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 1.1rem;
+  }
+  .cl-sec {
+    margin: 3.2rem 0;
+    padding-top: 1.2rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+
+  .cl-eqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; max-width: 64rem; }
+  .cl-eq-n {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    margin: 0 0 0.5rem;
+  }
+  .cl-eq-f {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 50%, transparent);
+    background: var(--paper-raised);
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    line-height: 1.7;
+  }
+  .cl-eq-note {
+    margin: 0.5rem 0 0;
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    max-width: 62ch;
+  }
+
+  .cl-voc { margin: 0; display: grid; gap: 0.9rem; max-width: 64rem; }
+  .cl-voc-row {
+    display: grid;
+    grid-template-columns: 12rem 1fr;
+    gap: 1.4rem;
+    padding-bottom: 0.9rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 25%, transparent);
+  }
+  .cl-voc-row dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    padding-top: 0.15em;
+  }
+  .cl-voc-row dd { margin: 0; font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); max-width: 60ch; }
+
+  .cl-mis { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; max-width: 64rem; }
+  .cl-mis-item { border-left: 2px solid color-mix(in srgb, var(--oxblood) 55%, transparent); padding-left: 1.1rem; }
+  .cl-wrong, .cl-right { margin: 0; font-size: var(--t-base); line-height: 1.65; max-width: 60ch; }
+  .cl-wrong { color: var(--ink-soft); }
+  .cl-right { margin-top: 0.45rem; }
+  .cl-tag {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+    margin-right: 0.6rem;
+  }
+  .cl-tag-ok { color: var(--brass-text); }
+
+  .cl-exs { margin: 0; padding-left: 1.4rem; display: grid; gap: 1.2rem; max-width: 64rem; }
+  .cl-ex::marker { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .cl-ex-t { margin: 0; font-size: var(--t-base); line-height: 1.65; max-width: 60ch; }
+  .cl-ex-n {
+    margin: 0.35rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    line-height: 1.7;
+    max-width: 60ch;
+  }
+
+  .cl-papers { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; max-width: 64rem; }
+  .cl-paper { line-height: 1.6; }
+  .cl-paper-t { font-family: var(--font-display); font-size: var(--t-md); display: block; }
+  .cl-paper-n { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; max-width: 60ch; }
+
+  .cl-bridge { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .cl-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+  .cl-nav-right { text-align: right; }
+  .cl-nav-link { display: inline-block; }
+  .cl-nav-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .cl-nav-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 640px) {
+    .cl-h1 { font-size: var(--t-xl); }
+    .cl-voc-row { grid-template-columns: 1fr; gap: 0.3rem; }
+    .cl-nav { grid-template-columns: 1fr; gap: 1.4rem; }
+    .cl-nav-right { text-align: left; }
+  }
+</style>

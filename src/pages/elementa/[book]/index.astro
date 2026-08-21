@@ -60,6 +60,18 @@ const { book, chapters, propositions, n } = node;
       ))}
     </ol>
 
+    {book.data.closing && (
+      <a class="bk-closing" href={`/elementa/${book.id}/closing`} data-reveal>
+        <span class="bk-closing-label">Closing</span>
+        <span class="bk-closing-t">The whole book on one plate</span>
+        <span class="bk-closing-s">
+          The map, the equations, the vocabulary, the misconceptions that come with
+          them, and the exercises. Read it after the chapters, then again before
+          the next book.
+        </span>
+      </a>
+    )}
+
     <LesionRule />
 
     <nav class="bk-next" aria-label="Next book">
@@ -129,6 +141,36 @@ const { book, chapters, propositions, n } = node;
     color: var(--brass-text);
     white-space: nowrap;
     text-align: right;
+  }
+
+  .bk-closing {
+    display: block;
+    margin-top: 2.4rem;
+    padding: 1.4rem 1.6rem;
+    max-width: 64rem;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    background: var(--paper-raised);
+    color: var(--ink);
+  }
+  .bk-closing:hover { border-color: var(--fundus); }
+  .bk-closing-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.5rem;
+  }
+  .bk-closing-t { display: block; font-family: var(--font-display); font-size: var(--t-md); }
+  .bk-closing:hover .bk-closing-t { color: var(--fundus); }
+  .bk-closing-s {
+    display: block;
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-top: 0.35rem;
+    max-width: 62ch;
   }
 
   .bk-next { margin-bottom: 2rem; }

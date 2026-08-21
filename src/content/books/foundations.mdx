@@ -4,4 +4,151 @@ title: Foundations
 covers: tokenisation, attention, the transformer block
 goal: "Build the conceptual and mathematical footing the rest of the corpus stands on. By the end you should understand how a network represents information and how a transformer processes a sequence."
 prerequisites: []
+closingFigure: FigTransformerMap
+closing:
+  equations:
+    - name: "A model"
+      formula: "ŷ = f(x ; θ)"
+      note: "Two arguments. The world supplies the first; training may only change the second."
+    - name: "A linear layer"
+      formula: "y = Wx + b"
+      note: "Affine, and affine maps compose into a single affine map. Depth without a non-linearity buys nothing."
+    - name: "The gradient step"
+      formula: "θ ← θ − η ∇θ L"
+      note: "The gradient gives the direction; η is where the distance has to come from."
+    - name: "Backpropagation"
+      formula: "∂L/∂θ = ∏ (local derivatives along the path)"
+      note: "The chain rule with the forward intermediates kept. A zero anywhere in the product is a zero at the end."
+    - name: "Scaled dot-product attention"
+      formula: "Attention(Q,K,V) = softmax(QKᵀ / √dₖ) V"
+      note: "A weighted average of values, with weights computed from content. The divisor is what keeps the softmax out of saturation."
+    - name: "Multi-head attention"
+      formula: "MHA(X) = [head₁ … head_h] W_O,   headᵢ = Attention(XWQᵢ, XWKᵢ, XWVᵢ)"
+      note: "Heads are slices of one budget of width d, not copies of it."
+    - name: "A transformer block"
+      formula: "x ← x + Attn(Norm(x));  x ← x + MLP(Norm(x))"
+      note: "Mix across positions, then compute within one. The additions are the residual stream."
+    - name: "Causal mask"
+      formula: "A = softmax(QKᵀ/√d + M),   Mᵢⱼ = 0 for j ≤ i, else −∞"
+      note: "Added before the softmax, so masked positions get exactly zero weight rather than a small one."
+    - name: "Rotary position"
+      formula: "⟨R(mθ)q, R(nθ)k⟩ = ⟨q, R((n−m)θ)k⟩"
+      note: "The absolute indices cancel. Only the distance survives the inner product."
+  vocabulary:
+    - term: Parameter
+      definition: "A number the model carries and training may change. Everything else about the model is fixed before the first example arrives."
+    - term: Tensor
+      definition: "An array whose axes carry the meaning. The same numbers along different axes are different data."
+    - term: Logit
+      definition: "An unnormalised score, before a softmax or a sigmoid. Logits have no scale of their own, which is why temperature exists."
+    - term: Token
+      definition: "One integer produced by the tokeniser. The model never sees text — only a sequence of these."
+    - term: Embedding
+      definition: "A row of a learned table, retrieved by token id. Retrieval is indexing; the geometry between rows is a consequence of training."
+    - term: Residual stream
+      definition: "The running vector each block reads from and adds back into. A single shared communication channel of width d."
+    - term: Head
+      definition: "One slice of the attention budget, of width d/h, with its own query, key and value projections."
+    - term: Receptive field
+      definition: "The set of input positions that can influence one output. Fixed for a convolution, the whole sequence for attention."
+    - term: Path length
+      definition: "How many operations separate two positions in the computational graph. The quantity that decides whether a long-range dependency is learnable."
+    - term: Inductive bias
+      definition: "What the architecture makes easy, hard or impossible before any training happens."
+    - term: Generalisation gap
+      definition: "The distance between training and held-out performance. The part of the fit that was memorisation."
+    - term: Leakage
+      definition: "Any route by which held-out data influenced the model. It always moves the number in the flattering direction."
+  misconceptions:
+    - wrong: "Deeper is more expressive."
+      right: "Only if there is a non-linearity between the layers. Stacked affine maps collapse into one affine map exactly, whatever the depth."
+    - wrong: "Attention means the model focuses on the important tokens."
+      right: "Attention computes a weighted average whose weights come from content similarity. Whether the result is important is a separate question, and attention weights are weak evidence about what the model used."
+    - wrong: "A transformer understands word order."
+      right: "Attention is permutation-equivariant and has no opinion about order at all. Any order-sensitivity is supplied by the positional encoding, which is where to look when it fails."
+    - wrong: "A transformer is mostly attention."
+      right: "By parameter count the feed-forward blocks are usually about twice the size of the attention blocks. Attention is where the mixing happens, not where most of the model is."
+    - wrong: "The √dₖ in attention is a cosmetic normalisation."
+      right: "Without it the logits grow with head width, the softmax saturates and the gradient to the query and key projections vanishes. The model still trains — just badly, and silently."
+    - wrong: "Low training loss means the model learned the task."
+      right: "A large enough network reaches zero training loss on random labels. Training loss measures capacity, not understanding."
+    - wrong: "Adam removes the need to tune the learning rate."
+      right: "Adam widens the usable band. Any result that changes character when the rate moves by a factor of two was never about the architecture."
+    - wrong: "A model with a 128k context window can use 128k tokens."
+      right: "The window is a buffer size. What matters is what fraction of training contained sequences of that length, and it is testable in ten minutes by putting the answer at the far end."
+    - wrong: "Mixed precision is a speed optimisation."
+      right: "It is first a range problem. Half precision has ample mantissa and a narrow exponent, and late-training gradients fall through its floor to zero."
+  exercises:
+    - task: "Tokenise the same paragraph with two different tokenisers and count the tokens. Then find a string the two segment differently and explain what the model can no longer distinguish under each."
+      note: "Chapter III. Numbers and code are the fastest places to find one."
+    - task: "Implement scaled dot-product attention from the equation alone, in about fifteen lines, and check it against a library implementation on random inputs."
+      note: "Chapter V. Then remove the √dₖ and watch the attention distribution collapse as you raise the head width."
+    - task: "Take a small trained transformer, shuffle the input tokens and compare the outputs with and without the positional encoding."
+      note: "Chapter VI. Without it, the outputs should be a permutation of one another."
+    - task: "Count the parameters of one transformer block by hand for a given d and h, split between attention and the feed-forward network. Compare with what the framework reports."
+      note: "Chapter VII. If the two disagree, the disagreement is the exercise."
+    - task: "Plot the attention score matrix memory footprint against sequence length for a real configuration, and find the length at which it exceeds the model weights."
+      note: "Chapter V, Proposition 5. Do the same for the KV cache at inference."
+    - task: "Take any dataset with a natural grouping — patient, site, author, session — and evaluate the same model under a random split and a grouped split."
+      note: "Chapter VIII, Proposition 5. The difference between the two numbers is the size of the problem."
+    - task: "Write down the objective you actually care about for a project of your own, then write the loss you would train with, and list what the second omits."
+      note: "Chapter I, Proposition 4. The list is where the failures will come from."
+  papers:
+    - title: "Attention Is All You Need"
+      url: https://arxiv.org/abs/1706.03762
+      note: "The architecture, and a trade-off table that is more instructive than the results."
+    - title: "Neural Machine Translation by Jointly Learning to Align and Translate"
+      url: https://arxiv.org/abs/1409.0473
+      note: "Attention before transformers, introduced to fix one specific bottleneck. Read it first."
+    - title: "Deep Residual Learning for Image Recognition"
+      url: https://arxiv.org/abs/1512.03385
+      note: "Where the residual connection comes from, and why depth became trainable."
+    - title: "Neural Machine Translation of Rare Words with Subword Units"
+      url: https://arxiv.org/abs/1508.07909
+      note: "Byte-pair encoding. Four lines of algorithm that decide what every model downstream can distinguish."
+    - title: "On Layer Normalization in the Transformer Architecture"
+      url: https://arxiv.org/abs/2002.04745
+      note: "Why pre-norm trains without a warm-up, worked through rather than asserted."
+    - title: "RoFormer: Enhanced Transformer with Rotary Position Embedding"
+      url: https://arxiv.org/abs/2104.09864
+      note: "Position as rotation, and the cancellation that makes it relative."
+    - title: "Understanding Deep Learning Requires Rethinking Generalization"
+      url: https://arxiv.org/abs/1611.03530
+      note: "Networks fit random labels. Everything you believed about capacity and generalisation has to survive that."
+    - title: "A Mathematical Framework for Transformer Circuits"
+      url: https://transformer-circuits.pub/2021/framework/index.html
+      note: "The residual stream taken seriously as the object of study."
+    - title: "FlashAttention"
+      url: https://arxiv.org/abs/2205.14135
+      note: "The same attention, computed with fewer memory reads. A lesson in where the cost actually was."
+  bridge: >-
+    Everything after this book is an answer to the question of what the sequence
+    is made of. Book II replaces tokens with image patches and asks what
+    convolution was giving you that attention has to earn back. Book III keeps
+    the tokens and asks what happens when the corpus is the internet and the
+    objective is the next word. Book IV runs both at once and has to decide how
+    two representations are made comparable. The block does not change. What
+    changes is what is fed to it, and what it is being asked to predict.
 ---
+
+The whole of Book I is one plate. Text becomes tokens, tokens become vectors,
+position is added or applied, and then the same block runs some number of times:
+mix across positions, compute within one, add the result back into the stream.
+At the end the stream is projected back to the vocabulary and a distribution
+comes out.
+
+If any stage of that map is one you could not explain to somebody else, the
+chapter is named beside it.
+
+The propositions were written to be read in order, because they depend on one
+another in a specific way: a tensor is only interesting once you know a model is
+a function of parameters; attention only makes sense once you know why a
+recurrence could not do it; the residual stream only matters once you have seen
+a long product of Jacobians decay. The dependency graph on each page is the real
+structure, and it is worth walking backwards from any proposition that does not
+land.
+
+One thing to carry forward before the next book. Of everything here, the
+proposition that constrains all the others is the last one. Architecture, loss,
+schedule and precision are judged by a number, and the number is worth exactly
+what the split makes it worth.
