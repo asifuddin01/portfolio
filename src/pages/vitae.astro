@@ -32,7 +32,6 @@ const { email, github, linkedin, location } = await getContact();
         </div>
         <div class="cv-actions">
           <a class="cv-btn" href="/vitae/cv">Get the PDF</a>
-          <button class="cv-btn" type="button" data-print>Print</button>
         </div>
       </div>
       <ul class="cv-contact" data-reveal>
@@ -246,16 +245,3 @@ const { email, github, linkedin, location } = await getContact();
     @page { margin: 16mm; }
   }
 </style>
-
-<script>
-  function bindPrint(): void {
-    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-print]')) {
-      if (btn.dataset.bound === '1') continue;
-      btn.dataset.bound = '1';
-      btn.addEventListener('click', () => window.print());
-    }
-  }
-  document.addEventListener('astro:page-load', bindPrint);
-  if (document.readyState !== 'loading') bindPrint();
-  else document.addEventListener('DOMContentLoaded', bindPrint);
-</script>
