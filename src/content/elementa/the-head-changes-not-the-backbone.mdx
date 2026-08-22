@@ -1,0 +1,57 @@
+---
+chapter: vision--vision-tasks
+proposition: 1
+statement: The task lives in the head and the loss, not in the backbone.
+claim: "One encoder serves classification, detection, segmentation, depth and retrieval. What changes is the shape of the output and the function that scores it."
+given:
+  - features-are-learned-in-a-hierarchy
+  - a-loss-is-where-the-objective-is-stated
+figure: FigOneImageManyTasks
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Rich Feature Hierarchies for Object Detection (R-CNN)"
+    url: https://arxiv.org/abs/1311.2524
+---
+
+## Demonstration
+
+Five questions of one photograph:
+
+```
+classification   image → one label
+detection        image → a set of (box, label, score)
+segmentation     image → a label per pixel
+depth            image → a distance per pixel
+retrieval        image → a vector, to compare with others
+```
+
+The encoder can be identical across all five. What differs is the head — a few
+layers — and the loss.
+
+The organising distinction is what happens to the spatial axes.
+
+**Classification collapses them.** Global average pooling turns H × W × C into
+C, and after that no spatial question can be answered.
+
+**Detection keeps them coarsely.** Predictions are made at feature-map
+positions, so output stride sets the smallest object that can be localised.
+
+**Segmentation and depth must keep them fully**, which is why both use
+encoder–decoder shapes and why Proposition 3 is about getting the resolution
+back.
+
+**Retrieval collapses them like classification** but scores differently:
+there is no fixed label set, only a metric.
+
+This is the practical content of transfer learning. A backbone pretrained for
+classification is useful for detection because the features are about content,
+and content is what all five questions are asked about. Only the last part is
+task-specific, which is exactly the ordering Chapter III found in the
+hierarchy.
+
+## Corollary
+
+When a vision result improves, ask which of the three moved: backbone, head or
+loss. Papers frequently change all three and attribute the gain to the one in
+the title, and the ablation that separates them is the part worth reading.

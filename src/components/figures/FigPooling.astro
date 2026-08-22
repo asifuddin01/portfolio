@@ -1,0 +1,50 @@
+---
+/**
+ * Book II, Ch. II, Prop. 4 — pooling keeps the answer and drops the address.
+ * Two inputs that differ only in position give the same pooled output.
+ */
+const grid = (x0: number, y0: number, hot: number, cls: string) =>
+  Array.from({ length: 16 }, (_, i) => ({
+    x: x0 + (i % 4) * 26, y: y0 + Math.floor(i / 4) * 26, hot: i === hot, cls,
+  }));
+const A = grid(40, 60, 5, 'a2');
+const B = grid(40, 176, 10, 'a2');
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pl-t pl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="pl-t">Two activations, one pooled result</title>
+  <desc id="pl-d">
+    Two four by four feature maps that differ only in where the single strong
+    response sits. Max pooling over each quadrant returns the same value in
+    both cases: the response survives, its position does not.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">max pooling, 2×2</text>
+
+  {[...A, ...B].map((c) => (
+    <g>
+      <rect x={c.x} y={c.y} width="23" height="23" class={c.hot ? c.cls : 'bx-soft'} opacity={c.hot ? 0.9 : 1} />
+    </g>
+  ))}
+  {[60, 176].map((y) => (
+    <g>
+      <rect x="38" y={y - 2} width="106" height="106" class="bx" />
+      <line x1="91" y1={y - 2} x2="91" y2={y + 104} class="bx-soft" />
+      <line x1="38" y1={y + 51} x2="144" y2={y + 51} class="bx-soft" />
+      <line x1="160" y1={y + 50} x2="212" y2={y + 50} class="wire" />
+      <polygon points={`212,${y + 45} 224,${y + 50} 212,${y + 55}`} class="head" />
+      <rect x="240" y={y + 24} width="52" height="52" class="a2" opacity="0.34" />
+      <rect x="240" y={y + 24} width="52" height="52" class="bx" />
+      <text x="266" y={y + 56} class="t-md" text-anchor="middle">1.0</text>
+    </g>
+  ))}
+
+  <text x="330" y="96" class="t-sm">The strong response is in a</text>
+  <text x="330" y="114" class="t-sm">different quadrant cell in each</text>
+  <text x="330" y="132" class="t-sm">input, and the same after pooling.</text>
+
+  <text x="330" y="184" class="t-sm">Bought: a small translation no</text>
+  <text x="330" y="202" class="t-sm">longer changes the answer.</text>
+  <text x="330" y="228" class="t-sm">Paid: you cannot say where it was,</text>
+  <text x="330" y="246" class="t-sm">which is why segmentation networks</text>
+  <text x="330" y="264" class="t-sm">have to put the resolution back.</text>
+</svg>

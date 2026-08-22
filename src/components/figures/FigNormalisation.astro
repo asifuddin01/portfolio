@@ -1,0 +1,44 @@
+---
+/**
+ * Book II, Ch. I, Prop. 3 — normalisation is a promise about the numbers the
+ * model will meet. Break the promise at inference and nothing warns you.
+ */
+const bars = (shift: number, scale: number) =>
+  Array.from({ length: 22 }, (_, i) => {
+    const x = (i - 11) / 5;
+    return Math.exp(-((x - shift) ** 2) / (2 * scale * scale)) * 90;
+  });
+const RAW = bars(1.1, 0.55);
+const NORM = bars(0, 0.85);
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="nz-t nz-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="nz-t">Intensity distribution before and after normalisation</title>
+  <desc id="nz-d">
+    A histogram of pixel intensities shifted off centre and narrow, and the
+    same histogram after subtracting the mean and dividing by the standard
+    deviation. The statistics used must come from the training set, and the
+    same ones must be applied at inference.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">raw intensities</text>
+  <text x="380" y="22" class="t-lab">after (x − μ) / σ</text>
+
+  {RAW.map((h, i) => (
+    <rect x={20 + i * 14} y={180 - h} width="11" height={h} class="a3" opacity="0.75" />
+  ))}
+  <line x1="14" y1="180" x2="330" y2="180" class="axis" />
+  <line x1="175" y1="70" x2="175" y2="188" class="dash" />
+  <text x="175" y="204" class="t-key" text-anchor="middle">0</text>
+
+  {NORM.map((h, i) => (
+    <rect x={400 + i * 14} y={180 - h} width="11" height={h} class="a1" opacity="0.75" />
+  ))}
+  <line x1="394" y1="180" x2="700" y2="180" class="axis" />
+  <line x1="555" y1="70" x2="555" y2="188" class="dash" />
+  <text x="555" y="204" class="t-key" text-anchor="middle">0</text>
+
+  <text x="0" y="244" class="t-sm">μ and σ come from the training set, and the same two numbers must be applied at inference. Recomputing them</text>
+  <text x="0" y="262" class="t-sm">per batch at test time leaks information between test examples, and the leak is silent.</text>
+  <text x="0" y="288" class="t-sm">A model trained on one scanner's intensity distribution has been told what to expect.</text>
+  <text x="0" y="308" class="t-sm">Another scanner is a different promise.</text>
+</svg>

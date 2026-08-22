@@ -1,0 +1,45 @@
+---
+/**
+ * Book II, Ch. V, Prop. 2 — the augmentation list is a list of things you are
+ * telling the model not to care about. Choose it wrongly and you erase the label.
+ */
+const AUG = [
+  { t: 'random crop', ok: 'scale and framing', cls: 'a1' },
+  { t: 'flip', ok: 'left–right', cls: 'a3' },
+  { t: 'colour jitter', ok: 'illumination', cls: 'a4' },
+  { t: 'greyscale', ok: 'hue', cls: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ai-t ai-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ai-t">Each augmentation declares an invariance</title>
+  <desc id="ai-d">
+    Four augmentations, each naming the factor the representation is being told
+    to ignore. Colour jitter and greyscale discard hue, which is correct for
+    natural images and destructive for a retinal photograph, where the colour of
+    a lesion is the diagnosis.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">what you augment is what you discard</text>
+
+  {AUG.map((a, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 4; --dur: 9s`}>
+      <rect x="0" y={46 + i * 46} width="180" height="36" class="bx-fill" />
+      <rect x="0" y={46 + i * 46} width="180" height="3" class={a.cls} />
+      <text x="14" y={70 + i * 46} class="t-md">{a.t}</text>
+      <line x1="184" y1={64 + i * 46} x2="216" y2={64 + i * 46} class="wire" />
+      <polygon points={`216,${59 + i * 46} 228,${64 + i * 46} 216,${69 + i * 46}`} class="head" />
+      <text x="238" y={70 + i * 46} class="t-sm">ignore {a.ok}</text>
+    </g>
+  ))}
+
+  <line x1="440" y1="40" x2="440" y2="240" class="grid" />
+  <text x="466" y="70" class="t-lab">on a fundus photograph</text>
+  <text x="466" y="104" class="t-sm">Haemorrhages are dark red.</text>
+  <text x="466" y="126" class="t-sm">Exudates are yellow-white.</text>
+  <text x="466" y="156" class="t-sm">Jitter the colour hard enough</text>
+  <text x="466" y="178" class="t-sm">and you have trained a model</text>
+  <text x="466" y="200" class="t-sm">to ignore the finding.</text>
+
+  <text x="0" y="266" class="t-sm">The recipe that works on ImageNet encodes assumptions about photographs of objects. Every one of them is</text>
+  <text x="0" y="284" class="t-sm">a claim about your domain, and they are rarely checked before being copied.</text>
+</svg>

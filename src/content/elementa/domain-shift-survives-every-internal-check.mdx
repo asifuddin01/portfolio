@@ -1,0 +1,53 @@
+---
+chapter: vision--medical-vision
+proposition: 5
+statement: Domain shift is the failure that survives every internal check.
+claim: "Split by patient, calibrate, choose the augmentation carefully — and the number can still collapse at another hospital, because every one of those checks drew from the distribution the model was fitted on."
+given:
+  - an-evaluation-is-only-as-good-as-its-split
+  - calibration-is-not-discrimination
+figure: FigDomainShift
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Variable Generalization Performance of a Deep Learning Model to Detect Pneumonia in Chest Radiographs"
+    url: https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002683
+  - title: "Confounding Variables Can Degrade Generalization Performance"
+    url: https://arxiv.org/abs/1807.00431
+---
+
+## Demonstration
+
+Book I's last proposition said a number is worth what the split makes it worth,
+and required the unit of the split to match the unit of the claim. This is the
+case where even a correct split is not enough.
+
+Split by patient and you have answered *does this work on a new patient at this
+hospital*. Deployment asks *does this work at another hospital*, and the
+distributions differ in ways nobody enumerated: scanner manufacturer,
+acquisition protocol, reconstruction kernel, population, disease prevalence,
+what a technician does when an image looks poor.
+
+Zech and colleagues measured it on pneumonia detection across three hospital
+systems. Internal performance was strong. External performance dropped
+substantially, and — the instructive part — the models had learned to detect
+*which hospital* a radiograph came from with high accuracy, from markers and
+positioning. Since prevalence differed between sites, exploiting hospital
+identity was a genuinely useful shortcut internally and pure noise externally.
+
+That is the shape of the failure. Not the model being weak, but the model
+finding a signal that is real in the training distribution and absent outside
+it. A laterality marker, a scanner-specific texture, a chest drain that only
+appears in patients already known to be ill.
+
+The defences are partial and worth knowing as partial. Multi-site training data
+helps most and is hardest to get. Augmentation that simulates acquisition
+variation — intensity, resolution, noise — helps. Test-time normalisation per
+volume helps for MRI. None of them substitutes for the measurement.
+
+## Corollary
+
+An external validation cohort is not a nice addition to a medical imaging
+paper. It is the only measurement that answers the question the paper claims to
+answer, and its absence should be read as the result being unknown rather than
+as the result being good.

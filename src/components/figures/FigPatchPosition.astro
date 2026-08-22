@@ -1,0 +1,47 @@
+---
+/**
+ * Book II, Ch. IV, Prop. 3 — a bag of patches. Without a position embedding
+ * the encoder cannot tell the picture from its jumble.
+ */
+const N = 4, S = 28, X0 = 40, Y0 = 66;
+const SHUF = [10, 3, 14, 6, 1, 12, 8, 15, 5, 0, 11, 2, 13, 7, 4, 9];
+const shade = (i: number) => 0.16 + ((i * 41) % 9) / 14;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pp2-t pp2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="pp2-t">The same patches, with and without position</title>
+  <desc id="pp2-d">
+    A grid of patches and a shuffled copy of the same patches. To self-attention
+    alone the two inputs are indistinguishable, because nothing in the operation
+    references an index. The positional embedding added to each patch is what
+    makes them different objects.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">to attention alone, these are the same input</text>
+
+  {[0, 1].map((p) => (
+    <g>
+      {Array.from({ length: 16 }, (_, i) => (
+        <rect x={X0 + p * 200 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+              class="a4" opacity={shade(p === 0 ? i : SHUF[i])} />
+      ))}
+      <rect x={X0 + p * 200} y={Y0} width={S * N - 2} height={S * N - 2} class="bx" />
+    </g>
+  ))}
+  <text x={X0} y="204" class="t-sm">as photographed</text>
+  <text x={X0 + 200} y="204" class="t-sm">shuffled</text>
+
+  <line x1="368" y1="122" x2="410" y2="122" class="wire" />
+  <polygon points="410,117 422,122 410,127" class="head" />
+
+  {Array.from({ length: 5 }, (_, i) => (
+    <g class="anim-fade" style={`--i: ${i}; --dur: 5.4s`}>
+      <rect x="440" y={70 + i * 28} width="130" height="20" class="bx" />
+      <rect x="440" y={70 + i * 28} width="130" height="3" class="a3" />
+      <text x="580" y={85 + i * 28} class="t-xs">+ p{i + 1}</text>
+    </g>
+  ))}
+  <text x="440" y="234" class="t-sm">position added to each</text>
+  <text x="440" y="252" class="t-sm">patch before layer one</text>
+
+  <text x="0" y="290" class="t-sm">Interpolating these embeddings is how a model pretrained at 224px is evaluated at 448px.</text>
+</svg>

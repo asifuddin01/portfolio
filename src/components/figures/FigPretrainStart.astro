@@ -1,0 +1,36 @@
+---
+/**
+ * Book II, Ch. III, Prop. 3 — pretraining does not change the family, it
+ * changes where in it you start looking.
+ */
+const A = [[70, 244], [128, 216], [188, 208], [250, 190], [316, 176], [386, 168], [452, 162], [520, 158], [590, 156]];
+const B = [[70, 130], [122, 122], [180, 118], [246, 114], [316, 111], [386, 109], [452, 108], [520, 107], [590, 106]];
+const path = (p: number[][]) => p.map((q, i) => `${i ? 'L' : 'M'}${q[0]},${q[1]}`).join(' ');
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pst-t pst-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="pst-t">Held-out error against labelled examples</title>
+  <desc id="pst-d">
+    Two curves against the number of labelled examples. Training from scratch
+    starts high and needs many labels. Starting from pretrained weights begins
+    far lower and converges sooner. The architecture is identical in both.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">held-out error against labelled examples</text>
+
+  <line x1="60" y1="266" x2="660" y2="266" class="axis" />
+  <line x1="60" y1="266" x2="60" y2="52" class="axis" />
+
+  <path d={path(A)} class="s2 anim-trace" style="--len: 700; --dur: 5s" stroke-width="1.8" />
+  <path d={path(B)} class="s1 anim-trace" style="--len: 700; --dur: 5s" stroke-width="1.8" />
+
+  <circle cx="70" cy="244" r="5" class="a2" />
+  <circle cx="70" cy="130" r="5" class="a1" />
+  <text x="86" y="238" class="t-sm" fill="var(--lesion-ma)">from scratch</text>
+  <text x="86" y="124" class="t-sm" fill="var(--lesion-ves)">from pretrained weights</text>
+
+  <line x1="60" y1="156" x2="590" y2="156" class="dash" />
+  <text x="600" y="152" class="t-key">same model,</text>
+  <text x="600" y="170" class="t-key">different start</text>
+
+  <text x="0" y="294" class="t-sm">The gap is widest on the left. Where labels are plentiful the two converge.</text>
+</svg>

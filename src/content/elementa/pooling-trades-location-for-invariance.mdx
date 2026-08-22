@@ -1,0 +1,50 @@
+---
+chapter: vision--convolution
+proposition: 4
+statement: Pooling keeps the answer and throws away the address.
+claim: "Taking a maximum over a neighbourhood makes the response survive a small shift and destroys the record of where it was. Both halves of that trade are real, and one of them has to be undone for dense tasks."
+given:
+  - a-convolution-is-one-filter-everywhere
+figure: FigPooling
+status: published
+updated: 2026-08-22
+sources:
+  - title: "ImageNet Classification with Deep CNNs (AlexNet)"
+    url: https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
+---
+
+## Demonstration
+
+Max pooling over a 2 × 2 window reports the largest activation in each
+neighbourhood. Two feature maps that differ only in *where* within a window the
+strong response sits produce the same pooled output.
+
+**Bought:** a small translation no longer changes the answer, which is what you
+want when the question is *is there a cat* and not *exactly where is the cat*.
+Also a fourfold reduction in positions, and a doubling of everything above it in
+receptive field.
+
+**Paid:** the position is gone, and it is gone irreversibly. Nothing downstream
+can recover it from the pooled value.
+
+For classification that is a clean win, and it is why the classical stack ends
+in global average pooling — collapsing every spatial position into one vector
+per channel, at which point the network is committed to a question with no
+spatial answer.
+
+For segmentation and detection it is a problem, and the architectures are
+shaped by the repair. A U-Net downsamples like a classifier and then upsamples
+back, carrying skip connections across at every level *because the bottleneck
+cannot supply the detail*. The skips are not an optimisation; they are the only
+place the fine spatial information still exists.
+
+Stride-2 convolution has largely replaced pooling in modern networks, and it is
+worth being clear that this changes little about the trade — it is a learnable
+downsample rather than a fixed one, and it discards position just the same.
+
+## Corollary
+
+Count the downsampling steps in any architecture and you know its output
+stride. A network with an output stride of 32 predicts one value per 32 × 32
+block of input, and every segmentation boundary it produces is a guess
+interpolated between those blocks.

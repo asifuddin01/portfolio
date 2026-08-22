@@ -1,0 +1,60 @@
+---
+/**
+ * Book II, Ch. IV, Prop. 4 — the shift is the whole idea. Windowed attention
+ * is cheap but sealed; alternating the offset lets information cross.
+ */
+const N = 8, S = 26, X0 = 60, Y0 = 66;
+
+/* Window origins in grid units. The shifted partition hangs off both edges,
+   so each window is clamped to the grid here rather than clipped in the
+   markup — nothing is then drawn outside the figure's own bounds. */
+const PARTITION = [
+  [[0, 0], [4, 0], [0, 4], [4, 4]],
+  [[-2, -2], [2, -2], [6, -2], [-2, 2], [2, 2], [6, 2], [-2, 6], [2, 6], [6, 6]],
+];
+const windows = PARTITION.map((set) =>
+  set
+    .map(([cx, cy]) => {
+      const x0 = Math.max(cx, 0), y0 = Math.max(cy, 0);
+      const x1 = Math.min(cx + 4, N), y1 = Math.min(cy + 4, N);
+      return { x0, y0, w: (x1 - x0) * S - 2, h: (y1 - y0) * S - 2 };
+    })
+    .filter((r) => r.w > 0 && r.h > 0)
+);
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sw-t sw-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="sw-t">Windowed attention, and the shift between blocks</title>
+  <desc id="sw-d">
+    An eight by eight grid of patches partitioned into four attention windows.
+    In the next block the partition is offset by half a window, so patches that
+    were sealed into separate windows now share one. Cost stays linear in the
+    number of patches; information still crosses the whole image with depth.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">block k — windows</text>
+  <text x="380" y="22" class="t-lab">block k+1 — shifted</text>
+
+  {[0, 1].map((p) => (
+    <g>
+      {Array.from({ length: N * N }, (_, i) => (
+        <rect x={X0 + p * 340 + (i % N) * S} y={Y0 + Math.floor(i / N) * S}
+              width={S - 2} height={S - 2} class="bx-soft" />
+      ))}
+      {windows[p].map((r) => (
+        <rect x={X0 + p * 340 + r.x0 * S} y={Y0 + r.y0 * S} width={r.w} height={r.h}
+              class={p === 0 ? 's1' : 's2'} stroke-width="1.8" fill="none" />
+      ))}
+    </g>
+  ))}
+
+  <g class="anim-pulse" style="--dur: 4s">
+    <rect x={X0 + 3 * S} y={Y0 + 3 * S} width={S * 2 - 2} height={S * 2 - 2} class="a3" opacity="0.4" />
+    <rect x={X0 + 340 + 3 * S} y={Y0 + 3 * S} width={S * 2 - 2} height={S * 2 - 2} class="a3" opacity="0.4" />
+  </g>
+
+  <text x={X0} y="296" class="t-sm">sealed into four windows</text>
+  <text x={X0 + 340} y="296" class="t-sm">the same four patches now share one</text>
+
+  <text x="0" y="256" class="t-sm">Attention within a window costs the square of the window, not of the image — dense prediction</text>
+  <text x="0" y="274" class="t-sm">affordable. The shift is what stops the windows being four separate images.</text>
+</svg>

@@ -1,0 +1,54 @@
+---
+chapter: vision--representation
+proposition: 3
+statement: Pretraining changes where the search starts, not what it can reach.
+claim: "The architecture fixes the family of functions. Pretrained weights are a point inside it that is already useful, which matters most exactly where labels are scarce."
+given:
+  - transfer-works-because-early-features-are-generic
+  - learning-changes-parameters-not-rules
+figure: FigPretrainStart
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Transfusion: Understanding Transfer Learning for Medical Imaging"
+    url: https://arxiv.org/abs/1902.07208
+---
+
+## Demonstration
+
+Book I, Chapter I established that training moves a point through parameter
+space and never changes the architecture. Pretraining is that framing used
+deliberately: instead of starting from random initialisation, start from a
+point somebody else already walked to.
+
+The consequence is a curve, not a constant. Plot held-out error against the
+number of labelled examples and the two runs converge on the right and diverge
+sharply on the left. Pretraining is worth most when labels are scarce and
+approximately nothing when they are abundant, which is the shape of the claim
+and the part usually dropped.
+
+Raghu and colleagues examined this specifically for medical imaging and the
+findings are worth carrying.
+
+**Much of the benefit is optimisation speed, not final accuracy.** On their
+tasks, large ImageNet architectures fine-tuned from pretrained weights often
+matched much smaller models trained from scratch, once both had converged.
+
+**The gain concentrates in the small-data regime**, which is where medical
+datasets live, so the practice survives the critique — but for a different
+reason than the one usually given.
+
+**Architecture size transferred badly.** ImageNet performance was a poor
+predictor of medical performance across architectures, so choosing a backbone
+by its ImageNet number is choosing on a proxy that does not hold.
+
+There is one asymmetry worth knowing. Pretrained weights carry the *statistics*
+they were trained under, so the normalisation must match. Feeding raw 0–255
+pixels to a backbone pretrained on standardised inputs produces a model that
+trains, slowly, to undo the mismatch in its first layer.
+
+## Corollary
+
+"We used a pretrained ResNet-50" is three decisions: the family, the starting
+point and the preprocessing that starting point assumes. The third is the one
+that gets copied without being read.

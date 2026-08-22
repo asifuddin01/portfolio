@@ -1,0 +1,68 @@
+---
+/**
+ * Book II, Ch. IV, Prop. 1 — the pipeline the plan asks for, animated: the
+ * grid breaks into patches, the patches flatten, and the sequence departs.
+ */
+const N = 4, S = 30, X0 = 24, Y0 = 74;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ip-t ip-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 700px">
+  <title id="ip-t">Image to patches to tokens</title>
+  <desc id="ip-d">
+    An image divided into a grid of fixed-size patches. Each patch is flattened
+    into a vector and multiplied by a learned matrix to give an embedding. A
+    positional embedding is added, and the result is an ordinary sequence of
+    tokens for a transformer encoder.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">image</text>
+  <text x="180" y="22" class="t-lab">patches</text>
+  <text x="330" y="22" class="t-lab">flatten + W</text>
+  <text x="500" y="22" class="t-lab">+ position</text>
+  <text x="630" y="22" class="t-lab">encoder</text>
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <rect x={X0 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+          class="a4" opacity={0.18 + ((i * 37) % 9) / 16} />
+  ))}
+  <rect x={X0} y={Y0} width={S * N - 2} height={S * N - 2} class="bx" />
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <g class="anim-fade" style={`--i: ${i % 5}; --dur: 6s`}>
+      <rect x={182 + (i % N) * (S + 3)} y={Y0 + Math.floor(i / N) * (S + 3)} width={S - 4} height={S - 4}
+            class="a4" opacity="0.5" />
+      <rect x={182 + (i % N) * (S + 3)} y={Y0 + Math.floor(i / N) * (S + 3)} width={S - 4} height={S - 4}
+            class="bx-soft" />
+    </g>
+  ))}
+
+  <line x1="152" y1="134" x2="168" y2="134" class="wire" />
+  <polygon points="168,129 178,134 168,139" class="head" />
+  <line x1="318" y1="134" x2="334" y2="134" class="wire" />
+  <polygon points="334,129 344,134 334,139" class="head" />
+
+  {Array.from({ length: 6 }, (_, i) => (
+    <g>
+      <rect x={352} y={60 + i * 26} width="112" height="18" class="bx" />
+      <rect x={352} y={60 + i * 26} width="112" height="3" class="a1" />
+    </g>
+  ))}
+  <text x="408" y="234" class="t-sm" text-anchor="middle">one vector</text>
+  <text x="408" y="252" class="t-sm" text-anchor="middle">per patch</text>
+
+  <line x1="470" y1="134" x2="486" y2="134" class="wire" />
+  <polygon points="486,129 496,134 486,139" class="head" />
+
+  {Array.from({ length: 6 }, (_, i) => (
+    <g>
+      <rect x={504} y={60 + i * 26} width="86" height="18" class="bx" />
+      <rect x={504} y={60 + i * 26} width="86" height="3" class="a3" />
+      <text x={598} y={74 + i * 26} class="t-xs">+p{i + 1}</text>
+    </g>
+  ))}
+
+  <line x1="640" y1="134" x2="656" y2="134" class="wire" />
+  <polygon points="656,129 666,134 656,139" class="head" />
+  <rect x="672" y="60" width="34" height="152" class="bx-fill" />
+
+  <text x="0" y="286" class="t-sm">No vision-specific machinery anywhere in it. Once an image is a sequence of tokens it concatenates with text.</text>
+</svg>

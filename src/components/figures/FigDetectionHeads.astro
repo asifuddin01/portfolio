@@ -1,0 +1,46 @@
+---
+/**
+ * Book II, Ch. VI, Prop. 2 — detection asks two questions per object and they
+ * are scored by different losses that do not agree.
+ */
+const BOX = [
+  { x: 60, y: 78, w: 110, h: 84, lab: 'cat 0.94', cls: 'a1' },
+  { x: 196, y: 116, w: 78, h: 62, lab: 'cat 0.41', cls: 'a3' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="dh-t dh-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="dh-t">Two questions, two losses</title>
+  <desc id="dh-d">
+    A detector must decide what an object is and where its box sits. The two are
+    scored by different losses — a classification loss and a regression loss —
+    and a prediction can be right about one and wrong about the other.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one image, two predictions</text>
+
+  <rect x="30" y="56" width="300" height="164" class="bx" />
+  {Array.from({ length: 20 }, (_, i) => (
+    <rect x={30 + (i % 5) * 60} y={56 + Math.floor(i / 5) * 41} width="58" height="39" class="a4"
+          opacity={0.12 + ((i * 43) % 7) / 22} />
+  ))}
+  {BOX.map((b) => (
+    <g>
+      <rect x={b.x} y={b.y} width={b.w} height={b.h} class={b.cls === 'a1' ? 's1' : 's3'} stroke-width="2" fill="none" />
+      <text x={b.x + 4} y={b.y - 6} class="t-key">{b.lab}</text>
+    </g>
+  ))}
+
+  <text x="374" y="76" class="t-md">what is it?</text>
+  <text x="374" y="96" class="t-sm">a classification loss</text>
+  <text x="374" y="116" class="t-sm">over a fixed label set</text>
+
+  <text x="374" y="164" class="t-md">where is it?</text>
+  <text x="374" y="184" class="t-sm">a regression loss on four</text>
+  <text x="374" y="204" class="t-sm">box coordinates, usually IoU</text>
+
+  <line x1="366" y1="128" x2="700" y2="128" class="wire-soft" />
+
+  <text x="0" y="256" class="t-sm">A box in the right place with the wrong label and the reverse fail differently,</text>
+  <text x="0" y="274" class="t-sm">and mAP folds both into one number by sweeping the confidence threshold and the IoU threshold together.</text>
+  <text x="0" y="296" class="t-sm">Reading a single mAP without knowing which threshold was used is reading a summary of a summary.</text>
+</svg>

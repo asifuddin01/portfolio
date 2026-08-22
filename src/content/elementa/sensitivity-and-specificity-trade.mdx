@@ -1,0 +1,56 @@
+---
+chapter: vision--medical-vision
+proposition: 2
+statement: A model does not have a sensitivity — a threshold does.
+claim: "The score is continuous and the decision is binary, so every operating point trades misses against false alarms. ROC shows the whole trade; a deployed system occupies exactly one point on it."
+given:
+  - a-modality-is-a-measurement
+  - an-evaluation-is-only-as-good-as-its-split
+figure: FigRocSweep
+status: published
+updated: 2026-08-22
+sources:
+  - title: "The Meaning and Use of the Area under a ROC Curve"
+    url: https://pubs.rsna.org/doi/10.1148/radiology.143.1.7063747
+---
+
+## Demonstration
+
+The definitions, because they are constantly swapped:
+
+```
+sensitivity (recall) = TP / (TP + FN)    of the diseased, how many did we catch
+specificity          = TN / (TN + FP)    of the healthy, how many did we clear
+precision (PPV)      = TP / (TP + FP)    of our positives, how many were right
+F1                   = harmonic mean of precision and recall
+```
+
+Sensitivity and specificity are properties of the model *at a threshold*. Lower
+the threshold and sensitivity rises while specificity falls, always. There is no
+setting that improves both; that would be a better model, not a better
+threshold.
+
+The **ROC curve** is that sweep drawn out: sensitivity against 1 − specificity
+across every threshold. **AUROC** is the area under it, and it has a clean
+interpretation — the probability that a randomly chosen diseased case is ranked
+above a randomly chosen healthy one. It is a summary of *ranking*, independent
+of any threshold.
+
+Which is exactly its limitation. Two things AUROC cannot tell you:
+
+**Where you will operate.** A screening tool wants high sensitivity and accepts
+false alarms, because a missed cancer is worse than a recall visit. A
+confirmatory test wants the opposite. Reporting only AUROC leaves the reader to
+guess which regime the model was built for.
+
+**How it behaves when the classes are unbalanced.** With 1% prevalence, the
+false-positive rate is computed against a very large denominator, so a model can
+look excellent while most of its positive calls are wrong. The
+precision–recall curve is the honest instrument there, and the next proposition
+is about why.
+
+## Corollary
+
+Report the threshold, and report sensitivity and specificity at it, alongside
+AUROC. A deployed system does not sweep — it makes one decision with one
+threshold, and that is the number a clinician needs.

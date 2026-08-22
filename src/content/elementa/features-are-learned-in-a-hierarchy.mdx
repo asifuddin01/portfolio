@@ -1,0 +1,57 @@
+---
+chapter: vision--representation
+proposition: 1
+statement: The hierarchy is learned, not designed.
+claim: "Early layers converge on edges and colour, middle layers on texture and parts, late layers on objects. Nobody specified that ordering; it is what gradient descent produces when the loss sits at the far end."
+given:
+  - the-cnn-lineage-answers-one-question
+  - non-linearity-is-what-makes-depth-worth-having
+figure: FigFeatureHierarchy
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Visualizing and Understanding Convolutional Networks"
+    url: https://arxiv.org/abs/1311.2901
+  - title: "Feature Visualization — Distill"
+    url: https://distill.pub/2017/feature-visualization/
+---
+
+## Demonstration
+
+Zeiler and Fergus made this visible in 2013 by projecting activations back to
+pixel space, and every subsequent visualisation method has found the same
+ordering.
+
+**Layer 1** learns oriented edges and colour opponents. They look like Gabor
+filters, and they look like Gabor filters *whatever the dataset*. Train on
+faces, on galaxies, on retinal photographs, and the first layer is recognisably
+the same.
+
+**Middle layers** compose those into corners, curves, repeated textures.
+
+**Late layers** respond to parts and then to whole objects — a unit that fires
+on faces, another on wheels.
+
+The consistency of the early layers is the load-bearing fact, and it explains
+transfer learning entirely. If layer one is generic, there is no reason to
+relearn it from four hundred labelled images when a model trained on a million
+already has it.
+
+Two cautions, because this picture is often over-read.
+
+**"A unit detects X" is usually too strong.** Many units are polysemantic —
+responding to several unrelated things — because a network with more features to
+represent than dimensions to represent them in packs them into overlapping
+directions. The clean single-concept neuron is the exception that gets
+published.
+
+**The visualisations are optimised, not observed.** A feature visualisation is
+an input synthesised to maximise a unit, heavily regularised to look like an
+image at all. It shows what excites the unit, which is related to but not the
+same as what the unit does on real data.
+
+## Corollary
+
+*Low-level* and *high-level* are statements about depth, not about difficulty.
+Which is why the useful question when transferring is not whether the source
+task resembles yours, but how deep into the network the resemblance goes.

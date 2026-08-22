@@ -1,0 +1,45 @@
+---
+/**
+ * Book II, Ch. I, Prop. 2 — the same pixel values in a different arrangement.
+ * A bag of intensities is not an image, and the animation is the argument.
+ */
+const N = 8, S = 22, X0 = 40, Y0 = 60;
+/* A crude disc, so the ordered panel reads as a shape rather than noise. */
+const on = (i: number) => {
+  const r = Math.floor(i / N), c = i % N;
+  return (r - 3.5) ** 2 + (c - 3.5) ** 2 < 7.5;
+};
+const PERM = [37, 5, 52, 18, 61, 2, 44, 27, 9, 55, 13, 40, 30, 63, 21, 48,
+              1, 34, 58, 11, 46, 25, 7, 50, 16, 42, 60, 3, 29, 53, 20, 38,
+              12, 57, 24, 45, 6, 33, 62, 15, 49, 28, 4, 51, 19, 36, 59, 10,
+              43, 22, 0, 39, 56, 31, 14, 47, 26, 8, 41, 17, 54, 35, 23, 32];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sd-t sd-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="sd-t">The same pixels, reordered</title>
+  <desc id="sd-d">
+    Two grids holding an identical multiset of pixel values. On the left they
+    are in their original positions and a shape is visible. On the right the
+    same values are permuted and nothing is. Every summary statistic of the two
+    grids is identical.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the same values, arranged and shuffled</text>
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <rect x={X0 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+          class={on(i) ? 'a1' : 'a4'} opacity={on(i) ? 0.9 : 0.2} />
+  ))}
+  {Array.from({ length: N * N }, (_, i) => (
+    <rect x={420 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+          class={on(PERM[i]) ? 'a1' : 'a4'} opacity={on(PERM[i]) ? 0.9 : 0.2} />
+  ))}
+
+  <line x1="252" y1="146" x2="392" y2="146" class="wire" />
+  <polygon points="392,141 404,146 392,151" class="head" />
+  <text x="322" y="136" class="t-key" text-anchor="middle">permute</text>
+
+  <text x={X0} y="262" class="t-sm">mean, variance, histogram: identical</text>
+  <text x="420" y="262" class="t-sm">mean, variance, histogram: identical</text>
+
+  <text x="0" y="292" class="t-sm">A fully connected layer cannot tell these apart at initialisation. The arrangement is the information.</text>
+</svg>

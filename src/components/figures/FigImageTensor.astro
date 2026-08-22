@@ -1,0 +1,42 @@
+---
+/**
+ * Book II, Ch. I, Prop. 1 — the three channel planes of an image, drawn apart
+ * so the axes are visible, then read back as one tensor.
+ */
+const CH = [
+  { t: 'R', y: 60,  cls: 'a2' },
+  { t: 'G', y: 116, cls: 'a4' },
+  { t: 'B', y: 172, cls: 'a1' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="it-t it-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="it-t">An image as a stack of channel planes</title>
+  <desc id="it-d">
+    Three planes of the same height and width, one per colour channel, drawn
+    separated so the axes are visible. Together they are a single tensor of
+    shape height by width by channels; each entry is one number.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">shape (H, W, C)</text>
+
+  {CH.map((c, i) => (
+    <g class="anim-pulse" style={`--i: ${2 - i}; --dur: 4.2s`}>
+      <polygon points={`60,${c.y} 220,${c.y} 268,${c.y - 34} 108,${c.y - 34}`} class="bx" />
+      <polygon points={`60,${c.y} 220,${c.y} 268,${c.y - 34} 108,${c.y - 34}`} class={c.cls} opacity="0.22" />
+      <text x="40" y={c.y - 12} class="t-md" text-anchor="end">{c.t}</text>
+    </g>
+  ))}
+
+  <line x1="300" y1="66" x2="300" y2="180" class="wire-soft" />
+  <text x="316" y="72" class="t-sm">H — rows of pixels</text>
+  <text x="316" y="98" class="t-sm">W — columns of pixels</text>
+  <text x="316" y="124" class="t-sm">C — channels, three here</text>
+  <text x="316" y="158" class="t-key">one number per (row, column, channel)</text>
+
+  <line x1="316" y1="188" x2="700" y2="188" class="wire-soft" />
+  <text x="316" y="212" class="t-sm">A greyscale scan has C = 1.</text>
+  <text x="316" y="230" class="t-sm">A CT volume adds a depth axis.</text>
+  <text x="316" y="248" class="t-sm">Nothing else about the model changes.</text>
+
+  <text x="0" y="288" class="t-sm">The numbers are only numbers. The shape is the claim about what they are.</text>
+</svg>

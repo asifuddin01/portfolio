@@ -1,0 +1,55 @@
+---
+chapter: vision--images
+proposition: 3
+statement: Normalisation is a promise about the numbers the model will meet.
+claim: "Subtracting a mean and dividing by a deviation fixes what counts as a typical intensity. The statistics must come from training data and be applied unchanged afterwards, or the promise is broken silently."
+given:
+  - an-image-is-a-structured-tensor
+figure: FigNormalisation
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Batch Normalization"
+    url: https://arxiv.org/abs/1502.03167
+---
+
+## Demonstration
+
+Raw pixel values arrive in whatever range the format uses — 0 to 255 for an
+8-bit photograph, roughly −1000 to 3000 Hounsfield units for a CT. Feeding
+those directly gives large activations, large gradients, and a first layer that
+spends its early training just rescaling.
+
+The standard fix is per-channel standardisation:
+
+```
+x ← (x − μ) / σ
+```
+
+The important part is not the arithmetic. It is **where μ and σ come from**.
+
+They are computed on the training set, stored, and applied unchanged to
+everything afterwards. Recomputing them per batch at test time is a leak: the
+prediction for one image then depends on which other images happened to be in
+the batch with it. The number goes up, the model is not better, and nothing
+raises an error.
+
+The modality decides what is even meaningful.
+
+**CT is a measurement.** Hounsfield units are absolute and comparable across
+patients and scanners — water is 0, air is −1000, by definition. So you window
+by *value*: a lung window and a soft-tissue window are two fixed intervals, and
+min-max normalising a CT per image destroys precisely the property that makes
+it a measurement.
+
+**MRI is not.** Intensities are arbitrary and depend on the scanner, the
+sequence and the session, so they are comparable only within a scan. Some
+normalisation per volume is not optional, and which one is a research question
+in its own right.
+
+## Corollary
+
+The phrase *standard ImageNet normalisation* names three numbers computed from
+photographs of objects on the internet. Applying them to a chest radiograph is
+not wrong exactly, but it is an assumption, and it is one worth making
+deliberately rather than by copying a snippet.

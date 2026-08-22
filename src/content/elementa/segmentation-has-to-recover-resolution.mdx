@@ -1,0 +1,57 @@
+---
+chapter: vision--vision-tasks
+proposition: 3
+statement: A per-pixel task must recover the resolution the encoder discarded.
+claim: "The bottleneck knows what is in the image and no longer knows exactly where. Skip connections are not an optimisation — they are the only place the fine spatial detail still exists."
+given:
+  - pooling-trades-location-for-invariance
+  - the-head-changes-not-the-backbone
+figure: FigSegDecoder
+status: published
+updated: 2026-08-22
+sources:
+  - title: "U-Net: Convolutional Networks for Biomedical Image Segmentation"
+    url: https://arxiv.org/abs/1505.04597
+  - title: "nnU-Net"
+    url: https://doi.org/10.1038/s41592-020-01008-z
+---
+
+## Demonstration
+
+A classifier's encoder halves the resolution repeatedly until the spatial axes
+are nearly gone. Segmentation needs a label at every original pixel, so the
+resolution has to come back.
+
+Upsampling from the bottleneck alone gives blurred, approximately correct
+regions with boundaries in roughly the right place. The information required to
+put an edge exactly where it belongs was destroyed by the downsampling and
+cannot be reconstructed from a coarse feature map.
+
+The U-Net's answer is to route around the problem. At every level, the encoder's
+feature map is concatenated to the decoder's, so the decoder combines *what*
+from below with *where* from the side. Remove the skips and the same network
+produces soft, drifting boundaries — the standard demonstration in every
+ablation of it.
+
+Two things worth stating plainly for medical work.
+
+**Class imbalance is structural.** A lesion may be 0.1% of the voxels, so
+per-pixel cross-entropy is minimised by predicting background everywhere. Dice
+loss optimises overlap directly and is far less sensitive to it; the common
+practice of summing Dice and cross-entropy takes the stable gradients of one
+and the imbalance-robustness of the other.
+
+**Dice is not the clinical quantity.** It measures region overlap, and it can
+be high while a small lesion is missed entirely and low on a well-found
+structure with an ambiguous boundary. What matters clinically is usually
+detection — was this lesion found — and Dice does not report that.
+
+nnU-Net's whole argument, covered in the Marginalia, is that on this task the
+architecture was never the bottleneck. Spacing, patch size and preprocessing
+were.
+
+## Corollary
+
+Report per-lesion detection alongside Dice. Two models with the same Dice can
+differ completely in how many findings they miss, and the second number is the
+one a clinician is asking for.

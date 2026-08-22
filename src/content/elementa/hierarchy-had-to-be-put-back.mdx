@@ -1,0 +1,52 @@
+---
+chapter: vision--vision-transformers
+proposition: 4
+statement: Hierarchy had to be put back before transformers worked on dense tasks.
+claim: "A plain ViT holds one resolution throughout and costs the square of the image. Swin restores the pyramid and confines attention to windows, and the shift between blocks is what stops the windows becoming separate images."
+given:
+  - a-patch-is-a-token
+  - pooling-trades-location-for-invariance
+figure: FigSwinWindows
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Swin Transformer: Hierarchical Vision Transformer using Shifted Windows"
+    url: https://arxiv.org/abs/2103.14030
+---
+
+## Demonstration
+
+ViT has a flat body. Every layer works at the same token count, and every layer
+attends over all of them. Two problems follow for anything denser than
+classification.
+
+**Cost.** Attention over *n* patches costs *n*². Going from 224 to 1024 pixels
+at /16 takes you from 196 tokens to about 4,000, and the score matrix from
+38,000 entries to sixteen million per head per layer.
+
+**No pyramid.** Detection and segmentation want features at several scales, the
+way a convolutional backbone naturally provides them.
+
+Swin restores both, with two moves.
+
+**Windowed attention.** Partition the patches into fixed windows — 7 × 7 — and
+attend only within each. Cost becomes linear in the number of patches, because
+the window size is fixed and the number of windows grows linearly.
+
+**Patch merging.** Every stage concatenates 2 × 2 neighbouring patches and
+projects, halving each spatial axis. Resolutions go 56, 28, 14, 7, which is a
+convolutional pyramid rebuilt from transformer parts.
+
+The clever part is the third move, and it is the one the name records. Windowed
+attention alone seals information into windows permanently; a patch on one side
+of a boundary can never influence the other. So alternate blocks shift the
+partition by half a window. Patches separated by a boundary in block *k* share a
+window in block *k+1*, and information crosses the image with depth.
+
+## Corollary
+
+Note what Swin is: a transformer with locality and a pyramid added back. Read
+alongside Book I's ViT entry, which found the data-scale threshold, and the
+Marginalia review of Swin UNETR V2, which had to insert a convolution into every
+stage — the corrections all point the same way. Priors are a constraint whose
+value depends on how much data you have.

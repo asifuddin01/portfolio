@@ -1,0 +1,46 @@
+---
+/**
+ * Book II closing — the whole book on one plate, from pixels to a deployed
+ * decision, with the chapter covering each stage named beside it.
+ */
+const STAGE = [
+  { t: 'pixels, channels, normalisation', ch: 'Ch. I', cls: 'a4' },
+  { t: 'convolution or patches', ch: 'Ch. II, IV', cls: 'a1' },
+  { t: 'a learned hierarchy of features', ch: 'Ch. III, V', cls: 'a3' },
+  { t: 'a head for the question asked', ch: 'Ch. VI', cls: 'a2' },
+  { t: 'a number somebody acts on', ch: 'Ch. VII', cls: 'a5' },
+];
+---
+<svg class="fig" viewBox="0 0 720 400" role="img" aria-labelledby="vm-t vm-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="vm-t">The whole of Book II on one plate</title>
+  <desc id="vm-d">
+    A vertical map from raw pixels to a decision. Pixels are normalised, mixed
+    either by convolution or by attention over patches, built into a hierarchy
+    of features, read by a task head, and finally turned into a number that
+    someone acts on. Each stage is labelled with the chapter that covers it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">from pixels to a decision</text>
+
+  {STAGE.map((s, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 5; --dur: 12s`}>
+      <rect x="90" y={48 + i * 66} width="360" height="46" class="bx-fill" />
+      <rect x="90" y={48 + i * 66} width="360" height="3" class={s.cls} />
+      <text x="270" y={77 + i * 66} class="t-md" text-anchor="middle">{s.t}</text>
+      <text x="468" y={77 + i * 66} class="t-key">{s.ch}</text>
+      {i < 4 && (
+        <g>
+          <line x1="270" y1={94 + i * 66} x2="270" y2={104 + i * 66} class="wire" />
+          <polygon points={`265,${104 + i * 66} 270,${114 + i * 66} 275,${104 + i * 66}`} class="head" />
+        </g>
+      )}
+    </g>
+  ))}
+
+  <line x1="60" y1="48" x2="60" y2="376" class="s3" stroke-width="2" />
+  <text x="34" y="212" class="t-key" text-anchor="middle">one image</text>
+
+  <text x="0" y="356" class="t-sm">Two stages are architecture and three are judgement. Most of the literature is about the second row;</text>
+  <text x="0" y="374" class="t-sm">goes wrong in a deployed system is in the last one.</text>
+  <text x="0" y="396" class="t-sm">If a stage here is not one you could explain to somebody else, the chapter is named beside it.</text>
+</svg>

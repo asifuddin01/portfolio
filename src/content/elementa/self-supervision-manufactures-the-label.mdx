@@ -1,0 +1,54 @@
+---
+chapter: vision--representation
+proposition: 4
+statement: Self-supervision manufactures the label from the input.
+claim: "Corrupt the image in a way you control, and the answer is known without an annotator. What the model must learn in order to undo the corruption is the representation you were after."
+given:
+  - pretraining-moves-the-starting-point
+figure: FigPretextTask
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Unsupervised Visual Representation Learning by Context Prediction"
+    url: https://arxiv.org/abs/1505.05192
+  - title: "Masked Autoencoders Are Scalable Vision Learners"
+    url: https://arxiv.org/abs/2111.06377
+---
+
+## Demonstration
+
+Labels are the expensive part. A radiologist's time is the binding constraint
+on every medical vision dataset, and the images themselves are comparatively
+abundant. Self-supervision is the observation that a supervision signal can be
+constructed rather than collected.
+
+The recipe: apply a transformation whose parameters you know, and ask the model
+to recover them.
+
+- **Hide a region**, predict what was there. The answer is the region you hid.
+- **Take two crops** of one photograph, ask whether they came from the same
+  image. The answer is your bookkeeping.
+- **Rotate by a multiple of 90°**, predict the angle. The answer is the angle
+  you chose.
+
+None of these is the task anyone cares about. They are *pretext* tasks, and the
+whole bet is that solving them is impossible without learning something
+genuinely useful about images. To fill in a masked region you must have some
+model of what usually goes there; to match two crops you must represent content
+rather than framing.
+
+The bet holds unevenly, and the choice of pretext is where the design lives.
+Rotation prediction works on photographs of objects because photographs have a
+canonical orientation, and fails on a fundus image or a satellite tile because
+they do not — there, the task is either impossible or solvable from an artefact.
+
+Chapter V is about the two families that turned out to scale: contrastive
+methods, which build the task from *pairs*, and masked modelling, which builds
+it from *reconstruction*.
+
+## Corollary
+
+Judge a pretext task by asking what shortcut would solve it. Early
+context-prediction work was partly solved by chromatic aberration — the model
+learned the lens, not the scene. If a corruption leaves a cheaper cue than the
+one you intended, that cue is what gets learned.

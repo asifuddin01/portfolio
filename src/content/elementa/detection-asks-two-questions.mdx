@@ -1,0 +1,52 @@
+---
+chapter: vision--vision-tasks
+proposition: 2
+statement: Detection asks two questions at once and scores them separately.
+claim: "What an object is and where its box sits are different problems with different losses. A prediction can be right about one and wrong about the other, and one number hides which."
+given:
+  - the-head-changes-not-the-backbone
+figure: FigDetectionHeads
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Focal Loss for Dense Object Detection (RetinaNet)"
+    url: https://arxiv.org/abs/1708.02002
+  - title: "End-to-End Object Detection with Transformers (DETR)"
+    url: https://arxiv.org/abs/2005.12872
+---
+
+## Demonstration
+
+Every detector optimises a sum of two losses: a classification loss over a
+label set, and a regression loss on four box coordinates, usually some form of
+intersection-over-union. Weighting them against each other is a hyperparameter,
+and it is a statement about which error you would rather make.
+
+Three difficulties follow, and each produced a family of methods.
+
+**Class imbalance is extreme.** A dense detector evaluates tens of thousands of
+candidate locations, of which a handful contain objects. Trained with ordinary
+cross-entropy, the easy background dominates the gradient. Focal loss
+down-weights well-classified examples so the rare positives are heard, and that
+single change is what made one-stage detectors competitive.
+
+**Assignment is a choice.** Which prediction is responsible for which ground
+truth object? Anchor-based methods match by IoU against predefined boxes;
+DETR removes anchors entirely and solves a bipartite matching between a fixed
+set of queries and the objects present. The assignment rule is not a detail —
+it determines what the loss even means.
+
+**Duplicates need removing.** Several predictions fire on one object, so
+classical detectors run non-maximum suppression as a post-process, with its own
+threshold. DETR's set-based loss makes it unnecessary, which is the cleanest
+thing about that architecture.
+
+Then the reporting. **mAP** averages precision over recall levels, over
+classes, and over IoU thresholds. COCO's headline number averages IoU from 0.5
+to 0.95. A model with excellent classification and sloppy boxes and one with
+the reverse can land on the same mAP.
+
+## Corollary
+
+Ask for mAP@0.5 and mAP@0.75 separately. The gap between them is the box
+quality, and it is invisible in the averaged number that gets quoted.

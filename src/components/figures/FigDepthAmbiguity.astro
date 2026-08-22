@@ -1,0 +1,36 @@
+---
+/**
+ * Book II, Ch. VI, Prop. 4 — one image cannot fix scale. Two worlds project to
+ * identical pixels, which is why monocular depth is predicted up to a factor.
+ */
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="da-t da-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="da-t">Two scenes, one projection</title>
+  <desc id="da-d">
+    A camera centre with two objects along the same ray: a small one nearby and
+    a large one far away. Both fill the same region of the image, so a single
+    photograph cannot separate size from distance. Monocular depth is therefore
+    predicted only up to an unknown scale.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the same pixels</text>
+
+  <circle cx="60" cy="160" r="7" class="a2" />
+  <text x="60" y="188" class="t-sm" text-anchor="middle">camera</text>
+
+  <line x1="60" y1="160" x2="660" y2="72" class="wire-soft" />
+  <line x1="60" y1="160" x2="660" y2="248" class="wire-soft" />
+
+  <line x1="160" y1="146" x2="160" y2="174" class="s1" stroke-width="3" />
+  <text x="160" y="132" class="t-key" text-anchor="middle">near, small</text>
+
+  <line x1="520" y1="93" x2="520" y2="227" class="s3" stroke-width="3" />
+  <text x="520" y="76" class="t-key" text-anchor="middle">far, large</text>
+
+  <rect x="104" y="140" width="14" height="40" class="bx-fill" />
+  <text x="111" y="212" class="t-xs" text-anchor="middle">image</text>
+
+  <text x="0" y="266" class="t-sm">Both objects subtend the same angle, so both occupy the same pixels.</text>
+  <text x="0" y="286" class="t-sm">Monocular depth models predict relative or scale-invariant depth — a metric claim needs stereo,</text>
+  <text x="0" y="306" class="t-sm">a known object size, or a sensor that measures distance directly.</text>
+</svg>

@@ -1,0 +1,51 @@
+---
+chapter: vision--convolution
+proposition: 3
+statement: A convolutional network buys range with depth.
+claim: "One layer sees a small window. Stacking layers widens it by a fixed amount each time, so how far a unit can see is a fact about the architecture, computable before any training."
+given:
+  - a-convolution-is-one-filter-everywhere
+  - convolution-buys-parallelism-with-range
+figure: FigReceptiveGrowth
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Understanding the Effective Receptive Field in Deep CNNs"
+    url: https://arxiv.org/abs/1701.04128
+---
+
+## Demonstration
+
+The **receptive field** of a unit is the set of input pixels that can influence
+it. For a stack of 3 × 3 convolutions at stride 1 it grows by two positions per
+layer: 3, 5, 7, 9. Linear in depth, which is slow.
+
+Stride and pooling accelerate it, because they multiply the step size of
+everything above them. That is most of why classification networks downsample
+so aggressively — not to save compute alone, but so that a unit near the top
+can see the whole object.
+
+Two things follow that matter more than the arithmetic.
+
+**A dependency wider than the receptive field cannot be learned.** If your
+lesion is defined by its relation to a structure 400 pixels away, and the
+network's receptive field at the head is 200, no amount of data will help. That
+is a property you can check with a formula before training anything, and it is
+checked far less often than it should be.
+
+**The effective receptive field is much smaller than the theoretical one.**
+Luo and colleagues showed the influence of input pixels on an output decays
+roughly like a Gaussian from the centre, and the *effective* field grows only
+as the square root of the number of layers. So the nominal number on paper
+overstates what the unit actually uses, often by a large factor.
+
+This is the point where the comparison with attention becomes concrete. A
+transformer's first layer already reaches every position — path length one,
+whatever the distance — and pays quadratically for the privilege. A convolution
+pays with depth and a decaying influence, and gets linear cost in return.
+
+## Corollary
+
+Before adding capacity, compute the receptive field. If it does not cover the
+structure the task depends on, more parameters are the wrong repair; dilation,
+downsampling or attention are the right ones.

@@ -1,0 +1,49 @@
+---
+/**
+ * Book II, Ch. III, Prop. 2 — the three usual moves, and what each costs when
+ * the labelled set is small.
+ */
+const CASE = [
+  { t: 'linear probe', frozen: 4, note: 'hundreds of labels', cls: 'a1' },
+  { t: 'partial fine-tune', frozen: 2, note: 'thousands', cls: 'a3' },
+  { t: 'full fine-tune', frozen: 0, note: 'tens of thousands', cls: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="tf-t tf-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="tf-t">How much of the network you let move</title>
+  <desc id="tf-d">
+    Three stacks of five blocks. In the first, four are frozen and only the
+    head is trained. In the second, the upper half moves. In the third,
+    everything moves. Each step down needs roughly an order of magnitude more
+    labelled data than the one above it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">frozen</text>
+  <text x="86" y="22" class="t-lab">trained</text>
+
+  {CASE.map((c, ci) => (
+    <g>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <g>
+          <rect x={200 + ci * 170} y={214 - i * 34} width="128" height="28"
+                class={i < c.frozen ? 'bx-soft' : 'bx-fill'} />
+          {i >= c.frozen && <rect x={200 + ci * 170} y={214 - i * 34} width="128" height="3" class={c.cls} />}
+        </g>
+      ))}
+      <text x={264 + ci * 170} y="252" class="t-md" text-anchor="middle">{c.t}</text>
+      <text x={264 + ci * 170} y="272" class="t-sm" text-anchor="middle">{c.note}</text>
+    </g>
+  ))}
+
+  <rect x="30" y="14" width="14" height="14" class="bx-soft" />
+  <rect x="116" y="14" width="14" height="14" class="bx-fill" />
+
+  <text x="0" y="96" class="t-sm">The head is</text>
+  <text x="0" y="114" class="t-sm">always trained.</text>
+  <text x="0" y="148" class="t-sm">Everything below</text>
+  <text x="0" y="166" class="t-sm">it is a decision</text>
+  <text x="0" y="184" class="t-sm">about how much</text>
+  <text x="0" y="202" class="t-sm">data you have.</text>
+
+  <text x="0" y="296" class="t-sm">Fine-tuning a large backbone on four hundred images is how you get a model that memorises them.</text>
+</svg>

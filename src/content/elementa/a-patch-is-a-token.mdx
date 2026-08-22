@@ -1,0 +1,57 @@
+---
+chapter: vision--vision-transformers
+proposition: 1
+statement: A patch is a token, and that is the entire adaptation.
+claim: "Cut the image into fixed squares, flatten each, project it, add a position. What follows is the transformer encoder from the translation literature, unchanged."
+given:
+  - an-image-is-a-structured-tensor
+  - a-transformer-block-mixes-then-computes
+figure: FigImageToPatches
+status: published
+updated: 2026-08-22
+sources:
+  - title: "An Image is Worth 16x16 Words"
+    url: https://arxiv.org/abs/2010.11929
+---
+
+## Demonstration
+
+The pipeline, in full:
+
+```
+image  224 × 224 × 3
+  ↓  cut into 16 × 16 patches
+patches  196 of them, each 16 × 16 × 3
+  ↓  flatten → 768 numbers, multiply by a learned matrix
+embeddings  196 × d
+  ↓  add a positional embedding to each
+tokens  196 × d
+  ↓  standard transformer encoder
+representation
+```
+
+The minimalism is the argument. There is no vision-specific machinery anywhere
+in it — no kernels, no pooling, no notion of adjacency. If it works, it works
+because attention over patches suffices, not because image priors were built
+into the layers.
+
+Note what the patch projection actually is: a convolution with kernel size 16
+and stride 16. Every implementation does it that way, which is a quiet
+admission that one convolution survived.
+
+The notation comes from here and you will type it for the rest of your career.
+**ViT-B/16** is Base-sized with 16 × 16 patches; **ViT-L/14** is Large with 14.
+When a modern model card says `So400m` or `ViT-7B/16`, that is this convention
+still running.
+
+The consequence that reshaped the field is not the accuracy. It is that once an
+image is a sequence of tokens, it concatenates with text tokens and one model
+trains over both. Every vision-language model in the Marginalia depends on that
+single representational choice.
+
+## Corollary
+
+The classification token is a convention, not a necessity. ViT prepends a
+learnable token and reads the answer off it; plenty of later models average the
+patch tokens instead and do as well. What matters is that the encoder produced
+one vector per patch — everything downstream is a choice about how to read them.

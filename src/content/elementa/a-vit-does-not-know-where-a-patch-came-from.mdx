@@ -1,0 +1,52 @@
+---
+chapter: vision--vision-transformers
+proposition: 3
+statement: Without a positional embedding a ViT sees a bag of patches.
+claim: "Self-attention is permutation-equivariant in two dimensions exactly as it is in one. The grid is not in the operation; it is added to the tokens."
+given:
+  - a-patch-is-a-token
+  - attention-is-permutation-invariant
+figure: FigPatchPosition
+status: published
+updated: 2026-08-22
+sources:
+  - title: "An Image is Worth 16x16 Words"
+    url: https://arxiv.org/abs/2010.11929
+  - title: "How Do Vision Transformers Work?"
+    url: https://arxiv.org/abs/2202.06709
+---
+
+## Demonstration
+
+Book I, Chapter VI proved that attention weights depend only on the contents of
+two tokens and never on their indices. Nothing about that proof mentions
+language. Shuffle the patches of an image and self-attention alone produces the
+same outputs in the shuffled order.
+
+So the spatial grid — the thing that made the image an image in Chapter I of
+this book — is not present in the architecture at all. It is *added*, as a
+learned vector per position, to each patch embedding before the first layer.
+
+Two details are worth having.
+
+**ViT uses learned one-dimensional positions.** Patches are numbered in raster
+order and each index gets its own trained vector. The paper tried
+two-dimensional encodings that separate row and column and found no consistent
+gain, which is mildly surprising and worth remembering when someone claims the
+2D structure must be encoded explicitly.
+
+**Interpolation is how resolution changes.** Evaluating a model pretrained at
+224 on 448 gives four times the patches and therefore positions with no learned
+vector. The standard fix reshapes the position embeddings to their 2D grid,
+interpolates bilinearly to the new grid, and flattens back. It works well, and
+it is the single most common source of a silently worse ViT when omitted.
+
+Modern vision models increasingly use rotary embeddings for the same reason
+language models do: relative position falls out of the algebra, and there is no
+table to run off the end of. DINOv3 made exactly that switch.
+
+## Corollary
+
+If a ViT is behaving as though it cannot localise, check the positional
+embeddings before the attention. That is where spatial information enters, and
+it is the only place it can be lost.

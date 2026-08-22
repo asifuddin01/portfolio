@@ -1,0 +1,55 @@
+---
+chapter: vision--medical-vision
+proposition: 1
+statement: A medical image is a measurement, and what it measures decides the pipeline.
+claim: "CT reports absolute attenuation in calibrated units; MRI reports relaxation in arbitrary ones. The right preprocessing is a fact about the physics, not a default in a library."
+given:
+  - normalisation-is-a-promise-about-the-data
+figure: FigModalities
+status: published
+updated: 2026-08-22
+sources:
+  - title: "The Medical Segmentation Decathlon"
+    url: https://www.nature.com/articles/s41467-022-30695-9
+---
+
+## Demonstration
+
+**X-ray** measures attenuation integrated along a ray. It is a projection, so
+everything between the source and the detector is superimposed — a nodule can
+hide behind a rib, and no amount of contrast adjustment separates them. Pixel
+values have no absolute meaning.
+
+**CT** is the same physics reconstructed into a volume. Its values are
+calibrated: Hounsfield units, water at 0 and air at −1000 *by definition*, so
+intensities are comparable across patients and scanners. This is why clinicians
+window by value — a lung window and a soft-tissue window are two fixed
+intervals — and why min-max normalising a CT per image destroys the property
+that makes it a measurement.
+
+**MRI** measures proton relaxation, and the intensities are arbitrary. They
+depend on scanner, field strength, coil, sequence and session, and they are
+comparable only within a scan. Some per-volume normalisation is mandatory, and
+which one is a research question. The same anatomy in T1, T2 and FLAIR gives
+three different pictures; those are channels, and dropping one is dropping a
+measurement.
+
+**Fundus photography** is reflected visible light. It is closest to an ordinary
+photograph, and it is the case where colour carries the diagnosis directly —
+which is what makes the augmentation warning of Chapter V concrete.
+
+Two facts that cut across all of them.
+
+Volumes have **anisotropic spacing**: 0.7 mm in plane and 5 mm between slices is
+ordinary, so a 3 × 3 × 3 kernel covers a very different physical volume along
+each axis. Resampling to a common spacing is why nnU-Net computes it from the
+dataset rather than accepting a default.
+
+And a DICOM file carries the acquisition parameters. Reading them is the
+difference between processing images and processing measurements.
+
+## Corollary
+
+Ask what physical quantity the numbers represent before choosing any transform.
+Half the preprocessing decisions answer themselves once that question is
+answered, and the other half become visible as decisions.

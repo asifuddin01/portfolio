@@ -1,0 +1,35 @@
+---
+/**
+ * Book II, Ch. VII, Prop. 5 — the failure that survives every internal check,
+ * because the check was drawn from the same distribution as the training set.
+ */
+const SITES = [
+  { t: 'internal test', v: 0.94, cls: 'a1' },
+  { t: 'same hospital, new scanner', v: 0.87, cls: 'a3' },
+  { t: 'external hospital', v: 0.71, cls: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="ds2-t ds2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ds2-t">The same model on three populations</title>
+  <desc id="ds2-d">
+    One model evaluated on an internal held-out set, on data from a different
+    scanner at the same hospital, and on data from another institution. The
+    internal number is the one that appears in the abstract and the external one
+    is the one that predicts deployment.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the same weights, three populations</text>
+
+  {SITES.map((s, i) => (
+    <g>
+      <text x="0" y={78 + i * 60} class="t-md">{s.t}</text>
+      <rect x="300" y={58 + i * 60} width={s.v * 340} height="28" class={s.cls} />
+      <text x={310 + s.v * 340} y={78 + i * 60} class="t-key">{s.v.toFixed(2)}</text>
+    </g>
+  ))}
+
+  <line x1="300" y1="46" x2="300" y2="250" class="grid" />
+  <text x="0" y="266" class="t-sm">Everything upstream can be right — the split, the calibration, the augmentation — and this gap opens,</text>
+  <text x="0" y="284" class="t-sm">because every one of those checks drew from the same distribution the model was fitted on.</text>
+  <text x="0" y="306" class="t-sm">The only measurement that answers it is data from an institution outside the training set.</text>
+</svg>

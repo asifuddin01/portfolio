@@ -1,0 +1,42 @@
+---
+/**
+ * Book II, Ch. VI, Prop. 5 — retrieval has no label set. What is learned is a
+ * metric, and the classes may not exist at training time.
+ */
+const PTS = [
+  { x: 180, y: 96, c: 'a1' }, { x: 214, y: 128, c: 'a1' }, { x: 156, y: 140, c: 'a1' },
+  { x: 380, y: 90, c: 'a3' }, { x: 416, y: 122, c: 'a3' }, { x: 356, y: 128, c: 'a3' },
+  { x: 300, y: 216, c: 'a2' }, { x: 340, y: 236, c: 'a2' }, { x: 268, y: 240, c: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rs-t rs-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="rs-t">Retrieval is a metric, not a label set</title>
+  <desc id="rs-d">
+    An embedding space with three clusters. A query lands in it and the answer
+    is its nearest neighbours. Nothing about the procedure requires the classes
+    to have existed when the model was trained.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">embedding space</text>
+
+  {PTS.map((p) => <circle cx={p.x} cy={p.y} r="6" class={p.c} />)}
+
+  <g class="anim-pulse" style="--dur: 3.8s">
+    <circle cx="196" cy="118" r="34" class="s2" stroke-width="1.8" fill="none" />
+  </g>
+  <circle cx="196" cy="118" r="7" class="a5" />
+  <text x="196" y="72" class="t-key" text-anchor="middle">query</text>
+
+  {[[180, 96], [214, 128], [156, 140]].map((p) => (
+    <line x1="196" y1="118" x2={p[0]} y2={p[1]} class="dash" />
+  ))}
+
+  <text x="480" y="96" class="t-sm">The output is an ordering,</text>
+  <text x="480" y="116" class="t-sm">not a class. Add a new</text>
+  <text x="480" y="136" class="t-sm">category tomorrow and</text>
+  <text x="480" y="156" class="t-sm">nothing needs retraining —</text>
+  <text x="480" y="176" class="t-sm">you index one more vector.</text>
+
+  <text x="0" y="278" class="t-sm">Which is why the evaluation is recall@k and mAP rather than accuracy, and why the embedding's geometry —</text>
+  <text x="0" y="296" class="t-sm">not its accuracy on any fixed label set — is the thing that has to be good.</text>
+</svg>

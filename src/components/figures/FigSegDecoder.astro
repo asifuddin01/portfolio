@@ -1,0 +1,40 @@
+---
+/**
+ * Book II, Ch. VI, Prop. 3 — segmentation has to put back what the encoder
+ * threw away, and the skip connections are how the detail survives.
+ */
+const ENC = [{ w: 150, y: 56 }, { w: 118, y: 100 }, { w: 86, y: 144 }, { w: 54, y: 188 }];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sdc-t sdc-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="sdc-t">The U, and why the skips are load-bearing</title>
+  <desc id="sdc-d">
+    An encoder that halves the resolution at each stage and a decoder that
+    doubles it back, joined by skip connections at every level. The bottleneck
+    knows what is in the image; only the skips still know exactly where.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">resolution down</text>
+  <text x="560" y="22" class="t-lab">and back up</text>
+
+  {ENC.map((e, i) => (
+    <g>
+      <rect x={40} y={e.y} width={e.w} height="34" class="bx-fill" />
+      <rect x={40} y={e.y} width={e.w} height="3" class="a1" />
+      <rect x={680 - e.w} y={e.y} width={e.w} height="34" class="bx-fill" />
+      <rect x={680 - e.w} y={e.y} width={e.w} height="3" class="a3" />
+      {i < 3 && (
+        <g class="anim-fade" style={`--i: ${i}; --dur: 6s`}>
+          <line x1={40 + e.w + 6} y1={e.y + 17} x2={680 - e.w - 6} y2={e.y + 17} class="s3" stroke-width="1.6" />
+          <polygon points={`${680 - e.w - 6},${e.y + 12} ${680 - e.w + 4},${e.y + 17} ${680 - e.w - 6},${e.y + 22}`} fill="var(--lesion-ex)" />
+        </g>
+      )}
+    </g>
+  ))}
+
+  <text x="300" y="248" class="t-key" text-anchor="middle">bottleneck — knows what, not where</text>
+  <line x1="94" y1="222" x2="626" y2="222" class="wire-soft" />
+  <text x="360" y="42" class="t-key" text-anchor="middle">skip connections</text>
+
+  <text x="0" y="278" class="t-sm">Pooling bought invariance by discarding position. A per-pixel task needs that position back, and it cannot be</text>
+  <text x="0" y="296" class="t-sm">recovered from the bottleneck — so it is carried around it. Remove the skips and the boundaries go soft.</text>
+</svg>

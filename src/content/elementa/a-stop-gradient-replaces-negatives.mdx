@@ -1,0 +1,54 @@
+---
+chapter: vision--self-supervision
+proposition: 3
+statement: An asymmetry between two branches prevents collapse without negatives.
+claim: "Give one branch a predictor and stop the gradient into the other, and the degenerate solution stops being reachable. That is DINO's skeleton, and it is why it needs no negative pairs at all."
+given:
+  - agreement-alone-collapses
+figure: FigStopGradient
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Emerging Properties in Self-Supervised Vision Transformers (DINO)"
+    url: https://arxiv.org/abs/2104.14294
+  - title: "Bootstrap Your Own Latent (BYOL)"
+    url: https://arxiv.org/abs/2006.07733
+  - title: "Exploring Simple Siamese Representation Learning"
+    url: https://arxiv.org/abs/2011.10566
+---
+
+## Demonstration
+
+BYOL's result was, at the time, hard to believe: matched or beat contrastive
+methods using only positive pairs. No negatives, no large batches, no queue.
+
+The mechanism is an asymmetry between two branches processing two views.
+
+**Student.** Encoder, then a prediction head. Trained by gradient descent.
+
+**Teacher.** Encoder only. Its weights are an exponential moving average of the
+student's, and **no gradient flows into it**.
+
+The loss asks the student's prediction to match the teacher's output. If both
+branches were trained together the constant solution would be directly
+reachable. With the gradient cut, the teacher is a slowly receding target rather
+than a partner in the collapse, and SimSiam later showed the stop-gradient is
+the necessary ingredient — remove it and collapse is immediate; remove the
+momentum and things still work.
+
+DINO adds two operations to the teacher's output and both are collapse
+controls. **Centring** subtracts a running mean, which prevents any one
+dimension dominating. **Sharpening** applies a low temperature, which prevents
+the output becoming uniform. They push against each other, and the balance is
+what keeps the distribution informative.
+
+DINO also supplies the property the Marginalia entry is about: the attention
+maps of a ViT trained this way segment objects without ever being told what an
+object is.
+
+## Corollary
+
+The theory here is thinner than the practice. There is still no complete
+account of why the stop-gradient suffices, only strong evidence that it does.
+Worth holding as an empirical fact that works rather than a derivation, and
+worth remembering when the hyperparameters need care.

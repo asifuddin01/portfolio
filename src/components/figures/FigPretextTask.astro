@@ -1,0 +1,41 @@
+---
+/**
+ * Book II, Ch. III, Prop. 4 — self-supervision manufactures the label from
+ * the input, so the supervision signal costs nothing but compute.
+ */
+const T = [
+  { t: 'hide a region', q: 'what was there?', cls: 'a1' },
+  { t: 'take two crops', q: 'same photo or not?', cls: 'a3' },
+  { t: 'rotate it', q: 'by how much?', cls: 'a4' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="px-t px-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="px-t">Three pretext tasks built from one unlabelled image</title>
+  <desc id="px-d">
+    An unlabelled image feeds three tasks whose answers are known by
+    construction: predict a hidden region, decide whether two crops came from
+    the same photo, and recover an applied rotation. No annotator is involved.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one unlabelled image</text>
+
+  <rect x="0" y="106" width="120" height="90" class="bx" />
+  {Array.from({ length: 12 }, (_, i) => (
+    <rect x={(i % 4) * 30} y={106 + Math.floor(i / 4) * 30} width="28" height="28" class="a4"
+          opacity={0.16 + ((i * 29) % 7) / 12} />
+  ))}
+  <text x="60" y="216" class="t-sm" text-anchor="middle">no label</text>
+
+  {T.map((t, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 3; --dur: 7.5s`}>
+      <line x1="124" y1="150" x2="196" y2={70 + i * 68} class="wire-soft" />
+      <rect x="204" y={48 + i * 68} width="230" height="44" class="bx-fill" />
+      <rect x="204" y={48 + i * 68} width="230" height="3" class={t.cls} />
+      <text x="216" y={76 + i * 68} class="t-md">{t.t}</text>
+      <text x="452" y={76 + i * 68} class="t-sm">{t.q}</text>
+    </g>
+  ))}
+
+  <text x="0" y="262" class="t-sm">The answer is known because you performed the corruption. What the model has to learn in order to undo it is</text>
+  <text x="0" y="280" class="t-sm">the representation you were after, and the choice of corruption decides which representation you get.</text>
+</svg>

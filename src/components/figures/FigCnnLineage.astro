@@ -1,0 +1,40 @@
+---
+/**
+ * Book II, Ch. II, Prop. 5 — the lineage read as one question asked five
+ * times: how do you get deeper without the training falling over.
+ */
+const M = [
+  { t: 'LeNet', y: 1998, d: 5,   note: 'it works at all', cls: 'a4' },
+  { t: 'AlexNet', y: 2012, d: 8, note: 'ReLU, dropout, GPUs', cls: 'a1' },
+  { t: 'VGG', y: 2014, d: 19,    note: 'only 3×3, stacked', cls: 'a3' },
+  { t: 'ResNet', y: 2015, d: 152,note: 'an additive path home', cls: 'a2' },
+  { t: 'EfficientNet', y: 2019, d: 66, note: 'scale the three axes together', cls: 'a5' },
+];
+const X0 = 40, W = 128;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="cnl-t cnl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="cnl-t">Five architectures, one question</title>
+  <desc id="cnl-d">
+    Five convolutional architectures in order, with their depth in layers. Each
+    is an answer to the same problem: how to add depth without the optimisation
+    failing. ResNet's residual connection is the step that made depth cheap.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">how do you get deeper?</text>
+
+  {M.map((m, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 5; --dur: 10s`}>
+      <rect x={X0 + i * W} y={200 - Math.min(120, 26 * Math.log2(m.d))} width={W - 26}
+            height={Math.min(120, 26 * Math.log2(m.d))} class={m.cls} opacity="0.32" />
+      <rect x={X0 + i * W} y={200 - Math.min(120, 26 * Math.log2(m.d))} width={W - 26}
+            height={Math.min(120, 26 * Math.log2(m.d))} class="bx" />
+      <text x={X0 + i * W + (W - 26) / 2} y={192 - Math.min(120, 26 * Math.log2(m.d))} class="t-key" text-anchor="middle">{m.d} layers</text>
+      <text x={X0 + i * W + (W - 26) / 2} y="222" class="t-md" text-anchor="middle">{m.t}</text>
+      <text x={X0 + i * W + (W - 26) / 2} y="240" class="t-xs" text-anchor="middle">{m.y}</text>
+      <text x={X0 + i * W + (W - 26) / 2} y="262" class="t-sm" text-anchor="middle">{m.note}</text>
+    </g>
+  ))}
+
+  <line x1={X0} y1="208" x2="660" y2="208" class="axis" />
+  <text x="0" y="292" class="t-sm">Depth axis is logarithmic. Before ResNet the fight was optimisation; after it, tuning.</text>
+</svg>

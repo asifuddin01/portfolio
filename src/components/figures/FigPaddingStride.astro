@@ -1,0 +1,41 @@
+---
+/**
+ * Book II, Ch. II, Prop. 2 — three settings of the same convolution, and the
+ * output size each produces. The formula is the whole content.
+ */
+const CASES = [
+  { lab: 'no padding, stride 1', pad: 0, st: 1, out: 5, cls: 'a1' },
+  { lab: 'padding 1, stride 1',  pad: 1, st: 1, out: 7, cls: 'a3' },
+  { lab: 'padding 1, stride 2',  pad: 1, st: 2, out: 4, cls: 'a2' },
+];
+const S = 17;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ps2-t ps2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ps2-t">Output size under three settings</title>
+  <desc id="ps2-d">
+    A seven by seven input under three configurations of a three by three
+    kernel. Without padding the output shrinks to five. With padding of one it
+    keeps its size. With a stride of two it halves.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">7×7 input, 3×3 kernel</text>
+
+  {CASES.map((c, ci) => (
+    <g>
+      <text x={ci * 240} y="56" class="t-md">{c.lab}</text>
+      {c.pad > 0 && (
+        <rect x={ci * 240 - S} y={70 - S} width={S * 9} height={S * 9} class="dash" />
+      )}
+      {Array.from({ length: 49 }, (_, i) => (
+        <rect x={ci * 240 + (i % 7) * S} y={70 + Math.floor(i / 7) * S} width={S - 2} height={S - 2} class="bx-soft" />
+      ))}
+      <text x={ci * 240} y="222" class="t-sm">output</text>
+      {Array.from({ length: c.out }, (_, i) => (
+        <rect x={ci * 240 + i * S} y="232" width={S - 2} height={S - 2} class={c.cls} />
+      ))}
+      <text x={ci * 240} y="272" class="t-key">{c.out} × {c.out}</text>
+    </g>
+  ))}
+
+  <text x="0" y="298" class="t-sm">out = ⌊(in + 2·pad − k) / stride⌋ + 1. Nothing else decides it, and it is the commonest shape bug.</text>
+</svg>

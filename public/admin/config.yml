@@ -160,6 +160,37 @@ collections:
           - FigCountLikelihood
           - FigTwoBenchmarks
           - FigStripedHyena
+          - FigImageTensor
+          - FigShuffleDestroys
+          - FigNormalisation
+          - FigKernelSlide
+          - FigPaddingStride
+          - FigReceptiveGrowth
+          - FigPooling
+          - FigCnnLineage
+          - FigFeatureHierarchy
+          - FigTransferFreeze
+          - FigPretrainStart
+          - FigPretextTask
+          - FigImageToPatches
+          - FigPatchSize
+          - FigPatchPosition
+          - FigSwinWindows
+          - FigCollapse
+          - FigAugmentationInvariance
+          - FigStopGradient
+          - FigMaskedImage
+          - FigOneImageManyTasks
+          - FigDetectionHeads
+          - FigSegDecoder
+          - FigDepthAmbiguity
+          - FigRetrievalSpace
+          - FigModalities
+          - FigRocSweep
+          - FigOperatingPoint
+          - FigCalibrationCurve
+          - FigDomainShift
+          - FigVisionMap
         hint: "A drawing for the entry, from the same library the Elementa uses."
       - label: References
         name: links
@@ -291,6 +322,37 @@ collections:
           - FigCountLikelihood
           - FigTwoBenchmarks
           - FigStripedHyena
+          - FigImageTensor
+          - FigShuffleDestroys
+          - FigNormalisation
+          - FigKernelSlide
+          - FigPaddingStride
+          - FigReceptiveGrowth
+          - FigPooling
+          - FigCnnLineage
+          - FigFeatureHierarchy
+          - FigTransferFreeze
+          - FigPretrainStart
+          - FigPretextTask
+          - FigImageToPatches
+          - FigPatchSize
+          - FigPatchPosition
+          - FigSwinWindows
+          - FigCollapse
+          - FigAugmentationInvariance
+          - FigStopGradient
+          - FigMaskedImage
+          - FigOneImageManyTasks
+          - FigDetectionHeads
+          - FigSegDecoder
+          - FigDepthAmbiguity
+          - FigRetrievalSpace
+          - FigModalities
+          - FigRocSweep
+          - FigOperatingPoint
+          - FigCalibrationCurve
+          - FigDomainShift
+          - FigVisionMap
         hint: "The one drawing that holds the whole book. Shown at the top of the closing page."
       - label: Closing
         name: closing
@@ -536,6 +598,37 @@ collections:
           - FigCountLikelihood
           - FigTwoBenchmarks
           - FigStripedHyena
+          - FigImageTensor
+          - FigShuffleDestroys
+          - FigNormalisation
+          - FigKernelSlide
+          - FigPaddingStride
+          - FigReceptiveGrowth
+          - FigPooling
+          - FigCnnLineage
+          - FigFeatureHierarchy
+          - FigTransferFreeze
+          - FigPretrainStart
+          - FigPretextTask
+          - FigImageToPatches
+          - FigPatchSize
+          - FigPatchPosition
+          - FigSwinWindows
+          - FigCollapse
+          - FigAugmentationInvariance
+          - FigStopGradient
+          - FigMaskedImage
+          - FigOneImageManyTasks
+          - FigDetectionHeads
+          - FigSegDecoder
+          - FigDepthAmbiguity
+          - FigRetrievalSpace
+          - FigModalities
+          - FigRocSweep
+          - FigOperatingPoint
+          - FigCalibrationCurve
+          - FigDomainShift
+          - FigVisionMap
         hint: "Registered in src/lib/figures.ts, and checked against it by `npm run check:cms`. A new figure needs a developer."
       - label: Status
         name: status

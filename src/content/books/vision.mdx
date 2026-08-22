@@ -5,4 +5,190 @@ covers: ViT, DINOv2, self-supervised visual representation
 goal: "Explain how a machine represents and interprets visual information, from pixels to self-supervised representations."
 prerequisites:
   - foundations
+closingFigure: FigVisionMap
+closing:
+  equations:
+    - name: "An image"
+      formula: "x ∈ ℝ^(H × W × C)"
+      note: "Rows, columns, channels. The numbers are only numbers; the axes are what make it a picture."
+    - name: "Normalisation"
+      formula: "x ← (x − μ) / σ,   μ and σ from the training set"
+      note: "Recomputing them at test time leaks between test examples, and the leak is silent."
+    - name: "Convolution output size"
+      formula: "out = ⌊(in + 2·pad − k) / stride⌋ + 1"
+      note: "Nothing else decides it. Most shape errors are this formula applied by the framework and not by the author."
+    - name: "Receptive field, stride-1 3×3 stack"
+      formula: "r = 2L + 1  after L layers"
+      note: "Linear in depth, and the effective field is much smaller than the nominal one."
+    - name: "Patches"
+      formula: "n = (H/p)(W/p),   attention cost ∝ n²"
+      note: "Halving the patch quadruples the tokens and multiplies the bill by sixteen."
+    - name: "Sensitivity and specificity"
+      formula: "TP/(TP+FN)   and   TN/(TN+FP)"
+      note: "Properties of a threshold, not of a model. Lowering it raises one and lowers the other, always."
+    - name: "Precision"
+      formula: "TP/(TP+FP)"
+      note: "Depends on prevalence. The same model at 10% and 1% prevalence reports 50% and 8%."
+    - name: "Dice"
+      formula: "2|A ∩ B| / (|A| + |B|)"
+      note: "Region overlap. High while a small lesion is missed entirely, low on a well-found structure with a soft edge."
+  vocabulary:
+    - term: Channel
+      definition: "One measurement per pixel. Colour for a photograph, a sequence for MRI, a modality for anything multispectral."
+    - term: Feature map
+      definition: "The output of one filter at every position: how strongly that pattern was present, and where."
+    - term: Receptive field
+      definition: "The input pixels that can influence one unit. Computable from the architecture before any training."
+    - term: Output stride
+      definition: "How many input pixels one output position covers. It is the finest structure the head can localise."
+    - term: Inductive bias
+      definition: "An assumption welded into the architecture rather than learned. Locality and translation equivariance are the two that matter here."
+    - term: Patch
+      definition: "A fixed square of pixels treated as one token. The /16 in ViT-B/16."
+    - term: Pretext task
+      definition: "A problem whose answer you know because you created the corruption. Nobody wants its output; they want what solving it required."
+    - term: Collapse
+      definition: "Every input mapping to one vector. Not an instability — the global optimum of an objective that only rewards agreement."
+    - term: Linear probe
+      definition: "A logistic regression on frozen features. The standard measurement of a representation, and the standard way to compare two encoders."
+    - term: Domain shift
+      definition: "The deployment distribution differing from the training one. The failure that survives every check drawn from the training distribution."
+    - term: Calibration
+      definition: "Whether a stated probability matches an observed frequency. Independent of ranking, and invisible to AUROC."
+    - term: Prevalence
+      definition: "How common the finding is in the population being tested. It moves precision and leaves sensitivity alone."
+  misconceptions:
+    - wrong: "Transformers replaced convolutions in vision."
+      right: "ViT's own ablation is a crossover with a threshold near a hundred million images. Below it convolution wins, and Swin, ConvNeXt and Swin UNETR V2 all put a locality prior back. Match the prior to the data budget."
+    - wrong: "A bigger input resolution is always better."
+      right: "It is always more expensive, and for a ViT it costs quadratically. Whether it helps depends on whether the structure you care about was smaller than a patch — which is a question about your data, not about the model."
+    - wrong: "Self-supervised learning needs no labels, so it is free."
+      right: "It needs no annotations and a great deal of compute and data. What it does not need is a radiologist, which is why it matters in medicine specifically."
+    - wrong: "The augmentation pipeline is a detail."
+      right: "It is the specification of what the representation should ignore. SimCLR's ablation found it mattered more than the architecture, and colour jitter on a fundus photograph tells the model to ignore the finding."
+    - wrong: "Pooling and stride throw away redundant information."
+      right: "They throw away position, irreversibly. Every segmentation architecture is shaped by the need to get it back, which is what the skip connections in a U-Net are for."
+    - wrong: "A high AUROC means the model is ready."
+      right: "AUROC is a statement about ranking at every threshold at once. It says nothing about where you will operate, nothing about precision at your prevalence, and nothing about calibration."
+    - wrong: "Dice is the segmentation metric."
+      right: "It measures overlap. A clinician usually wants to know whether the lesion was found. Report per-lesion detection beside it."
+    - wrong: "Our model generalises — we held out a test set."
+      right: "Held out from the same distribution. External validation on data from an institution that contributed nothing to training is the only measurement that answers the question."
+    - wrong: "Pretrained on ImageNet, so it understands images."
+      right: "Its early layers are edge detectors, which transfer almost anywhere. Its late layers are about the thousand ImageNet classes, and transfer to a retinal photograph considerably less well."
+  exercises:
+    - task: "Take one image, shuffle its pixels with a fixed permutation, and train the same MLP on the original and the shuffled dataset. Then do it with a small CNN."
+      note: "Chapter I. The MLP should be indifferent and the CNN should not. That gap is the locality prior, measured."
+    - task: "Compute the receptive field of a backbone you use, by hand, layer by layer. Then check it against the size of the structure your task depends on."
+      note: "Chapter II. If it does not cover it, no amount of data will help, and you now know that before training."
+    - task: "Train a linear probe on frozen features from three backbones — a supervised CNN, DINOv2, and a masked autoencoder — on a few hundred labelled images from your own domain."
+      note: "Chapter III and V. This is the cheapest honest comparison of representations available, and it takes an afternoon."
+    - task: "Take a ViT pretrained at 224 and evaluate it at 448, once with interpolated positional embeddings and once without."
+      note: "Chapter IV. The version without is the commonest silent bug in this literature."
+    - task: "Write out what each transform in your augmentation pipeline asserts about your domain, then check the list with someone who reads the images clinically."
+      note: "Chapter V. Ten minutes, and it is the difference between ignoring nuisance and ignoring the diagnosis."
+    - task: "Take a trained classifier and plot its reliability diagram. Then fit a temperature on held-out data and plot it again."
+      note: "Chapter VII. Accuracy and AUROC will be identical before and after, which is the point."
+    - task: "Recompute the precision of a published medical model at the prevalence of the clinic it is meant for, using its reported sensitivity and specificity."
+      note: "Chapter VII. Do this with three papers and the habit will be permanent."
+    - task: "A project, end to end. Pick a public medical dataset with site or scanner metadata. Split it by patient and train. Then split it by site, retrain, and compare. Report Dice, per-lesion detection, calibration error and both splits' numbers."
+      note: "The gap between the two splits is the result. Everything else is method."
+  papers:
+    - title: "Gradient-Based Learning Applied to Document Recognition (LeNet)"
+      url: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf
+      note: "Where the shape comes from, and worth reading for how much of it survived."
+    - title: "ImageNet Classification with Deep CNNs (AlexNet)"
+      url: https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
+      note: "The moment learned features stopped being controversial."
+    - title: "Deep Residual Learning for Image Recognition"
+      url: https://arxiv.org/abs/1512.03385
+      note: "The one that settled depth. Everything that stacks deeply inherits it, transformers included."
+    - title: "U-Net: Convolutional Networks for Biomedical Image Segmentation"
+      url: https://arxiv.org/abs/1505.04597
+      note: "Still the shape of nearly every dense prediction network, and the skips are the reason."
+    - title: "An Image is Worth 16x16 Words"
+      url: https://arxiv.org/abs/2010.11929
+      note: "Read the dataset-size ablation rather than the headline table. The ablation is where the science is."
+    - title: "Swin Transformer"
+      url: https://arxiv.org/abs/2103.14030
+      note: "A transformer with the pyramid and the locality put back, and honest about why."
+    - title: "A Simple Framework for Contrastive Learning (SimCLR)"
+      url: https://arxiv.org/abs/2002.05709
+      note: "The augmentation ablation is the most useful table in the self-supervised literature."
+    - title: "Emerging Properties in Self-Supervised Vision Transformers (DINO)"
+      url: https://arxiv.org/abs/2104.14294
+      note: "Attention maps that segment objects nobody labelled."
+    - title: "Masked Autoencoders Are Scalable Vision Learners"
+      url: https://arxiv.org/abs/2111.06377
+      note: "Why the mask ratio has to be 75%, which is a fact about images rather than about the method."
+    - title: "nnU-Net"
+      url: https://doi.org/10.1038/s41592-020-01008-z
+      note: "The argument that on 3D medical segmentation the architecture was never the bottleneck."
+    - title: "Variable Generalization Performance of a Deep Learning Model to Detect Pneumonia"
+      url: https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002683
+      note: "The models learned which hospital the radiograph came from. Read this before claiming generalisation."
+    - title: "On Calibration of Modern Neural Networks"
+      url: https://arxiv.org/abs/1706.04599
+      note: "Networks got more accurate and less calibrated at the same time."
+  bridge: >-
+    Book III keeps the transformer and changes what the tokens are made of,
+    and the two meet again in Book IV: a vision-language model is this book's
+    encoder and that book's decoder, joined by cross-attention, and the whole
+    difficulty is making two representations comparable. What carries forward
+    is not the architecture — it is the last chapter. Every claim about a model
+    is a claim about a measurement, and the measurement is only as good as the
+    population it was taken on.
 ---
+
+Book II is one plate. Pixels are normalised into a tensor whose axes carry the
+meaning, mixed either by a convolution that assumes locality or by attention
+over patches that assumes nothing, built into a hierarchy nobody specified, read
+by a head chosen for the question, and turned into a number that someone acts
+on.
+
+Two of those stages are architecture and three are judgement. Most of the
+literature is about the second row. Most of what goes wrong in a deployed system
+is in the last one.
+
+## CNN or transformer
+
+The honest comparison is not a winner but a set of conditions.
+
+| | convolution | attention over patches |
+|---|---|---|
+| prior | locality, translation equivariance | none |
+| data needed | works from thousands | wants a hundred million to beat the prior |
+| cost in length | linear | quadratic |
+| path between distant pixels | grows with depth | one step |
+| resolution | any, without ceremony | fixed by patch size and position embeddings |
+| pyramid | free | has to be rebuilt, as Swin does |
+
+The field's own corrections point one way. Swin reintroduced windows and a
+hierarchy. ConvNeXt matched a transformer by modernising a ResNet's recipe.
+Swin UNETR V2 had to insert a convolution at the head of every encoder stage.
+Priors are a constraint whose value depends on how much data you have, and
+medical datasets are small by construction.
+
+## Supervised or self-supervised
+
+| | supervised | self-supervised |
+|---|---|---|
+| what it costs | annotation | compute and unlabelled data |
+| what it learns | features useful for one label set | features useful for many |
+| frozen quality | good on the source task | good in general, for joint-embedding methods |
+| where it wins | plentiful labels, fixed task | scarce labels, unknown downstream task |
+
+The reason this chapter sits in a medical book rather than a general one is
+that the binding constraint in medical imaging is a specialist's time, not
+storage. Images are comparatively abundant and labels are not, which is exactly
+the regime self-supervision was built for.
+
+## How to compare two vision models
+
+Freeze both. Train a linear probe on the same few hundred labelled images from
+your own domain, with the same preprocessing and the same splits, over several
+seeds. Report the spread, not the best run.
+
+Then, and only then, fine-tune. If fine-tuning beats the probe by a large margin
+on a small dataset, be suspicious before being pleased — that gap is what
+memorisation looks like from the outside.

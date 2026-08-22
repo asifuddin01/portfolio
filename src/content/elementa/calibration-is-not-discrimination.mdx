@@ -1,0 +1,54 @@
+---
+chapter: vision--medical-vision
+proposition: 4
+statement: Ranking well and being right about probability are different claims.
+claim: "A model can order every patient correctly and still say 0.9 when it means 0.6. AUROC is invariant to any monotone rescaling of the scores, so it cannot see the difference at all."
+given:
+  - sensitivity-and-specificity-trade
+figure: FigCalibrationCurve
+status: published
+updated: 2026-08-22
+sources:
+  - title: "On Calibration of Modern Neural Networks"
+    url: https://arxiv.org/abs/1706.04599
+---
+
+## Demonstration
+
+**Discrimination** is the ability to separate classes — measured by AUROC, and
+a statement about ordering. **Calibration** is whether a stated probability
+matches an observed frequency: among cases assigned 0.7, about 70% should be
+positive.
+
+They are independent. Take a perfectly calibrated model and square every
+probability. The ordering is untouched, so AUROC is identical, and the
+calibration is now badly wrong. Any measure computed from ranking alone is blind
+to this by construction.
+
+Guo and colleagues showed that modern networks are systematically
+**overconfident**, and — the part worth sitting with — that they got *worse* as
+they got more accurate. LeNet was reasonably calibrated. ResNet is not. The
+suspects are capacity, the absence of the regularisation that used to be
+standard, and training long past the point where the training loss is near zero,
+which pushes the softmax toward saturation.
+
+The fix is cheap and unreasonably effective. **Temperature scaling** divides the
+logits by a single scalar fitted on a validation set. One parameter, no change
+to the ordering, so accuracy and AUROC are exactly preserved while the
+reliability diagram straightens out.
+
+The measurement is a **reliability diagram**: bin predictions by confidence and
+plot mean confidence against observed accuracy in each bin. **Expected
+calibration error** summarises the gap. Both are easy and both are missing from
+most papers.
+
+Why this matters more in medicine than elsewhere: a probability that feeds a
+decision is used *as* a probability. If a clinician's threshold for acting is
+"above 80% likely", an overconfident model changes who gets treated, and the
+ranking being correct is no defence.
+
+## Corollary
+
+If a model's output will be read as a probability rather than a rank, fit a
+temperature on held-out data and report the calibration error. It costs one
+scalar and it is the difference between a score and a number somebody can act on.

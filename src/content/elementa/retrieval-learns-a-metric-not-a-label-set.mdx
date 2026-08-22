@@ -1,0 +1,54 @@
+---
+chapter: vision--vision-tasks
+proposition: 5
+statement: Retrieval learns a geometry, so the categories need not exist yet.
+claim: "A classifier commits to a fixed label set at training time. An embedding commits only to a notion of similarity, and a new category costs one more indexed vector."
+given:
+  - the-head-changes-not-the-backbone
+  - an-embedding-is-a-learned-lookup-table
+figure: FigRetrievalSpace
+status: published
+updated: 2026-08-22
+sources:
+  - title: "FaceNet: A Unified Embedding for Face Recognition and Clustering"
+    url: https://arxiv.org/abs/1503.03832
+  - title: "Learning Transferable Visual Models From Natural Language Supervision (CLIP)"
+    url: https://arxiv.org/abs/2103.00020
+---
+
+## Demonstration
+
+A classifier's final layer has one row per class. Adding a class means changing
+the architecture and retraining. That is fine for ten fixed categories and
+useless for a system that must handle people, products or species that did not
+exist when it was trained.
+
+Retrieval avoids the commitment. Train an encoder so that similar images land
+close together, then answer queries by nearest neighbour. The output is an
+*ordering*, not a label, and the evaluation follows: recall@k, mean average
+precision, not accuracy.
+
+FaceNet is the clean statement. Rather than classify identities, learn an
+embedding where distance encodes identity, trained with a triplet loss —
+anchor, positive, negative — with the requirement that the anchor be closer to
+the positive by a margin. Recognition becomes a threshold on a distance, and
+clustering and verification come free from the same vectors.
+
+Two practical consequences.
+
+**Mining is most of the difficulty.** Random triplets are almost all trivially
+satisfied and contribute no gradient. Which negatives you choose — hardest in
+the batch, semi-hard, or something in between — matters more than the margin,
+and choosing the hardest often destabilises training.
+
+**Zero-shot classification is retrieval in disguise.** CLIP embeds an image and
+a set of text prompts into one space and takes the nearest. There is no
+classifier head anywhere; the label set is whatever you typed, and that is why
+it can be changed at inference.
+
+## Corollary
+
+If the categories in a deployment will change — and in most real systems they
+will — an embedding is the architecture that survives it. The cost is that
+quality is now a property of the geometry, which is harder to state in one
+number than accuracy is.

@@ -46,6 +46,38 @@ import FigSchedule from '../components/figures/FigSchedule.astro';
 import FigClipping from '../components/figures/FigClipping.astro';
 import FigPrecision from '../components/figures/FigPrecision.astro';
 import FigSplitLeak from '../components/figures/FigSplitLeak.astro';
+/* Book II — Vision */
+import FigImageTensor from '../components/figures/FigImageTensor.astro';
+import FigShuffleDestroys from '../components/figures/FigShuffleDestroys.astro';
+import FigNormalisation from '../components/figures/FigNormalisation.astro';
+import FigKernelSlide from '../components/figures/FigKernelSlide.astro';
+import FigPaddingStride from '../components/figures/FigPaddingStride.astro';
+import FigReceptiveGrowth from '../components/figures/FigReceptiveGrowth.astro';
+import FigPooling from '../components/figures/FigPooling.astro';
+import FigCnnLineage from '../components/figures/FigCnnLineage.astro';
+import FigFeatureHierarchy from '../components/figures/FigFeatureHierarchy.astro';
+import FigTransferFreeze from '../components/figures/FigTransferFreeze.astro';
+import FigPretrainStart from '../components/figures/FigPretrainStart.astro';
+import FigPretextTask from '../components/figures/FigPretextTask.astro';
+import FigImageToPatches from '../components/figures/FigImageToPatches.astro';
+import FigPatchSize from '../components/figures/FigPatchSize.astro';
+import FigPatchPosition from '../components/figures/FigPatchPosition.astro';
+import FigSwinWindows from '../components/figures/FigSwinWindows.astro';
+import FigCollapse from '../components/figures/FigCollapse.astro';
+import FigAugmentationInvariance from '../components/figures/FigAugmentationInvariance.astro';
+import FigStopGradient from '../components/figures/FigStopGradient.astro';
+import FigMaskedImage from '../components/figures/FigMaskedImage.astro';
+import FigOneImageManyTasks from '../components/figures/FigOneImageManyTasks.astro';
+import FigDetectionHeads from '../components/figures/FigDetectionHeads.astro';
+import FigSegDecoder from '../components/figures/FigSegDecoder.astro';
+import FigDepthAmbiguity from '../components/figures/FigDepthAmbiguity.astro';
+import FigRetrievalSpace from '../components/figures/FigRetrievalSpace.astro';
+import FigModalities from '../components/figures/FigModalities.astro';
+import FigRocSweep from '../components/figures/FigRocSweep.astro';
+import FigOperatingPoint from '../components/figures/FigOperatingPoint.astro';
+import FigCalibrationCurve from '../components/figures/FigCalibrationCurve.astro';
+import FigDomainShift from '../components/figures/FigDomainShift.astro';
+import FigVisionMap from '../components/figures/FigVisionMap.astro';
 /* Marginalia — the model reviews */
 import FigGramAnchoring from '../components/figures/FigGramAnchoring.astro';
 import FigFcmaeGrn from '../components/figures/FigFcmaeGrn.astro';
@@ -457,6 +489,192 @@ export const FIGURES = {
     caption:
       'Operators assigned by the range they cover, so attention is spent only on the sparse long-range relationships that need it. A megabase becomes affordable.',
     source: 'Marginalia XXVII — Evo 2',
+  },
+  FigImageTensor: {
+    component: FigImageTensor,
+    caption:
+      'An image as a stack of channel planes. The numbers are only numbers; the shape is the claim about what they are.',
+    source: 'Book II, Ch. I, Prop. 1',
+  },
+  FigShuffleDestroys: {
+    component: FigShuffleDestroys,
+    caption:
+      'The same pixel values in a different arrangement. Every summary statistic is identical and one of the two is a picture.',
+    source: 'Book II, Ch. I, Prop. 2',
+  },
+  FigNormalisation: {
+    component: FigNormalisation,
+    caption:
+      'Intensities before and after normalisation. The statistics must come from the training set and be applied unchanged at inference.',
+    source: 'Book II, Ch. I, Prop. 3',
+  },
+  FigKernelSlide: {
+    component: FigKernelSlide,
+    caption:
+      'One kernel applied at every position. Nine weights and a bias, whatever the size of the image — the reuse is the locality prior.',
+    source: 'Book II, Ch. II, Prop. 1',
+  },
+  FigPaddingStride: {
+    component: FigPaddingStride,
+    caption:
+      'A 7×7 input under three settings. Padding and stride decide the output size and nothing else does.',
+    source: 'Book II, Ch. II, Prop. 2',
+  },
+  FigReceptiveGrowth: {
+    component: FigReceptiveGrowth,
+    caption:
+      'What one unit at the top can see, opening by two positions a layer. Range is bought with depth.',
+    source: 'Book II, Ch. II, Prop. 3',
+  },
+  FigPooling: {
+    component: FigPooling,
+    caption:
+      'Two activations differing only in position, pooled to the same value. Invariance bought, location spent.',
+    source: 'Book II, Ch. II, Prop. 4',
+  },
+  FigCnnLineage: {
+    component: FigCnnLineage,
+    caption:
+      'Five architectures asking one question: how to get deeper without the optimisation failing. The depth axis is logarithmic.',
+    source: 'Book II, Ch. II, Prop. 5',
+  },
+  FigFeatureHierarchy: {
+    component: FigFeatureHierarchy,
+    caption:
+      'What each depth responds to, from edges to whole objects. Nobody specified it; it is what the loss at the far end produces.',
+    source: 'Book II, Ch. III, Prop. 1',
+  },
+  FigTransferFreeze: {
+    component: FigTransferFreeze,
+    caption:
+      'How much of the network you let move, and what each choice costs in labels.',
+    source: 'Book II, Ch. III, Prop. 2',
+  },
+  FigPretrainStart: {
+    component: FigPretrainStart,
+    caption:
+      'Held-out error against labelled examples, from scratch and from pretrained weights. Same architecture, different starting point.',
+    source: 'Book II, Ch. III, Prop. 3',
+  },
+  FigPretextTask: {
+    component: FigPretextTask,
+    caption:
+      'Three tasks whose answers are known by construction, because you performed the corruption yourself.',
+    source: 'Book II, Ch. III, Prop. 4',
+  },
+  FigImageToPatches: {
+    component: FigImageToPatches,
+    caption:
+      'Image to patches to tokens. No vision-specific machinery anywhere in it, which is what made vision-language models straightforward.',
+    source: 'Book II, Ch. IV, Prop. 1',
+  },
+  FigPatchSize: {
+    component: FigPatchSize,
+    caption:
+      'Patch size against token count. Halving the patch quadruples the tokens and multiplies attention cost by sixteen.',
+    source: 'Book II, Ch. IV, Prop. 2',
+  },
+  FigPatchPosition: {
+    component: FigPatchPosition,
+    caption:
+      'A grid of patches and a shuffled copy. To attention alone they are the same input until a positional embedding is added.',
+    source: 'Book II, Ch. IV, Prop. 3',
+  },
+  FigSwinWindows: {
+    component: FigSwinWindows,
+    caption:
+      'Windowed attention and the half-window shift between blocks. Without the shift the windows are four separate images.',
+    source: 'Book II, Ch. IV, Prop. 4',
+  },
+  FigCollapse: {
+    component: FigCollapse,
+    caption:
+      'The degenerate optimum: every input mapping to one point drives the agreement objective to zero and carries no information.',
+    source: 'Book II, Ch. V, Prop. 1',
+  },
+  FigAugmentationInvariance: {
+    component: FigAugmentationInvariance,
+    caption:
+      'Each augmentation names a factor the representation is told to ignore. On a fundus photograph, colour is the finding.',
+    source: 'Book II, Ch. V, Prop. 2',
+  },
+  FigStopGradient: {
+    component: FigStopGradient,
+    caption:
+      'Student and teacher with the gradient cut on one side. The asymmetry is what replaces negatives.',
+    source: 'Book II, Ch. V, Prop. 3',
+  },
+  FigMaskedImage: {
+    component: FigMaskedImage,
+    caption:
+      'Masked image modelling. High mask ratios work because neighbouring patches are redundant; hide too little and copying beats understanding.',
+    source: 'Book II, Ch. V, Prop. 4',
+  },
+  FigOneImageManyTasks: {
+    component: FigOneImageManyTasks,
+    caption:
+      'One image and one backbone feeding five heads. What changes is the question, the output shape and the loss.',
+    source: 'Book II, Ch. VI, Prop. 1',
+  },
+  FigDetectionHeads: {
+    component: FigDetectionHeads,
+    caption:
+      'Detection asks what and where, scored by two different losses. A prediction can be right about one and wrong about the other.',
+    source: 'Book II, Ch. VI, Prop. 2',
+  },
+  FigSegDecoder: {
+    component: FigSegDecoder,
+    caption:
+      'The U and its skips. The bottleneck knows what is in the image; only the skips still know exactly where.',
+    source: 'Book II, Ch. VI, Prop. 3',
+  },
+  FigDepthAmbiguity: {
+    component: FigDepthAmbiguity,
+    caption:
+      'Two scenes projecting to identical pixels. One photograph cannot separate size from distance.',
+    source: 'Book II, Ch. VI, Prop. 4',
+  },
+  FigRetrievalSpace: {
+    component: FigRetrievalSpace,
+    caption:
+      'Retrieval returns an ordering, not a class, so a category that did not exist at training time costs one more indexed vector.',
+    source: 'Book II, Ch. VI, Prop. 5',
+  },
+  FigModalities: {
+    component: FigModalities,
+    caption:
+      'Four modalities and what each measures. The right preprocessing is a fact about the physics, not a default in a library.',
+    source: 'Book II, Ch. VII, Prop. 1',
+  },
+  FigRocSweep: {
+    component: FigRocSweep,
+    caption:
+      'The ROC curve traced from strict to permissive. Every point is a threshold; a deployed system occupies exactly one of them.',
+    source: 'Book II, Ch. VII, Prop. 2',
+  },
+  FigOperatingPoint: {
+    component: FigOperatingPoint,
+    caption:
+      'The same sensitivity and specificity at two prevalences. Precision is a property of the model and the population together.',
+    source: 'Book II, Ch. VII, Prop. 3',
+  },
+  FigCalibrationCurve: {
+    component: FigCalibrationCurve,
+    caption:
+      'Predicted probability against observed frequency. AUROC is unchanged by any monotone rescaling, so it cannot see this at all.',
+    source: 'Book II, Ch. VII, Prop. 4',
+  },
+  FigDomainShift: {
+    component: FigDomainShift,
+    caption:
+      'One model on three populations. Every internal check drew from the distribution the model was fitted on.',
+    source: 'Book II, Ch. VII, Prop. 5',
+  },
+  FigVisionMap: {
+    component: FigVisionMap,
+    caption:
+      'The whole of Book II on one plate. Two stages are architecture and three are judgement.',
+    source: 'Book II — closing',
   },
 } as const;
 

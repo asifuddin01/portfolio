@@ -1,0 +1,40 @@
+---
+/**
+ * Book II, Ch. VII, Prop. 3 — prevalence. The same sensitivity and specificity
+ * produce very different precision depending on how rare the finding is.
+ */
+const CASE = [
+  { prev: '10%', tp: 90, fp: 90,  ppv: '50%', cls: 'a1' },
+  { prev: '1%',  tp: 9,  fp: 99,  ppv: '8%',  cls: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="op-t op-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="op-t">The same model at two prevalences</title>
+  <desc id="op-d">
+    One model with 90% sensitivity and 90% specificity applied to a thousand
+    patients. At ten percent prevalence, half of its positive calls are
+    correct. At one percent, fewer than one in ten are. Sensitivity and
+    specificity did not change.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">sensitivity 90% · specificity 90% · 1000 patients</text>
+
+  {CASE.map((c, i) => (
+    <g>
+      <text x="0" y={72 + i * 116} class="t-md">prevalence {c.prev}</text>
+      <text x="0" y={94 + i * 116} class="t-sm">of the positive calls…</text>
+
+      <rect x="200" y={50 + i * 116} width={c.tp * 2.2} height="30" class={c.cls} />
+      <text x={206 + c.tp * 2.2} y={72 + i * 116} class="t-key">{c.tp} true</text>
+
+      <rect x="200" y={88 + i * 116} width={c.fp * 2.2} height="30" class="a4" opacity="0.55" />
+      <text x={206 + c.fp * 2.2} y={110 + i * 116} class="t-key">{c.fp} false</text>
+
+      <text x="560" y={86 + i * 116} class="t-md">precision {c.ppv}</text>
+    </g>
+  ))}
+
+  <text x="0" y="264" class="t-sm">Sensitivity and specificity are properties of the model. Precision is a property of the model and</text>
+  <text x="0" y="282" class="t-sm">so a screening tool validated on an enriched cohort will disappoint in a clinic where the disease is rare.</text>
+  <text x="0" y="304" class="t-sm">Ask what the prevalence was in the test set before reading any precision or F1.</text>
+</svg>

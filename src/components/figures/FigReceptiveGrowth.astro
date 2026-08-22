@@ -1,0 +1,48 @@
+---
+/**
+ * Book II, Ch. II, Prop. 3 — one output unit's window, opening layer by layer.
+ * The animation traces the cone rather than describing it.
+ */
+const N = 15, S = 26, X0 = 150;
+const LAYERS = [
+  { y: 230, lab: 'input',   r: 0 },
+  { y: 176, lab: 'layer 1', r: 1 },
+  { y: 122, lab: 'layer 2', r: 2 },
+  { y: 68,  lab: 'layer 3', r: 3 },
+];
+const C = 7;
+const cx = (i: number) => X0 + i * S;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rg-t rg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="rg-t">Receptive field growth with depth</title>
+  <desc id="rg-d">
+    Four rows of positions. One unit at the top depends on three positions in
+    the layer below, seven two layers down, and fifteen three layers down. A
+    3 by 3 kernel widens the window by two positions per layer, so range is
+    bought with depth.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">what one unit at the top can see</text>
+
+  {LAYERS.map((L, li) => (
+    <g>
+      <text x="130" y={L.y + 4} class="t-sm" text-anchor="end">{L.lab}</text>
+      {Array.from({ length: N }, (_, i) => (
+        <circle cx={cx(i)} cy={L.y} r="4"
+                class={Math.abs(i - C) <= 2 * L.r ? 'a1' : 'a4'}
+                opacity={Math.abs(i - C) <= 2 * L.r ? 1 : 0.26} />
+      ))}
+      {li > 0 && (
+        <g class="anim-fade" style={`--i: ${li - 1}; --dur: 5.4s`}>
+          <path d={`M${cx(C - 2 * L.r)},${L.y + 8} L${cx(C - 2 * LAYERS[li - 1].r)},${LAYERS[li - 1].y - 8}
+                    L${cx(C + 2 * LAYERS[li - 1].r)},${LAYERS[li - 1].y - 8} L${cx(C + 2 * L.r)},${L.y + 8} Z`}
+                class="a3" opacity="0.18" />
+        </g>
+      )}
+      <text x={cx(N - 1) + 22} y={L.y + 4} class="t-key">{L.r === 0 ? '' : `sees ${4 * L.r + 1}`}</text>
+    </g>
+  ))}
+
+  <text x="0" y="276" class="t-sm">A 3×3 kernel adds two positions per layer, so the window grows linearly with depth — which is why deep stacks</text>
+  <text x="0" y="294" class="t-sm">and dilation both exist. Attention reaches the whole image at layer one, and pays a square for it.</text>
+</svg>

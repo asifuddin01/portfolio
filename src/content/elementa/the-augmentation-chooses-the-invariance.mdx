@@ -1,0 +1,53 @@
+---
+chapter: vision--self-supervision
+proposition: 2
+statement: The augmentation list is a list of things the model is told not to care about.
+claim: "Two views differ by whatever you applied, and the objective says those differences are noise. Copy a recipe from natural images into a medical domain and you may have declared the finding irrelevant."
+given:
+  - agreement-alone-collapses
+figure: FigAugmentationInvariance
+status: published
+updated: 2026-08-22
+sources:
+  - title: "A Simple Framework for Contrastive Learning (SimCLR)"
+    url: https://arxiv.org/abs/2002.05709
+  - title: "What Makes for Good Views for Contrastive Learning?"
+    url: https://arxiv.org/abs/2005.10243
+---
+
+## Demonstration
+
+SimCLR's ablation is the clearest evidence in this literature: the augmentation
+composition mattered more than the architecture or the loss, and the strongest
+single pair was random cropping with colour distortion. Not because those are
+magic, but because of what they declare.
+
+Read each one as a sentence about the world.
+
+- **Random crop** — scale and framing are irrelevant.
+- **Horizontal flip** — left and right are interchangeable.
+- **Colour jitter** — illumination and white balance are irrelevant.
+- **Greyscale** — hue is irrelevant.
+
+For photographs of objects on the internet, all four are true, which is why the
+recipe works there.
+
+Now transplant it. On a fundus photograph, haemorrhages are dark red and hard
+exudates are yellow-white; the colour *is* the finding. Colour jitter strong
+enough to help on ImageNet trains a representation to ignore the difference
+between the two lesion classes. On a chest radiograph, horizontal flip declares
+that situs inversus is the same as a normal heart. On a histology slide, scale
+is diagnostic and aggressive cropping across magnifications discards it.
+
+The reason colour distortion is needed at all in the natural-image case is
+instructive: without it, two crops of the same photograph share a colour
+histogram, and the model can match them on that alone. The augmentation exists
+to close a shortcut, which is the same lesson as the pretext task in
+Chapter III.
+
+## Corollary
+
+Before adopting an augmentation pipeline, write out what each transform asserts
+and check it against a domain expert. It is a ten-minute conversation, and it
+is the difference between a representation that ignores nuisance and one that
+ignores the diagnosis.

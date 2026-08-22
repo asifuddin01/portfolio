@@ -53,3 +53,101 @@
 .fig .s2 { stroke: var(--lesion-ma);  fill: none; }
 .fig .s3 { stroke: var(--lesion-ex);  fill: none; }
 .fig .s4 { stroke: var(--lesion-cws); fill: none; }
+
+/* ==================================================================
+   Motion.
+
+   Every rule that moves lives inside `prefers-reduced-motion:
+   no-preference`, so the resting state outside this block has to be the
+   one that reads correctly on its own: a traced stroke is already drawn,
+   a cycling set is already fully lit, a sliding kernel already sits
+   somewhere that makes the point. Animation adds emphasis to a figure
+   that was complete without it.
+
+   Only transform and opacity are animated, so nothing here forces layout.
+   ================================================================== */
+
+/* Resting state is the finished stroke: one dash long enough to cover the
+   whole path, at zero offset. The animation only moves the offset, so a
+   figure whose animation never starts still shows a drawn line rather than
+   an empty frame. --len must be at least the path length. */
+.fig .anim-trace {
+  stroke-dasharray: var(--len, 600);
+  stroke-dashoffset: 0;
+}
+.fig .anim-cycle,
+.fig .anim-pulse,
+.fig .anim-fade { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A kernel, window or head travelling along a track. The figure sets
+     --dx/--dy for the distance and --dur for the period. */
+  .fig .anim-slide {
+    animation: fig-slide var(--dur, 6s) var(--ease-ink, ease-in-out) infinite;
+  }
+  @keyframes fig-slide {
+    0%,   6%  { transform: translate(0, 0); }
+    47%, 53%  { transform: translate(var(--dx, 0px), var(--dy, 0px)); }
+    94%, 100% { transform: translate(0, 0); }
+  }
+
+  /* A stroke drawing itself. Only the animation lives here; the dash pattern
+     is declared unguarded above so the resting state is a finished line. */
+  .fig .anim-trace {
+    animation: fig-trace var(--dur, 5s) var(--ease-out, ease-out) infinite;
+  }
+  @keyframes fig-trace {
+    0%        { stroke-dashoffset: var(--len, 600); }
+    55%, 90%  { stroke-dashoffset: 0; }
+    100%      { stroke-dashoffset: 0; }
+  }
+
+  /* One of a set lit at a time. Each element sets --i and they share
+     --n and --dur. */
+  .fig .anim-cycle {
+    animation: fig-cycle var(--dur, 8s) linear infinite;
+    animation-delay: calc(var(--dur, 8s) / var(--n, 4) * var(--i, 0) * -1);
+  }
+  @keyframes fig-cycle {
+    0%, 22%   { opacity: 1; }
+    26%, 96%  { opacity: 0.22; }
+    100%      { opacity: 1; }
+  }
+
+  .fig .anim-pulse {
+    animation: fig-pulse var(--dur, 3.2s) ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 0.18s);
+  }
+  @keyframes fig-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.34; }
+  }
+
+  /* Something appearing and disappearing in place — a mask, a prediction. */
+  .fig .anim-fade {
+    animation: fig-fade var(--dur, 5s) ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 0.12s);
+  }
+  @keyframes fig-fade {
+    0%, 34%  { opacity: 0; }
+    46%, 88% { opacity: 1; }
+    100%     { opacity: 0; }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A raster scan: across a row, down, back across the next. */
+  .fig .anim-scan {
+    animation: fig-scan var(--dur, 7s) steps(1) infinite;
+  }
+  @keyframes fig-scan {
+    0%,  11% { transform: translate(0, 0); }
+    12%, 23% { transform: translate(var(--dx, 0px), 0); }
+    24%, 35% { transform: translate(calc(var(--dx, 0px) * 2), 0); }
+    36%, 47% { transform: translate(calc(var(--dx, 0px) * 3), 0); }
+    48%, 59% { transform: translate(0, var(--dy, 0px)); }
+    60%, 71% { transform: translate(var(--dx, 0px), var(--dy, 0px)); }
+    72%, 83% { transform: translate(calc(var(--dx, 0px) * 2), var(--dy, 0px)); }
+    84%,100% { transform: translate(calc(var(--dx, 0px) * 3), var(--dy, 0px)); }
+  }
+}

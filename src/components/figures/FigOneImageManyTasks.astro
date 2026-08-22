@@ -1,0 +1,52 @@
+---
+/**
+ * Book II, Ch. VI, Prop. 1 — the plan's figure. One image, five questions, one
+ * backbone; the head is what changes. Cycling makes that the point.
+ */
+const TASK = [
+  { t: 'classification', out: 'one label', cls: 'a1' },
+  { t: 'detection', out: 'boxes + labels', cls: 'a2' },
+  { t: 'segmentation', out: 'a label per pixel', cls: 'a3' },
+  { t: 'depth', out: 'a distance per pixel', cls: 'a4' },
+  { t: 'retrieval', out: 'a vector to compare', cls: 'a5' },
+];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="om-t om-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="om-t">One image, five tasks</title>
+  <desc id="om-d">
+    A single image and backbone feeding five different heads: classification,
+    detection, segmentation, depth and retrieval. The backbone is the same in
+    each case; what differs is the head and the shape of what comes out.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one image</text>
+  <text x="180" y="22" class="t-lab">one backbone</text>
+  <text x="400" y="22" class="t-lab">five heads</text>
+
+  <rect x="0" y="120" width="110" height="86" class="bx" />
+  {Array.from({ length: 12 }, (_, i) => (
+    <rect x={(i % 4) * 27} y={120 + Math.floor(i / 4) * 29} width="25" height="27" class="a4"
+          opacity={0.16 + ((i * 31) % 8) / 13} />
+  ))}
+
+  <line x1="114" y1="163" x2="168" y2="163" class="wire" />
+  <polygon points="168,158 180,163 168,168" class="head" />
+
+  <rect x="186" y="112" width="150" height="102" class="bx-fill" />
+  <text x="261" y="158" class="t-md" text-anchor="middle">encoder</text>
+  <text x="261" y="178" class="t-sm" text-anchor="middle">unchanged</text>
+
+  {TASK.map((t, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 5; --dur: 11s`}>
+      <line x1="340" y1="163" x2="392" y2={62 + i * 50} class="wire-soft" />
+      <rect x="400" y={42 + i * 50} width="160" height="38" class="bx" />
+      <rect x="400" y={42 + i * 50} width="160" height="3" class={t.cls} />
+      <text x="412" y={66 + i * 50} class="t-md">{t.t}</text>
+      <text x="576" y={66 + i * 50} class="t-sm">{t.out}</text>
+    </g>
+  ))}
+
+  <text x="0" y="272" class="t-sm">Nothing about the pixels changed between these five rows. What changed is the question, and with it</text>
+  <text x="0" y="290" class="t-sm">the output and the loss that scores it — which is why a good backbone is worth more than a good head.</text>
+  <text x="0" y="314" class="t-sm">Classification throws the spatial axes away. Everything below it has to keep them, or get them back.</text>
+</svg>

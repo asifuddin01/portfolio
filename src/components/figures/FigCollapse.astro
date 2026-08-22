@@ -1,0 +1,52 @@
+---
+/**
+ * Book II, Ch. V, Prop. 1 — the failure mode contrastive learning exists to
+ * prevent: every input mapping to one point satisfies the objective perfectly.
+ */
+const SPREAD = [[112, 96], [162, 138], [88, 168], [178, 84], [136, 190], [196, 156], [104, 128], [168, 118]];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="cp-t cp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="cp-t">Collapse, and what prevents it</title>
+  <desc id="cp-d">
+    On the left, embeddings spread across the space. In the middle, every
+    embedding has fallen onto one point, which drives the agreement objective
+    to zero while carrying no information. On the right, negatives push the
+    embeddings apart and keep the space occupied.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">agreement only</text>
+  <text x="270" y="22" class="t-lab">the degenerate optimum</text>
+  <text x="530" y="22" class="t-lab">with negatives</text>
+
+  <circle cx="142" cy="140" r="86" class="grid" />
+  {SPREAD.map((p, i) => (
+    <circle cx={p[0]} cy={p[1]} r="5" class="a1" style={`--i: ${i}`} />
+  ))}
+
+  <line x1="238" y1="140" x2="272" y2="140" class="wire" />
+  <polygon points="272,135 284,140 272,145" class="head" />
+  <text x="260" y="128" class="t-key" text-anchor="middle">train</text>
+
+  <circle cx="400" cy="140" r="86" class="grid" />
+  <g class="anim-pulse" style="--dur: 3.4s">
+    <circle cx="400" cy="140" r="9" class="a2" />
+  </g>
+  <text x="400" y="248" class="t-sm" text-anchor="middle">loss is zero</text>
+  <text x="400" y="266" class="t-sm" text-anchor="middle">and the model is useless</text>
+
+  <circle cx="620" cy="140" r="86" class="grid" />
+  {SPREAD.map((p) => (
+    <circle cx={p[0] + 478} cy={p[1]} r="5" class="a3" />
+  ))}
+  {SPREAD.slice(0, 4).map((p) => (
+    <line x1="620" y1="140" x2={p[0] + 478} y2={p[1]} class="dash" />
+  ))}
+
+  <text x="0" y="248" class="t-sm">"Make two views of the</text>
+  <text x="0" y="266" class="t-sm">same photo agree" is</text>
+  <text x="0" y="284" class="t-sm">solved by a constant.</text>
+
+  <text x="530" y="248" class="t-sm">Negatives supply the</text>
+  <text x="530" y="266" class="t-sm">repulsion. So does a</text>
+  <text x="530" y="284" class="t-sm">stop-gradient, cheaper.</text>
+</svg>

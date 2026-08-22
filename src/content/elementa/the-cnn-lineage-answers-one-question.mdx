@@ -1,0 +1,54 @@
+---
+chapter: vision--convolution
+proposition: 5
+statement: The architecture lineage is one question asked five times.
+claim: "LeNet through EfficientNet is not a parade of unrelated ideas. Each is an answer to how you add depth without the optimisation falling over, and the residual connection is the one that settled it."
+given:
+  - depth-buys-receptive-field
+  - the-residual-stream-is-what-layers-edit
+figure: FigCnnLineage
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Deep Residual Learning for Image Recognition"
+    url: https://arxiv.org/abs/1512.03385
+  - title: "Very Deep Convolutional Networks (VGG)"
+    url: https://arxiv.org/abs/1409.1556
+  - title: "EfficientNet: Rethinking Model Scaling"
+    url: https://arxiv.org/abs/1905.11946
+---
+
+## Demonstration
+
+**LeNet-5 (1998).** Five layers, on 32 × 32 digits. It established the shape —
+convolution, subsample, repeat, classify — and then the field waited fourteen
+years for hardware and data.
+
+**AlexNet (2012).** Eight layers, and three changes that mattered more than the
+depth: ReLU instead of a saturating non-linearity, dropout, and an
+implementation that ran on two GPUs. The ImageNet error fell from 26% to 15% and
+the argument about whether learned features beat engineered ones ended.
+
+**VGG (2014).** Nineteen layers, and one idea: use only 3 × 3 kernels and stack
+them. Two stacked 3 × 3 layers see the same window as one 5 × 5 with fewer
+parameters and an extra non-linearity between. Uniformity turned out to be
+worth more than cleverness, and VGG features are still used as a perceptual loss
+thirty architectures later.
+
+**ResNet (2015).** Here the question is answered. Plain networks past about
+twenty layers got *worse on the training set*, which is not overfitting — it is
+an optimisation failure. Adding `x + f(x)` gives the gradient an additive path
+to the early layers, and 152 layers became routine. Everything in this book that
+stacks deeply, transformers included, inherits this.
+
+**EfficientNet (2019).** With depth solved, the question becomes how to spend a
+budget. Depth, width and resolution are coupled and should be scaled together
+under one coefficient. Elegant, widely used, and — as Book I's Marginalia entry
+argues — measured in FLOPs rather than in time.
+
+## Corollary
+
+Notice what stopped changing. After ResNet the interesting differences are the
+training recipe, the data and the scaling policy, not the block. ConvNeXt made
+that explicit by taking a ResNet and modernising only the recipe until it
+matched a transformer.

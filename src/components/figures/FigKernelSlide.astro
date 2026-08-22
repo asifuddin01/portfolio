@@ -1,0 +1,43 @@
+---
+/**
+ * Book II, Ch. II, Prop. 1 — one kernel, every position. The animation is the
+ * definition: the same weights are applied at each place in turn.
+ */
+const N = 6, S = 34, X0 = 30, Y0 = 56;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ks-t ks-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ks-t">One kernel applied at every position</title>
+  <desc id="ks-d">
+    A six by six input grid with a three by three kernel window that moves
+    across it, and a four by four output grid beside it. The same nine weights
+    are used at every position, which is what weight sharing means and why the
+    parameter count does not grow with the image.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">input</text>
+  <text x="430" y="22" class="t-lab">feature map</text>
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <rect x={X0 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 3} height={S - 3} class="bx-soft" />
+  ))}
+
+  <g class="anim-scan" style={`--dx: ${S}px; --dy: ${S}px; --dur: 7.2s`}>
+    <rect x={X0 - 2} y={Y0 - 2} width={S * 3} height={S * 3} class="s2" stroke-width="2" fill="none" />
+    <rect x={X0 - 2} y={Y0 - 2} width={S * 3} height={S * 3} class="a2" opacity="0.14" />
+  </g>
+
+  <line x1="266" y1="158" x2="400" y2="158" class="wire" />
+  <polygon points="400,153 412,158 400,163" class="head" />
+  <text x="333" y="148" class="t-key" text-anchor="middle">same 9 weights</text>
+
+  {Array.from({ length: 16 }, (_, i) => (
+    <rect x={430 + (i % 4) * S} y={Y0 + 34 + Math.floor(i / 4) * S} width={S - 3} height={S - 3} class="bx-soft" />
+  ))}
+  <g class="anim-scan" style={`--dx: ${S}px; --dy: ${S}px; --dur: 7.2s`}>
+    <rect x={428} y={Y0 + 32} width={S} height={S} class="s2" stroke-width="2" fill="none" />
+  </g>
+
+  <text x="0" y="246" class="t-sm">Six by six in, four by four out: a 3×3 kernel with no padding loses one position at each edge.</text>
+  <text x="0" y="266" class="t-sm">Nine weights and a bias, whatever the size of the image. A dense layer here would need over a thousand.</text>
+  <text x="0" y="290" class="t-sm">That reuse is the locality prior, welded into the architecture rather than learned.</text>
+</svg>

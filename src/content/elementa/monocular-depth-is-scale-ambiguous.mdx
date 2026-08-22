@@ -1,0 +1,52 @@
+---
+chapter: vision--vision-tasks
+proposition: 4
+statement: One photograph cannot fix scale.
+claim: "A small object nearby and a large one far away project to identical pixels. Monocular depth is therefore predicted up to an unknown factor, and a metric claim needs information the image does not contain."
+given:
+  - the-head-changes-not-the-backbone
+figure: FigDepthAmbiguity
+status: published
+updated: 2026-08-22
+sources:
+  - title: "MiDaS: Towards Robust Monocular Depth Estimation"
+    url: https://arxiv.org/abs/1907.01341
+  - title: "Depth Anything"
+    url: https://arxiv.org/abs/2401.10891
+---
+
+## Demonstration
+
+Perspective projection maps a 3D point to an image point by dividing by depth.
+Double every distance in a scene and double every object's size and the
+projection is unchanged, pixel for pixel. The scene and its scaled copy are
+indistinguishable from one viewpoint.
+
+So a network predicting *metres* from a single image is not solving a
+well-posed problem. What it can do is exploit the regularities of the world it
+was trained on — doors are about two metres, corridors have known proportions,
+this camera has this focal length — and those regularities are priors about the
+training distribution, not geometry.
+
+The literature is unusually honest about this and the terminology records it.
+**Relative depth** predicts ordering. **Scale-invariant** losses score a
+prediction after fitting the best scale, so the model is never penalised for the
+part it cannot know. **Metric depth** models exist and are explicitly restricted
+to a domain and camera, because that is the extra information that resolves the
+ambiguity.
+
+MiDaS's contribution was to train across many datasets whose depth annotations
+are in incompatible units — some metric, some stereo disparity, some structure
+from motion — by using a loss invariant to scale and shift. Giving up on the
+unknowable is what let the data be pooled.
+
+Genuine resolution comes from adding information: a second camera at a known
+baseline, motion between frames, an object of known size, or a sensor that
+measures distance directly.
+
+## Corollary
+
+When a monocular depth model reports metres, ask what fixed the scale. If the
+answer is the training set, the number is a prediction about how similar your
+scene is to that dataset, and it will be wrong in exactly the way that
+assumption is wrong.

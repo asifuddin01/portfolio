@@ -1,0 +1,55 @@
+---
+chapter: vision--representation
+proposition: 2
+statement: How much of the network you let move is a statement about how much data you have.
+claim: "Freezing everything and training a linear head needs hundreds of labels. Fine-tuning everything needs tens of thousands. The choice is not a preference; it is arithmetic about capacity and examples."
+given:
+  - features-are-learned-in-a-hierarchy
+  - generalisation-is-not-memorisation
+figure: FigTransferFreeze
+status: published
+updated: 2026-08-22
+sources:
+  - title: "How Transferable Are Features in Deep Neural Networks?"
+    url: https://arxiv.org/abs/1411.1792
+---
+
+## Demonstration
+
+Three moves, in order of how much data each demands.
+
+**Linear probe.** Freeze the backbone, train a linear classifier on its
+features. The trainable parameters number in the thousands. It works with a few
+hundred labelled examples, it is fast enough to run on every checkpoint, and —
+as Book I, Proposition 5 of Chapter I insisted — it is also the instrument by
+which every self-supervised paper reports its results.
+
+**Partial fine-tuning.** Unfreeze the last block or two. You are now adapting
+the task-specific end of the hierarchy while keeping the generic beginning.
+Thousands of examples.
+
+**Full fine-tuning.** Everything moves. This gives the best result when the
+data supports it and produces a confident memoriser when it does not. Tens of
+thousands, or a very small learning rate and a short schedule.
+
+Yosinski and colleagues measured the underlying gradient directly: transfer
+performance degrades smoothly with the distance between source and target task,
+and it degrades *from the top down*. Early layers stay useful across
+surprisingly distant domains; late layers stop being useful quickly.
+
+Two practical notes that follow from the same fact.
+
+Use a lower learning rate for pretrained layers than for the new head. The head
+is random and needs to move; the backbone is already good and large steps will
+destroy it before the head is ready. Warming up the head first with the
+backbone frozen, then unfreezing, is the same idea in two phases.
+
+And ImageNet pretraining still helps on medical images, which is not obvious —
+a retinal photograph is nothing like a photograph of a dog. It helps because the
+first layers are edges, and edges are edges.
+
+## Corollary
+
+If a fine-tuned model beats a linear probe by a large margin on a small
+dataset, be suspicious before being pleased. That gap is exactly what
+memorisation looks like from the outside.

@@ -1,0 +1,54 @@
+---
+/**
+ * Book II, Ch. V, Prop. 3 — the asymmetry that replaces negatives. One branch
+ * learns, the other is a target and receives no gradient.
+ */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sg-t sg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="sg-t">Student and teacher, with the gradient cut</title>
+  <desc id="sg-d">
+    Two views of one image go through two branches. The student has a
+    prediction head and is trained; the teacher is an exponential moving average
+    of the student and receives no gradient. Cutting the gradient on one side is
+    what stops both branches walking together into a constant.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">two views of one image</text>
+
+  <rect x="0" y="60" width="104" height="40" class="bx" />
+  <text x="52" y="85" class="t-md" text-anchor="middle">view A</text>
+  <rect x="0" y="196" width="104" height="40" class="bx" />
+  <text x="52" y="221" class="t-md" text-anchor="middle">view B</text>
+
+  <rect x="150" y="52" width="150" height="56" class="bx-fill" />
+  <rect x="150" y="52" width="150" height="3" class="a1" />
+  <text x="225" y="78" class="t-md" text-anchor="middle">student</text>
+  <text x="225" y="96" class="t-sm" text-anchor="middle">trained</text>
+
+  <rect x="150" y="188" width="150" height="56" class="bx-fill" />
+  <rect x="150" y="188" width="150" height="3" class="a4" />
+  <text x="225" y="214" class="t-md" text-anchor="middle">teacher</text>
+  <text x="225" y="232" class="t-sm" text-anchor="middle">EMA of the student</text>
+
+  <line x1="106" y1="80" x2="140" y2="80" class="wire" />
+  <line x1="106" y1="216" x2="140" y2="216" class="wire" />
+
+  <rect x="336" y="52" width="110" height="56" class="bx" />
+  <text x="391" y="86" class="t-md" text-anchor="middle">predictor</text>
+  <line x1="302" y1="80" x2="330" y2="80" class="wire" />
+
+  <path d="M448,80 L520,80 L520,138" class="wire" />
+  <path d="M302,216 L520,216 L520,166" class="wire" />
+  <circle cx="520" cy="152" r="16" class="bx-fill" />
+  <text x="520" y="158" class="t-md" text-anchor="middle">≈</text>
+  <text x="556" y="156" class="t-sm">agree</text>
+
+  <g class="anim-pulse" style="--dur: 3.6s">
+    <line x1="352" y1="196" x2="392" y2="236" class="s2" stroke-width="2.4" />
+    <line x1="392" y1="196" x2="352" y2="236" class="s2" stroke-width="2.4" />
+  </g>
+  <text x="410" y="222" class="t-key">stop-gradient</text>
+
+  <text x="0" y="276" class="t-sm">No negatives anywhere. The teacher moves only through the moving average, so it is a slowly receding target</text>
+  <text x="0" y="294" class="t-sm">rather than a partner in the collapse. DINO adds centring and sharpening to the same skeleton.</text>
+</svg>

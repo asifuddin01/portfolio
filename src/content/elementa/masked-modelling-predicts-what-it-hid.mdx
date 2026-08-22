@@ -1,0 +1,55 @@
+---
+chapter: vision--self-supervision
+proposition: 4
+statement: Masked image modelling works because pixels are redundant.
+claim: "Hide most of an image and predict the rest. The mask ratio has to be brutal — around three quarters — precisely because neighbouring patches say almost the same thing."
+given:
+  - a-patch-is-a-token
+  - self-supervision-manufactures-the-label
+figure: FigMaskedImage
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Masked Autoencoders Are Scalable Vision Learners"
+    url: https://arxiv.org/abs/2111.06377
+  - title: "BEiT: BERT Pre-Training of Image Transformers"
+    url: https://arxiv.org/abs/2106.08254
+---
+
+## Demonstration
+
+The language version needs a mask ratio of about 15%, because words are dense
+in information and predicting a missing one requires real syntax and semantics.
+
+Images are not like that. A patch is usually well approximated by its
+neighbours, so hiding 15% leaves a task solvable by interpolation — a texture
+completion problem, not an understanding one. He and colleagues found the ratio
+had to go to **75%** before the task demanded anything worth learning.
+
+The architecture follows from the ratio.
+
+**The encoder sees only the visible patches.** With three quarters removed the
+sequence is a quarter as long, and attention is quadratic, so encoding is about
+an order of magnitude cheaper than the full image. This is what made MAE
+practical to scale.
+
+**The decoder is deliberately small and thrown away.** Mask tokens are inserted
+at the removed positions and a light decoder reconstructs the pixels. It exists
+only to define the loss; after pretraining it is discarded.
+
+**The loss is on the masked patches only.** Scoring the visible ones rewards
+copying.
+
+Set beside DINO, the pair covers the two families. Masked modelling gives
+strong features for fine-tuning and comparatively weak ones frozen. Joint-
+embedding methods like DINO give features good enough to use frozen — which is
+why the Marginalia entry reaches for DINOv2 as a backbone and not for an MAE
+checkpoint. DINOv2 in fact uses both, adding a patch-level masked objective to
+the image-level one.
+
+## Corollary
+
+The mask ratio is a measure of redundancy in your data. If a domain needs a
+lower ratio than 75% to be non-trivial, its images carry more information per
+patch than photographs do — which is a useful thing to have discovered about a
+modality.

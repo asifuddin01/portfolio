@@ -1,0 +1,49 @@
+---
+chapter: vision--images
+proposition: 2
+statement: The arrangement is the information, not the values.
+claim: "Two images with identical pixel statistics can be a photograph and a jumble. Everything a vision architecture is built to exploit is in the arrangement, and the arrangement is exactly what a dense layer discards."
+given:
+  - an-image-is-a-structured-tensor
+figure: FigShuffleDestroys
+status: published
+updated: 2026-08-22
+sources:
+  - title: "An Image is Worth 16x16 Words (on inductive bias)"
+    url: https://arxiv.org/abs/2010.11929
+---
+
+## Demonstration
+
+Take an image and apply a fixed permutation to its pixels. The mean, the
+variance, the histogram, every order-free statistic you can compute: unchanged.
+One of the two is a picture and the other is not.
+
+That difference lives entirely in *which value sits next to which*, and it is
+the thing two priors are built to exploit.
+
+**Locality.** Nearby pixels are related and distant ones usually are not. A
+convolution reads a small window, so it assumes this by construction.
+
+**Translation equivariance.** The same object means the same thing wherever it
+sits. A convolution slides one kernel everywhere, so it assumes this too.
+
+Neither is learned. Both are architectural, imposed by whoever chose the layer,
+and both are *true of photographs*, which is why they were worth imposing.
+
+Now the sharp version of the claim. A fully connected layer on flattened pixels
+is invariant to a fixed permutation of its inputs in the following sense: apply
+any permutation to every image in the dataset and permute the first weight
+matrix's columns the same way, and you have the identical model. It cannot
+prefer the un-permuted world, because nothing in its structure references
+adjacency.
+
+So the shuffled image is not merely harder for a dense network. It is, before
+training, indistinguishable.
+
+## Corollary
+
+This is why the flatten in a classifier goes at the *end*. Flattening first
+throws away the only structure the architecture was going to exploit, and every
+subsequent layer has to rediscover from data what a 3 × 3 kernel is given for
+free.

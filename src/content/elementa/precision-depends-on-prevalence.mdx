@@ -1,0 +1,47 @@
+---
+chapter: vision--medical-vision
+proposition: 3
+statement: Precision is a property of the model and the population together.
+claim: "Hold sensitivity and specificity fixed, change how rare the disease is, and precision moves dramatically. A model validated on an enriched cohort will disappoint in a clinic."
+given:
+  - sensitivity-and-specificity-trade
+figure: FigOperatingPoint
+status: published
+updated: 2026-08-22
+sources:
+  - title: "The Precision-Recall Plot Is More Informative than the ROC Plot"
+    url: https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118432
+---
+
+## Demonstration
+
+Take a model at 90% sensitivity and 90% specificity — respectable numbers — and
+apply it to a thousand patients.
+
+**At 10% prevalence.** 100 diseased, 900 healthy. It finds 90 of the 100 and
+falsely flags 90 of the 900. Of 180 positive calls, half are right. Precision
+50%.
+
+**At 1% prevalence.** 10 diseased, 990 healthy. It finds 9 and falsely flags 99.
+Of 108 positive calls, 9 are right. **Precision 8%.**
+
+The model did not change. Sensitivity and specificity did not change. What
+changed is the population, and precision moved by a factor of six.
+
+This is why a research dataset assembled with a comfortable fraction of
+positives — because that is what makes training tractable — cannot support a
+claim about a screening clinic where prevalence is a hundredth of that. The
+paper's precision, F1 and PPV are all reported on the wrong denominator.
+
+It also explains a practice that looks like sleight of hand until you see the
+arithmetic: quoting specificity at a fixed high sensitivity. At 1% prevalence,
+moving specificity from 90% to 99% takes false positives from 99 to about 10 and
+precision from 8% to nearly half. In the rare-disease regime, specificity is
+where the usefulness lives.
+
+## Corollary
+
+Before reading any precision or F1, find the prevalence in the test set and
+compare it with the deployment setting. If they differ by an order of magnitude,
+recompute — the sensitivity and specificity transfer, and everything derived
+from them does not.

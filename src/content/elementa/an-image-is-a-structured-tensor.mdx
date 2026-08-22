@@ -1,0 +1,55 @@
+---
+chapter: vision--images
+proposition: 1
+statement: An image is a tensor whose axes are the picture.
+claim: "A photograph reaches a model as a block of numbers indexed by row, column and channel. Nothing about it is visual; the axes are what make it an image rather than a list."
+given:
+  - a-tensor-carries-its-meaning-in-its-shape
+figure: FigImageTensor
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Digital Image Processing — Gonzalez and Woods"
+    url: https://www.imageprocessingplace.com
+---
+
+## Demonstration
+
+A model never sees a picture. It sees an array, and the array has a shape:
+
+```
+(H, W, C)      one photograph
+(B, H, W, C)   a batch of them
+(B, D, H, W, C) a CT volume, with depth
+```
+
+Each entry is a measured intensity at a location in a channel. That is the
+whole of the representation, and everything called *computer vision* is
+arithmetic on it.
+
+Two facts about the shape are worth stating because both cause real bugs.
+
+**Channel order is a convention, not a property.** PyTorch expects
+`(B, C, H, W)`; TensorFlow and almost every image library expect
+`(B, H, W, C)`. Loading with one and computing with the other produces a tensor
+of the right rank and the wrong meaning. If the height and width happen to
+match, nothing errors.
+
+**Resolution is a choice, and it is made twice.** Once by the sensor, and again
+by whatever resize sits at the head of the pipeline. Downsampling a 4000 × 3000
+fundus photograph to 224 × 224 discards roughly 99.6% of the pixels. For
+classifying a whole eye that may be fine. For finding microaneurysms — lesions
+that are a few pixels across at full resolution — it is the experiment.
+
+The channel axis is where the modalities differ. Three for RGB. One for a
+greyscale radiograph. Four when a mask is carried alongside. Many for a
+multispectral or multi-sequence acquisition, where each channel is a different
+measurement of the same tissue rather than a different colour of the same
+light.
+
+## Corollary
+
+*Resolution* and *input size* are different numbers, and the gap between them
+is a decision nobody records. Before comparing two vision results, ask what
+each one resized to. A model reading 512 × 512 and a model reading 224 × 224
+are not solving the same problem, whatever the table says.

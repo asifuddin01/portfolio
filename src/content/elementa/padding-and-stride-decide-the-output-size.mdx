@@ -1,0 +1,46 @@
+---
+chapter: vision--convolution
+proposition: 2
+statement: Padding and stride decide the output size, and nothing else does.
+claim: "One formula gives the spatial size of every convolution's output. Most shape errors in a vision pipeline are that formula applied without being read."
+given:
+  - a-convolution-is-one-filter-everywhere
+figure: FigPaddingStride
+status: published
+updated: 2026-08-22
+sources:
+  - title: "A Guide to Convolution Arithmetic for Deep Learning"
+    url: https://arxiv.org/abs/1603.07285
+---
+
+## Demonstration
+
+```
+out = ⌊(in + 2·pad − k) / stride⌋ + 1
+```
+
+That is the entire content of the proposition. Everything else is reading it.
+
+**Without padding the image shrinks.** A 3 × 3 kernel loses one position at
+each edge, so 7 becomes 5. Stack twenty such layers and a 224-pixel image is
+184 pixels, and the corners have been seen by fewer windows than the middle.
+
+**Padding of (k−1)/2 keeps the size.** For k = 3 that is 1, which is why almost
+every modern network uses 3 × 3 with padding 1: shapes stay put and the
+architecture becomes composable.
+
+**Stride subsamples.** Stride 2 halves each spatial axis and quarters the
+number of positions. It is the cheap way to downsample, and it is why
+resolutions in a network go 224, 112, 56, 28, 14, 7.
+
+The floor is where the surprises live. With `in = 7`, `k = 3`, `pad = 1`,
+`stride = 2`, the output is ⌊8/2⌋ + 1 = 5, and the last window hangs off the
+edge — some frameworks silently drop it, some pad again. The two disagree by a
+row, and in a segmentation network that disagreement surfaces at the decoder as
+a shape mismatch several layers later.
+
+## Corollary
+
+Compute the shapes on paper before writing the model. Most "the tensors do not
+line up" bugs are this formula, applied by the framework and not by the author,
+and they are cheaper to prevent than to trace back from the exception.

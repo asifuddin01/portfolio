@@ -1,0 +1,53 @@
+---
+chapter: vision--vision-transformers
+proposition: 2
+statement: Patch size is the dial between detail and cost, and it is set once.
+claim: "Halving the patch quadruples the tokens and multiplies attention cost sixteenfold. The choice is made at pretraining and everything afterwards inherits it."
+given:
+  - a-patch-is-a-token
+  - attention-costs-a-square
+figure: FigPatchSize
+status: published
+updated: 2026-08-22
+sources:
+  - title: "FlexiViT: One Model for All Patch Sizes"
+    url: https://arxiv.org/abs/2212.08013
+---
+
+## Demonstration
+
+For a 224 × 224 image:
+
+```
+/32  →   49 tokens   attention cost ×1
+/16  →  196 tokens   ×16
+/8   →  784 tokens   ×256
+```
+
+Tokens go as the square of 1/patch, and attention goes as the square of tokens,
+so the bill goes as the fourth power. That is why /16 is the near-universal
+compromise and why /8 models are rare and expensive.
+
+What you buy with a smaller patch is spatial resolution. A /32 model reasons
+about the image in 7 × 7 blocks; anything smaller than a block is averaged
+inside the patch embedding before layer one and is not recoverable. For
+classifying a scene that is fine. For a lesion a few pixels across it is the
+same loss described in Chapter I — a distinction destroyed at the input.
+
+The other dial is input resolution, and it is the cheaper one. Keeping /16 and
+going from 224 to 448 also quadruples the tokens, but it does so by *supplying
+more pixels* rather than by dividing the same ones more finely. Book I's
+Marginalia entry on EVA-CLIP is the empirical version of this: raising the
+resolution on the smaller model bought nearly as much as doubling the
+parameters.
+
+Changing patch size after pretraining is awkward, because the patch projection
+and the positional embeddings are both sized to it. Changing input resolution
+only requires interpolating the position embeddings, which is why it is the
+standard move and patch size is not.
+
+## Corollary
+
+Read `/16` on a model card as a resolution ceiling. If the structure you care
+about is smaller than one patch at your input size, the architecture has
+already decided the answer, and no amount of fine-tuning changes it.

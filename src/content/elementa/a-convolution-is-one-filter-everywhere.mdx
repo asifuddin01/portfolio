@@ -1,0 +1,53 @@
+---
+chapter: vision--convolution
+proposition: 1
+statement: A convolution is one small filter applied at every position.
+claim: "The same weights are used at every location, so the parameter count depends on the kernel and not on the image. That reuse is the locality prior, welded into the layer rather than learned."
+given:
+  - spatial-structure-is-information
+  - a-linear-layer-is-an-affine-map
+figure: FigKernelSlide
+status: published
+updated: 2026-08-22
+sources:
+  - title: "Gradient-Based Learning Applied to Document Recognition (LeNet)"
+    url: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf
+---
+
+## Demonstration
+
+Take a *k* × *k* window of weights. Place it over the top-left corner of the
+image, multiply elementwise, sum, add a bias, write the result. Move one
+position and repeat until the image is covered. The output is a **feature map**:
+one number per position, saying how strongly that window's pattern was present
+there.
+
+Two consequences follow immediately, and they are the whole reason the layer
+exists.
+
+**The parameters do not scale with the image.** A 3 × 3 kernel over three input
+channels producing sixty-four output channels has 3·3·3·64 + 64 = 1,792
+parameters, whether the image is 64 pixels across or 4,000. A dense layer on
+even a small image needs millions, and would have to learn separately that an
+edge in the corner is the same thing as an edge in the middle.
+
+**Every output is a local function of the input.** Position *(i, j)* of the
+feature map depends only on a *k* × *k* neighbourhood. Nothing distant can
+reach it in one layer, which is the subject of Proposition 3.
+
+Two details that trip people:
+
+*It is technically a cross-correlation.* True convolution flips the kernel.
+Since the weights are learned, the flip is absorbed and every framework
+implements the unflipped version while calling it convolution.
+
+*Channels are summed, not convolved separately.* A convolution over *C* input
+channels has a *k* × *k* × *C* kernel per output channel and reduces the channel
+axis away. A "3 × 3 convolution" is really 3 × 3 × C.
+
+## Corollary
+
+The parameter count of a convolutional layer is a fact about the architecture
+and the parameter count of a dense layer is a fact about the input size. That
+difference is why convolutional networks were trainable on the hardware of 1998
+and dense ones were not.

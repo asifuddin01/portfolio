@@ -1,0 +1,33 @@
+---
+/**
+ * Book II, Ch. VII, Prop. 4 — ranking and probability are different claims.
+ * A model can order patients perfectly and still be badly calibrated.
+ */
+const OVER = 'M60,240 C120,222 180,206 260,180 C340,154 430,116 620,60';
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="cv-t cv-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="cv-t">Predicted probability against observed frequency</title>
+  <desc id="cv-d">
+    A reliability diagram. The diagonal is perfect calibration. The plotted
+    curve sits below it, meaning that among cases the model calls ninety
+    percent likely, far fewer than ninety percent are positive. Its ranking may
+    still be excellent.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">observed frequency against predicted probability</text>
+
+  <line x1="60" y1="250" x2="620" y2="250" class="axis" />
+  <line x1="60" y1="250" x2="60" y2="40" class="axis" />
+  <line x1="60" y1="250" x2="620" y2="44" class="dash" />
+  <text x="560" y="66" class="t-xs">perfectly calibrated</text>
+
+  <path d={OVER} class="s2 anim-trace" style="--len: 760; --dur: 5.5s" stroke-width="2" />
+  <text x="330" y="196" class="t-sm" fill="var(--lesion-ma)">overconfident</text>
+
+  <line x1="560" y1="60" x2="560" y2="250" class="dash" />
+  <text x="560" y="272" class="t-key" text-anchor="middle">says 0.9</text>
+  <circle cx="560" cy="78" r="5" class="a2" />
+  <text x="596" y="96" class="t-key">is 0.62</text>
+
+  <text x="0" y="296" class="t-sm">AUROC is unchanged by any monotone rescaling of the scores, so it cannot see this at all.</text>
+</svg>

@@ -1,0 +1,42 @@
+---
+/**
+ * Book II, Ch. IV, Prop. 2 — the patch size dial. Halving it quadruples the
+ * tokens, and attention costs the square of that.
+ */
+const C = [
+  { p: 32, n: 49,  cost: 1,   cls: 'a4' },
+  { p: 16, n: 196, cost: 16,  cls: 'a1' },
+  { p: 8,  n: 784, cost: 256, cls: 'a2' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pz-t pz-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="pz-t">Patch size against token count and attention cost</title>
+  <desc id="pz-d">
+    A 224 pixel image at three patch sizes. Halving the patch quadruples the
+    number of tokens, and attention cost grows as the square of the token
+    count, so it rises sixteenfold for each halving.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">224px image</text>
+
+  {C.map((c, i) => {
+    const n = 224 / c.p, s = Math.min(120 / n, 22);
+    return (
+      <g>
+        <text x={i * 234} y="56" class="t-md">ViT-B/{c.p}</text>
+        {Array.from({ length: Math.min(n, 14) ** 2 }, (_, k) => (
+          <rect x={i * 234 + (k % Math.min(n, 14)) * (120 / Math.min(n, 14))}
+                y={70 + Math.floor(k / Math.min(n, 14)) * (120 / Math.min(n, 14))}
+                width={120 / Math.min(n, 14) - 1.5} height={120 / Math.min(n, 14) - 1.5}
+                class={c.cls} opacity="0.4" />
+        ))}
+        <rect x={i * 234} y="70" width="120" height="120" class="bx" />
+        <text x={i * 234} y="216" class="t-sm">{c.n} tokens</text>
+        <text x={i * 234} y="236" class="t-key">attention ×{c.cost}</text>
+      </g>
+    );
+  })}
+
+  <text x="0" y="276" class="t-sm">Smaller patches mean finer detail and a quadratically larger bill. The /16 is that decision,</text>
+  <text x="0" y="294" class="t-sm">and it is fixed at pretraining time — changing it later means re-interpolating the position embeddings.</text>
+</svg>

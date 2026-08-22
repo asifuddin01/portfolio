@@ -1,0 +1,39 @@
+---
+/**
+ * Book II, Ch. VII, Prop. 2 — the threshold sweep made visible. The curve is
+ * every operating point; a deployed model only ever sits at one of them.
+ */
+const roc = 'M60,250 C60,150 96,96 168,76 C260,50 400,44 620,40';
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rc-t rc-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="rc-t">The ROC curve is a sweep, not a score</title>
+  <desc id="rc-d">
+    A receiver operating characteristic curve, traced from the strict end to the
+    permissive end. Each point on it is one decision threshold with its own
+    sensitivity and specificity. AUROC summarises the whole curve; a deployed
+    system occupies a single point on it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">sensitivity against 1 − specificity</text>
+
+  <line x1="60" y1="250" x2="620" y2="250" class="axis" />
+  <line x1="60" y1="250" x2="60" y2="36" class="axis" />
+  <line x1="60" y1="250" x2="620" y2="40" class="dash" />
+  <text x="330" y="166" class="t-xs" text-anchor="middle">chance</text>
+
+  <path d={roc} class="s1 anim-trace" style="--len: 700; --dur: 6s" stroke-width="2" />
+
+  <g class="anim-slide" style="--dx: 240px; --dy: -46px; --dur: 6s">
+    <circle cx="168" cy="76" r="6" class="a2" />
+  </g>
+
+  <text x="70" y="272" class="t-xs">strict — few alarms</text>
+  <text x="620" y="272" class="t-xs" text-anchor="end">permissive — few misses</text>
+
+  <text x="650" y="80" class="t-sm">AUROC</text>
+  <text x="650" y="100" class="t-sm">is the</text>
+  <text x="650" y="120" class="t-sm">area under</text>
+  <text x="650" y="140" class="t-sm">all of it</text>
+
+  <text x="0" y="296" class="t-sm">Screening wants the permissive end and pays in false alarms. Confirmation wants the strict end.</text>
+</svg>

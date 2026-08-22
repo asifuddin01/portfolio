@@ -1,0 +1,53 @@
+---
+chapter: vision--self-supervision
+proposition: 1
+statement: An objective that only rewards agreement is solved by a constant.
+claim: "Ask a network to map two views of one image to the same vector and the perfect solution is to map everything to the same vector. Every method in this chapter is an answer to that."
+given:
+  - self-supervision-manufactures-the-label
+  - a-loss-is-where-the-objective-is-stated
+figure: FigCollapse
+status: published
+updated: 2026-08-22
+sources:
+  - title: "A Simple Framework for Contrastive Learning (SimCLR)"
+    url: https://arxiv.org/abs/2002.05709
+  - title: "Momentum Contrast (MoCo)"
+    url: https://arxiv.org/abs/1911.05722
+---
+
+## Demonstration
+
+The idea is appealing and, stated alone, broken:
+
+> Two crops of the same photograph should have similar representations.
+
+A constant function satisfies it perfectly. Loss zero, information zero. This
+is **representational collapse**, and it is not a training instability — it is
+the global optimum of the objective as written. Book I, Chapter I put it
+generally: whatever the loss fails to mention is not optimised, and this loss
+fails to mention that different images should differ.
+
+**Contrastive learning** repairs it by adding the missing half. For each
+positive pair, sample negatives — crops of *other* images — and require the
+positive to be closer than all of them. The InfoNCE loss is a softmax over
+similarities, one positive against many negatives, and it is a classification
+problem the model builds for itself.
+
+The awkward part is the negatives. Quality scales with how many you use, so
+SimCLR needed batch sizes in the thousands, which meant hardware most labs did
+not have. MoCo answered this with a queue of features from recent batches and a
+momentum-updated encoder to keep them consistent, decoupling the number of
+negatives from the batch size.
+
+There is a subtler failure inside the fix. Sampled negatives are just other
+images, and some of them are the *same class* as the positive. The loss pushes
+two photographs of the same species apart. This is the false-negative problem,
+and it is why supervised contrastive variants exist for cases where labels are
+available.
+
+## Corollary
+
+Watch the standard deviation of the embeddings during self-supervised training.
+Collapse is visible there long before it is visible in the loss, which by
+construction is delighted.

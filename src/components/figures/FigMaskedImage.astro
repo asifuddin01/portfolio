@@ -1,0 +1,55 @@
+---
+/**
+ * Book II, Ch. V, Prop. 4 — masked image modelling. The animation hides the
+ * patches and brings back the reconstruction, which is the loop being trained.
+ */
+const N = 6, S = 30, X0 = 40, Y0 = 68;
+const MASK = new Set([2, 3, 8, 9, 13, 15, 20, 21, 26, 28, 31, 33]);
+const shade = (i: number) => 0.16 + ((i * 53) % 11) / 16;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="mi-t mi-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="mi-t">Masked image modelling</title>
+  <desc id="mi-d">
+    A grid of patches with a large fraction hidden. The encoder sees only the
+    visible patches; a light decoder predicts what was removed. The training
+    signal is the input itself, and the mask ratio is high because neighbouring
+    patches are highly redundant.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">input</text>
+  <text x="280" y="22" class="t-lab">encoder sees</text>
+  <text x="520" y="22" class="t-lab">decoder predicts</text>
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <rect x={X0 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+          class="a4" opacity={shade(i)} />
+  ))}
+  <rect x={X0} y={Y0} width={S * N - 2} height={S * N - 2} class="bx" />
+
+  {Array.from({ length: N * N }, (_, i) => (
+    !MASK.has(i)
+      ? <rect x={280 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+              class="a4" opacity={shade(i)} />
+      : <rect x={280 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+              class="bx-soft" />
+  ))}
+  <rect x="280" y={Y0} width={S * N - 2} height={S * N - 2} class="bx" />
+
+  {Array.from({ length: N * N }, (_, i) => (
+    <g>
+      <rect x={520 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+            class="a4" opacity={MASK.has(i) ? 0 : shade(i)} />
+      {MASK.has(i) && (
+        <rect x={520 + (i % N) * S} y={Y0 + Math.floor(i / N) * S} width={S - 2} height={S - 2}
+              class="a1 anim-fade" style={`--i: ${i % 6}; --dur: 6s`} opacity="0.55" />
+      )}
+    </g>
+  ))}
+  <rect x="520" y={Y0} width={S * N - 2} height={S * N - 2} class="bx" />
+
+  <text x={X0} y="272" class="t-sm">36 patches</text>
+  <text x="280" y="272" class="t-sm">24 kept — 33%</text>
+  <text x="520" y="272" class="t-sm">loss on the hidden ones only</text>
+
+  <text x="0" y="298" class="t-sm">Mask ratios of 75% work because neighbouring patches are redundant; hide too little and copying wins.</text>
+</svg>

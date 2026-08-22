@@ -1,0 +1,57 @@
+---
+/**
+ * Book II, Ch. III, Prop. 1 — what each depth responds to. Cycling the
+ * emphasis makes the progression readable without a caption doing the work.
+ */
+const L = [
+  { t: 'layer 1', k: 'edges and colour blobs', cls: 'a3' },
+  { t: 'layer 2', k: 'corners, texture, repeats', cls: 'a4' },
+  { t: 'layer 3', k: 'parts — an eye, a wheel', cls: 'a1' },
+  { t: 'layer 4', k: 'objects and whole scenes', cls: 'a2' },
+];
+const X0 = 30, W = 168;
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="fh-t fh-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="fh-t">What each depth responds to</title>
+  <desc id="fh-d">
+    Four stages of a convolutional stack. Early layers respond to edges and
+    colour, middle layers to texture and parts, late layers to whole objects.
+    The early ones are generic across tasks, which is what makes transfer work.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">generic</text>
+  <text x="620" y="22" class="t-lab">specific</text>
+  <line x1="70" y1="17" x2="600" y2="17" class="wire-soft" />
+
+  {L.map((l, i) => (
+    <g class="anim-cycle" style={`--i: ${i}; --n: 4; --dur: 9s`}>
+      <rect x={X0 + i * W} y="46" width={W - 26} height="110" class="bx" />
+      <rect x={X0 + i * W} y="46" width={W - 26} height="4" class={l.cls} />
+      {/* a crude stand-in for what the filters look like at this depth */}
+      {i === 0 && [0, 1, 2].map((k) => (
+        <line x1={X0 + i * W + 22 + k * 34} y1="70" x2={X0 + i * W + 52 + k * 34} y2="132" class="s3" stroke-width="2" />
+      ))}
+      {i === 1 && [0, 1, 2].map((k) => (
+        <path d={`M${X0 + i * W + 20 + k * 36},130 q16,-52 32,0`} class="s4" stroke-width="2" fill="none" />
+      ))}
+      {i === 2 && [0, 1].map((k) => (
+        <circle cx={X0 + i * W + 44 + k * 54} cy="100" r="20" class="s1" stroke-width="2" />
+      ))}
+      {i === 3 && (
+        <path d="M0,0" class="s2" />
+      )}
+      {i === 3 && (
+        <g>
+          <circle cx={X0 + i * W + 70} cy="96" r="30" class="s2" stroke-width="2" />
+          <circle cx={X0 + i * W + 60} cy="88" r="5" class="a2" />
+          <circle cx={X0 + i * W + 82} cy="88" r="5" class="a2" />
+        </g>
+      )}
+      <text x={X0 + i * W + (W - 26) / 2} y="178" class="t-md" text-anchor="middle">{l.t}</text>
+      <text x={X0 + i * W + (W - 26) / 2} y="198" class="t-sm" text-anchor="middle">{l.k}</text>
+    </g>
+  ))}
+
+  <text x="0" y="248" class="t-sm">Nobody specified this. The hierarchy is what gradient descent produces with the loss at the far end.</text>
+  <text x="0" y="270" class="t-sm">An edge is an edge whatever the task, which is why early layers transfer and late ones do not.</text>
+</svg>
