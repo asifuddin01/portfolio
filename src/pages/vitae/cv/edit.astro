@@ -1,0 +1,160 @@
+---
+/**
+ * The CV editor.
+ *
+ * Nothing here gates itself. The route is protected by a Cloudflare Access
+ * policy, so a request that is not signed in as the owner never reaches this
+ * page at all — which is the only kind of gate a static site can actually
+ * enforce, since any check written in JavaScript runs on the visitor's
+ * machine and can be switched off there.
+ *
+ * Kept out of the sitemap and disallowed in robots.txt so it is not indexed
+ * and does not advertise itself.
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProofSheet from '../../../components/cv/ProofSheet.astro';
+import { loadCv, CV_PDF } from '../../../lib/cv-page.mjs';
+import { AUTHOR } from '../../../consts';
+
+const cv = await loadCv();
+---
+<BaseLayout
+  title={`Correcting the proof — ${AUTHOR}`}
+  description="Editing the curriculum vitae before generating the PDF."
+  folio="V.ii"
+  noindex
+>
+  <div class="codex pf">
+    <ProofSheet cv={cv} pdfHref={CV_PDF} editable />
+  </div>
+</BaseLayout>
+
+<script>
+  /**
+   * Edits never leave the browser. They are applied to a copy of the data on
+   * the way into the PDF renderer — the same module the build script uses —
+   * so a tailored CV is set exactly like the published one.
+   *
+   * This module is only ever bundled into this page, so /vitae/cv ships none
+   * of it.
+   */
+  const DRAFT = 'codex-cv-draft';
+
+  function setup() {
+    const holder = document.getElementById('pf-data');
+    const root = document.querySelector<HTMLElement>('[data-proof]');
+    if (!holder || !root || root.dataset.wired === 'on') return;
+    root.dataset.wired = 'on';
+
+    const base = JSON.parse(holder.textContent || '{}');
+    const status = document.querySelector('[data-status]');
+    const state = document.querySelector('[data-state]');
+    const fields = [...document.querySelectorAll('[data-path]')] as HTMLElement[];
+
+    /** What the last action did. */
+    const say = (msg: string) => { if (status) status.textContent = msg; };
+    /** Whether the draft differs from the site. Kept apart from `say` so the
+        debounced autosave cannot clobber a "downloaded" message. */
+    const mark = (msg: string) => { if (state) state.textContent = msg; };
+
+    function get(obj: any, path: string) {
+      return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
+    }
+    function set(obj: any, path: string, value: unknown) {
+      const keys = path.split('.');
+      const last = keys.pop()!;
+      const target = keys.reduce((o, k) => (o == null ? o : o[k]), obj);
+      if (target) target[last] = value;
+    }
+
+    /* ---- drafts, kept in this browser only ---- */
+    let draft: Record<string, unknown> = {};
+    try { draft = JSON.parse(localStorage.getItem(DRAFT) || '{}'); } catch {}
+
+    for (const el of fields) {
+      const value = draft[el.dataset.path!];
+      if (typeof value === 'string') el.textContent = value;
+    }
+    for (const box of document.querySelectorAll<HTMLInputElement>('[data-include]')) {
+      if (draft[`!${box.dataset.include}`] === false) box.checked = false;
+    }
+    mark(Object.keys(draft).length ? 'edited in this browser' : 'matches the site');
+
+    let timer: number | undefined;
+    root.addEventListener('input', save);
+    root.addEventListener('change', save);
+    function save() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const d: Record<string, unknown> = {};
+        for (const el of fields) {
+          const path = el.dataset.path!;
+          const value = (el.textContent || '').trim();
+          if (value !== String(get(base, path) ?? '').trim()) d[path] = value;
+        }
+        for (const box of document.querySelectorAll<HTMLInputElement>('[data-include]')) {
+          if (!box.checked) d[`!${box.dataset.include}`] = false;
+        }
+        try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch {}
+        mark(Object.keys(d).length ? 'edited in this browser' : 'matches the site');
+      }, 350);
+    }
+
+    /* ---- generate ---- */
+    document.querySelector('[data-generate]')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      btn.disabled = true;
+      say('setting the type…');
+      try {
+        const data = JSON.parse(JSON.stringify(base));
+        for (const el of fields) set(data, el.dataset.path!, (el.textContent || '').trim());
+
+        /* Drop excluded entries back to front so the indices stay valid. */
+        const drops = [...document.querySelectorAll<HTMLInputElement>('[data-include]')]
+          .filter((b) => !b.checked)
+          .map((b) => b.dataset.include!)
+          .sort()
+          .reverse();
+        for (const path of drops) {
+          const m = path.match(/^sections\.(\d+)\.items\.(\d+)$/);
+          if (m) data.sections[+m[1]].items.splice(+m[2], 1);
+        }
+        data.sections = data.sections.filter((s: any) => s.items.length);
+
+        const { renderCv } = await import('../../../lib/cv-layout.mjs');
+        const { bytes, pages } = await renderCv(data);
+        const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${String(data.author).replace(/[^\w]+/g, '-')}-CV.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        say(`${pages} page${pages === 1 ? '' : 's'} — downloaded`);
+      } catch (err) {
+        console.error(err);
+        say('could not generate the PDF — see the console');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    /* ---- reset ---- */
+    document.querySelector('[data-reset]')?.addEventListener('click', () => {
+      try { localStorage.removeItem(DRAFT); } catch {}
+      for (const el of fields) el.textContent = String(get(base, el.dataset.path!) ?? '');
+      for (const box of document.querySelectorAll<HTMLInputElement>('[data-include]')) box.checked = true;
+      mark('matches the site');
+      say('reset to the site');
+    });
+  }
+
+  setup();
+  document.addEventListener('astro:page-load', setup);
+</script>
+
+<style>
+  .pf { padding-top: clamp(2.5rem, 7vh, 5rem); }
+</style>

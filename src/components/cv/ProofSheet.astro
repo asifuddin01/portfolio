@@ -1,0 +1,299 @@
+---
+/**
+ * The CV as it will be set: one box per section, every field visible.
+ *
+ * Rendered on two routes. /vitae/cv passes nothing and gets a read-only
+ * proof; /vitae/cv/edit passes `editable` and gets contenteditable fields,
+ * the include toggles and the generate controls. The difference is decided
+ * here at build time, so the public page contains no editing markup to switch
+ * back on — the gate is Cloudflare Access in front of the route, not anything
+ * in this file.
+ */
+import LesionRule from '../ornament/LesionRule.astro';
+import type { Cv, CvItem, CvSection } from '../../lib/cv-data.mjs';
+
+interface Props {
+  cv: Cv;
+  /** Editable fields, include toggles and the generate controls. */
+  editable?: boolean;
+  /** The published PDF, offered on both routes. */
+  pdfHref: string;
+}
+const { cv, editable = false, pdfHref } = Astro.props;
+
+const LABELS: Record<string, string> = {
+  title: 'Title', right: 'Date', subtitle: 'What it does', detail: 'Detail',
+};
+const FIELDS = ['title', 'right', 'subtitle', 'detail'];
+
+interface ProofField { key: string; label: string; value: string; path: string }
+interface ProofItem { path: string; fields: ProofField[] }
+interface ProofBox { id: string; heading: string; items: ProofItem[] }
+
+const boxes: ProofBox[] = cv.sections.map((sec: CvSection, si: number) => ({
+  id: sec.id,
+  heading: sec.heading,
+  items: sec.items.map((item: CvItem, ii: number) => ({
+    path: `sections.${si}.items.${ii}`,
+    fields: FIELDS
+      .filter((f) => (item as Record<string, string | undefined>)[f])
+      .map((f) => ({
+        key: f,
+        label: LABELS[f] ?? f,
+        value: (item as Record<string, string>)[f],
+        path: `sections.${si}.items.${ii}.${f}`,
+      })),
+  })),
+}));
+
+/* plaintext-only keeps pasted markup out of a field; engines without it fall
+   back to plain contenteditable, and the value is read with textContent
+   either way. */
+const ce = editable ? 'plaintext-only' : undefined;
+---
+<header class="pf-head">
+  <p class="pf-kicker" data-reveal>Vitae</p>
+  <h1 class="pf-h1" data-press>
+    {editable ? 'Correcting the proof' : 'The curriculum vitae, in proof'}
+  </h1>
+  <p class="pf-lede codex-measure" data-reveal>
+    {editable
+      ? 'Retype anything, or drop an entry with its include switch, then generate the PDF. Changes stay in this browser.'
+      : 'Every section of the CV as it will be set, drawn from the same content as the rest of this site. The PDF below is generated from exactly this.'}
+  </p>
+
+  <div class="pf-actions" data-reveal>
+    <a class="pf-btn" href={pdfHref} download>Download the PDF</a>
+    {editable && (
+      <>
+        <button class="pf-btn" type="button" data-generate>Generate PDF from this proof</button>
+        <button class="pf-btn pf-quiet" type="button" data-reset>Reset to the site</button>
+        <a class="pf-btn pf-quiet" href="/vitae/cv">Stop editing</a>
+        <span class="pf-state" data-state></span>
+      </>
+    )}
+    <span class="pf-status" data-status role="status" aria-live="polite"></span>
+  </div>
+
+  {editable && (
+    <p class="pf-note codex-measure" data-reveal>
+      Changes stay in this browser and shape only the PDF you generate here —
+      the published file and the site itself are untouched. To change those,
+      edit the content in <a class="link" href="/admin">/admin</a>.
+    </p>
+  )}
+</header>
+
+<LesionRule />
+
+<div class:list={['pf-sheet', { 'is-editable': editable }]} data-proof>
+  <section class="pf-box" aria-labelledby="pf-mast">
+    <h2 class="pf-box-h" id="pf-mast">Masthead</h2>
+    <div class="pf-grid">
+      <div class="pf-f">
+        <span class="pf-lab">Name</span>
+        <div class="pf-v pf-v-lg" data-path="author" contenteditable={ce} spellcheck="false">{cv.author}</div>
+      </div>
+      {cv.contact.map((line: string, i: number) => (
+        <div class="pf-f">
+          <span class="pf-lab">Contact {i + 1}</span>
+          <div class="pf-v" data-path={`contact.${i}`} contenteditable={ce} spellcheck="false">{line}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="pf-box" aria-labelledby="pf-sum">
+    <h2 class="pf-box-h" id="pf-sum">Summary</h2>
+    <div class="pf-f">
+      <div class="pf-v" data-path="summary" contenteditable={ce} spellcheck="false">{cv.summary}</div>
+    </div>
+  </section>
+
+  {boxes.map((sec) => (
+    <section class="pf-box" aria-labelledby={`pf-${sec.id}`}>
+      <div class="pf-box-bar">
+        <h2 class="pf-box-h" id={`pf-${sec.id}`}>{sec.heading}</h2>
+        <span class="pf-count">{sec.items.length} {sec.items.length === 1 ? 'entry' : 'entries'}</span>
+      </div>
+      <ol class="pf-items">
+        {sec.items.map((item) => (
+          <li class="pf-item">
+            {editable && (
+              <label class="pf-omit">
+                <input type="checkbox" checked data-include={item.path} />
+                <span>include</span>
+              </label>
+            )}
+            <div class="pf-grid">
+              {item.fields.map((f) => (
+                <div class="pf-f">
+                  <span class="pf-lab">{f.label}</span>
+                  <div
+                    class:list={['pf-v', { 'pf-v-t': f.key === 'title' }]}
+                    data-path={f.path}
+                    contenteditable={ce}
+                    spellcheck="false"
+                  >{f.value}</div>
+                </div>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ))}
+</div>
+
+<LesionRule />
+
+<p class="pf-foot codex-measure">
+  No phone number appears here or in the PDF: this page is public, and a number
+  on a public page is a different exposure from one on a CV handed to a person.
+  <a class="link" href="/vitae">The vitae page</a> reads the same content in full.
+</p>
+
+<script is:inline type="application/json" id="pf-data" set:html={JSON.stringify(cv)} />
+
+<style>
+  .pf { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pf-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .pf-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .pf-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .pf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 1.6rem;
+  }
+  .pf-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: none;
+    border: var(--rule) solid var(--brass);
+    padding: 0.55em 1.1em;
+    cursor: pointer;
+  }
+  .pf-btn:hover { border-color: var(--fundus); color: var(--fundus); }
+  .pf-btn[disabled] { opacity: 0.5; cursor: progress; }
+  .pf-quiet { border-color: color-mix(in srgb, var(--brass) 45%, transparent); }
+  .pf-status, .pf-state {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .pf-state {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    padding: 0.4em 0.7em;
+    letter-spacing: 0.06em;
+  }
+  .pf-note {
+    margin-top: 1.1rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.75;
+    color: var(--ink-soft);
+    border-left: 2px solid color-mix(in srgb, var(--brass) 60%, transparent);
+    padding-left: 0.9rem;
+  }
+
+  .pf-sheet { display: grid; gap: 1.6rem; max-width: 64rem; }
+  .pf-box {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    background: var(--paper-raised);
+    padding: 1.2rem 1.4rem 1.4rem;
+  }
+  .pf-box-bar { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .pf-box-h {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.9rem;
+  }
+  .pf-box-bar .pf-box-h { margin-bottom: 0.9rem; }
+  .pf-count { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .pf-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+  .pf-item {
+    position: relative;
+    padding-top: 1.1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .pf-item:first-child { padding-top: 0; border-top: 0; }
+
+  .pf-grid { display: grid; gap: 0.6rem; }
+  .pf-f { display: grid; gap: 0.2rem; }
+  .pf-lab {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--brass-text) 80%, transparent);
+  }
+  .pf-v {
+    font-size: var(--t-base);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    white-space: pre-wrap;
+  }
+  .pf-v-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--ink); line-height: 1.35; }
+  .pf-v-lg { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); }
+
+  /* Only once editing is unlocked does a field look like somewhere to type. */
+  .is-editable .pf-v {
+    border: var(--rule) dashed color-mix(in srgb, var(--brass) 45%, transparent);
+    padding: 0.35rem 0.5rem;
+    margin-left: -0.5rem;
+  }
+  .is-editable .pf-v:hover { border-style: solid; }
+  .is-editable .pf-v:focus {
+    outline: none;
+    border-color: var(--fundus);
+    border-style: solid;
+    background: color-mix(in srgb, var(--brass) 8%, transparent);
+  }
+
+  .pf-omit {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .pf-omit input { accent-color: var(--brass); }
+  .pf-item:has(input[data-include]:not(:checked)) { opacity: 0.42; }
+
+  .pf-foot {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.8;
+    color: var(--ink-soft);
+    margin-bottom: 2.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .pf-h1 { font-size: var(--t-xl); }
+    .pf-box { padding: 1rem; }
+  }
+</style>

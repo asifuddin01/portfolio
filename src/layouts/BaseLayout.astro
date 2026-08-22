@@ -27,14 +27,17 @@ interface Props {
   folio?: string | number;
   image?: string;
   type?: 'website' | 'article';
+  /** Keeps a page out of search results. For routes behind Cloudflare Access,
+      which crawlers cannot reach anyway but should not be advertised. */
+  noindex?: boolean;
 }
 
-const { title, description, folio, image, type } = Astro.props;
+const { title, description, folio, image, type, noindex } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={title} description={description} image={image} type={type} />
+    <BaseHead title={title} description={description} image={image} type={type} noindex={noindex} />
     <ClientRouter />
     <!-- No-flash theme + the `js` gate. Both must land before first paint:
          without `js`, motion.css leaves every element visible, so a broken

@@ -12,6 +12,7 @@ export const GET: APIRoute = () =>
 Allow: /
 Disallow: /admin
 Disallow: /uploads/
+Disallow: /vitae/cv/edit
 
 Sitemap: ${new URL('sitemap-index.xml', SITE).href}
 `,

@@ -8,9 +8,11 @@ interface Props {
   /** Route-level OG image, absolute or root-relative. */
   image?: string;
   type?: 'website' | 'article';
+  /** Emits robots noindex. Used by routes behind Cloudflare Access. */
+  noindex?: boolean;
 }
 
-const { title, description, image = '/og.png', type = 'website' } = Astro.props;
+const { title, description, image = '/og.png', type = 'website', noindex } = Astro.props;
 
 const { github, linkedin } = await getContact();
 // Astro's pathname keeps a trailing slash; the links and the served URL do
@@ -44,6 +46,7 @@ const personLd = {
 <meta name="description" content={description} />
 <meta name="author" content={AUTHOR} />
 <link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="sitemap" href="/sitemap-index.xml" />

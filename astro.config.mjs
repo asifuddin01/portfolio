@@ -87,7 +87,7 @@ export default defineConfig({
     // The editor is noindex'd, but listing it in the sitemap invites crawlers
     // to it anyway.
     sitemap({
-      filter: (page) => !page.includes('/admin'),
+      filter: (page) => !page.includes('/admin') && !page.includes('/vitae/cv/edit'),
       // Match the canonical, slash-less form the links use.
       serialize: (item) => {
         // Strip the trailing slash so the sitemap names the same address the
