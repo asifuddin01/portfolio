@@ -1,0 +1,96 @@
+---
+entry: 25
+kind: model
+title: 'The baseline nobody specifies'
+subject: 'scVI (Lopez et al., Nature Methods 2018)'
+summary: 'The most useful model in single-cell biology, and the one nobody writes about.'
+figure: FigCountLikelihood
+status: published
+updated: 2026-08-22
+source: https://www.nature.com/articles/s41592-018-0229-2
+links:
+  - title: 'scVI'
+    url: https://www.nature.com/articles/s41592-018-0229-2
+  - title: 'scvi-tools'
+    url: https://scvi-tools.org
+  - title: 'Pharma integration benchmark'
+    url: https://www.biorxiv.org/content/10.64898/2026.04.17.719314v1
+  - title: 'Zero-shot evaluation'
+    url: https://link.springer.com/article/10.1186/s13059-025-03574-x
+---
+
+I have now written three posts in this series arguing that simple baselines beat single-cell foundation models, and in none of them did I say what the baseline actually is. That is a bad habit and it is worth correcting properly, because scVI is more interesting than its role as a punchline suggests.
+
+## The problem it solves
+
+Single-cell RNA sequencing gives you a matrix. Rows are cells, columns are genes, entries are counts of how many transcripts of that gene were captured in that cell.
+
+Three things about that matrix make standard methods fail.
+
+The counts are discrete and mostly zero. A typical cell has detectable expression for a few thousand of twenty thousand genes. The zeros are a mix of genes genuinely off and genes present but missed by a lossy capture process. The distribution is overdispersed relative to Poisson.
+
+Every cell has a different sequencing depth. One cell might yield 2,000 counts and another 20,000, and that difference is a property of the droplet and the chemistry, not the biology. If you do not handle it, your first principal component is library size.
+
+Everything was run in batches. Different days, different chips, different donors, different labs. Batch effects in single-cell data are frequently larger than the biological differences you are trying to detect.
+
+Any method that ignores these produces a beautiful embedding of your experimental logistics.
+
+## What scVI does
+
+It is a variational autoencoder, and the interesting parts are the three places where it departs from the textbook version.
+
+A count likelihood, not a Gaussian one. The decoder outputs parameters of a negative binomial, or a zero-inflated negative binomial, rather than a mean and a variance for squared error. This sounds like a detail. It is the difference between modelling what the assay produces and modelling a convenient fiction about it. Overdispersion is real and the negative binomial has a parameter for it.
+
+Batch as an explicit conditioning variable. Batch identity is fed into both encoder and decoder. The decoder can use it to explain away batch-driven variation, which means the latent space does not have to encode it. Contrast this with the common alternative of embedding first and correcting afterwards, which asks a downstream method to remove something the representation has already entangled.
+
+A separate latent for library size. Sequencing depth gets its own scaling factor per cell, so it is modelled rather than allowed to contaminate the cell-state latent.
+
+Then the practical decision that made it usable: inference is amortized. Rather than optimising variational parameters separately for every cell, an encoder network maps cells to latent distributions in one forward pass. That is what lets it run on millions of cells on ordinary hardware, and it is why scVI survived the scale-up of the field while several contemporaries did not.
+
+What you get out is a low-dimensional embedding, usually ten to thirty dimensions, that is batch-corrected, depth-normalised, and suitable for clustering, visualisation, differential expression and downstream analysis.
+
+## The ecosystem
+
+scVI is now the core of scvi-tools, and the family matters as much as the original model. scANVI adds semi-supervision when you have some cell-type labels. totalVI handles CITE-seq, jointly modelling RNA and surface protein. MultiVI does multiomic integration. There are models for deconvolution, doublet detection, and spatial data.
+
+This is a thing foundation-model releases usually lack. Not a checkpoint, an ecosystem, with consistent APIs, documentation, and eight years of people filing issues about edge cases in their own data.
+
+## The evidence it still wins
+
+A pharmaceutical benchmark, April 2026. scGPT, a continually pretrained scGPT checkpoint, scFoundation, scMulan and CellFM, evaluated against scVI and Harmony on over 1.5 million cells from clinical and preclinical samples, scored on technical correction and biological structure preservation with robustness-oriented rankings. scVI was the top overall performer by their multi-metric ranking and achieved the highest Pareto Front-1 hit. Among foundation models, fine-tuned scGPT did best, which is the same lesson as [Geneformer](/marginalia/the-model-is-fine.-the-framing-wasn-t): fine-tuning works, zero-shot does not.
+
+Kedzierska and colleagues, Genome Biology 2025. Zero-shot Geneformer and scGPT embeddings underperformed highly variable gene selection, scVI, and Harmony on cell clustering.
+
+VCBench, June 2026. Pre-registered linear and nearest-neighbour baselines matched or exceeded every evaluated foundation model on four of five capability dimensions.
+
+Three independent evaluations, different teams, different data, same direction.
+
+## Where I would push back
+
+No transfer. This is the real limitation and it deserves stating plainly. You train scVI on your data. There is no pretrained checkpoint bringing knowledge from thirty million other cells. If you have four hundred cells from a rare tissue, a foundation model's pretraining is exactly the thing that should help, and scVI offers nothing there. The foundation-model programme is not stupid. It is aimed at a real gap. It has just not yet delivered on it in most settings.
+
+The latent space is uninterpretable. Dimension 7 is not a pathway and never will be. PCA at least gives you variance explained per component and loadings you can inspect. scVI gives you a black box that works.
+
+Stochasticity. It is a neural network trained with SGD. Seeds matter, results move between runs, and the amount they move is rarely reported. PCA is deterministic. When you are comparing methods, that difference in variance is easy to forget and hard to defend.
+
+Over-correction is the dangerous failure. Conditioning on batch removes batch-associated variation. If your batches are confounded with your biological condition, which happens constantly in clinical data where each patient is a batch, then batch-associated variation includes your effect. scVI will remove it cleanly and give you a well-mixed, biologically empty embedding. This is not a bug in scVI. It is a design problem in the experiment. But the method's efficiency at doing what you asked makes it easy not to notice.
+
+Hyperparameters matter more than people admit. Latent dimensionality, number of layers, dispersion parameterisation, gene selection upstream. Defaults are good and results are not invariant to them.
+
+It does not do the interesting thing. scVI gives you a representation. It does not predict how a cell responds to a perturbation you have not run. That is the question the field actually wants answered, and it is what [STATE](/marginalia/state-arc-virtual-cell) is about.
+
+## Why this post exists
+
+Because "run the baseline" is advice everyone agrees with and few people follow, and part of the reason is that the baseline is usually left unspecified.
+
+For single-cell integration and representation, it is scVI, and running it properly means running it with the same care you would give the model you are hoping to promote. Tuned defaults, multiple seeds, the same preprocessing, the same evaluation splits. A baseline you ran carelessly and beat is not evidence of anything.
+
+The pattern across this series is now clear enough to state as a rule. In [logistic regression](/marginalia/logistic-regression) the instrument measuring every self-supervised vision encoder turned out to be logistic regression. In [nnU-Net](/marginalia/nnu-net-the-3d-one), the thing 3D medical transformers kept losing to was a well-configured U-Net. Here it is an eight-year-old VAE.
+
+The lesson is not that new methods do not work. It is that the field's evaluation culture consistently under-invests in the comparison that would tell you whether they do.
+
+## Verdict
+
+The most useful model in single-cell biology, and the one nobody writes about.
+
+Use it. Report it. Make the expensive thing beat it, with the same effort you spent on the expensive thing. If the gap is small, say so, and then decide whether the complexity is worth it in your setting.

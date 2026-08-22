@@ -1,0 +1,42 @@
+---
+entry: 4
+kind: model
+title: 'Swin UNETR V2'
+subject: 'Swin UNETR V2 (NVIDIA, 2023)'
+summary: 'A transformer that had to be handed convolutions back before it worked properly.'
+figure: FigConvHandback
+status: published
+updated: 2026-08-22
+source: https://link.springer.com/chapter/10.1007/978-3-031-43901-8_40
+links:
+  - title: 'Paper'
+    url: https://link.springer.com/chapter/10.1007/978-3-031-43901-8_40
+  - title: 'nnU-Net Revisited'
+    url: https://arxiv.org/abs/2404.09556
+---
+
+[ConvNeXt V2](/marginalia/convnext-v2) was a ConvNet built to look like a transformer. This one is the mirror image. A transformer that had to be handed convolutions back before it worked properly.
+
+Quick context if you don't do 3D medical imaging. Segmenting an organ or a tumor in a CT or MRI volume isn't classification, you need a label per voxel. So the standard shape is a U-Net: an encoder that downsamples, a decoder that upsamples, skip connections carrying fine detail across the gap. Swin UNETR (NVIDIA, 2022) keeps the U and swaps the encoder for a 3D Swin Transformer. Windowed self-attention, shifted between blocks, which buys long-range context without attending over a whole volume. The decoder stays convolutional.
+
+It worked. Top of the BTCV leaderboard, strong on BraTS, and it became the transformer people reached for, largely because MONAI shipped it.
+
+Then the problems surfaced, and the V2 paper is unusually honest about them. Straight from its own abstract: self-attention has no strong inductive bias, so the model is harder to train, needs more data, and is sensitive to the training recipe. And in many clinical scenarios transformers still lose to nnU-Net.
+
+The fix is one block. A residual convolution at the start of every encoder stage, before the Swin blocks. Conv, then two Swin blocks, then patch merging. That is the entire contribution.
+
+In MONAI it's use_v2=True.
+
+And it delivers. Top results on WORD, FLARE2021, and the MSD pancreas, prostate and lung tasks, using one training recipe across all of them. Not needing a fresh recipe per dataset is the part I actually care about.
+
+Now the part that should change how you read all of the above.
+
+In 2024, Isensee and colleagues published nnU-Net Revisited, a benchmark built specifically to avoid weak baselines. SwinUNETR, nnFormer and CoTr all failed to match CNNs, including the original nnU-Net from years earlier. The best transformer was CoTr, and the paper attributes that to its convolutional components. Running the same method in two frameworks, plain nnU-Net beat Auto3DSeg on 5 of 6 datasets.
+
+Same pattern as [ConvNeXt V2](/marginalia/convnext-v2), pointing the other way. Whenever a transformer wins in 3D medical imaging, the convolutions are doing more of the work than the title admits.
+
+To be fair, the nnU-Net authors flag their own caveat: this holds for training from scratch on small benchmarks. Scale the data and pretrain properly and it may well flip.
+
+Why I still use it. The 3D self-supervised pretrained weights are genuinely useful when you have 200 labelled volumes instead of 2,000. MONAI makes it a flag. On some anatomy the long-range context does help.
+
+Why I don't start there. If you want the best Dice on a small dataset this week, run nnU-Net first. Beat that, then get clever.

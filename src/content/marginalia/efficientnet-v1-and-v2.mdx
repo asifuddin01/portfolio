@@ -1,0 +1,54 @@
+---
+entry: 20
+kind: model
+title: 'EfficientNet, V1 and V2'
+subject: 'EfficientNet (Tan and Le, 2019 and 2021)'
+summary: 'Fewer FLOPs, 2.7x slower, same accuracy. The name did a decade of damage.'
+figure: FigFlopsVsLatency
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2103.07579
+links:
+  - title: 'FLOPs versus latency'
+    url: https://arxiv.org/abs/2103.07579
+  - title: 'V1'
+    url: https://arxiv.org/abs/1905.11946
+  - title: 'V2'
+    url: https://arxiv.org/abs/2104.00298
+---
+
+EfficientNet-B6 uses 1.8 times fewer FLOPs than ResNet-RS-350. On the same TPU it runs 2.7 times slower. Both land at 84.0% on ImageNet.
+
+That isn't a typo. It's the most useful thing these two papers taught the field.
+
+Why a 2019 model gets a post: it's still one of the most-used backbones in academic work, and still the baseline half of applied vision papers compare against. Open almost any medical imaging paper and there's a B-something sitting in the table.
+
+What V1 got right, because it's elegant. Before 2019, scaling a ConvNet meant picking a dimension and pushing. Deeper, wider, higher resolution. Tan and Le showed the three are coupled and should move together under one compound coefficient. B0 came from a neural architecture search. Everything above is that network run through the formula.
+
+The ladder, AutoAugment numbers: B0 77.1% at 224px and 5.3M params. B3 81.6%. B4 82.9% at 380px. B5 83.6%. B6 84.0%. B7 84.3% at 600px, 66M params, 37B FLOPs.
+
+B4 is the one that made the argument land. Same FLOP budget as ResNet-50, and it moved top-1 from 76.3% to 82.6%.
+
+Push the family with Noisy Student pseudo-labelling and B7 hits 86.9%, L2 hits 88.4%, and that was ImageNet state of the art.
+
+The block was MBConv: depthwise conv, pointwise conv, squeeze-and-excitation. Depthwise costs far fewer FLOPs than dense. Hence the name.
+
+Then two years later, Tan and Le published the problems themselves.
+
+Their own list. Large training images are slow, because memory forces the batch size down. Depthwise convolutions are slow in early layers. Scaling every stage equally isn't optimal.
+
+Read the second one again. The operation the architecture was built around is slow, exactly where the network carries the most resolution.
+
+V2's fix is Fused-MBConv, swapping that pair for one ordinary 3x3 convolution, in early stages only. It uses more FLOPs. It runs faster. Spending FLOPs to gain speed is the sentence worth keeping.
+
+V2's numbers: V2-L reaches 85.7% on ImageNet-1k alone. With ImageNet-21k pretraining, V2-XL hits 87.3%, two points above ViT and training 5 to 11 times faster. V2-M matches B7 with 17% fewer parameters, 37% fewer FLOPs, and 11x faster training.
+
+Why the gap exists: depthwise convolutions on large activations have a poor compute-to-memory ratio. Accelerators are bound by memory bandwidth, not arithmetic.
+
+Where I'd push back.
+
+The name did damage. "Efficient" meant FLOP-efficient, and a decade of practitioners read it as fast.
+
+And I wouldn't start here in 2026. ConvNeXt V2 from [ConvNeXt V2](/marginalia/convnext-v2) is often quicker at matched accuracy on real GPUs.
+
+Read V2's problem statement even if you never touch the model. Three sentences of authors stating what was wrong with their own famous paper. Same shape as [nnU-Net](/marginalia/nnu-net-the-3d-one) and [Qwen](/marginalia/qwen-the-family).

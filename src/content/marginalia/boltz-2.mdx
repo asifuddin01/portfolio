@@ -1,0 +1,74 @@
+---
+entry: 23
+kind: model
+title: 'The number a chemist can use'
+subject: 'Boltz-2 (MIT CSAIL and Recursion, 2025)'
+summary: 'A neural network reaching the correlation of a physics simulation, three orders of magnitude faster.'
+figure: FigAffinityGap
+status: published
+updated: 2026-08-22
+source: https://boltz.bio/boltz2
+links:
+  - title: 'Boltz-2'
+    url: https://boltz.bio/boltz2
+  - title: 'Preprint'
+    url: https://www.biorxiv.org/content/10.1101/2025.06.14.659707v1
+  - title: 'Announcement'
+    url: https://ir.recursion.com/news-releases/news-release-details/mit-and-recursion-release-boltz-2-next-generation-ai-model
+---
+
+AlphaFold solved a problem that had been open for fifty years, and in doing so it made a second problem more visible.
+
+Knowing the structure of a protein-ligand complex tells you the two molecules can fit together. It does not tell you how strongly they hold, and binding affinity is the quantity a drug discovery programme actually runs on. A compound that binds a hundred times more tightly than another is a different proposition entirely, and structure alone will not separate them.
+
+The rigorous answer is free energy perturbation. FEP simulates the thermodynamics directly and it works. It is also expensive enough that running it is a scheduling decision rather than a routine step. You use it to check a shortlist. You cannot use it to build one.
+
+That gap, between structures you can generate at scale and affinities you cannot, is where Boltz-2 aims.
+
+## What it is
+
+Boltz-2 is a biomolecular co-folding model. It predicts the structure of a complex and, through a dedicated affinity module, predicts how tightly the components bind. It is the first deep learning model to approach FEP accuracy on that second task.
+
+It descends from Boltz-1, which mattered for a specific reason. AlphaFold3 was published in Nature without usable code, and the resulting objection from the research community was loud and well founded. Boltz-1 was the open replication, and it became the most-used open alternative in academia and industry. Boltz-2 continues that lineage under an MIT licence, with training code included and commercial use permitted.
+
+Training ran on Recursion's BioHive-2, an NVIDIA-accelerated cluster. The collaboration structure is worth registering: an academic lab and a publicly traded biotech releasing a commercially usable model with its training code. That is not the usual shape of a corporate research release.
+
+## The results
+
+FEP+ benchmark (OpenFE). Targets held out of training. Average Pearson correlation of 0.62, comparable to OpenFE, a widely used open-source FEP pipeline, at more than 1000 times the speed.
+
+That comparison is the whole argument. A neural network reaching the correlation of a physics simulation, three orders of magnitude faster, changes what screening can look like. Ranking a million compounds becomes an afternoon rather than an impossibility.
+
+CASP16 affinity challenge. Boltz-2 outperformed every submitted method across 140 complexes. CASP is blind and community-run, which makes this the most credible number in the release.
+
+Polaris-ASAP. Retrospectively, Boltz-2 matched the top five contenders without fine-tuning and without physics-based relaxation, which is to say without the tuning the actual competitors used.
+
+Molecular dynamics ensembles. On RMSF, a standard measure of local flexibility, Boltz-2's ensembles correlate better with ground-truth simulation than Boltz-1, BioEmu or AlphaFlow. That is a side result and a suggestive one, because dynamics has generally resisted this class of model.
+
+The release also adds controllability features that matter in practice: conditioning on experimental method, distance constraints, and multi-chain template integration.
+
+## Where I would push back
+
+It still trails AlphaFold3 on structure, and the paper says so. The exact framing in their own figure is that Boltz-2 improves over Boltz-1 while still lagging behind AlphaFold3. Press coverage compressed this into "goes beyond AlphaFold3," which is true for affinity and false for structure. If your work needs the best available complex geometry, this is not currently that model. The affinity module is the contribution.
+
+Approaching FEP is not matching FEP. The paper is careful with the word and most coverage is not. A Pearson of 0.62 against experimental readouts is genuinely strong for a fast method and it is a correlation, not a computed binding free energy with error bars you would defend in a program review.
+
+A correlation is a triage instrument. 0.62 supports ranking a library and choosing what to synthesise. It does not support telling a chemist that compound 47 binds at 12 nanomolar. Knowing which decisions a number can carry is most of the skill in using it.
+
+Benchmarks are not programmes. FEP+ and CASP16 are curated. Real screening campaigns involve targets with poor structural data, ligands outside the training distribution, and chemistry that generative models like to propose and nobody can make. None of that appears in a Pearson correlation.
+
+## The licence, which is the other reason to care
+
+I have now written four posts in this series where "open" turned out to mean something narrower on inspection. DINOv3 under a custom Meta licence with a gated download. ConvNeXt V2 with MIT code and CC BY-NC weights. Qwen3.8's flagship under a bespoke licence with revenue thresholds while the coverage said Apache. Kimi K3 moving from modified MIT to a house licence.
+
+Boltz-2 is MIT. Weights, code, training code. Academic and commercial use. Regina Barzilay's stated reason in the announcement is that openness lets other researchers adapt it to their own molecule classes, which is the argument for open weights made by someone who actually wants it used.
+
+Set that beside AlphaGenome from [AlphaGenome](/marginalia/alphagenome), which is the strongest model in its field and reachable only through a non-commercial API. Both are defensible institutional choices. Only one of them lets you check the work.
+
+## Verdict
+
+The most consequential open model in computational drug discovery, and it is honest about what it is.
+
+If you screen compounds, the FEP-adjacent accuracy at 1000x the speed is a genuine change in what is possible, and the MIT licence means you can put it in a commercial pipeline without a lawyer. If you need best-in-class structure prediction, the paper tells you to look elsewhere, and you should take the authors at their word rather than at their press release.
+
+The most encouraging thing about Boltz-2 is not the Pearson coefficient. It is that the open replication of a closed model did not merely catch up, it went and solved the adjacent problem the closed model had not touched.

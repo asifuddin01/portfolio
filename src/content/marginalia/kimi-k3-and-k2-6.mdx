@@ -1,0 +1,46 @@
+---
+entry: 16
+kind: model
+title: 'Kimi K3 and K2.6'
+subject: 'Kimi K3 and K2.6 (Moonshot AI, 2026)'
+summary: 'They said the weights would be out by July 27. On July 27, the weights were out.'
+figure: FigPricePerTask
+status: published
+updated: 2026-08-22
+source: https://platform.moonshot.ai
+links:
+  - title: 'API'
+    url: https://platform.moonshot.ai
+  - title: 'Launch-day notes'
+    url: https://simonwillison.net/2026/Jul/16/kimi-k3/
+  - title: 'Independent benchmarks'
+    url: https://benchlm.ai/models/kimi-3
+---
+
+Moonshot said the weights would be out by July 27. On July 27, the weights were out.
+
+After a year of "open weights coming soon" from more or less everybody, I want to start there rather than with the parameter count. Shipping when you said you would isn't a technical achievement. It's rarer than one.
+
+Now the parameter count, because it's absurd. Kimi K3 is 2.8 trillion parameters, sparse mixture-of-experts, 896 experts with 16 active per token. Largest open-weight model anyone has released, which means the record I mentioned in [DeepSeek V4](/marginalia/deepseek-v4) lasted about twelve weeks.
+
+1M context, native vision, thinking always on. The weights ship in MXFP4, and the good part is that the model was trained quantization-aware from the fine-tuning stage, so the released checkpoint isn't a lossy conversion of something better. It is the model. It's still 1.56 terabytes.
+
+The efficiency work is Kimi Delta Attention, hybrid linear attention interleaved roughly three to one with full attention, cutting KV cache by up to 75%. Same problem DeepSeek attacked in [DeepSeek V4](/marginalia/deepseek-v4) with compressed sparse attention, different answer.
+
+The numbers, and they are Moonshot's own: 81.2 on FrontierSWE, 88.3 on Terminal-Bench 2.0. On their charts K3 beats Opus 4.8 at max and GPT-5.5 at high, and loses to Fable 5 and GPT-5.6 Sol. Independent trackers put it around fifth overall at 80.3 out of 100, strongest on multimodal and grounded work, weakest on knowledge.
+
+But this is a post about two models, and the second matters more for most people.
+
+Kimi K2.6, from April, is 1 trillion total with 32 billion active, at roughly $0.95 in and $4 out per million tokens. K3 is $3 and $15. Three times the price, and people read it as the end of cheap Chinese frontier models.
+
+Per task it's less clear cut. Artificial Analysis measured about $0.94 a task for K3 against $1.04 for GPT-5.6 Sol and $1.80 for Opus 4.8, because K3's answers run token-efficient. A higher rate card and a lower bill are not contradictory.
+
+So the question isn't whether K3 is better. It is. The question is whether your workload notices.
+
+Where I'd push back.
+
+The license moved the wrong way. K2 shipped under a modified MIT license. K3 ships under a bespoke Kimi K3 License published alongside the weights. I don't know its clauses well enough to summarize them, and that's the point. Read it before you build on it.
+
+Thinking can't be turned off, and at launch the API's reasoning effort supports only max. Low and high are promised later. You pay for reasoning tokens on every call whether the task warrants them or not.
+
+Choosing today: K2.6 for anything high volume, K3 when the task is long, visual, or genuinely agentic. And I'd wait for the low-effort setting before putting K3 anywhere near a loop.

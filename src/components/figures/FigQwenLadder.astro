@@ -1,0 +1,37 @@
+---
+/**
+ * Marginalia VIII — the Qwen product is the ladder, and the interesting part
+ * is where the open rungs stop.
+ */
+const RUNGS = [
+  { t: 'laptop', w: 100, open: true },
+  { t: 'workstation', w: 165, open: true },
+  { t: 'server', w: 235, open: true },
+  { t: 'cluster', w: 305, open: true },
+  { t: 'Max class', w: 370, open: false },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ql-t ql-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="ql-t">The open ladder and the closed rung</title>
+  <desc id="ql-d">
+    Five rungs of a model ladder, each wider than the last. The four lower ones
+    ship as open weights. The top rung stayed API-only for most of the family's
+    life, and the gap between the two is the measure of the commitment.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">ship the whole ladder at once</text>
+
+  {RUNGS.map((r, i) => (
+    <g>
+      <rect x="120" y={230 - i * 42} width={r.w} height="30"
+            class={r.open ? 'bx-fill' : 'bx-soft'} />
+      {r.open && <rect x="120" y={230 - i * 42} width={r.w} height="3" class="a1" />}
+      <text x="112" y={250 - i * 42} class="t-sm" text-anchor="end">{r.t}</text>
+      <text x={128 + r.w} y={250 - i * 42} class="t-key">
+        {r.open ? 'open weights' : 'API only, until Aug 2026'}
+      </text>
+    </g>
+  ))}
+
+  <text x="0" y="284" class="t-sm">Watch what they hold back, not what they release. That gap has moved in both directions.</text>
+</svg>

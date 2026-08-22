@@ -1,0 +1,92 @@
+---
+entry: 26
+kind: model
+title: 'Two benchmarks, one model, opposite answers'
+subject: 'STATE (Arc Institute, 2025)'
+summary: 'Both claims are in print. Working out how they can both be true is more useful than picking a side.'
+figure: FigTwoBenchmarks
+status: published
+updated: 2026-08-22
+source: https://arcinstitute.org/news/virtual-cell-model-state
+links:
+  - title: 'STATE announcement'
+    url: https://arcinstitute.org/news/virtual-cell-model-state
+  - title: 'Code'
+    url: https://github.com/ArcInstitute/state
+  - title: 'Virtual Cell Initiative'
+    url: https://arcinstitute.org/virtual-cell-initiative
+  - title: 'VCBench'
+    url: https://www.biorxiv.org/content/10.64898/2026.06.18.733146v1
+---
+
+In June 2025, Arc Institute wrote that STATE is, to the best of their knowledge, the first model in its domain to consistently beat simple linear baselines.
+
+In June 2026, VCBench evaluated five single-cell foundation models against pre-registered linear and nearest-neighbour baselines and reported that the baselines matched or exceeded every one of them on four of five scored dimensions. Arc State was among the five.
+
+Neither claim is dishonest. Both are in print. Working out how they can both be true is more useful than picking a side, and it is the reason this model is worth a post.
+
+## What it is trying to do
+
+Most single-cell models produce representations. You feed in cells, you get embeddings, you cluster them or annotate them or integrate across batches. Useful, and downstream of the question people actually have.
+
+The question people actually have is counterfactual. If I knock out this gene in this cell type, what happens to the transcriptome? Nobody can run every perturbation in every context, because the combinatorics defeat any budget. A model that predicts response would let a lab enumerate thousands of hypotheses in silico and spend its limited wet-lab capacity on the survivors.
+
+That is what a virtual cell model is for, and STATE is Arc's first serious attempt at one.
+
+## The architecture
+
+Two modules, which can be used together or separately.
+
+State Embedding (SE) is trained on observational data from 167 million human cells. It maps a transcriptome into a vector space designed to be smooth, comparable across cell types, and robust to technical noise. It is optional. You can run the transition model on log-normalised expression instead.
+
+State Transition (ST) is where the interesting decision lives. It is trained on perturbational data from over 100 million cells spanning 70 human cell contexts, drawn from Tahoe-100M, Parse-PBMC and Replogle-Nadig. Given a control cell population and a specified perturbation, it predicts how the population's embeddings shift. A learned decoder maps the predicted embeddings back to gene expression space.
+
+The architectural choice worth taking seriously is that ST operates on sets. Existing perturbation models predict one cell at a time. ST is a bidirectional transformer over whole cell collections, so it predicts a distributional shift rather than a per-cell delta.
+
+That matters because perturbation response is heterogeneous. Knock out a gene in a population and you do not get one answer, you get a distribution of answers, and the shape of that distribution carries information. A model that treats cells as independent draws throws that away and then usually reintroduces it through an explicit distributional assumption. Modelling the set directly avoids assuming a form.
+
+Practically, the released tooling is unglamorous in a good way. The preprocessing pipeline normalises counts, applies log1p, and selects highly variable genes, defaulting to 2,000. Note what that means: even the frontier virtual cell model is running on HVG selection, which is the same first step as the baseline it is competing with.
+
+## The numbers, and the disagreement
+
+Arc's evaluation. On Tahoe-100M, STATE improved discrimination of perturbation effects by 50% and doubled accuracy in identifying true differentially expressed genes relative to prior models. Arc's stated claim is that it is the first model in the domain to consistently exceed simple linear methods.
+
+VCBench's evaluation. Five foundation models, including Arc State, against pre-registered linear and nearest-neighbour baselines across five capability dimensions: perturbation response, cross-species transfer, gene regulatory network inference, temporal ordering, and cross-modal prediction. Baselines matched or exceeded every foundation model on four of them. Only TranscriptFormer beat the strongest baseline anywhere, on RNA-to-protein prediction, with a contamination caveat attached, and the architectural choice enabling that advantage caused a spectral collapse that destroyed its temporal ordering.
+
+How do both hold? Several ways, and they are not exotic.
+
+Different baselines. "Simple linear methods" is not one thing. An additive model over mean perturbation effects, a ridge regression on HVG space, and a nearest-neighbour lookup in embedding space are all linear-ish, and they are not equally strong. VCBench pre-registered theirs, which is the methodologically stronger position.
+
+Different splits. Perturbation-held-out, cell-line-held-out and donor-held-out are different problems with different difficulty. A model can beat baselines on one and lose on another.
+
+Different metrics. Discrimination of perturbation effects, differential expression accuracy, and distributional distance rank models differently. Arc reported the metrics they built the model to optimise, which is normal and is also exactly the thing pre-registration exists to constrain.
+
+And the timing. Arc's claim was made about the models available in June 2025. VCBench measured in June 2026 with a rubric designed afterwards.
+
+## Where I would push back
+
+At the field, mostly. This is [Llama 4](/marginalia/llama-3-3-70b-and-llama-4) in a lab coat. There, Meta submitted an experimental chat variant to LMArena and the released weights ranked 32nd. Here nobody has done anything comparable, and yet the reader is still in the position of having two credible numbers pointing opposite directions with no principled way to reconcile them. Biology now has the benchmark-integrity problem that vision and language have been working through for years, and it has arrived faster because the stakes are higher and the datasets are harder.
+
+At the evaluation gap specifically. VCBench's own framing is that most existing benchmarks cannot distinguish real capability from main effects. If a benchmark cannot tell whether a model has learned interaction structure or is reproducing additive effects, then a model scoring well on it has demonstrated very little. That is a criticism of the measuring apparatus, and until it is fixed, vendor claims and independent claims will keep failing to converge.
+
+At the honesty asymmetry. Arc's claim is carefully hedged, "to the best of our knowledge," and the coverage dropped the hedge immediately. That is not Arc's fault and it is a predictable consequence of publishing a superlative.
+
+## What I would credit
+
+The premise, which is correct and unfashionable.
+
+Arc's stated reasoning for building on large perturbational datasets is that disentangling correlation from causation is the central problem, and that CRISPR knockouts and chemical interventions are a more reliable signal of causal effect than purely observational RNA-seq.
+
+That is right, and it is the same argument for why observational single-cell data cannot orient a causal edge on its own. Correlation between two genes across cells is consistent with either direction and with a shared upstream driver. An intervention breaks the symmetry. It is the difference between rung one and rung two of the ladder in [The Book of Why](/marginalia/pearl-book-of-why).
+
+Building a model whose training signal is interventional rather than observational is a structural commitment to the right thing, whatever the benchmark says this month.
+
+And the openness. Code on GitHub, package on PyPI, reproducibility repository, a public challenge with a hundred thousand dollar prize that attracted over 1,200 teams and 300 submissions. That last part matters more than any single benchmark, because a public challenge with held-out private test data is the mechanism that eventually settles arguments like this one.
+
+## Verdict
+
+The most serious attempt at the right problem, evaluated by an apparatus not yet good enough to tell us whether it worked.
+
+If you do perturbation modelling, use STATE and use a strong baseline, and report both. Not as a gesture. As the actual result. The field is in a moment where the honest answer to "is this better" is frequently "our benchmarks cannot yet tell," and saying that out loud is more useful than picking whichever number flatters your method.
+
+I will change my view when a pre-registered, perturbation-held-out benchmark with a baseline someone tuned as hard as their model shows a consistent gap. That is a low bar and nobody has cleared it.

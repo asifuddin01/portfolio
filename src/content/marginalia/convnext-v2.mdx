@@ -1,0 +1,46 @@
+---
+entry: 3
+kind: model
+title: 'ConvNeXt V2'
+subject: 'ConvNeXt V2 (Woo et al., 2023)'
+summary: 'The least exciting model I use, and it shows up in more of my projects than anything else.'
+figure: FigFcmaeGrn
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2301.00808
+links:
+  - title: 'Paper'
+    url: https://arxiv.org/abs/2301.00808
+  - title: 'Code and weights'
+    url: https://github.com/facebookresearch/ConvNeXt-V2
+---
+
+Nobody writes threads about ConvNeXt V2. It's just sitting inside half the pipelines I read, quietly doing its job. Which is exactly why it's worth a post. The models you stop noticing are the models you stop checking.
+
+[SigLIP 2](/marginalia/siglip-2) and [DINOv2 and DINOv3](/marginalia/dinov2-and-dinov3) are both transformers. This one isn't, and that's the whole point of it.
+
+ConvNeXt V2 is a pure convolutional network. No attention anywhere. V1 took a ResNet and modernized it piece by piece until it matched Swin Transformers, which was a humbling result at the time. V2 asked the obvious follow-up: can a ConvNet learn from masked autoencoding the way a ViT does?
+
+Two ideas got it there.
+
+FCMAE, a fully convolutional masked autoencoder. Masking is awkward for convolutions, because a kernel slides straight over the holes and leaks the answer. So they treat the visible patches as sparse data and pretrain with sparse convolutions.
+
+GRN, global response normalization. Bolting MAE onto plain ConvNeXt made things worse, not better. The diagnosis was feature collapse, with channels going redundant. GRN forces channels to compete. Add it, drop LayerScale, and the pretraining finally pays off. The co-design is the contribution, not either half alone.
+
+The lineup, since it goes wider than most families:
+
+Atto 3.7M, Femto 5M, Pico 9M, Nano 15M, Tiny 28M, Base 89M, Large 198M, Huge 650M.
+
+Atto reaches 76.7% on ImageNet-1k at 3.7M params. Huge reaches 88.9% with an ImageNet-22k step in the middle, using public data only. There is no Small. V1 had one, V2 doesn't, and I have watched people lose an afternoon to that. The four tiny ones also came out of Ross Wightman's timm work before the paper existed.
+
+Why I still reach for it. It eats any input resolution without you thinking about position embeddings. It exports to ONNX and TensorRT without drama. On a 4,000 image dataset the convolutional prior still beats a ViT with nothing to lean on. And DINOv3 distilled its 7B teacher into ConvNeXt students, so this shape is still the answer when someone needs a model that actually deploys.
+
+Now the parts nobody mentions.
+
+The weights are CC BY-NC. The code is MIT, the ImageNet checkpoints are not, and non-commercial means non-commercial. Having spent [DINOv2 and DINOv3](/marginalia/dinov2-and-dinov3) complaining about Meta's DINOv3 license, I owe you the symmetry: this one is stricter, and it has been sitting there quietly since 2023.
+
+FCMAE pretraining needs sparse convolution ops. Fine-tuning is easy. Pretraining on your own domain data is a dependency you'll feel.
+
+And there's no text tower and no language alignment of any kind. It's a backbone. If you want zero-shot from a prompt, go back to [SigLIP 2](/marginalia/siglip-2).
+
+It's the least exciting model I use and it shows up in more of my projects than anything else.

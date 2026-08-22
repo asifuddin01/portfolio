@@ -1,0 +1,37 @@
+---
+/**
+ * Marginalia II — dense features rot as a big ViT trains, because the
+ * image-level objective wants abstraction and wins. Gram anchoring pins the
+ * patch-to-patch similarity back to an earlier checkpoint.
+ */
+const early = 'M70,200 C160,196 250,192 340,190';
+const rot   = 'M340,190 C420,190 510,206 660,238';
+const fixed = 'M340,190 C420,186 510,178 660,170';
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ga-t ga-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="ga-t">Patch feature quality over a long training run</title>
+  <desc id="ga-d">
+    Dense task quality plotted against training steps. Early on it rises and
+    holds. Left alone it then declines as the image-level objective pulls the
+    representation toward abstraction. A later phase that pins the patch-to-patch
+    Gram matrix to an earlier teacher checkpoint recovers it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">dense task quality against training steps</text>
+
+  <line x1="70" y1="266" x2="670" y2="266" class="axis" />
+  <line x1="70" y1="266" x2="70" y2="52" class="axis" />
+
+  <path d={early} class="s4" stroke-width="1.8" />
+  <path d={rot} class="s2" stroke-width="1.8" />
+  <path d={fixed} class="s1" stroke-width="1.8" />
+
+  <line x1="340" y1="70" x2="340" y2="266" class="dash" />
+  <text x="340" y="62" class="t-key" text-anchor="middle">anchoring begins</text>
+  <circle cx="340" cy="190" r="4" class="a3" />
+
+  <text x="470" y="152" class="t-sm" fill="var(--lesion-ves)">anchored — +2 mIoU</text>
+  <text x="470" y="258" class="t-sm" fill="var(--lesion-ma)">left alone — features rot</text>
+
+  <text x="0" y="292" class="t-sm">Scaling to 7B only paid off because they fixed this first.</text>
+</svg>

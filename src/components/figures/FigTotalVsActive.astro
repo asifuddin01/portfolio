@@ -1,0 +1,46 @@
+---
+/**
+ * Marginalia XVII — the two numbers. What you store and what you compute
+ * used to be one budget and now are two.
+ */
+const EXPERTS = 16;
+const FIRED = new Set([2, 9]);
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="tv-t tv-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="tv-t">Total parameters against active parameters</title>
+  <desc id="tv-d">
+    A router scores one token against many expert feed-forward layers and runs
+    only the top few. Every expert must be stored in memory; only the fired
+    ones do arithmetic. Compute tracks the small number, memory the large one.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one token</text>
+
+  <rect x="0" y="120" width="96" height="40" class="bx-fill" />
+  <text x="48" y="145" class="t-md" text-anchor="middle">token</text>
+  <line x1="98" y1="140" x2="130" y2="140" class="wire" />
+  <polygon points="130,135 142,140 130,145" class="head" />
+
+  <rect x="150" y="112" width="90" height="56" class="bx-fill" />
+  <text x="195" y="136" class="t-md" text-anchor="middle">router</text>
+  <text x="195" y="154" class="t-sm" text-anchor="middle">top-k</text>
+
+  {Array.from({ length: EXPERTS }, (_, i) => (
+    <g>
+      <rect x={300 + (i % 4) * 74} y={54 + Math.floor(i / 4) * 58} width="60" height="42"
+            class={FIRED.has(i) ? 'bx-fill' : 'bx-soft'} />
+      {FIRED.has(i) && <rect x={300 + (i % 4) * 74} y={54 + Math.floor(i / 4) * 58} width="60" height="3" class="a2" />}
+      {FIRED.has(i) && (
+        <line x1="242" y1="140" x2={298 + (i % 4) * 74} y2={75 + Math.floor(i / 4) * 58} class="s2" stroke-width="1.4" />
+      )}
+    </g>
+  ))}
+
+  <text x="300" y="290" class="t-sm">every expert stored — memory</text>
+  <text x="300" y="272" class="t-sm" fill="var(--lesion-ma)">two fired — compute</text>
+
+  <text x="0" y="216" class="t-sm">A parameter count is</text>
+  <text x="0" y="234" class="t-sm">no longer a capability</text>
+  <text x="0" y="252" class="t-sm">claim. It is a hardware</text>
+  <text x="0" y="270" class="t-sm">requirement.</text>
+</svg>

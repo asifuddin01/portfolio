@@ -1,0 +1,57 @@
+---
+/**
+ * Marginalia III — why masked autoencoding needed two changes at once. A
+ * kernel slides over a hole and leaks the answer; sparse convolution stops it.
+ */
+const N = 9;
+const X0 = 40, S = 30;
+const MASK = new Set([2, 3, 6, 7, 11, 12, 15, 20, 21]);
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="fg-t fg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="fg-t">Masking a convolution, and the collapse it causes</title>
+  <desc id="fg-d">
+    On the left, a masked grid with a kernel window straddling the boundary:
+    an ordinary convolution reads across the hole. In the middle, sparse
+    convolution treats visible patches as sparse data. On the right, channel
+    responses collapse toward each other until global response normalisation
+    forces them to compete.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the problem</text>
+  <text x="252" y="22" class="t-lab">FCMAE</text>
+  <text x="470" y="22" class="t-lab">GRN</text>
+
+  {Array.from({ length: 25 }, (_, i) => (
+    <rect x={X0 + (i % 5) * S} y={50 + Math.floor(i / 5) * S} width={S - 3} height={S - 3}
+          class={MASK.has(i) ? 'bx-soft' : 'bx-fill'} />
+  ))}
+  <rect x={X0 + S} y={50 + S} width={S * 3 - 3} height={S * 3 - 3} class="s2" stroke-width="1.6" fill="none" />
+  <text x={X0} y="222" class="t-sm">a kernel spans the hole</text>
+  <text x={X0} y="240" class="t-sm">and leaks the answer</text>
+
+  <line x1="212" y1="130" x2="240" y2="130" class="wire" />
+  <polygon points="240,125 252,130 240,135" class="head" />
+
+  {Array.from({ length: 25 }, (_, i) => (
+    !MASK.has(i) && <rect x={272 + (i % 5) * S} y={50 + Math.floor(i / 5) * S} width={S - 3} height={S - 3} class="bx-fill" />
+  ))}
+  <text x="272" y="222" class="t-sm">visible patches only,</text>
+  <text x="272" y="240" class="t-sm">as sparse data</text>
+
+  <line x1="444" y1="130" x2="458" y2="130" class="wire" />
+  <polygon points="458,125 470,130 458,135" class="head" />
+
+  {[0, 1, 2, 3, 4, 5].map((i) => (
+    <g>
+      <rect x={490 + i * 34} y={186 - 22} width="22" height="22" class="a4" opacity="0.5" />
+      <rect x={490 + i * 34} y={150 - [58, 54, 60, 56, 59, 55][i]} width="22" height={[58, 54, 60, 56, 59, 55][i]} class="a4" opacity="0" />
+      <rect x={490 + i * 34} y={92} width="22" height={[18, 62, 30, 74, 24, 56][i]} class="a1" />
+    </g>
+  ))}
+  <text x="490" y="182" class="t-sm">collapsed</text>
+  <text x="490" y="80" class="t-sm">competing</text>
+  <text x="490" y="222" class="t-sm">channels forced apart</text>
+  <text x="490" y="240" class="t-sm">by normalisation</text>
+
+  <text x="0" y="278" class="t-sm">Neither half works alone. Bolting MAE onto plain ConvNeXt made things worse.</text>
+</svg>

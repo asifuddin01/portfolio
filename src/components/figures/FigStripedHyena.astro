@@ -1,0 +1,34 @@
+---
+/**
+ * Marginalia XXVII — why a megabase is affordable. Different scales of genomic
+ * structure get different operators, and attention is spent only where needed.
+ */
+const BAND = [
+  { t: 'short explicit conv', note: 'motifs, splice sites', y: 60, cls: 'a1', w: 70 },
+  { t: 'medium regularized conv', note: 'local regulatory syntax', y: 118, cls: 'a3', w: 150 },
+  { t: 'long implicit conv', note: 'domain-scale structure', y: 176, cls: 'a4', w: 290 },
+  { t: 'self-attention', note: 'enhancer to promoter, sparse', y: 234, cls: 'a2', w: 430 },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sh-t sh-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 680px">
+  <title id="sh-t">Operators by the range they cover</title>
+  <desc id="sh-d">
+    Four operator types striped through the model, each covering a different
+    range: short and medium convolutions for local motifs, long implicit
+    convolutions for domain-scale structure, and self-attention reserved for the
+    sparse long-range relationships that need it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one megabase, single-nucleotide resolution</text>
+
+  {BAND.map((b) => (
+    <g>
+      <rect x="0" y={b.y} width={b.w} height="26" class={b.cls} opacity="0.34" />
+      <rect x="0" y={b.y} width={b.w} height="26" class="bx" />
+      <text x={b.w + 12} y={b.y + 18} class="t-md">{b.t}</text>
+      <text x={b.w + 12} y={b.y + 36} class="t-sm">{b.note}</text>
+    </g>
+  ))}
+
+  <text x="0" y="292" class="t-sm">Attention costs the square of the length, so you do not pay it across the whole sequence.</text>
+</svg>

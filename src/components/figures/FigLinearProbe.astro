@@ -1,0 +1,40 @@
+---
+/** Marginalia V — the linear probe is logistic regression wearing a hat. */
+---
+<svg class="fig" viewBox="0 0 720 292" role="img" aria-labelledby="lp-t lp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="lp-t">What a linear probe actually measures</title>
+  <desc id="lp-d">
+    A frozen encoder feeds features into a single linear layer and a softmax.
+    The encoder is the thing under test; the classifier on top is logistic
+    regression, and it is the instrument doing the measuring.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the thing being tested</text>
+  <text x="430" y="22" class="t-lab">the instrument</text>
+
+  <rect x="0" y="60" width="230" height="96" class="bx-fill" />
+  <text x="115" y="102" class="t-md" text-anchor="middle">encoder, frozen</text>
+  <text x="115" y="124" class="t-sm" text-anchor="middle">DINOv2 · ConvNeXt V2 · SigLIP</text>
+  <text x="115" y="176" class="t-key" text-anchor="middle">no gradient reaches here</text>
+
+  <line x1="238" y1="108" x2="330" y2="108" class="wire" />
+  <polygon points="330,103 342,108 330,113" class="head" />
+  <text x="286" y="98" class="t-key" text-anchor="middle">features</text>
+
+  <rect x="430" y="60" width="180" height="96" class="bx-fill" />
+  <rect x="430" y="60" width="180" height="3" class="a2" />
+  <text x="520" y="96" class="t-md" text-anchor="middle">Wx + b</text>
+  <text x="520" y="118" class="t-md" text-anchor="middle">→ softmax</text>
+  <text x="520" y="140" class="t-sm" text-anchor="middle">one weight per feature</text>
+
+  <line x1="618" y1="108" x2="676" y2="108" class="wire" />
+  <polygon points="676,103 688,108 676,113" class="head" />
+  <text x="700" y="112" class="t-md" text-anchor="end">p</text>
+
+  <line x1="430" y1="176" x2="700" y2="176" class="wire-soft" />
+  <text x="430" y="196" class="t-sm">Convex loss. One optimum.</text>
+  <text x="430" y="214" class="t-sm">The same answer every run,</text>
+  <text x="430" y="232" class="t-sm">which is why it can be a ruler.</text>
+
+  <text x="0" y="272" class="t-sm">Every self-supervised paper reports this number. The model doing it is the one nobody names.</text>
+</svg>

@@ -1,0 +1,42 @@
+---
+entry: 10
+kind: model
+title: 'SAM 3'
+subject: 'SAM 3 (Meta, November 2025)'
+summary: 'SAM 1 and 2 answered where. This one answers what, and the clever part is one token.'
+figure: FigPresenceToken
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2511.16719
+links:
+  - title: 'Paper'
+    url: https://arxiv.org/abs/2511.16719
+  - title: 'Code'
+    url: https://github.com/facebookresearch/sam3
+---
+
+[SigLIP 2](/marginalia/siglip-2) mentioned Meta's Perception Encoder in passing, as the thing that beats SigLIP 2 on zero-shot classification. It shows up here as the backbone. That's the nice part about doing these in order.
+
+SAM 1 and SAM 2 answered where. You clicked a point or drew a box and got a mask for that one object. Enormously useful, and completely blind. The model had no idea what it had just segmented.
+
+SAM 3, November 2025, answers what. You type a noun phrase and it returns every instance that matches. Not the biggest one, not the one nearest your click. All of them. Meta calls it promptable concept segmentation, and it is a genuinely different task from what SAM used to do.
+
+The architecture, briefly. A shared Perception Encoder takes the image and the text. A fusion encoder conditions the image embeddings on the prompt. A DETR-style decoder runs learned object queries over that. For video, the SAM 2 tracker and its memory bank carry each mask across frames. 848M parameters for all of it.
+
+The clever part is smaller than any of that.
+
+Open-vocabulary detection has a calibration problem. Every object query has to decide, at once, whether the concept is present and where it is. Those are different questions and they interfere with each other. SAM 3 adds a single learned global token whose only job is to answer whether the concept exists in this image at all. The queries then just localize. The final score is the product of the two. That's the presence token, and it's most of why the numbers moved.
+
+They did move. On SA-Co Gold, cgF1 of 55.7 against OWLv2 at 24.5, DINO-X at 22.5 and Gemini 2.5 at 14.4. Roughly double the field.
+
+Now the ceiling, which the paper states itself. Human performance on that same benchmark is 72.8. SAM 3 reaches about 76% of it. Not solved.
+
+Other limits worth knowing.
+
+It handles short noun phrases. Anything compositional, "people sitting down but not holding a gift box", needs an MLLM wrapped around it as an agent. And text is ambiguous in ways a click never is. Prompt "large circular shape" at a car and nobody can tell you whether the right answer is the tire, the wheel, or the arch.
+
+For medical work, and this is the thread from [Swin UNETR V2](/marginalia/swin-unetr-v2) and [nnU-Net](/marginalia/nnu-net-the-3d-one), it doesn't know what a lesion is. SAM3-Adapter exists for exactly that reason, and on tasks where you actually have labels, nnU-Net is still the thing to beat.
+
+The license is the SAM License, not Apache, with checkpoints gated behind an access request. Third post running where I've had to say that.
+
+SAM 3.1 landed in March 2026 with faster multi-object tracking.

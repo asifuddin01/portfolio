@@ -1,0 +1,88 @@
+---
+entry: 22
+kind: model
+title: 'Refusing the tradeoff'
+subject: 'AlphaGenome (Google DeepMind, Nature 2026)'
+summary: 'The most convincing large model in genomics right now, and the most frustrating to actually use.'
+figure: FigContextResolution
+status: published
+updated: 2026-08-22
+source: https://www.nature.com/articles/s41586-025-10014-0
+links:
+  - title: 'Nature paper'
+    url: https://www.nature.com/articles/s41586-025-10014-0
+  - title: 'Preprint'
+    url: https://www.biorxiv.org/content/10.1101/2025.06.25.661532v1
+  - title: 'DeepMind''s writeup'
+    url: https://deepmind.google/blog/alphagenome-ai-for-better-understanding-the-genome/
+---
+
+Most of the human genome does not code for protein, and most disease-associated variants sit in that non-coding fraction. They do their damage by changing regulation: shifting how much a gene is expressed, where a transcript gets spliced, whether a region of chromatin is open, which transcription factor can bind.
+
+Predicting that from sequence alone is the central computational problem in functional genomics, and for about five years the field has been stuck behind a single structural constraint.
+
+## The tradeoff
+
+You can have long context or fine resolution. Not both.
+
+SpliceAI, BPNet and ProCapNet give you base-pair resolution. They see 10kb or less. Enhancers routinely act from hundreds of kilobases away, so anything distal is simply outside the model's world.
+
+Enformer and Borzoi extended context to roughly 200 to 500kb, which brings distal regulation into view. They paid for it by binning outputs at 128 or 32 base pairs. That blurs precisely the features that matter at fine scale: splice sites, transcription factor footprints, polyadenylation signals.
+
+The constraint is computational rather than conceptual. Attention over a megabase at single-base resolution is expensive, and the memory cost of high-resolution outputs across many tracks compounds it.
+
+AlphaGenome's claim is that the tradeoff was an engineering limit rather than a law. One megabase in, single-base-pair resolution out, eleven output modalities simultaneously.
+
+## What it predicts
+
+From one input sequence, plus a species tag for human or mouse, the model produces gene expression, transcription initiation, chromatin accessibility, histone modifications, transcription factor binding, chromatin contact maps, splice site usage, and splice junction coordinates and strength, across thousands of tracks covering many cell types.
+
+Training draws on the standard consortium resources: ENCODE, GTEx, FANTOM5, 4D Nucleome.
+
+The multimodality is not decoration. A single variant can act through several mechanisms at once, and scoring it against one modality tells you about one pathway. The paper's TAL1 oncogene case study is the demonstration: the model recovers the mechanism of clinically relevant variants by scoring across modalities together rather than separately.
+
+## The numbers
+
+State of the art on 22 of 24 genome track prediction tasks on held-out sequence.
+
+Matching or exceeding the strongest available external model on 25 of 26 variant effect prediction evaluations. Note that the preprint reported 24 of 26 and the published version reports 25. That kind of drift is normal between preprint and journal, usually from a revised external comparison, and it is worth registering that the headline figure moved.
+
+Against specialists: better than SpliceAI and Pangolin on six of seven splicing benchmarks. An 8 to 19% improvement in correlation over ChromBPNet on DNase-seq and ATAC-seq. A 25.5% improvement over Borzoi on eQTL direction-of-effect prediction.
+
+Beating specialist tools at their own tasks, with one model, is the part that should get attention. The usual pattern in this literature is that generalists trade a little accuracy for breadth. This one mostly does not.
+
+## The actual novelty
+
+Splice junction prediction.
+
+Existing splicing models predict splice sites: is this position a donor, is that one an acceptor. Useful, and incomplete, because splicing is a pairing problem. Which donor joins which acceptor, and with what relative strength, determines the isoform that actually exists in the cell.
+
+AlphaGenome predicts junction coordinates and strengths directly from sequence. That had not been done. It changes what you can ask about a variant, because exon skipping and cryptic junction activation become directly predictable rather than inferred from site scores.
+
+Caleb Lareau of Memorial Sloan Kettering described it as a milestone for the field. Given that the previous state of the art on splicing was a genuinely strong specialist model, that assessment seems proportionate rather than promotional.
+
+## Where I would push back
+
+It is an API, not a model you have. Access is a non-commercial preview through DeepMind's endpoint. You cannot run it locally, cannot fine-tune it on a non-model organism or an assay type outside the training set, and cannot inspect the weights. For a tool intended to inform variant interpretation, that is a meaningful limit rather than a licensing quibble. Reproducibility in genomics has a long institutional memory, and gated access to the model behind a published result sits uneasily with it.
+
+Correlation with an assay is not mechanism. The training targets are measured tracks. A model that predicts ATAC-seq extremely well has learned what ATAC-seq reports, which includes the assay's biases, its cell-type coverage, and its noise. Predicting the measurement is a step toward predicting the biology and it is not the same thing. The paper is reasonably careful here. Downstream users often will not be.
+
+Cell-type coverage is bounded by the consortia. The model knows the cell types that ENCODE and GTEx sampled. Tissues and states outside that, including a great many disease-relevant ones, are extrapolation.
+
+It is not a clinical tool. DeepMind says so. Variant effect prediction that matches specialists on benchmarks is not the same as evidence admissible in a diagnostic workflow, and the distance between those two things is measured in years of validation.
+
+## Reading it against Geneformer
+
+I wrote about Geneformer immediately before this, and the two make a pair worth holding together.
+
+In single-cell, foundation models have repeatedly failed to beat linear baselines, and the field is only now building the benchmarks that show it. In regulatory genomics, a large model beats every specialist tool at its own task, and does so on held-out sequence with external comparisons.
+
+The difference is not the size of the model. It is whether the pretraining objective aligns with the downstream task, and whether the evaluation is capable of detecting the difference. Sequence-to-function has an enormous amount of directly supervised measurement to train against. Single-cell masked modelling has a proxy objective and benchmarks that, as VCBench showed, often cannot distinguish real capability from main effects.
+
+Scale is not the variable. Task alignment is.
+
+## Verdict
+
+The most convincing large model in genomics right now, and the most frustrating to actually use.
+
+If you work on non-coding variant interpretation, this changed what is possible and you should be using it. If you need to run it on your own hardware, on your own organism, or with any auditability, you cannot, and that gap is where the next open replication will land. Someone will build it. Given how Boltz-1 followed AlphaFold3, probably within a year.

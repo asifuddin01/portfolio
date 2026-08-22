@@ -3,6 +3,8 @@ import { render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import KindMark from '../../components/marginalia/KindMark.astro';
+import FigureFrame from '../../components/elementa/FigureFrame.astro';
+import { FIGURES, isFigureName } from '../../lib/figures';
 import { getMarginalia } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
@@ -21,6 +23,10 @@ interface Props {
 const { entry, next } = Astro.props;
 const d = entry.data;
 const { Content } = await render(entry);
+
+const figName = entry.data.figure && isFigureName(entry.data.figure) ? entry.data.figure : null;
+const fig = figName ? FIGURES[figName] : null;
+const Figure = fig?.component;
 ---
 <BaseLayout
   title={`${d.title} — Marginalia — Md. Asif Uddin`}
@@ -49,7 +55,26 @@ const { Content } = await render(entry);
       )}
     </header>
 
+    {Figure && fig && (
+      <div class="fig-draw" data-reveal>
+        <FigureFrame n="—" numeral="arabic" caption={fig.caption} id={figName ?? undefined}>
+          <Figure />
+        </FigureFrame>
+      </div>
+    )}
+
     <div class="prose me-body"><Content /></div>
+
+    {entry.data.links.length > 0 && (
+      <section class="me-links" data-reveal aria-labelledby="me-links-h">
+        <h2 class="me-links-h" id="me-links-h">References</h2>
+        <ul>
+          {entry.data.links.map((l) => (
+            <li>{l.url ? <a class="link" href={l.url} rel="noopener">{l.title}</a> : l.title}</li>
+          ))}
+        </ul>
+      </section>
+    )}
 
     <LesionRule />
 
@@ -70,6 +95,24 @@ const { Content } = await render(entry);
 </BaseLayout>
 
 <style>
+  .me-links {
+    margin: 2.4rem 0 0;
+    padding-top: 1.1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    max-width: var(--measure);
+  }
+  .me-links-h {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .me-links ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .me-links li { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 1.7; }
+
   .me { padding-top: clamp(2.5rem, 7vh, 5rem); }
   .me-head { margin-bottom: 2rem; }
   .me-ref {

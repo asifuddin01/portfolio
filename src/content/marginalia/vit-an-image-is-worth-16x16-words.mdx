@@ -1,0 +1,104 @@
+---
+entry: 24
+kind: model
+title: 'The architecture won, the argument did not'
+subject: 'ViT — An Image is Worth 16x16 Words (Dosovitskiy et al., ICLR 2021)'
+summary: 'The paper is careful, conditional and honest about its negative result. What spread was a slogan.'
+figure: FigDataCrossover
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2010.11929
+links:
+  - title: 'ViT'
+    url: https://arxiv.org/abs/2010.11929
+  - title: 'DeiT'
+    url: https://arxiv.org/abs/2012.12877
+  - title: 'Vision Transformers Need Registers'
+    url: https://arxiv.org/abs/2309.16588
+---
+
+Every model I have covered in this series above [EVA-CLIP](/marginalia/eva-clip-8b-and-18b) is a transformer. SigLIP 2, DINOv3, EVA-CLIP, SAM 3, Qwen, DeepSeek, Kimi, Llama 4, MedGemma. All of them descend from one paper that made a specific argument about vision, and the strange thing is that the paper won completely while its central argument mostly lost.
+
+That is worth sitting with, because it is the sort of outcome that gets flattened in retrospect. The usual telling is that transformers replaced convolutions. What actually happened is more interesting and more useful.
+
+## The claim
+
+The paper's own summary is that large scale training trumps inductive bias.
+
+Unpack it. A convolutional network has assumptions welded into its structure. Nearby pixels are more related than distant ones, which is locality. A cat is a cat wherever it sits in the frame, which is translation equivariance. Neither is learned. They are architectural constraints, imposed by the designer, based on knowledge about how images work.
+
+That is inductive bias, and for thirty years it was treated as obviously correct, because it is obviously correct. Images do have local structure. Objects do move around.
+
+ViT's proposition was that the constraint is only worth having when you are short of data. Given enough examples, a model can learn locality and equivariance from scratch, and will do better than one that had those rules imposed, because the learned version is not restricted to what the designer happened to anticipate.
+
+## The architecture, which is deliberately boring
+
+Split the image into fixed-size patches, typically 16x16 pixels. Flatten each patch into a vector. Multiply by a learned matrix to get an embedding. Add a positional embedding so the model knows where the patch came from. Prepend a learnable classification token. Feed the sequence into a standard transformer encoder, the same one from the translation literature, unchanged.
+
+The minimalism is the argument. There is no vision-specific machinery in there. If it works, it works because attention over patches is sufficient, not because someone engineered image priors into the layers.
+
+The notation everybody uses comes from here. ViT-B/16 is a Base-sized model with 16x16 patches. ViT-L/14 is Large with 14x14. Smaller patches mean more tokens, quadratically more attention cost, and finer spatial detail. When you see So400m or ViT-7B/16 on a modern model card, that is this convention, still running.
+
+## The experiment that actually matters
+
+Most attention went to the headline accuracy. The important part of the paper is the dataset-size ablation.
+
+Trained on ImageNet-1k alone, ViT lands a few percentage points below ResNets of comparable size. The authors do not bury this. They report it and explain it in terms of the missing inductive biases.
+
+Pretrained on ImageNet-21k, ViT-L/16 reaches 85.30% on ImageNet.
+
+Pretrained on JFT-300M, Google's internal 300-million-image dataset, ViT-L/16 reaches 87.76% and ViT-H/14 reaches 88.55%, along with 90.72% on ImageNet-ReaL, 94.55% on CIFAR-100 and 77.63% across the 19-task VTAB suite.
+
+For context on that headline number: the previous state of the art was Noisy Student with EfficientNet-L2 at 88.4%, which I wrote about in [EfficientNet](/marginalia/efficientnet-v1-and-v2). ViT-H/14 beat it by fifteen hundredths of a point, using substantially less compute to pretrain.
+
+The crossover is the finding. Below some data threshold, convolution wins. Above it, attention wins. The paper's own conclusion is that convolutional inductive bias is useful for smaller datasets, and that for larger ones learning the patterns directly from data is sufficient and possibly better.
+
+Read carefully, that is a conditional claim with a threshold in it, and the threshold sits somewhere around a hundred million images.
+
+## What the field heard
+
+Not that.
+
+What propagated was "transformers beat CNNs," and the condition fell off in transit. For about two years afterwards, reaching for a ViT became the default move regardless of whether anyone in the room had a hundred million labelled examples, which almost nobody did.
+
+The corrections arrived quickly and from several directions at once.
+
+DeiT, from Touvron and colleagues later in 2021, got ViT-Base to 81.8% on ImageNet-1k alone. The recipe was heavy augmentation, RandAugment and Mixup and CutMix, plus stochastic depth and repeated augmentation, plus a distillation token trained against a convolutional teacher. So the data requirement was not a law of nature. It was a training-recipe problem, and part of the fix was explicitly borrowing knowledge from a ConvNet.
+
+Swin Transformer reintroduced spatial hierarchy and local windowed attention, which is to say it put back a form of the locality prior ViT had removed, and became the default backbone for dense prediction.
+
+ConvNeXt, covered in [ConvNeXt V2](/marginalia/convnext-v2), took a ResNet and modernised it piece by piece using design choices lifted from transformer papers. It matched ViT. That result quietly reframes the debate, because if a ConvNet with updated training recipes and macro design performs like a transformer, a good deal of what looked like an architecture win was a training win.
+
+Swin UNETR V2, from [Swin UNETR V2](/marginalia/swin-unetr-v2), is the version I find hardest to argue with. To make a transformer work on 3D medical volumes, the authors inserted a residual convolution at the start of every encoder stage. Their stated reason is that self-attention has no strong inductive bias, which makes the model harder to train and hungrier for data. That is ViT's thesis quoted back as a problem statement.
+
+nnU-Net Revisited, from [nnU-Net](/marginalia/nnu-net-the-3d-one), benchmarked properly and found SwinUNETR, nnFormer and CoTr all fail to match CNNs in 3D medical segmentation. The strongest transformer was CoTr, and the paper attributes that to its convolutional components.
+
+There is a smaller wrinkle worth knowing. In 2023 a paper found that ViT feature maps contain artifact tokens with roughly ten times the normal norm, sitting in low-information background patches, which the model appears to recycle as scratch space. Adding dedicated register tokens fixes it. I mentioned this in [DINOv2 and DINOv3](/marginalia/dinov2-and-dinov3) in the DINOv2 context. It is a reminder that years in, we are still discovering basic facts about what these representations contain.
+
+## Where I would push back
+
+Not at the paper, which is careful, honest about its negative result, and explicit about the condition.
+
+At the reading. The claim was never that inductive bias is bad. It was that inductive bias is a constraint whose value depends on how much data you have, and that above a certain scale the constraint costs more than it returns. That is nuanced and probably correct. What spread was a slogan.
+
+The practical consequence has been years of people applying data-hungry architectures to small datasets and being disappointed, and a smaller number of people quietly reintroducing convolution wherever it helped. Medical imaging is the clearest case, because those datasets are small by construction and the crossover point is nowhere near.
+
+The second thing I would push on is the JFT dependency. The headline result requires a proprietary 300-million-image dataset nobody outside Google can use. The paper is transparent about it, but it means the central experimental claim was not independently reproducible when it was made. That is a recurring feature of this literature and it deserves naming each time.
+
+## What survived
+
+The architecture, comprehensively. Attention over patch tokens is now the default substrate for vision, and more importantly it is the substrate that made vision-language models straightforward, because once an image is a sequence of tokens you can concatenate it with text tokens and train one model over both. SigLIP, DINOv3, SAM 3 and every VLM in this series depend on that.
+
+The tokenisation idea, which was the real contribution and gets less credit than the accuracy number.
+
+The notation, which you will type for the rest of your career.
+
+What did not survive is the strong form of the argument. Nobody in 2026 believes inductive bias is a crutch to be discarded. The consensus that settled is duller and more useful: match your prior to your data budget, and if you have less data than Google, keep the convolution.
+
+## Verdict
+
+The most consequential vision paper of the decade, and the one most often summarised wrongly.
+
+Read the dataset-size ablation, not the headline table. The ablation is where the science is, and it says something quantitative and falsifiable about when architectural priors help. The headline says something quotable that turned out to be conditional in a way most readers dropped.
+
+If you take one thing from it: the question is never whether transformers beat ConvNets. It is whether you have enough data to afford throwing away a prior that was, on the whole, correct about images.

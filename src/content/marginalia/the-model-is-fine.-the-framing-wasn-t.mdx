@@ -8,7 +8,7 @@ summary: |-
   Single-cell expression data is a problem for tokenization. Counts are sparse, noisy, and vary in scale between cells for reasons that have nothing to do with biology. Feeding raw values invites the model to learn sequencing depth.
   Geneformer's answer is rank value encoding. Within each cell, genes are ranked by expression, but normalized first by that gene's median expression across the entire corpus. A gene that is highly expressed everywhere gets demoted. A gene that is unusually high in this particular cell rises. The result is a ranked list per cell where position encodes something closer to cell identity than to library size.
   Then the standard masked objective. Hide some genes in the ranking, predict them from the rest.
-entry: 8
+entry: 21
 status: published
 updated: 2026-08-20
 source: https://www.nature.com/articles/s41586-023-06139-9

@@ -1,0 +1,45 @@
+---
+/**
+ * Marginalia X — SAM 3's presence token. Splitting "is it here" from "where is
+ * it" is most of why the numbers moved.
+ */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="pt-t pt-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="pt-t">The presence token</title>
+  <desc id="pt-d">
+    Object queries used to answer two questions at once: whether the concept is
+    present and where it is. SAM 3 gives presence its own global token, leaves
+    localisation to the queries, and multiplies the two scores.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one prompt, two questions</text>
+
+  <rect x="0" y="48" width="150" height="40" class="bx" />
+  <text x="75" y="73" class="t-md" text-anchor="middle">"striped cat"</text>
+
+  <line x1="152" y1="68" x2="196" y2="112" class="wire" />
+  <polygon points="191,108 202,120 200,105" class="head" />
+  <line x1="152" y1="68" x2="196" y2="216" class="wire" />
+  <polygon points="191,212 202,224 200,209" class="head" />
+
+  <rect x="206" y="96" width="220" height="52" class="bx-fill" />
+  <rect x="206" y="96" width="220" height="3" class="a2" />
+  <text x="316" y="120" class="t-md" text-anchor="middle">presence token</text>
+  <text x="316" y="138" class="t-sm" text-anchor="middle">is the concept here at all?</text>
+
+  <rect x="206" y="200" width="220" height="52" class="bx-fill" />
+  <rect x="206" y="200" width="220" height="3" class="a1" />
+  <text x="316" y="224" class="t-md" text-anchor="middle">object queries</text>
+  <text x="316" y="242" class="t-sm" text-anchor="middle">where, for each instance</text>
+
+  <line x1="430" y1="122" x2="486" y2="164" class="wire" />
+  <line x1="430" y1="226" x2="486" y2="184" class="wire" />
+  <circle cx="504" cy="174" r="16" class="bx-fill" />
+  <text x="504" y="180" class="t-md" text-anchor="middle">×</text>
+
+  <line x1="522" y1="174" x2="576" y2="174" class="wire" />
+  <polygon points="576,169 588,174 576,179" class="head" />
+  <text x="600" y="178" class="t-md">score</text>
+
+  <text x="0" y="288" class="t-sm">Two questions that interfered when one set of queries answered both. cgF1 55.7 against a field near 24.</text>
+</svg>

@@ -1,0 +1,46 @@
+---
+entry: 5
+kind: model
+title: 'The instrument, not the competitor'
+subject: 'Logistic regression (Berkson 1944, Cox 1958)'
+summary: 'Every linear probe in every self-supervised paper is this model. It is the ruler, and nobody calls it by name.'
+figure: FigLinearProbe
+status: published
+updated: 2026-08-22
+source: https://academic.oup.com/jrsssb/article/20/2/215/7027376
+links:
+  - title: 'Cox 1958'
+    url: https://academic.oup.com/jrsssb/article/20/2/215/7027376
+  - title: 'Calibration'
+    url: https://arxiv.org/abs/1706.04599
+---
+
+Four posts about models with hundreds of millions of parameters. This one has as many parameters as you have features, plus one.
+
+It's also what I used to decide whether any of the other four were worth the trouble.
+
+The quick version, if you skipped stats. Take a weighted sum of your features, push it through a sigmoid, out comes a number between 0 and 1. Fit the weights by maximum likelihood. That's the model. Berkson had the logit in 1944, Cox formalized the regression in 1958, and it has outlived nearly every method that was supposed to replace it.
+
+Here's the part that should change how you read [SigLIP 2](/marginalia/siglip-2) through [Swin UNETR V2](/marginalia/swin-unetr-v2).
+
+Every self-supervised paper reports linear probe numbers. DINOv2, DINOv3, ConvNeXt V2 with FCMAE, all of them. A linear probe is a logistic regression fitted on frozen features. So when a paper claims its representations improved, the instrument measuring that claim is this model. It's the ruler, not the competitor.
+
+And the softmax layer at the end of your classifier is multinomial logistic regression. You never stopped using it. You stopped calling it that.
+
+Why it earns its place:
+
+The loss is convex. One global optimum, no seed lottery, no learning rate schedule, the same answer every run. That's a scientific property, not a convenience. Compare two deep models across three seeds and you'll feel the difference.
+
+The probabilities are honest. Fitting by maximum likelihood makes predicted probabilities line up with observed frequencies on the data you fit. Deep nets don't get that for free. Guo and colleagues showed in 2017 that modern networks are systematically overconfident, which is the entire reason temperature scaling exists. In anything clinical, a well-ranked but badly calibrated 0.9 is dangerous.
+
+It fits in milliseconds, so there's no excuse for not knowing your baseline before you burn a week on a transformer.
+
+Now the honest part.
+
+The boundary is linear in whatever features you hand it. On raw pixels it's useless. Everything above assumes somebody already did the representation learning, which is precisely what [SigLIP 2](/marginalia/siglip-2) to [Swin UNETR V2](/marginalia/swin-unetr-v2) were about.
+
+Perfect separation breaks it. If one feature splits your classes cleanly, the coefficients run off toward infinity. Regularize, or use Firth's penalty.
+
+And the interpretability is oversold. Odds ratios are non-collapsible: adjust for another covariate and the odds ratio shifts even with no confounding at all. That one property has produced a lot of confidently wrong medical papers. Correlated predictors make individual coefficients unstable, and people read them causally regardless.
+
+It isn't the interesting model. It's the one that tells you whether the interesting model is doing anything.

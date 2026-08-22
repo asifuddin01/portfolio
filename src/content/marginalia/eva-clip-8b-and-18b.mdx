@@ -1,0 +1,48 @@
+---
+entry: 7
+kind: model
+title: 'EVA-CLIP, 8B and 18B'
+subject: 'EVA-CLIP-18B (BAAI, 2024)'
+summary: 'Going from 8.1B to 18B bought 0.7 points. The most useful thing in the paper is that number.'
+figure: FigScalingFlat
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2402.04252
+links:
+  - title: 'Paper'
+    url: https://arxiv.org/abs/2402.04252
+  - title: 'Weights'
+    url: https://huggingface.co/BAAI/EVA-CLIP-18B
+  - title: 'Code'
+    url: https://github.com/baaivision/EVA
+---
+
+[SigLIP 2](/marginalia/siglip-2) is a 400M encoder doing image-text matching. This is the same job attempted with 18 billion parameters. The gap between those two numbers is the whole post.
+
+EVA-CLIP is BAAI's line of CLIP models. Same two-tower shape as [SigLIP 2](/marginalia/siglip-2): image encoder, text encoder, contrastive training, embeddings that land near each other when the caption matches. What differs is how the image tower gets built.
+
+The EVA recipe is a ladder. You pretrain a vision encoder with masked image modeling, but the targets aren't pixels, they're features from an existing CLIP. That encoder then becomes the image tower of a new, larger CLIP, which can teach the next one. They call it weak-to-strong scaling. Both the 8B and the 18B use the earlier 5B EVA-02-CLIP as their masked-modeling teacher.
+
+The numbers, which are the point:
+
+EVA-CLIP-8B is 8.1B parameters, 7.5B of them in the vision tower. 79.4% zero-shot, averaged over 27 classification benchmarks.
+
+The same model at 448px instead of 224: 80.0%.
+
+EVA-CLIP-18B: 80.7%.
+
+Sit with that. Going from 8.1B to 18B bought 0.7 points. Turning up the resolution on the 8B, with no extra parameters at all, bought 0.6.
+
+The data stayed fixed the whole way. Merged-2B, which is 1.6B samples from LAION-2B plus 0.4B from COYO-700M. All public. The authors draw the comparison themselves: far smaller than the in-house sets other labs use, DFN-5B and WebLI-10B.
+
+That's the actual finding. Scaling parameters still works on a fixed dataset. It just works slowly, and the lever everyone else is pulling is the data.
+
+Why it matters anyway. It's the largest open CLIP anyone has released, trained on data you can actually obtain, so the scaling claim is checkable instead of a press release. If you need a distillation teacher, or you study scaling behavior, nothing else this size is open.
+
+Now the parts that keep it off your machine.
+
+The 8B checkpoint is 32.9GB. The 18B is considerably worse. Training took 384 A100s at 40GB each. You are not fine-tuning this. At best you are running sharded inference with ZeRO-3.
+
+And read the headline carefully. 80.7% is an average across 27 benchmarks, not ImageNet-1k. Every time someone sets it beside a quoted ImageNet number from another model, that comparison is wrong. It happens constantly.
+
+The most useful thing in this paper isn't the 18B model. It's the 0.7 points.

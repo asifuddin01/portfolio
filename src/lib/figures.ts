@@ -46,6 +46,27 @@ import FigSchedule from '../components/figures/FigSchedule.astro';
 import FigClipping from '../components/figures/FigClipping.astro';
 import FigPrecision from '../components/figures/FigPrecision.astro';
 import FigSplitLeak from '../components/figures/FigSplitLeak.astro';
+/* Marginalia — the model reviews */
+import FigGramAnchoring from '../components/figures/FigGramAnchoring.astro';
+import FigFcmaeGrn from '../components/figures/FigFcmaeGrn.astro';
+import FigConvHandback from '../components/figures/FigConvHandback.astro';
+import FigLinearProbe from '../components/figures/FigLinearProbe.astro';
+import FigFingerprint from '../components/figures/FigFingerprint.astro';
+import FigScalingFlat from '../components/figures/FigScalingFlat.astro';
+import FigQwenLadder from '../components/figures/FigQwenLadder.astro';
+import FigOpenVsApi from '../components/figures/FigOpenVsApi.astro';
+import FigPresenceToken from '../components/figures/FigPresenceToken.astro';
+import FigKvCache from '../components/figures/FigKvCache.astro';
+import FigPricePerTask from '../components/figures/FigPricePerTask.astro';
+import FigTotalVsActive from '../components/figures/FigTotalVsActive.astro';
+import FigContextClaim from '../components/figures/FigContextClaim.astro';
+import FigFlopsVsLatency from '../components/figures/FigFlopsVsLatency.astro';
+import FigContextResolution from '../components/figures/FigContextResolution.astro';
+import FigAffinityGap from '../components/figures/FigAffinityGap.astro';
+import FigDataCrossover from '../components/figures/FigDataCrossover.astro';
+import FigCountLikelihood from '../components/figures/FigCountLikelihood.astro';
+import FigTwoBenchmarks from '../components/figures/FigTwoBenchmarks.astro';
+import FigStripedHyena from '../components/figures/FigStripedHyena.astro';
 /* Book I — closing */
 import FigTransformerMap from '../components/figures/FigTransformerMap.astro';
 
@@ -316,6 +337,126 @@ export const FIGURES = {
     caption:
       'The whole of Book I on one plate, from characters to logits, with the chapter covering each stage named beside it.',
     source: 'Book I — closing',
+  },
+  FigGramAnchoring: {
+    component: FigGramAnchoring,
+    caption:
+      'Dense features rot as a large ViT trains, because the image-level objective wants abstraction and wins. Anchoring the patch-to-patch Gram matrix to an earlier checkpoint drags them back.',
+    source: 'Marginalia II — DINOv2 and DINOv3',
+  },
+  FigFcmaeGrn: {
+    component: FigFcmaeGrn,
+    caption:
+      'A kernel slides across a masked hole and leaks the answer; sparse convolution stops it, and global response normalisation stops the channels collapsing. Neither half works alone.',
+    source: 'Marginalia III — ConvNeXt V2',
+  },
+  FigConvHandback: {
+    component: FigConvHandback,
+    caption:
+      'One residual convolution at the head of every encoder stage. That single block is the entire contribution of the paper.',
+    source: 'Marginalia IV — Swin UNETR V2',
+  },
+  FigLinearProbe: {
+    component: FigLinearProbe,
+    caption:
+      'What a linear probe measures, and what does the measuring. The encoder is frozen; the classifier on top is logistic regression, and its convexity is why it can serve as a ruler at all.',
+    source: 'Marginalia V — logistic regression',
+  },
+  FigFingerprint: {
+    component: FigFingerprint,
+    caption:
+      'A dataset fingerprint resolved by heuristic rules into a whole pipeline under a memory budget. The architecture is not among the things being chosen.',
+    source: 'Marginalia VI — nnU-Net',
+  },
+  FigScalingFlat: {
+    component: FigScalingFlat,
+    caption:
+      'Doubling the parameters on a fixed dataset bought seven tenths of a point. Raising the input resolution, with no extra parameters at all, bought six.',
+    source: 'Marginalia VII — EVA-CLIP',
+  },
+  FigQwenLadder: {
+    component: FigQwenLadder,
+    caption:
+      'The whole ladder shipped at once, with the top rung held back. The gap between the open rungs and the closed flagship is the honest measure of the commitment.',
+    source: 'Marginalia VIII — Qwen',
+  },
+  FigOpenVsApi: {
+    component: FigOpenVsApi,
+    caption:
+      'The two checkpoints in one release. The headline belongs to the 2.4 trillion; the 27B is the one that fits on hardware you can buy, and it is the Apache one.',
+    source: 'Marginalia IX — Qwen3.8',
+  },
+  FigPresenceToken: {
+    component: FigPresenceToken,
+    caption:
+      'Whether the concept is present and where it is are different questions that used to interfere. Giving presence its own token and multiplying the scores is most of why the numbers moved.',
+    source: 'Marginalia X — SAM 3',
+  },
+  FigKvCache: {
+    component: FigKvCache,
+    caption:
+      'At a one-million-token context, roughly a quarter of the per-token operations and a tenth of the key-value cache. Everyone quoted the parameter count.',
+    source: 'Marginalia XV — DeepSeek V4',
+  },
+  FigPricePerTask: {
+    component: FigPricePerTask,
+    caption:
+      'Rate card against measured cost per task. A higher price per million tokens and a lower bill per job are not contradictory when the answers run token-efficient.',
+    source: 'Marginalia XVI — Kimi K3',
+  },
+  FigTotalVsActive: {
+    component: FigTotalVsActive,
+    caption:
+      'Every expert is stored; only the routed few compute. Memory tracks the big number and arithmetic tracks the small one, which is the whole reason anyone does this.',
+    source: 'Marginalia XVII — Mixture of experts',
+  },
+  FigContextClaim: {
+    component: FigContextClaim,
+    caption:
+      'Comprehension at 120K tokens against an advertised ten-million-token window. Retrieval across a context is not comprehension of it.',
+    source: 'Marginalia XVIII — Llama 4',
+  },
+  FigFlopsVsLatency: {
+    component: FigFlopsVsLatency,
+    caption:
+      'Two models at the same accuracy: one with 1.8x fewer operations and 2.7x more wall-clock time. Accelerators are bound by memory bandwidth, not arithmetic.',
+    source: 'Marginalia XX — EfficientNet',
+  },
+  FigContextResolution: {
+    component: FigContextResolution,
+    caption:
+      'Context against output resolution. Every earlier model sits on one edge or the other; the claim is that the corner between them was an engineering limit rather than a law.',
+    source: 'Marginalia XXII — AlphaGenome',
+  },
+  FigAffinityGap: {
+    component: FigAffinityGap,
+    caption:
+      'Co-folding says whether two molecules fit, free energy perturbation says how tightly and runs slowly. Reaching the second at the speed of the first is what changes screening.',
+    source: 'Marginalia XXIII — Boltz-2',
+  },
+  FigDataCrossover: {
+    component: FigDataCrossover,
+    caption:
+      'Accuracy against pretraining set size. The paper\'s finding is a crossover with a threshold in it, somewhere near a hundred million images — not a verdict.',
+    source: 'Marginalia XXIV — ViT',
+  },
+  FigCountLikelihood: {
+    component: FigCountLikelihood,
+    caption:
+      'Three departures from a textbook autoencoder, each one a fact about the assay: a count likelihood, batch as a conditioning variable, and library size given its own latent.',
+    source: 'Marginalia XXV — scVI',
+  },
+  FigTwoBenchmarks: {
+    component: FigTwoBenchmarks,
+    caption:
+      'Two credible evaluations pointing opposite ways, and the four ordinary differences that account for it. Neither claim is dishonest.',
+    source: 'Marginalia XXVI — STATE',
+  },
+  FigStripedHyena: {
+    component: FigStripedHyena,
+    caption:
+      'Operators assigned by the range they cover, so attention is spent only on the sparse long-range relationships that need it. A megabase becomes affordable.',
+    source: 'Marginalia XXVII — Evo 2',
   },
 } as const;
 

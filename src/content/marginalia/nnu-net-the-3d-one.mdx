@@ -1,0 +1,46 @@
+---
+entry: 6
+kind: model
+title: 'nnU-Net, the 3D one'
+subject: 'nnU-Net (Isensee et al., Nature Methods 2021)'
+summary: 'It is not an architecture. That is the whole point, and it is why the paper gets misread.'
+figure: FigFingerprint
+status: published
+updated: 2026-08-22
+source: https://doi.org/10.1038/s41592-020-01008-z
+links:
+  - title: 'Paper'
+    url: https://doi.org/10.1038/s41592-020-01008-z
+  - title: 'Revisited'
+    url: https://arxiv.org/abs/2404.09556
+  - title: 'Code'
+    url: https://github.com/MIC-DKFZ/nnUNet
+---
+
+In [Swin UNETR V2](/marginalia/swin-unetr-v2) I said run nnU-Net before you try anything clever. Fair to ask what you're actually running.
+
+It isn't an architecture. That's the whole point, and it's why the paper gets misread.
+
+nnU-Net (Isensee and colleagues, Nature Methods 2021) is a configuration system wrapped around a plain U-Net. Hand it a new dataset and it extracts a fingerprint: voxel spacings, image sizes, intensity distributions, modality, class ratios. Heuristic rules then turn that fingerprint into a pipeline. Target spacing, resampling, normalization, patch size, batch size, network depth and pooling, all solved together under your GPU memory budget.
+
+Some things it never changes. Dice plus cross-entropy. SGD with Nesterov momentum at 0.99. 1000 epochs of 250 minibatches. The same augmentations every time: rotations, scaling, Gaussian noise and blur, brightness, contrast, low-resolution simulation, gamma, mirroring.
+
+For 3D it builds up to three pipelines. 3d_fullres at full resolution. 3d_lowres downsampled. 3d_cascade_fullres, which runs the lowres model and refines its output at full resolution, and only triggers when the fullres patch covers under 12.5% of the median image. Each trains in 5-fold cross-validation. Then nnU-Net picks the best config or the best pair by mean foreground Dice, and decides whether connected-component postprocessing helps.
+
+You type one command. It does all of that.
+
+Here's the part people skip. The original paper deliberately used none of the architectural fashion of its moment. No residual connections, no dense connections, no attention, no squeeze-and-excitation. The claim was that architecture was never the bottleneck. Spacing, patch size and preprocessing were.
+
+That held for three years. Then in 2024 the same group published nnU-Net Revisited, benchmarked transformers and Mamba without weak baselines, found CNNs still won, and shipped residual encoder presets. ResEnc L is now the recommended default. So they did take an architecture change eventually, after building the benchmark that justified it. The order matters.
+
+Now the cost, and it's real.
+
+ResEnc L runs about 35 hours per fold on an A100. Five folds. If you have one GPU and it isn't an A100, plan your week around it. M is roughly 12 hours a fold and fits in 9 to 11GB.
+
+The 1000 epoch schedule is fixed whether you have 20 cases or 2,000.
+
+It trains from scratch. In 2026, with pretrained encoders everywhere, that reads less like a design choice and more like a gap.
+
+And it's a framework, not a model. The moment you want a custom loss or a different backbone, you're subclassing trainers and fighting it.
+
+Six posts of increasingly clever models. This one beats most of them, and the cleverness is entirely in the parts nobody writes papers about.

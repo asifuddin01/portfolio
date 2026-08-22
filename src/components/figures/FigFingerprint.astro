@@ -1,0 +1,43 @@
+---
+/**
+ * Marginalia VI — nnU-Net is a rule system, not an architecture. The dataset
+ * fingerprint goes in one side and a whole pipeline comes out the other.
+ */
+const IN = ['voxel spacings', 'image sizes', 'intensity distribution', 'modality', 'class ratios'];
+const OUT = ['target spacing', 'resampling', 'normalisation', 'patch and batch size', 'depth and pooling'];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="fp-t fp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="fp-t">Dataset fingerprint to pipeline</title>
+  <desc id="fp-d">
+    Five measured properties of a dataset enter a set of heuristic rules, which
+    resolve them jointly under a GPU memory budget into five pipeline decisions.
+    The architecture is not among the things being chosen.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">fingerprint</text>
+  <text x="480" y="22" class="t-lab">pipeline</text>
+
+  {IN.map((t, i) => (
+    <g>
+      <rect x="0" y={46 + i * 40} width="196" height="30" class="bx" />
+      <text x="98" y={66 + i * 40} class="t-sm" text-anchor="middle">{t}</text>
+      <line x1="200" y1={61 + i * 40} x2="248" y2="150" class="wire-soft" />
+    </g>
+  ))}
+
+  <rect x="252" y="112" width="176" height="76" class="bx-fill" />
+  <text x="340" y="146" class="t-md" text-anchor="middle">heuristic rules</text>
+  <text x="340" y="168" class="t-sm" text-anchor="middle">under a memory budget</text>
+
+  {OUT.map((t, i) => (
+    <g>
+      <line x1="432" y1="150" x2="476" y2={61 + i * 40} class="wire-soft" />
+      <rect x="480" y={46 + i * 40} width="220" height="30" class="bx" />
+      <rect x="480" y={46 + i * 40} width="220" height="3" class="a1" />
+      <text x="590" y={66 + i * 40} class="t-sm" text-anchor="middle">{t}</text>
+    </g>
+  ))}
+
+  <text x="0" y="272" class="t-sm">Fixed regardless: Dice plus cross-entropy, SGD at 0.99, 1000 epochs, the same augmentations every time.</text>
+  <text x="0" y="292" class="t-sm">The original paper used no residual connections, no attention, no squeeze-and-excitation. That was the claim.</text>
+</svg>

@@ -1,0 +1,90 @@
+---
+entry: 27
+kind: model
+title: 'What open actually buys'
+subject: 'Evo 2 (Arc Institute, Nature 2026)'
+summary: 'The strongest argument in biology right now for releasing everything.'
+figure: FigStripedHyena
+status: published
+updated: 2026-08-22
+source: https://www.nature.com/articles/s41586-026-10176-5
+links:
+  - title: 'Nature paper'
+    url: https://www.nature.com/articles/s41586-026-10176-5
+  - title: 'Code and notebooks'
+    url: https://github.com/ArcInstitute/evo2
+  - title: 'Arc''s overview'
+    url: https://arcinstitute.org/tools/evo
+  - title: 'Interpretability work'
+    url: https://www.goodfire.com/research/interpreting-evo-2
+---
+
+I wrote about [AlphaGenome](/marginalia/alphagenome) just before this, which is the strongest model in regulatory genomics and reachable only through a non-commercial API. You cannot run it locally, fine-tune it on your organism, or inspect its weights. I said that was a meaningful limit rather than a licensing quibble, and that someone would eventually build the open version.
+
+Evo 2 is not that model. It is aimed at a different problem, and it arrived first. But it is the clearest available demonstration of what the open approach produces, so it is worth reading the two together.
+
+## The scale
+
+Evo 2 comes in 7 billion and 40 billion parameter versions, trained on 9.3 trillion DNA base pairs drawn from over 128,000 genomes spanning bacteria, archaea, eukaryotes and phage. The training corpus, OpenGenome2, was released alongside the model. Context extends to one million base pairs at single-nucleotide resolution.
+
+That combination is the difficult part. Enformer and Borzoi reach a few hundred kilobases by binning their outputs. SpliceAI works at base resolution over ten kilobases. Evo 2 does a megabase at single-nucleotide granularity, which is a different regime.
+
+## How they got there
+
+Attention over a million nucleotides is not affordable at any reasonable budget, since cost grows with the square of sequence length. The architecture, StripedHyena 2, is a multi-hybrid that mixes three convolutional operator types with self-attention in a striped arrangement: short explicit, medium regularized, and long implicit.
+
+The idea is that different scales of genomic structure want different mechanisms. Local motifs like splice sites and transcription factor binding sequences are short-range and dense. Regulatory relationships between an enhancer and a promoter are long-range and sparse. Convolution handles the first efficiently; attention handles the second where it is needed; and you do not pay attention's quadratic cost across the whole sequence.
+
+This is the same trade DeepSeek and Moonshot are making in language, in [DeepSeek V4](/marginalia/deepseek-v4) and [Kimi K3](/marginalia/kimi-k3-and-k2-6). Compressed sparse attention and Kimi Delta Attention are both answers to the question of how you make a very long context economically real. Genomics arrived at a hybrid architecture for the same reason and largely independently.
+
+## What it does
+
+Variant effect prediction, zero-shot. No fine-tuning, no task-specific head. Score the sequence with and without the variant and compare likelihoods.
+
+On BRCA1, Evo 2 exceeded 90% accuracy in separating benign from potentially pathogenic mutations. On BRCA1 noncoding single-nucleotide variants it outperformed every model tested, including supervised splicing predictors, and the advantage held when noncoding variants near and far from splice sites were analysed separately. The result extended to BRCA2, where it surpassed specialised models including GPN-MSA on combined coding and noncoding variants.
+
+On SpliceVarDB, a repository of experimentally validated splicing effects, Evo 2 40B and 7B ranked first among unsupervised models. On intronic variants, zero-shot Evo 2 was competitive with supervised models, slightly behind SpliceAI and CADD and ahead of Pangolin.
+
+On insertions and deletions, Evo 2 ranks first among all models, supervised or not. That is partly a structural advantage rather than a modelling one: AlphaMissense and similar tools cannot score non-SNV variants at all. A likelihood-based method scores anything you can write as a sequence.
+
+Embeddings that work with a linear model. Extract representations from the most informative block of the 40B model, train a ridge regression on BRCA1 data, and you get AUROC 0.95 with AUPRC 0.88. A linear probe on good features. Post [logistic regression](/marginalia/logistic-regression) again, in genomics this time, and it is the strongest practical result in the paper for anyone with a small labelled dataset.
+
+Generation. Complete mitochondrial genomes. Prokaryotic genomes around 580 kilobases with roughly 70% functional gene hits. Chromosome-scale eukaryotic sequence containing introns, promoters and tRNAs in plausible arrangements.
+
+Designed regulatory sequence. Using inference-time beam search guided by Enformer and Borzoi, the team designed chromatin accessibility patterns and spelled "EVO2" in Morse code in mouse embryonic stem cell chromatin, validated experimentally at AUROC 0.92 to 0.95. It is a stunt, and it is also a real demonstration that the model's outputs steer a physical measurement in a predicted direction.
+
+Interpretability. In collaboration with Goodfire, sparse autoencoders trained on Evo 2's activations surfaced features corresponding to exon-intron boundaries, transcription factor binding sites, and protein secondary structure, none of which were supervised. That is a meaningful finding: the model learned the categories molecular biology uses, from raw sequence, without being told they exist.
+
+## Where I would push back
+
+Zero-shot leading and best-in-class are different claims. On exonic splice variants, Evo 2 trails specialised supervised models. It leads among zero-shot models. The paper is precise about this. Secondary coverage generally is not, and if your task has a good supervised tool available, the supervised tool may still be the right answer.
+
+70% functional gene hits means 30% are not. Generating a 580kb prokaryotic genome where most predicted genes look functional is a striking result and it is a long way from a designed organism that lives. Generation is the flashiest capability here and the least validated.
+
+Scale has a threshold and the 40B is not free. Running the larger model needs real hardware. Most people will use the 7B, which is often close but not always, and the paper's headline results frequently come from the 40B.
+
+Dual use. A model that writes genome-scale sequence has obvious biosecurity implications and the team addressed them in the paper. I have not read their mitigations closely enough to summarise them fairly, and anyone building on this should read that section directly rather than take my word or a press release's.
+
+Correlation with likelihood is not mechanism. Evo 2 scores variants by how surprising the sequence becomes. That is a proxy for evolutionary constraint, which is a proxy for functional importance. It works remarkably well and it is not the same as knowing what the variant does.
+
+## Set against AlphaGenome
+
+Post [AlphaGenome](/marginalia/alphagenome) and this one are the same field with opposite institutional answers.
+
+AlphaGenome is trained on measured functional tracks, predicts eleven modalities including splice junctions, and beats specialist tools across the board. It is a non-commercial API.
+
+Evo 2 is trained on raw sequence across all of life, scores variants by likelihood, generates, and ships everything.
+
+The task framings differ enough that neither straightforwardly beats the other. Where AlphaGenome has supervision from ENCODE and GTEx, it should and does win. Where the question is evolutionary constraint, non-SNV variants, non-model organisms, or anything requiring local execution, Evo 2 is available and AlphaGenome is not.
+
+The adoption numbers make the argument better than I can. Over 88,000 GitHub downloads with 380 forks. More than 100,000 model downloads on Hugging Face. Over two million API requests for the 7B and six million for the 40B. OpenGenome2 pulled more than 48,000 times. Two hundred citations of the preprint, including groups benchmarking Evo 2 against other models and building models specifically to beat it.
+
+That last part is the point. People can only try to beat a model they can run. Openness does not just distribute a tool, it recruits the adversarial scrutiny that eventually tells you whether the tool was any good.
+
+## Verdict
+
+The strongest argument in biology right now for releasing everything.
+
+The science is genuinely impressive, particularly zero-shot variant effect prediction on non-SNVs and noncoding regions where supervised methods either lose or cannot compete at all. The linear probe result on BRCA1 embeddings is the one I would actually use tomorrow.
+
+But the reason it will matter in five years is not the benchmark table. It is that the weights, the code, the data and the interpretability tools are all sitting there, so the field can check the work, extend it, and try to beat it. AlphaGenome may be the better model on the tasks they share. Evo 2 is the better piece of science infrastructure, and over a long enough horizon that is the thing that compounds.

@@ -1,0 +1,43 @@
+---
+/**
+ * Marginalia XXVI — two credible evaluations pointing opposite ways, and the
+ * four places the disagreement can live.
+ */
+const WHY = ['different baselines', 'different splits', 'different metrics', 'a year apart'];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="tb2-t tb2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="tb2-t">Two evaluations, opposite conclusions</title>
+  <desc id="tb2-d">
+    Arc reports that STATE is the first model in its domain to consistently beat
+    simple linear baselines. VCBench reports that pre-registered baselines match
+    or exceed every foundation model tested on four of five dimensions. Four
+    ordinary differences account for the gap.
+  </desc>
+
+  <rect x="0" y="40" width="300" height="86" class="bx-fill" />
+  <rect x="0" y="40" width="300" height="3" class="a1" />
+  <text x="12" y="66" class="t-lab">Arc, June 2025</text>
+  <text x="12" y="92" class="t-sm">first to consistently beat</text>
+  <text x="12" y="110" class="t-sm">simple linear baselines</text>
+
+  <rect x="400" y="40" width="300" height="86" class="bx-fill" />
+  <rect x="400" y="40" width="300" height="3" class="a2" />
+  <text x="412" y="66" class="t-lab">VCBench, June 2026</text>
+  <text x="412" y="92" class="t-sm">baselines match or exceed all</text>
+  <text x="412" y="110" class="t-sm">five models on four of five</text>
+
+  <line x1="304" y1="83" x2="396" y2="83" class="dash" />
+  <text x="350" y="76" class="t-key" text-anchor="middle">both</text>
+  <text x="350" y="96" class="t-key" text-anchor="middle">in print</text>
+
+  {WHY.map((w, i) => (
+    <g>
+      <line x1="350" y1="130" x2={110 + i * 167} y2="176" class="wire-soft" />
+      <rect x={40 + i * 167} y="184" width="140" height="38" class="bx" />
+      <text x={110 + i * 167} y="208" class="t-sm" text-anchor="middle">{w}</text>
+    </g>
+  ))}
+
+  <text x="0" y="266" class="t-sm">Neither claim is dishonest. Working out how they can both be true is more useful than picking a side.</text>
+  <text x="0" y="288" class="t-sm">If a benchmark cannot tell interaction structure from main effects, a good score on it demonstrates little.</text>
+</svg>

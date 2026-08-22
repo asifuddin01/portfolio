@@ -1,0 +1,43 @@
+---
+/**
+ * Marginalia XXIII — the gap Boltz-2 aims at. Structure you can generate at
+ * scale, affinity you could not, and a method that is fast enough to build a
+ * shortlist rather than only check one.
+ */
+const COLS = [
+  { t: 'co-folding', speed: 'fast', ans: 'can they fit', x: 0, cls: 'a1' },
+  { t: 'FEP', speed: 'slow', ans: 'how tightly', x: 250, cls: 'a2' },
+  { t: 'Boltz-2', speed: 'fast', ans: 'how tightly', x: 500, cls: 'a3' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ag-t ag-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="ag-t">Structure, affinity, and the speed between them</title>
+  <desc id="ag-d">
+    Co-folding answers whether two molecules fit and runs fast. Free energy
+    perturbation answers how tightly they hold and runs slowly enough to be a
+    scheduling decision. Boltz-2 reaches comparable correlation to the second at
+    the speed of the first.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">what each method answers</text>
+
+  {COLS.map((c) => (
+    <g>
+      <rect x={c.x} y="46" width="200" height="120" class="bx-fill" />
+      <rect x={c.x} y="46" width="200" height="3" class={c.cls} />
+      <text x={c.x + 100} y="82" class="t-md" text-anchor="middle">{c.t}</text>
+      <text x={c.x + 100} y="110" class="t-sm" text-anchor="middle">{c.ans}</text>
+      <text x={c.x + 100} y="140" class="t-key" text-anchor="middle">{c.speed}</text>
+    </g>
+  ))}
+
+  <line x1="210" y1="106" x2="240" y2="106" class="wire-soft" />
+  <line x1="460" y1="106" x2="490" y2="106" class="wire-soft" />
+
+  <text x="500" y="196" class="t-key">Pearson 0.62, &gt;1000x faster</text>
+
+  <line x1="0" y1="222" x2="700" y2="222" class="wire-soft" />
+  <text x="0" y="246" class="t-sm">Approaching FEP is not matching FEP. A correlation of 0.62 supports ranking a library and choosing what to</text>
+  <text x="0" y="264" class="t-sm">synthesise. It does not support telling a chemist that compound 47 binds at 12 nanomolar.</text>
+  <text x="0" y="288" class="t-sm">Knowing which decisions a number can carry is most of the skill in using it.</text>
+</svg>

@@ -1,0 +1,41 @@
+---
+/**
+ * Marginalia XXII — the constraint AlphaGenome refuses. Context on one axis,
+ * output resolution on the other; everything before it sat on one edge.
+ */
+const M = [
+  { t: 'SpliceAI, BPNet', x: 110, y: 70, cls: 'a2', note: '10kb, base resolution' },
+  { t: 'Enformer, Borzoi', x: 380, y: 210, cls: 'a3', note: '200–500kb, 32–128bp bins' },
+  { t: 'AlphaGenome', x: 560, y: 70, cls: 'a1', note: '1Mb, base resolution' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="cr-t cr-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="cr-t">Context length against output resolution</title>
+  <desc id="cr-d">
+    Two axes: sequence context and output resolution. Earlier models occupy one
+    corner or the other — fine resolution over a short window, or a long window
+    with binned outputs. AlphaGenome occupies the corner that was assumed
+    unreachable.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">context</text>
+  <text x="0" y="42" class="t-sm">resolution ↑ · context →</text>
+
+  <line x1="40" y1="250" x2="670" y2="250" class="axis" />
+  <line x1="40" y1="250" x2="40" y2="56" class="axis" />
+
+  {[100, 160, 210].map((y) => <line x1="40" y1={y} x2="670" y2={y} class="grid" />)}
+
+  {M.map((m) => (
+    <g>
+      <circle cx={m.x} cy={m.y} r="7" class={m.cls} />
+      <text x={m.x} y={m.y - 16} class="t-md" text-anchor="middle">{m.t}</text>
+      <text x={m.x} y={m.y + 26} class="t-sm" text-anchor="middle">{m.note}</text>
+    </g>
+  ))}
+
+  <rect x="500" y="56" width="170" height="60" class="dash" />
+  <text x="585" y="132" class="t-key" text-anchor="middle">the corner nobody had</text>
+
+  <text x="0" y="284" class="t-sm">The constraint was computational rather than conceptual. Eleven output modalities at once, from one sequence.</text>
+</svg>

@@ -1,0 +1,46 @@
+---
+entry: 2
+kind: model
+title: 'DINOv2 and DINOv3'
+subject: 'DINOv2 (2023) and DINOv3 (2025), Meta AI'
+summary: 'I still start projects on the three-year-old one. That is not nostalgia, it is licensing.'
+figure: FigGramAnchoring
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/2304.07193
+links:
+  - title: 'DINOv2'
+    url: https://arxiv.org/abs/2304.07193
+  - title: 'DINOv3'
+    url: https://arxiv.org/abs/2508.10104
+---
+
+DINOv2 is three years old and I still reach for it more often than anything Meta has shipped since. That isn't nostalgia. It's licensing.
+
+[SigLIP 2](/marginalia/siglip-2) learns what things are called. DINO learns where things are. Here's the shape of it.
+
+DINO models are vision encoders that never see a word of text. No captions, no labels. You show it crops of one photo, a student network processes some, a teacher the rest, and the student has to match the teacher. The teacher is just a slow-moving average of the student. That's the entire supervision signal: be consistent with yourself.
+
+Sounds like it shouldn't work. It works.
+
+You get a frozen backbone where every patch carries a vector that means something about that location. Put a linear layer on top and you get segmentation or depth maps that used to need fine-tuning. No text tower though, so no zero-shot from a sentence.
+
+DINOv2 (2023) stacked three losses on that. DINO at the image level, iBOT at the patch level, and KoLeo to keep embeddings spread out. KoLeo alone bought over 8% on instance retrieval, iBOT about 3% on dense tasks. LVD-142M curated from a 1.2B web pool, a ViT-g/14 at 1.1B params, distilled to S, B and L. Frozen, it beat fine-tuned supervised models on segmentation and depth.
+
+DINOv3 (2025) is that recipe made enormous. 1.69 billion images from a 17B pool. A ViT-7B/16 at 6.7B params, RoPE instead of learned position embeddings. Same three losses, barely touched.
+
+The one real new idea is Gram anchoring.
+
+Train a big ViT long enough and its patch features quietly rot. The image-level objective wants abstraction, the patch-level objective wants locality, and abstraction wins. So a later phase pins the student's patch-to-patch Gram matrix to an earlier teacher checkpoint, dragging the feature maps back into shape. Roughly +2 mIoU on segmentation. Scaling to 7B only paid off because they fixed this first.
+
+Why I still start projects on v2. Apache 2.0. DINOv3 ships under a custom Meta license that permits commercial use but isn't Apache, and you hand over contact details and wait for approval to get the weights. Someone has to read that license, and that cost never shows up in a benchmark table.
+
+v2's ViT-S is also 21M params, which for a lot of medical imaging work is the right size.
+
+Now the annoying parts.
+
+DINOv2 has artifacts. About 2% of its patch tokens come out with roughly 10x the normal norm, parked in empty background, because the model recycles low-information patches as scratch space. It wrecks attention maps. Use the register checkpoints, not the originals.
+
+DINOv3's 7B is not a model you'll ever run. You'll use a distilled student and inherit the license anyway.
+
+Neither has a text tower. If you need zero-shot from a prompt, you're in the wrong family, go back to [SigLIP 2](/marginalia/siglip-2).

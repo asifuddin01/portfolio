@@ -1,0 +1,39 @@
+---
+/**
+ * Marginalia XVI — a higher rate card and a lower bill are not contradictory,
+ * because the model that answers in fewer tokens pays less per task.
+ */
+const M = [
+  { t: 'Kimi K3', rate: 3.0, task: 0.94, cls: 'a1' },
+  { t: 'GPT-5.6 Sol', rate: 2.2, task: 1.04, cls: 'a3' },
+  { t: 'Opus 4.8', rate: 4.5, task: 1.80, cls: 'a2' },
+];
+const X0 = 150, W = 180;
+const maxRate = 5, maxTask = 2;
+---
+<svg class="fig" viewBox="0 0 720 294" role="img" aria-labelledby="pp-t pp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="pp-t">Rate card against cost per task</title>
+  <desc id="pp-d">
+    Three models compared twice: by their published price per million input
+    tokens, and by measured cost to complete a task. The ordering is not the
+    same, because a model whose answers run token-efficient pays less per job
+    than its rate card suggests.
+  </desc>
+
+  <text x={X0} y="24" class="t-lab">price per million in</text>
+  <text x={X0 + W + 90} y="24" class="t-lab">measured cost per task</text>
+
+  {M.map((m, i) => (
+    <g>
+      <text x="0" y={68 + i * 58} class="t-md">{m.t}</text>
+      <rect x={X0} y={52 + i * 58} width={(m.rate / maxRate) * W} height="22" class={m.cls} opacity="0.45" />
+      <text x={X0 + (m.rate / maxRate) * W + 8} y={68 + i * 58} class="t-key">${m.rate.toFixed(2)}</text>
+      <rect x={X0 + W + 90} y={52 + i * 58} width={(m.task / maxTask) * W} height="22" class={m.cls} />
+      <text x={X0 + W + 98 + (m.task / maxTask) * W} y={68 + i * 58} class="t-key">${m.task.toFixed(2)}</text>
+    </g>
+  ))}
+
+  <line x1="0" y1="240" x2="700" y2="240" class="wire-soft" />
+  <text x="0" y="262" class="t-sm">Three times the rate of K2.6 and a lower bill than either rival. The question is not whether K3 is better.</text>
+  <text x="0" y="280" class="t-sm">It is whether your workload notices.</text>
+</svg>

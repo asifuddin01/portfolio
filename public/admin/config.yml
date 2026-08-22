@@ -94,6 +94,87 @@ collections:
         widget: string
         required: false
         hint: What the link should say, e.g. "Book, free PDF and notebooks". Defaults to "Source".
+      - label: Figure
+        name: figure
+        widget: select
+        required: false
+        options:
+          - FigPipelineHierarchiRetina
+          - FigModelAsFunction
+          - FigTensorShape
+          - FigParameterSpace
+          - FigLossLandscape
+          - FigGeneralisation
+          - FigNeuron
+          - FigDepthFolds
+          - FigComputationalGraph
+          - FigDescentStep
+          - FigRegularisation
+          - FigTokenBoundary
+          - FigBPEMerge
+          - FigEmbeddingSpace
+          - FigContextualisation
+          - FigRecurrentState
+          - FigVanishingGradient
+          - FigGating
+          - FigDilation
+          - FigSequenceLineage
+          - FigAttentionWeights
+          - FigQKV
+          - FigSoftmaxTemperature
+          - FigSelfVsCross
+          - FigAttentionCost
+          - FigPermutation
+          - FigSinusoid
+          - FigRoPE
+          - FigExtrapolation
+          - FigTransformerBlock
+          - FigMultiHead
+          - FigResidualStream
+          - FigPrePostNorm
+          - FigCausalMask
+          - FigEncoderDecoder
+          - FigBatchNoise
+          - FigSchedule
+          - FigClipping
+          - FigPrecision
+          - FigSplitLeak
+          - FigTransformerMap
+          - FigGramAnchoring
+          - FigFcmaeGrn
+          - FigConvHandback
+          - FigLinearProbe
+          - FigFingerprint
+          - FigScalingFlat
+          - FigQwenLadder
+          - FigOpenVsApi
+          - FigPresenceToken
+          - FigKvCache
+          - FigPricePerTask
+          - FigTotalVsActive
+          - FigContextClaim
+          - FigFlopsVsLatency
+          - FigContextResolution
+          - FigAffinityGap
+          - FigDataCrossover
+          - FigCountLikelihood
+          - FigTwoBenchmarks
+          - FigStripedHyena
+        hint: "A drawing for the entry, from the same library the Elementa uses."
+      - label: References
+        name: links
+        widget: list
+        required: false
+        fields:
+          - { label: Title, name: title, widget: string }
+          - label: Link
+            name: url
+            widget: string
+            required: false
+            pattern:
+              - "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$"
+              - "Paste the address only, e.g. https://example.com/page — not a sentence."
+        hint: "Papers, weights, code. Listed under the entry."
       - label: Review
         name: body
         widget: markdown
@@ -190,6 +271,26 @@ collections:
           - FigPrecision
           - FigSplitLeak
           - FigTransformerMap
+          - FigGramAnchoring
+          - FigFcmaeGrn
+          - FigConvHandback
+          - FigLinearProbe
+          - FigFingerprint
+          - FigScalingFlat
+          - FigQwenLadder
+          - FigOpenVsApi
+          - FigPresenceToken
+          - FigKvCache
+          - FigPricePerTask
+          - FigTotalVsActive
+          - FigContextClaim
+          - FigFlopsVsLatency
+          - FigContextResolution
+          - FigAffinityGap
+          - FigDataCrossover
+          - FigCountLikelihood
+          - FigTwoBenchmarks
+          - FigStripedHyena
         hint: "The one drawing that holds the whole book. Shown at the top of the closing page."
       - label: Closing
         name: closing
@@ -415,6 +516,26 @@ collections:
           - FigPrecision
           - FigSplitLeak
           - FigTransformerMap
+          - FigGramAnchoring
+          - FigFcmaeGrn
+          - FigConvHandback
+          - FigLinearProbe
+          - FigFingerprint
+          - FigScalingFlat
+          - FigQwenLadder
+          - FigOpenVsApi
+          - FigPresenceToken
+          - FigKvCache
+          - FigPricePerTask
+          - FigTotalVsActive
+          - FigContextClaim
+          - FigFlopsVsLatency
+          - FigContextResolution
+          - FigAffinityGap
+          - FigDataCrossover
+          - FigCountLikelihood
+          - FigTwoBenchmarks
+          - FigStripedHyena
         hint: "Registered in src/lib/figures.ts, and checked against it by `npm run check:cms`. A new figure needs a developer."
       - label: Status
         name: status

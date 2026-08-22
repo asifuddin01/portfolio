@@ -1,0 +1,36 @@
+---
+entry: 9
+kind: model
+title: 'Qwen3.8'
+subject: 'Qwen3.8-Max, 2.4T-A95B and 27B (Alibaba, August 2026)'
+summary: 'First Max-class Qwen released as weights. Both halves of that headline need checking.'
+figure: FigOpenVsApi
+status: published
+updated: 2026-08-22
+source: https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B
+links:
+  - title: 'Weights'
+    url: https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B
+  - title: 'The 27B'
+    url: https://huggingface.co/Qwen/Qwen3.8-27B
+  - title: 'The license, read it'
+    url: https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/main/LICENSE
+---
+
+[Qwen](/marginalia/qwen-the-family) ended on Alibaba finally open-weighting a Max-class model. This is that model, and both halves of the headline need checking.
+
+What shipped, in order. Qwen3.8-Max went live on the API on 3 August 2026: a 2.4 trillion parameter mixture-of-experts with 95B active per token, built on the Qwen3.5 architecture, taking text, image and video, at $2 per million input tokens and $6 per million output. Then on 12 August the weights: Qwen3.8-2.4T-A95B, plus an FP8 variant. Then on 14 August, Qwen3.8-27B.
+
+First Max-class Qwen ever released as weights. That part is real and it matters.
+
+Now the two catches.
+
+The open checkpoint is not the API model. Qwen3.8-2.4T-A95B is text-only and requires thinking mode for every interaction. The hosted Max adds vision input, a non-thinking mode, 1M context by default and built-in tools. Same base, meaningfully different product. If you download the weights expecting what the API does, you will be disappointed.
+
+And the license is not Apache 2.0, whatever the headlines said. The 2.4T checkpoint ships under a custom Qwen3.8-Max License: broadly permissive, with an attribution requirement above 100 million monthly active users or $20M monthly revenue, and a separate paid license for model-as-a-service or AI assistant businesses above $50M trailing revenue including affiliates. Internal use is carved out. Read it yourself before you plan anything commercial.
+
+The 27B is the different story, and probably the one that matters to you. 27.78B parameters, dense, multimodal, 262K native context, and genuinely Apache 2.0. Qwen reports big jumps over the 3.6 generation: Terminal-Bench 2.1 from 63.4 to 73.0, OSWorld-Verified from 63.9 to 84.3, DeepSWE from 13.3 to 42.2.
+
+Which brings the usual caveat, louder than usual. Every one of those numbers is Qwen's. Several of the benchmarks are in-house or modified versions of public ones. Treat the direction as informative and the magnitude as marketing until someone independent runs it.
+
+Practically: you are not self-hosting 2.4 trillion parameters. Ninety-five billion active keeps inference cheaper than the total suggests, but the checkpoint still has to fit in memory somewhere. The 27B fits on hardware you can buy. That asymmetry is the whole release.

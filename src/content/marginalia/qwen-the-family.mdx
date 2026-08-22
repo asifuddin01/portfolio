@@ -1,0 +1,40 @@
+---
+entry: 8
+kind: model
+title: 'Qwen, the family'
+subject: 'The Qwen series (Alibaba, 2023 onward)'
+summary: 'Not any single model. A ladder you can climb without changing vendor, and weights you can keep.'
+figure: FigQwenLadder
+status: published
+updated: 2026-08-22
+source: https://github.com/QwenLM/Qwen
+links:
+  - title: 'Code'
+    url: https://github.com/QwenLM/Qwen
+  - title: 'The 2507 split'
+    url: https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507
+---
+
+First language model in the series. I'm doing the family before the model, because with Qwen the family is the point.
+
+Alibaba unveiled Tongyi Qianwen in April 2023 and put the first weights out that August. Since then the pattern has barely changed: ship the whole ladder at once. Something that runs on a laptop, something that fills a workstation, something that needs a cluster, all released together, mostly under Apache 2.0. Then the same treatment for vision, for code, for audio, for embeddings.
+
+That is the actual product. Not any single model. A ladder you can climb without changing vendor, and weights you can keep.
+
+But the interesting part is where the pattern breaks, and it has broken publicly twice.
+
+First, hybrid thinking. Qwen3 launched in April 2025 with one model and two modes: send /think and it reasons before answering, send /no_think and it replies immediately. It looked like the obviously right design. Three months later the team dropped it, saying plainly that they would train Instruct and Thinking models separately because quality mattered more than unification.
+
+The reason is a real lesson, not a product footnote. Instruct training rewards being direct, short and fast. Thinking training rewards spending tokens on hard problems. Those objectives pull against each other, and merging them degrades both. The refreshed instruct model then scored roughly 2.8 times the April release on AIME25.
+
+Second, the open-weights promise. Through 2026 the top tier stayed shut. Qwen3-Max, 3.6-Plus, 3.7-Max, all API only, while everything below them stayed open. Then this month they open-weighted a Max-class model for the first time. That's [Qwen3.8](/marginalia/qwen3-8).
+
+What I'd watch, if you're deciding whether to build on this family: not what they release, but what they hold back. The gap between the open ladder and the closed flagship is the honest measure of the commitment, and that gap has moved in both directions.
+
+The parts that annoy me.
+
+The naming is a mess. Qwen3, then Qwen3-Max, then 2507 refreshes, then 3.5, 3.6, 3.7, 3.8, with Instruct and Thinking splits underneath. Qwen3.8-27B and Qwen3-8B are different models and people already confuse them.
+
+And almost every launch number is vendor-reported, often on in-house benchmarks. That is normal across the industry and it is still worth saying out loud each time.
+
+Two public reversals in sixteen months. I'd rather have that than a lab that quietly ships worse models and never explains why.

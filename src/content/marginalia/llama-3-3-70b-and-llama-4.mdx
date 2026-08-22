@@ -1,0 +1,44 @@
+---
+entry: 18
+kind: model
+title: 'Llama 3.3 70B and Llama 4'
+subject: 'Llama 3.3 70B and Llama 4 (Meta, 2024 and 2025)'
+summary: 'Ten million tokens of advertised context. At a hundred and twenty thousand, 15.6%.'
+figure: FigContextClaim
+status: published
+updated: 2026-08-22
+source: https://ai.meta.com/blog/llama-4-multimodal-intelligence/
+links:
+  - title: 'Meta''s announcement'
+    url: https://ai.meta.com/blog/llama-4-multimodal-intelligence/
+  - title: 'The long-context testing'
+    url: https://the-decoder.com/metas-llama-4-models-show-promise-on-standard-tests-but-struggle-with-long-context-tasks/
+---
+
+Llama 4 Scout advertises a ten million token context window. At a hundred and twenty thousand tokens, on long-context comprehension, it scores 15.6%.
+
+Both of those are true. That gap is the post.
+
+The [mixture of experts](/marginalia/mixture-of-experts) post set this up, and Meta hands you the clean experiment. Llama 3.3 70B is dense, every parameter active. Llama 4 went sparse one generation later. Scout is 109B total with 17B active across 16 experts. Maverick is 400B total, 17B active, 128 experts. Same lab, one year apart.
+
+So does sparse win?
+
+Scout against 3.3 70B: 68 on SWE-bench against roughly 72, 84 on MMLU against 86, and it drops GPQA by about two points too. On pure text, the dense 70B is still ahead.
+
+Scout takes everything else. Around $0.11 in and $0.34 out per million tokens against $0.59 and $0.79. Roughly 594 tokens per second against 315. Native vision. Several times the context providers will actually serve.
+
+Maverick sits above both: 69.8 on GPQA Diamond, 43.4 on LiveCodeBench against Scout's 32.8.
+
+Now the part that matters more than any of those numbers.
+
+Meta submitted an experimental chat version of Maverick to LMArena. It scored 1417 ELO and the launch coverage ran with it. That was not the model you can download. When the released weights were tested, standard Maverick landed 32nd. LMArena changed its policies afterwards.
+
+The context claim doesn't survive contact either. At 120K tokens, Gemini 2.5 Pro held 90.6% accuracy. Maverick managed 28.1%. Scout, 15.6%. Meta advertised 10M. Needle-in-a-haystack retrieval across that window is genuinely strong, and retrieval is not comprehension.
+
+One more, instructive rather than damning. When Artificial Analysis began accepting answers formatted as "The best answer is A", Scout's intelligence index went from 36 to 43. Seven points from a parser change. That's how much of a benchmark number is the benchmark.
+
+Where I'd land.
+
+Llama 3.3 70B is still the better text model, and being dense it's simpler to serve and simpler to reason about. Scout is what you reach for if you need vision, throughput, or that price. Maverick wants eight H100s and now trails DeepSeek V4 and Qwen on coding, which makes it a hard sell in 2026.
+
+And read the model card rather than the blog post. Meta's card benchmarked Llama 4 against Llama 3.3 and 3.1 405B. The GPT-4o comparison lives in the announcement text.

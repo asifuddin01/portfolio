@@ -1,0 +1,42 @@
+---
+entry: 17
+kind: model
+title: 'Mixture of experts'
+subject: 'Sparse MoE, from Jacobs 1991 to Kimi K3'
+summary: 'A parameter count is no longer a capability claim. It is a hardware requirement.'
+figure: FigTotalVsActive
+status: published
+updated: 2026-08-22
+source: https://arxiv.org/abs/1701.06538
+links:
+  - title: 'Shazeer et al., 2017'
+    url: https://arxiv.org/abs/1701.06538
+  - title: 'Switch Transformer'
+    url: https://jmlr.org/papers/v23/21-0998.html
+  - title: 'Survey, if you want depth'
+    url: https://arxiv.org/abs/2407.06204
+---
+
+1.6 trillion total, 49 billion active. I've written some version of that line in four straight posts without once explaining why there are two numbers.
+
+Short version: the big number is what you have to store. The small number is what you have to compute. Mixture of experts is the trick that lets you buy those separately.
+
+Here's the mechanism. In a normal transformer block, every token passes through the same feed-forward layer. Every parameter does work on every token. Swap that one feed-forward layer for a few hundred of them, add a small router that scores each token against each expert, and let only the top few run. Kimi K3 has 896 experts and fires 16 per token. DeepSeek V4-Pro activates 49B of its 1.6T.
+
+The consequence is the whole reason anyone does this. Compute per token tracks the active parameters. Memory tracks the total. Those used to be the same budget, and now they aren't.
+
+It isn't new. Jacobs, Jordan, Nowlan and Hinton published adaptive mixtures of local experts in 1991, back when the gating network was the interesting part rather than the plumbing. Shazeer and colleagues put it inside transformers in 2017, scaled it to 137B parameters, and introduced the load-balancing loss everyone still uses. Switch Transformer showed in 2022 that routing to a single expert works fine. Mixtral made it ordinary in open weights.
+
+Where I'd push back, or at least where I'd stop nodding along.
+
+"Expert" is a terrible word. Nobody on the router's payroll is the biology expert. They don't partition by topic, or by language, or by anything you'd want to name. It's learned routing that carves the space in ways that mostly resist interpretation, and the word invites people to imagine a committee of specialists that isn't there.
+
+Load balancing never stops being a problem. Leave a router alone and it collapses onto a handful of experts while the rest starve. The auxiliary loss that prevents this is a tax paid out of the objective you actually care about.
+
+Memory is the real bill, and it's why these models stay out of reach. K3 is 1.56 terabytes. V4-Pro is around 865GB. Both are genuinely open weights. Neither is going anywhere near your GPU. Sparse compute does not mean sparse storage.
+
+And serving is harder than the FLOPs suggest. Different tokens in the same batch want different experts, so you end up doing all-to-all communication across devices. A clean win on paper turns into a networking problem in production.
+
+Mostly though, the thing I'd want people to take away: a parameter count is no longer a capability claim. It's a hardware requirement. 2.8T sparse and 2.8T dense are not the same sentence, and almost every headline treats them as if they were.
+
+Next time you read one, ask which number it is.

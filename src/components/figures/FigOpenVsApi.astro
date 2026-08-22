@@ -1,0 +1,38 @@
+---
+/**
+ * Marginalia IX — the release is an asymmetry. The flagship you cannot run,
+ * the small one you can, and they are not the same product.
+ */
+const ROWS = [
+  { f: 'parameters', a: '2.4T, 95B active', b: '27.8B dense' },
+  { f: 'input', a: 'text only', b: 'multimodal' },
+  { f: 'thinking', a: 'always on', b: 'switchable' },
+  { f: 'licence', a: 'bespoke, revenue clauses', b: 'Apache 2.0' },
+  { f: 'you can host it', a: 'no', b: 'yes' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="oa-t oa-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="oa-t">The two checkpoints in one release</title>
+  <desc id="oa-d">
+    A comparison of the 2.4 trillion parameter flagship against the 27 billion
+    parameter model released beside it. The headline belongs to the first; the
+    second is the one most people can actually run.
+  </desc>
+
+  <text x="200" y="24" class="t-lab">Qwen3.8-2.4T-A95B</text>
+  <text x="470" y="24" class="t-lab">Qwen3.8-27B</text>
+  <line x1="0" y1="38" x2="700" y2="38" class="wire-soft" />
+
+  {ROWS.map((r, i) => (
+    <g>
+      <text x="0" y={68 + i * 44} class="t-sm">{r.f}</text>
+      <text x="200" y={68 + i * 44} class="t-md">{r.a}</text>
+      <text x="470" y={68 + i * 44} class="t-md">{r.b}</text>
+      <line x1="0" y1={82 + i * 44} x2="700" y2={82 + i * 44} class="grid" />
+    </g>
+  ))}
+
+  <rect x="464" y="46" width="236" height={44 * ROWS.length} class="bx" />
+
+  <text x="0" y="288" class="t-sm">The open checkpoint is not the API model, and the licence is not Apache whatever the headlines said.</text>
+</svg>

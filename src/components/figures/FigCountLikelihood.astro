@@ -1,0 +1,37 @@
+---
+/**
+ * Marginalia XXV — the three places scVI departs from a textbook VAE, each
+ * one a fact about the assay rather than a modelling convenience.
+ */
+const ROWS = [
+  { t: 'count likelihood', a: 'Gaussian, squared error', b: 'negative binomial', cls: 'a1' },
+  { t: 'batch', a: 'corrected afterwards', b: 'conditioned on, in both halves', cls: 'a2' },
+  { t: 'sequencing depth', a: 'left in the latent', b: 'its own scaling factor', cls: 'a3' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="cl2-t cl2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
+  <title id="cl2-t">Where scVI departs from a textbook autoencoder</title>
+  <desc id="cl2-d">
+    Three rows comparing an ordinary variational autoencoder with scVI: the
+    likelihood is a negative binomial rather than a Gaussian, batch identity
+    conditions both encoder and decoder rather than being corrected afterwards,
+    and library size gets its own latent instead of contaminating the cell state.
+  </desc>
+
+  <text x="230" y="24" class="t-lab">textbook VAE</text>
+  <text x="470" y="24" class="t-lab">scVI</text>
+  <line x1="0" y1="38" x2="700" y2="38" class="wire-soft" />
+
+  {ROWS.map((r, i) => (
+    <g>
+      <rect x="0" y={54 + i * 62} width="5" height="34" class={r.cls} />
+      <text x="18" y={78 + i * 62} class="t-md">{r.t}</text>
+      <text x="230" y={78 + i * 62} class="t-sm">{r.a}</text>
+      <text x="470" y={78 + i * 62} class="t-sm">{r.b}</text>
+      <line x1="0" y1={100 + i * 62} x2="700" y2={100 + i * 62} class="grid" />
+    </g>
+  ))}
+
+  <text x="0" y="266" class="t-sm">Any method that ignores these produces a beautiful embedding of your experimental logistics.</text>
+  <text x="0" y="288" class="t-sm">Three independent evaluations, different teams, different data, put this eight-year-old VAE ahead.</text>
+</svg>

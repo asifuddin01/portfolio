@@ -171,6 +171,16 @@ const marginalia = defineCollection({
     updated: z.date(),
     source: optionalUrl,
     sourceLabel: z.string().optional(),
+    /**
+     * A drawing for the entry, from the same registry the Elementa uses. A
+     * review of a model is mostly an argument about how the thing is put
+     * together, and those arguments are far shorter as a picture.
+     */
+    figure: z.string().nullable().default(null),
+    /** Papers, weights, code. Rendered as a list under the entry. */
+    links: z
+      .array(z.object({ title: z.string(), url: optionalUrl }))
+      .default([]),
   }),
 });
 

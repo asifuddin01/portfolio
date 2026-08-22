@@ -1,0 +1,37 @@
+---
+/**
+ * Marginalia XV — the release is not the parameter count. At a million
+ * tokens V4 needs a tenth of the cache and about a quarter of the compute.
+ */
+const BARS = [
+  { t: 'V3.2', flops: 1.0, kv: 1.0, cls: 'a4' },
+  { t: 'V4', flops: 0.27, kv: 0.10, cls: 'a1' },
+];
+const W = 260;
+---
+<svg class="fig" viewBox="0 0 720 280" role="img" aria-labelledby="kv-t kv-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="kv-t">Cost per token at a one-million-token context</title>
+  <desc id="kv-d">
+    Two bars per model. Compared with the previous generation, V4 needs about
+    twenty-seven percent of the per-token inference operations and ten percent
+    of the key-value cache at a one-million-token context.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">at 1M context, relative to V3.2</text>
+
+  {BARS.map((b, i) => (
+    <g>
+      <text x="0" y={78 + i * 96} class="t-md">{b.t}</text>
+      <text x="90" y={72 + i * 96} class="t-sm">FLOPs</text>
+      <rect x={190} y={58 + i * 96} width={W * b.flops} height="20" class={b.cls} />
+      <text x={200 + W * b.flops} y={73 + i * 96} class="t-key">{Math.round(b.flops * 100)}%</text>
+      <text x="90" y={106 + i * 96} class="t-sm">KV cache</text>
+      <rect x={190} y={92 + i * 96} width={W * b.kv} height="20" class={b.cls} opacity="0.5" />
+      <text x={200 + W * b.kv} y={107 + i * 96} class="t-key">{Math.round(b.kv * 100)}%</text>
+    </g>
+  ))}
+
+  <line x1="0" y1="238" x2="700" y2="238" class="wire-soft" />
+  <text x="0" y="260" class="t-sm">Compressed Sparse Attention interleaved with Heavily Compressed Attention. Everyone quoted the 1.6 trillion.</text>
+  <text x="0" y="278" class="t-sm">The number that matters is the 10%.</text>
+</svg>

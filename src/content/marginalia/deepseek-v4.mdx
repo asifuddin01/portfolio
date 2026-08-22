@@ -1,0 +1,46 @@
+---
+entry: 15
+kind: model
+title: 'DeepSeek V4'
+subject: 'DeepSeek-V4-Pro and V4-Flash (April 2026)'
+summary: 'Everyone quoted the 1.6 trillion. The number that matters is 10%.'
+figure: FigKvCache
+status: published
+updated: 2026-08-22
+source: https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro
+links:
+  - title: 'Model card'
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro
+  - title: 'Spec sheet'
+    url: https://fe-static.deepseek.com/chat/transparency/deepseek-V4-model-card-EN.pdf
+---
+
+Everyone quoted the 1.6 trillion. The number that matters is 10%.
+
+At a one-million-token context, DeepSeek-V4-Pro needs roughly 27% of the per-token inference FLOPs and 10% of the KV cache that V3.2 needed. That's the release. The parameter count is downstream of it.
+
+Quick shape. Two mixture-of-experts models, April 2026, MIT license, weights on Hugging Face. V4-Pro is 1.6T total with 49B active per token. V4-Flash is 284B total with 13B active. Both default to 1M context and 384K max output. Three reasoning modes: non-think, think high, think max.
+
+Three architectural changes, and only one of them is about size.
+
+Hybrid attention. Rather than one mechanism everywhere, V4 interleaves Compressed Sparse Attention and Heavily Compressed Attention. CSA compresses the sequence, then runs sparse selection over the compressed blocks. HCA compresses harder and attends densely. That stack is where the 10% comes from.
+
+Manifold-constrained hyper-connections. The residual stream gets constrained onto the manifold of doubly stochastic matrices, stabilizing signal propagation through a very deep model without surrendering expressivity.
+
+And the Muon optimizer in place of AdamW, at 1.6T scale.
+
+The headline result is 80.6% on SWE-bench Verified for V4-Pro-Max, the best open-weights score, level with Gemini 3.1 Pro.
+
+But read DeepSeek's own model card. It says Flash-Max reaches comparable reasoning to Pro given a larger thinking budget, and trails mainly on pure knowledge and the hardest agentic work. 284B against 1.6T, and the gap is narrower than the ratio suggests. Same lesson as [EVA-CLIP](/marginalia/eva-clip-8b-and-18b). Scaling is real and the curve is flat.
+
+Now the parts that don't make the launch thread.
+
+You will not run Pro. The download is around 865GB. Flash is roughly 160GB, which is at least a conversation. Open weights are real here, and open is not the same as runnable.
+
+Thinking mode defaults on, and reasoning tokens bill as output tokens. Think Max can emit an order of magnitude more tokens than non-think on a hard problem. Your bill scales with a setting, not with your prompt.
+
+The expert count isn't disclosed for either variant. MIT weights, undisclosed routing topology.
+
+And most serverless hosts quantize activations to fp8, so whatever your router calls DeepSeek V4 is not the reference weights. If you're benchmarking, check what you're actually being served.
+
+One thing to credit, after [Qwen3.8](/marginalia/qwen3-8). This is MIT. Both models, no revenue clause, no access gate, no approval form. That is what open weights are supposed to mean, and it's rarer than it should be.

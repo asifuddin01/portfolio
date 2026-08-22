@@ -1,0 +1,38 @@
+---
+/**
+ * Marginalia XX — the EfficientNet lesson. Two models at the same accuracy,
+ * one with far fewer operations and far more wall-clock time.
+ */
+const ROWS = [
+  { t: 'EfficientNet-B6', flops: 0.36, time: 1.0, cls: 'a2' },
+  { t: 'ResNet-RS-350',   flops: 0.65, time: 0.37, cls: 'a1' },
+];
+const X0 = 210, W = 300;
+---
+<svg class="fig" viewBox="0 0 720 260" role="img" aria-labelledby="fl-t fl-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="fl-t">Fewer operations, more time, same accuracy</title>
+  <desc id="fl-d">
+    Two models that both reach 84.0% on ImageNet. One uses 1.8 times fewer
+    floating-point operations and runs 2.7 times slower on the same hardware,
+    because depthwise convolutions are bound by memory bandwidth rather than
+    arithmetic.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">both land at 84.0% on ImageNet</text>
+
+  {ROWS.map((r, i) => (
+    <g>
+      <text x="0" y={80 + i * 84} class="t-md">{r.t}</text>
+      <text x="0" y={100 + i * 84} class="t-sm">FLOPs</text>
+      <rect x={X0} y={66 + i * 84} width={W * r.flops} height="16" class={r.cls} />
+      <text x={X0 + W * r.flops + 10} y={80 + i * 84} class="t-key">arithmetic</text>
+      <text x="0" y={120 + i * 84} class="t-sm">time</text>
+      <rect x={X0} y={90 + i * 84} width={W * r.time} height="16" class={r.cls} opacity="0.45" />
+      <text x={X0 + W * r.time + 10} y={104 + i * 84} class="t-key">wall clock</text>
+    </g>
+  ))}
+
+  <line x1="0" y1="212" x2="700" y2="212" class="wire-soft" />
+  <text x="0" y="234" class="t-sm">Accelerators are bound by memory bandwidth, not arithmetic. "Efficient" meant FLOP-efficient, and a decade</text>
+  <text x="0" y="252" class="t-sm">of practitioners read it as fast.</text>
+</svg>

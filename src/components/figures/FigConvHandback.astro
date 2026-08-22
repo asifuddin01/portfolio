@@ -1,0 +1,42 @@
+---
+/** Marginalia IV — the whole of Swin UNETR V2 is one block, put back. */
+const V1 = ['Swin block', 'Swin block', 'patch merging'];
+const V2 = ['residual conv', 'Swin block', 'Swin block', 'patch merging'];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ch-t ch-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="ch-t">One encoder stage, before and after</title>
+  <desc id="ch-d">
+    The V1 encoder stage is two Swin transformer blocks followed by patch
+    merging. V2 prepends a residual convolution to every stage. That single
+    block is the entire contribution of the paper.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">Swin UNETR</text>
+  <text x="380" y="22" class="t-lab">Swin UNETR V2</text>
+
+  {[{ x: 0, items: V1 }, { x: 380, items: V2 }].map((p) => (
+    <g>
+      {p.items.map((t, i) => (
+        <g>
+          <rect x={p.x} y={48 + i * 54} width="240" height="40"
+                class={t === 'residual conv' ? 'bx-fill' : 'bx'} />
+          {t === 'residual conv' && <rect x={p.x} y={48 + i * 54} width="240" height="3" class="a2" />}
+          <text x={p.x + 120} y={73 + i * 54} class="t-md" text-anchor="middle">{t}</text>
+          {i < p.items.length - 1 && (
+            <g>
+              <line x1={p.x + 120} y1={90 + i * 54} x2={p.x + 120} y2={96 + i * 54} class="wire" />
+              <polygon points={`${p.x + 115},${96 + i * 54} ${p.x + 120},${104 + i * 54} ${p.x + 125},${96 + i * 54}`} class="head" />
+            </g>
+          )}
+        </g>
+      ))}
+    </g>
+  ))}
+
+  <text x="380" y="278" class="t-key">in MONAI this is use_v2=True</text>
+
+  <text x="0" y="240" class="t-sm">Self-attention has no strong</text>
+  <text x="0" y="258" class="t-sm">inductive bias, so the model is</text>
+  <text x="0" y="276" class="t-sm">harder to train and hungrier</text>
+  <text x="0" y="294" class="t-sm">for data — their own abstract.</text>
+</svg>

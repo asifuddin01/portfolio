@@ -1,0 +1,38 @@
+---
+/**
+ * Marginalia VII — the useful number in EVA-CLIP is 0.7. Doubling the model
+ * on a fixed dataset buys less than turning up the resolution.
+ */
+const BARS = [
+  { t: 'EVA-CLIP-8B', sub: '224px', v: 79.4, cls: 'a1' },
+  { t: 'EVA-CLIP-8B', sub: '448px, same params', v: 80.0, cls: 'a3' },
+  { t: 'EVA-CLIP-18B', sub: '224px, 2.2x params', v: 80.7, cls: 'a2' },
+];
+const base = 78.5, span = 3.0;
+const X0 = 60, BW = 120, GAP = 90;
+---
+<svg class="fig" viewBox="0 0 720 322" role="img" aria-labelledby="sf-t sf-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="sf-t">Zero-shot average across 27 benchmarks</title>
+  <desc id="sf-d">
+    Three bars on a truncated axis. Going from eight billion parameters to
+    eighteen billion gains seven tenths of a point. Raising the input
+    resolution on the smaller model, with no extra parameters at all, gains six.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">zero-shot average, 27 benchmarks</text>
+
+  <line x1={X0 - 14} y1="220" x2="690" y2="220" class="axis" />
+  {BARS.map((b, i) => (
+    <g>
+      <rect x={X0 + i * (BW + GAP)} y={220 - ((b.v - base) / span) * 150} width={BW}
+            height={((b.v - base) / span) * 150} class={b.cls} />
+      <text x={X0 + i * (BW + GAP) + BW / 2} y={214 - ((b.v - base) / span) * 150} class="t-md" text-anchor="middle">{b.v}%</text>
+      <text x={X0 + i * (BW + GAP) + BW / 2} y="240" class="t-sm" text-anchor="middle">{b.t}</text>
+      <text x={X0 + i * (BW + GAP) + BW / 2} y="258" class="t-xs" text-anchor="middle">{b.sub}</text>
+    </g>
+  ))}
+  <text x="0" y="226" class="t-xs" text-anchor="start">78.5</text>
+
+  <text x="0" y="288" class="t-sm">Axis truncated. The data stayed fixed the whole way — scaling parameters still works, it just works slowly,</text>
+  <text x="0" y="306" class="t-sm">and the lever everyone else is pulling is the data.</text>
+</svg>
