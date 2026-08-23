@@ -1,0 +1,72 @@
+---
+id: "I.1.X05"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A split that reports a number about nothing"
+depends:
+  - "I.1.P05"
+rounding: "Exact fractions where possible; percentages to the nearest point."
+hasSolution: true
+verified: false
+status: published
+---
+
+The first assumption of this chapter is that examples are drawn independently
+from one fixed distribution. Construct a dataset where that fails, show
+concretely that the reported test accuracy is then not an estimate of anything
+the modeller wants, and state the smallest repair.
+
+<Hint>
+Independence is a property of the *sampling*, not of the numbers. Ask what
+happens when a single underlying object contributes several rows.
+</Hint>
+
+<SolutionToggle>
+
+**The construction.** Take $100$ patients. From each, take $10$ photographs of
+the same skin lesion, from slightly different angles: $1{,}000$ images, each
+labelled benign or malignant according to that patient's biopsy.
+
+Split the $1{,}000$ images uniformly at random, $800$ for training and $200$ for
+testing.
+
+**Why the assumption fails.** The ten images from one patient are not
+independent draws. They share a lesion, a camera, a skin tone, a lighting
+condition. Under a uniform split, a given patient's images land on *both* sides:
+with $800/1000$ training, the chance that a particular patient has all ten
+images in test is $(0.2)^{10} \approx 1.0 \times 10^{-7}$. In expectation,
+essentially every patient in the test set also appears in training.
+
+**What the model can do.** Nothing about the disease needs to be learned. A
+model that recognises *the patient* — from a freckle, the skin tone, a
+background corner of the image — can recall that patient's label from training
+and apply it to the test images. It will score near-perfectly.
+
+Concretely: suppose the model learns patient identity with $95\%$ accuracy and
+nothing else. Test accuracy is then about $95\%$, against a base rate of, say,
+$50\%$. The reported number looks like a strong result.
+
+**What it is an estimate of.** It estimates performance on *new photographs of
+patients already seen*. That is a real quantity, and it is almost never the one
+anyone wants. The quantity wanted is performance on a new patient, and the
+experiment contains no evidence about it whatsoever — a model with $95\%$
+reported accuracy may be at chance on a new patient, and this design cannot
+distinguish the two cases.
+
+**The smallest repair.** Split by patient, not by image. Assign each of the
+$100$ patients wholly to train or wholly to test. The test set then contains no
+patient the model has seen, and the number estimates the quantity of interest.
+
+The cost is that the effective sample size falls from $1{,}000$ to $100$, so the
+confidence interval widens by roughly $\sqrt{10} \approx 3.2\times$
+(<ApparatusRef ref="0.ST.02" />). That is not a loss — the narrow interval was
+never real. The honest number is the wider one.
+
+**The general form.** Wherever rows share a latent generator — patient, site,
+author, session, scanner, document — independence fails, and the repair is
+always to split at the level of the generator. Chapter VIII.3 makes this
+quantitative; Proposition I.1.P05 is where it starts.
+</SolutionToggle>

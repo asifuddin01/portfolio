@@ -1,0 +1,144 @@
+---
+id: "I.1.B04"
+kind: problem
+chapter: "I.1"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "Cross-entropy is the negative log-likelihood"
+depends:
+  - "I.1.P04"
+reachesBack: []
+rounding: "All values rounded to 4 d.p. Logarithms are natural, so losses are in nats."
+hasSolution: true
+verified: true
+snippet: "i-1-b04-bernoulli-cross-entropy.py"
+status: published
+---
+
+<Statement>
+Show that binary cross-entropy and the negative log-likelihood of a Bernoulli
+model are the same quantity, then evaluate both at $p = 0.8$ for each possible
+label.
+</Statement>
+
+<Given>
+A model that outputs a single number $p \in (0,1)$, interpreted as
+$P(Y = 1 \mid x)$. The label $y \in \{0, 1\}$. Binary cross-entropy is defined
+as
+
+$$\mathrm{CE}(p, y) = -\big[\, y \log p + (1-y)\log(1-p) \,\big]$$
+
+and the Bernoulli likelihood of the observed label is $P(Y = y) = p^{y}(1-p)^{1-y}$.
+</Given>
+
+<Find>
+An algebraic demonstration that $\mathrm{CE}(p,y) = -\log P(Y = y)$, and the
+value of each at $(p, y) = (0.8, 1)$ and $(0.8, 0)$.
+</Find>
+
+<Strategy>
+Take the logarithm of the likelihood and let the exponents come down. The two
+expressions are then identical term for term, so this is an identity rather
+than an approximation — which matters, because it means choosing cross-entropy
+*is* choosing a Bernoulli noise model, whether or not anyone said so.
+</Strategy>
+
+<Solution>
+
+**Step 1 — write the likelihood.** The trick is the indicator exponent: since
+$y$ is $0$ or $1$, exactly one of the two factors survives.
+
+$$P(Y = y) = p^{y}(1-p)^{1-y}$$
+
+Check both cases before going further. At $y=1$: $p^1(1-p)^0 = p$. At $y=0$:
+$p^0(1-p)^1 = 1-p$. Correct in both.
+
+**Step 2 — take logarithms.** Using $\log(ab) = \log a + \log b$ and
+$\log(a^c) = c\log a$:
+
+$$
+\log P(Y=y) = \log\!\big(p^{y}\big) + \log\!\big((1-p)^{1-y}\big)
+            = y\log p + (1-y)\log(1-p)
+$$
+
+**Step 3 — negate.**
+
+$$-\log P(Y = y) = -\big[\,y\log p + (1-y)\log(1-p)\,\big] = \mathrm{CE}(p,y) \tag{I.1.6}$$
+
+The two definitions coincide exactly, for every $p$ and every $y$. Nothing was
+approximated and no assumption was added beyond the one already made when the
+output was called a probability.
+
+**Step 4 — evaluate at $y = 1$.** The $(1-y)$ term vanishes:
+
+$$\mathrm{CE}(0.8, 1) = -\log 0.8 = -(-0.2231) = 0.2231$$
+
+and independently, $-\log P(Y=1) = -\log 0.8 = 0.2231$. They agree.
+
+**Step 5 — evaluate at $y = 0$.** Now the $y$ term vanishes:
+
+$$\mathrm{CE}(0.8, 0) = -\log(1 - 0.8) = -\log 0.2 = 1.6094$$
+
+and $-\log P(Y=0) = -\log 0.2 = 1.6094$.
+
+The asymmetry is the point. The same prediction $p = 0.8$ costs $0.2231$ when
+it is right and $1.6094$ when it is wrong — seven times as much. A model is
+punished far more for confident error than it is rewarded for confident
+correctness, and that asymmetry is what drives calibration.
+
+</Solution>
+
+<Answer>
+$$\mathrm{CE}(p, y) = -\log P(Y = y) \quad\text{identically, for all } p \in (0,1),\ y \in \{0,1\}$$
+
+$$
+\mathrm{CE}(0.8, 1) = 0.2231 \text{ nats}, \qquad
+\mathrm{CE}(0.8, 0) = 1.6094 \text{ nats}
+$$
+
+In bits, divide by $\log 2$: $0.3219$ and $2.3219$ bits respectively.
+</Answer>
+
+<CheckNumeric snippet="i-1-b04-bernoulli-cross-entropy.py" verified>
+```python
+def cross_entropy(p, y): return -(y * log(p) + (1 - y) * log(1 - p))
+def likelihood(p, y):    return p if y == 1 else 1 - p
+ce, nll = cross_entropy(p, y), -log(likelihood(p, y))
+```
+
+The two are computed from separate definitions and compared, rather than one
+being derived from the other. It prints `equal=True` at every tested pair.
+</CheckNumeric>
+
+<CheckSanity>
+**A perfect prediction costs nothing.** At $p \to 1$ with $y = 1$,
+$-\log p \to 0$. The snippet's $p = 0.99$ row gives $0.0101$, which is close to
+zero and on the right side of it.
+
+**A maximally uncertain prediction costs $\log 2$.** At $p = 0.5$ the loss is
+$0.6931$ nats $= 1$ bit, for either label. One bit is exactly the information in
+a fair coin (<ApparatusRef ref="0.IT.01" />), so the units are behaving.
+
+**The two branches sum correctly.** For any $p$, the expected cross-entropy
+under the model's own distribution is $p(-\log p) + (1-p)(-\log(1-p))$, which is
+the entropy of that Bernoulli. At $p = 0.8$: $0.8(0.2231) + 0.2(1.6094) = 0.5004$
+nats, and the closed-form entropy of $\mathrm{Bern}(0.8)$ is $0.5004$. That is a
+genuinely independent route to the same number.
+</CheckSanity>
+
+<Breaks>
+The identity needs $p \in (0,1)$ strictly. At $p = 0$ with $y = 1$ the loss is
+$-\log 0 = +\infty$: a model that assigns zero probability to something that
+then happens is infinitely wrong, and no finite gradient step recovers from it.
+This is not a corner case in practice — it is why the loss is computed from
+logits with the log-sum-exp identity (<ApparatusRef ref="0.NU.02" />) rather
+than from a probability that a float can round to exactly $0$ or $1$.
+</Breaks>
+
+<Variation>
+Extend to $K$ classes: show that categorical cross-entropy
+$-\sum_k y_k \log p_k$ is the negative log-likelihood of a categorical
+distribution, and evaluate for $\vec{p} = (0.7, 0.2, 0.1)$ with the true class
+being the second.
+</Variation>

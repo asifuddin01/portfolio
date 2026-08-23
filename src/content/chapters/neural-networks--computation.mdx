@@ -16,14 +16,68 @@ topics:
   - "Loss functions"
   - "Optimisation"
   - "Generalisation"
-definitions: []
+definitions:
+  - n: 1
+    term: "Model"
+    statement: "A model is a function f : 𝒳 × Θ → 𝒴 of two arguments. The first is an input supplied by the world; the second is a parameter vector supplied by the modeller. Fixing θ gives an ordinary function of x, written f(·; θ)."
+    introduces:
+      - "theta"
+      - "x"
+  - n: 2
+    term: "Parameter"
+    statement: "A parameter is one component of θ. It is a number the training procedure is permitted to change. Anything the procedure may not change — the number of layers, the choice of nonlinearity, the learning rate — is a hyperparameter and is not part of θ."
+    introduces:
+      - "N"
+  - n: 3
+    term: "Hypothesis class"
+    statement: "The hypothesis class ℱ = { f(·; θ) : θ ∈ Θ } is the set of functions reachable by varying the parameters. Choosing an architecture is choosing ℱ; training is searching inside it. No amount of training reaches a function outside ℱ."
+    introduces: []
+  - n: 4
+    term: "Tensor"
+    statement: "A tensor is a rectangular array of numbers together with an interpretation of its axes. Its rank is the number of axes and its shape is the tuple of their lengths. Two tensors with identical shape may still be different objects, because the shape does not record what the axes mean."
+    introduces:
+      - "X"
+      - "Rset"
+  - n: 5
+    term: "Forward computation"
+    statement: "The forward computation is the evaluation of f(x; θ) at fixed θ, carried out as a finite sequence of tensor operations. Each operation's output shape is determined by its input shapes alone, which is why a shape error is detectable without running the computation."
+    introduces: []
+  - n: 6
+    term: "Loss"
+    statement: "A loss ℓ : 𝒴 × 𝒴 → ℝ assigns a single non-negative number to one prediction–target pair, smaller meaning better. It is a choice, not a discovery: nothing in the data specifies it."
+    introduces:
+      - "L_loss"
+  - n: 7
+    term: "Empirical risk"
+    statement: "The empirical risk of θ on a dataset 𝒟 = {(xᵢ, yᵢ)}ⁿ is R̂(θ) = (1/n) Σ ℓ(f(xᵢ; θ), yᵢ) — the average loss over the examples actually held. It is a number that can be computed."
+    introduces:
+      - "Dset"
+      - "hat"
+  - n: 8
+    term: "Generalisation gap"
+    statement: "The generalisation gap is R(θ) − R̂(θ), where R(θ) = 𝔼[ℓ(f(X; θ), Y)] is the expected loss under the distribution the data was drawn from. R̂ is computable and R is not, which is the entire difficulty of the subject."
+    introduces:
+      - "E"
 beforeYouStart:
   - "0.LA.01"
   - "0.PR.02"
+  - "0.OP.02"
 conceptFigure: FigModelAsFunction
 problemStatement: "Before any of the machinery, the reader needs one frame: what object is being built, what can move in it, and what cannot. Without it, every later derivation is a manipulation of symbols whose referents are unclear."
-formalResults: []
-assumptions: []
+formalResults:
+  - id: "I.1.T1"
+    name: "Empirical risk minimisation"
+    statement: "Training selects θ̂ = argmin over Θ of R̂(θ). Under i.i.d. sampling R̂(θ) is an unbiased estimator of R(θ) for each fixed θ, so minimising the computable quantity is a principled proxy for minimising the one that matters."
+    doesNotPromise: "Unbiasedness holds for a θ fixed in advance, not for the θ̂ chosen by looking at the same data. R̂(θ̂) is biased downwards, and the bias grows with the size of the hypothesis class — which is exactly why a training loss of zero is not evidence of anything. It also promises nothing about whether the minimum is findable: existence of an optimum is not reachability by gradient descent."
+  - id: "I.1.T2"
+    name: "Bias–variance decomposition"
+    statement: "For squared loss and a fixed input x, the expected error over training sets decomposes exactly as 𝔼[(ŷ − y)²] = (bias)² + variance + irreducible noise. The three terms are non-negative and additive, so reducing one at the cost of another may not help."
+    doesNotPromise: "It is not a recipe for choosing capacity: none of the three terms is observable from a single training run, and the decomposition is exact only for squared loss — for cross-entropy no such clean split exists. It also says nothing about which direction a given architectural change moves the terms, and modern over-parameterised networks are the standard counterexample to reading it as a U-shaped curve."
+assumptions:
+  - statement: "The examples are drawn independently from a single fixed distribution, and the test data comes from that same distribution."
+    testedBy: "I.1.X05"
+  - statement: "The loss is a faithful statement of the objective — minimising it is what the modeller actually wants."
+    testedBy: "I.1.X06"
 owns:
   - "model-as-function"
   - "tensor-shape"
@@ -31,9 +85,41 @@ owns:
   - "generalisation-gap"
 borrows:
   - "chain-rule"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "A model with more parameters than examples can drive the empirical risk to exactly zero while the expected risk stays at chance. Fit a 10-parameter polynomial to 10 points with random labels: training MSE is 0 and test accuracy is 50% on a balanced binary task. The training number is not a weak signal here — it is no signal."
+  - "A shape error that broadcasts instead of failing. Adding a bias of shape (n,) to activations of shape (n, 1) yields an (n, n) tensor rather than an error, and the loss still decreases, so the bug survives training and shows up only as an accuracy ceiling nobody can explain."
+references:
+  - title: "The Elements of Statistical Learning"
+    authors: "Hastie, Tibshirani and Friedman"
+    year: 2009
+    venue: "Springer, 2nd edition"
+    url: https://hastie.su.domains/ElemStatLearn/
+  - title: "Understanding Machine Learning: From Theory to Algorithms"
+    authors: "Shalev-Shwartz and Ben-David"
+    year: 2014
+    venue: "Cambridge University Press"
+    url: https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/
+  - title: "Understanding Deep Learning Requires Rethinking Generalization"
+    authors: "Zhang, Bengio, Hardt, Recht and Vinyals"
+    year: 2017
+    venue: "ICLR"
+    url: https://arxiv.org/abs/1611.03530
+  - title: "Neural Networks and the Bias/Variance Dilemma"
+    authors: "Geman, Bienenstock and Doursat"
+    year: 1992
+    venue: "Neural Computation 4(1)"
+    url: https://doi.org/10.1162/neco.1992.4.1.1
+  - title: "Reconciling Modern Machine-Learning Practice and the Classical Bias–Variance Trade-off"
+    authors: "Belkin, Hsu, Ma and Mandal"
+    year: 2019
+    venue: "PNAS 116(32)"
+    url: https://arxiv.org/abs/1812.11118
+  - title: "A Few Useful Things to Know About Machine Learning"
+    authors: "Domingos"
+    year: 2012
+    venue: "Communications of the ACM 55(10)"
+    url: https://homes.cs.washington.edu/~pedrod/papers/cacm12.pdf
 notation:
   - "d"
   - "N"
@@ -44,10 +130,29 @@ notation:
   - "Dset"
   - "E"
   - "Rset"
+  - "hat"
 apparatus:
   - "0.LA.01"
   - "0.PR.02"
   - "0.OP.02"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.1.1"
+    formula: "ŷ = f(x ; θ)"
+    gloss: "Two arguments. The world supplies the first; training may only change the second."
+  - id: "I.1.2"
+    formula: "R̂(θ) = (1/n) Σᵢ ℓ(f(xᵢ ; θ), yᵢ)"
+    gloss: "The quantity that can be computed."
+  - id: "I.1.3"
+    formula: "R(θ) = 𝔼_{(X,Y)}[ ℓ(f(X ; θ), Y) ]"
+    gloss: "The quantity that matters, and that no dataset ever reports."
+  - id: "I.1.4"
+    formula: "𝔼[(ŷ − y)²] = bias² + variance + σ²"
+    gloss: "Three non-negative terms, only their sum observable."
+  - id: "I.1.5"
+    formula: "dℒ/dw = (1/n) Σᵢ xᵢ (w xᵢ − yᵢ)"
+    gloss: "Each point pulls in proportion to its own input and to how wrong the prediction is."
+  - id: "I.1.6"
+    formula: "CE(p, y) = −log P(Y = y)"
+    gloss: "Choosing cross-entropy is choosing a Bernoulli noise model, said or not."
+status: published
 ---

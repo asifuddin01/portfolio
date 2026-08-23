@@ -1,0 +1,100 @@
+---
+id: "I.1.X06"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: limit
+difficulty: 3
+title: "Where the loss and the objective come apart"
+depends:
+  - "I.1.P04"
+  - "I.1.P05"
+rounding: "Exact where stated."
+hasSolution: true
+verified: false
+status: published
+---
+
+The second assumption of this chapter is that minimising the loss is what the
+modeller wants. Take a task you care about, write down the loss you would
+actually train with, and enumerate what the second omits. Then show — with a
+worked case — that a model can strictly improve the loss while getting strictly
+worse at the objective.
+
+This is the chapter's open exercise. There is no single right answer, but there
+is a standard of rigour: the divergence must be exhibited with numbers, not
+asserted.
+
+<Hint>
+Averages hide structure. Ask what happens when a loss is averaged over a
+population containing a small subgroup you care about disproportionately.
+</Hint>
+
+<SolutionToggle>
+
+**A worked case.** The objective: detect a rare condition, present in $1\%$ of a
+screened population, well enough to be useful in a clinic. The loss: average
+binary cross-entropy over the screened population.
+
+**Model A** predicts $p = 0.01$ for every patient, always. It has learned
+nothing. Its average loss is the entropy of $\mathrm{Bern}(0.01)$:
+
+$$\loss_A = -\big[0.01\log 0.01 + 0.99\log 0.99\big] = 0.0461 + 0.0099 = 0.0560$$
+
+**Model B** genuinely detects the condition, assigning $p = 0.60$ to the $1\%$
+who have it and $p = 0.02$ to everyone else.
+
+$$
+\loss_B = 0.01\big(-\log 0.60\big) + 0.99\big(-\log 0.98\big)
+        = 0.01(0.5108) + 0.99(0.0202)
+        = 0.0051 + 0.0200 = 0.0251
+$$
+
+Model B is better on both counts here, so refine it. **Model C** is Model B with
+its confident positives softened to $p = 0.30$, and its negatives sharpened to
+$p = 0.005$:
+
+$$
+\loss_C = 0.01(-\log 0.30) + 0.99(-\log 0.995)
+        = 0.01(1.2040) + 0.99(0.0050)
+        = 0.0120 + 0.0050 = 0.0170
+$$
+
+$\loss_C = 0.0170 < \loss_B = 0.0251$. **Model C has a strictly lower loss.**
+
+But at any threshold above $0.30$, Model C detects nothing at all, while Model
+B detects everything it should. On the objective — finding the condition —
+Model C is strictly worse, and by the loss it is strictly better.
+
+**Why.** The $99\%$ contribute $99$ times more terms to the average than the
+$1\%$ do. A tiny improvement on the majority — $0.0202 \to 0.0050$ per
+example — outweighs a large degradation on the minority, $0.5108 \to 1.2040$.
+The arithmetic is $0.99 \times 0.0152 = 0.0150$ saved against
+$0.01 \times 0.6932 = 0.0069$ lost. The average is doing exactly what an average
+does.
+
+**What the loss omitted.** Four things, none of them visible in the number:
+
+1. **Who the errors fall on.** An average over a population is indifferent to
+   which subgroup absorbs the error.
+2. **The asymmetric cost of the two error types.** A missed malignancy and a
+   false alarm are both "wrong" to cross-entropy and are not remotely
+   comparable in a clinic.
+3. **The operating point.** The loss is computed over all thresholds at once;
+   the clinic uses exactly one, and Chapter III.7 shows that is the only one
+   that matters.
+4. **The deployment distribution.** The $1\%$ prevalence is the screened
+   population's, not the referred population's, and the same model faces both.
+
+**The repair, and its limits.** Class weighting, focal loss, or a fixed
+sensitivity constraint each address point 1 or 2. None addresses all four, and
+each introduces its own hyperparameter that is chosen by looking at the very
+metric it was meant to replace.
+
+**The honest conclusion.** The loss is a proxy chosen because it is
+differentiable, and differentiability is a property of the optimiser's needs,
+not the problem's. Every claim built on a training curve inherits that
+substitution. The discipline this chapter asks for is not to avoid the
+substitution — it is unavoidable — but to write down, once and explicitly,
+what it dropped.
+</SolutionToggle>

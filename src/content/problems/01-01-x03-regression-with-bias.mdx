@@ -1,0 +1,92 @@
+---
+id: "I.1.X03"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "What the intercept buys"
+depends:
+  - "I.1.P03"
+  - "I.1.P04"
+rounding: "All values rounded to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-1-x03-regression-with-bias.py"
+status: published
+---
+
+Repeat the derivation of I.1.B03 for the two-parameter model
+$\hat{y} = wx + b$. Derive both partial derivatives, set them to zero, solve for
+$w$ and $b$ on the same three points $(1,2), (2,4), (3,5)$, and compare the
+optimal loss with the through-origin fit.
+
+<Hint>
+Setting $\partial \loss/\partial b = 0$ first gives $b$ in terms of $w$ and the
+means. Substituting that back leaves one equation in $w$.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the two partials.** With $r_i = wx_i + b - y_i$ and
+$\loss = \frac{1}{2n}\sum r_i^2$:
+
+$$
+\frac{\partial \loss}{\partial w} = \frac1n \sum_i x_i r_i,
+\qquad
+\frac{\partial \loss}{\partial b} = \frac1n \sum_i r_i
+$$
+
+The second is the first with $x_i$ replaced by $1$ — which is exactly right,
+since the bias is the weight on a constant input of $1$. That is worth
+remembering: a bias is not a special kind of parameter, only a weight whose
+feature happens to be constant.
+
+**Step 2 — the normal equations.** Setting both to zero:
+
+$$
+w\sum x_i^2 + b\sum x_i = \sum x_i y_i,
+\qquad
+w\sum x_i + nb = \sum y_i
+$$
+
+**Step 3 — the sums.**
+
+$$
+n = 3, \quad \textstyle\sum x_i = 6, \quad \sum y_i = 11, \quad \sum x_i y_i = 25, \quad \sum x_i^2 = 14
+$$
+
+**Step 4 — solve.** Eliminating $b$ gives the standard form
+
+$$
+w = \frac{n\sum x_iy_i - \sum x_i \sum y_i}{n\sum x_i^2 - (\sum x_i)^2}
+  = \frac{3(25) - (6)(11)}{3(14) - 36}
+  = \frac{75 - 66}{42 - 36}
+  = \frac{9}{6} = 1.5000
+$$
+
+and then from the second equation
+
+$$b = \frac{\sum y_i - w\sum x_i}{n} = \frac{11 - (1.5)(6)}{3} = \frac{2}{3} = 0.6667$$
+
+**Step 5 — the residuals and the loss.**
+
+$$
+r_1 = +0.1667, \qquad r_2 = -0.3333, \qquad r_3 = +0.1667
+$$
+
+$$\loss = \frac{1}{6}\big(0.0278 + 0.1111 + 0.0278\big) = 0.0278$$
+
+against $0.0595$ for the through-origin fit of I.1.B03.
+
+**What the intercept bought.** The loss more than halved, from $0.0595$ to
+$0.0278$. But notice something sharper in the residuals: they sum to
+$0.1667 - 0.3333 + 0.1667 = 0.0000$. That is not a coincidence — it is exactly
+what $\partial\loss/\partial b = 0$ says. **A fitted intercept forces the mean
+residual to zero.** The through-origin model has no such constraint, and its
+residuals do not sum to zero.
+
+So the intercept did not merely add flexibility; it added a specific,
+nameable property to the fit. That is the honest way to describe what any
+parameter buys.
+</SolutionToggle>

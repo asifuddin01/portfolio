@@ -1,0 +1,7 @@
+grad at w=1      -3.6667
+loss at w=1      1.5000
+Sxy              25.0000
+Sxx              14.0000
+w* = Sxy/Sxx     1.7857
+grad at w*       0.0000
+loss at w*       0.0595

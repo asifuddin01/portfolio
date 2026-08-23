@@ -1,0 +1,62 @@
+---
+id: "I.1.X02"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "Where the parameters actually are"
+depends:
+  - "I.1.P02"
+rounding: "Exact counts; percentages to 2 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+A fully connected network has widths $100 \to 50 \to 20 \to 5$, with a bias on
+every layer. Count the weights, count the biases, and state what fraction of
+all parameters sits in the first layer. Then say what that fraction implies for
+where a parameter budget should be spent.
+
+<Hint>
+A layer from width $a$ to width $b$ holds $ab$ weights and $b$ biases.
+</Hint>
+
+<SolutionToggle>
+
+**Weights.** One matrix per layer, of shape (input width $\times$ output width):
+
+$$
+100 \times 50 = 5{,}000, \qquad
+50 \times 20 = 1{,}000, \qquad
+20 \times 5 = 100
+$$
+
+$$\text{total weights} = 6{,}100$$
+
+**Biases.** One per output unit, so $50 + 20 + 5 = 75$.
+
+**Total.** $6{,}100 + 75 = \mathbf{6{,}175}$ parameters.
+
+**First-layer share.**
+
+$$\frac{5{,}000 + 50}{6{,}175} = \frac{5{,}050}{6{,}175} = 0.8178 = 81.78\%$$
+
+**What it implies.** Four fifths of the network is the single matrix that meets
+the input. Two consequences follow directly:
+
+*Widening the input is expensive and widening the tail is cheap.* Going from
+$100$ to $200$ inputs adds $5{,}000$ parameters — as many as the whole first
+layer already had. Going from $5$ outputs to $10$ adds $105$.
+
+*Parameter count is a poor proxy for depth.* This network could be made twice as
+deep by inserting another $20 \to 20$ layer, adding $420$ parameters — under
+$7\%$ — while changing the function class substantially. Counting parameters
+tells you about memory; it tells you very little about capacity in the sense
+that matters for I.1.T2.
+
+Biases are $1.2\%$ of the total here, which is why they are routinely omitted
+from back-of-envelope counts. That is a rounding decision, not a claim that
+they do nothing.
+</SolutionToggle>

@@ -1,0 +1,61 @@
+---
+id: "I.1.X01"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "The same network, a different input"
+depends:
+  - "I.1.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-1-x01-forward-pass-variant.py"
+status: published
+---
+
+Using the network of I.1.B01 unchanged, compute the forward pass for
+$\vec{x} = \begin{bmatrix} 2 & 1 \end{bmatrix}$. Before computing, predict how
+many hidden units will be switched off, and say what that prediction rests on.
+
+<Hint>
+The first hidden unit's pre-activation is $x_1 - x_2 + 0.5$. Ask what sign that
+takes when $x_1 > x_2$.
+</Hint>
+
+<SolutionToggle>
+
+**Prediction.** The first unit computes $x_1 - x_2 + 0.5$, which is positive
+whenever $x_1 > x_2 - 0.5$. Here $2 > 0.5$, so it stays on. The second computes
+$2x_2 - 1$, positive when $x_2 > 0.5$; here $x_2 = 1$, so it also stays on.
+Prediction: **no dead units**, unlike I.1.B01 where the first died.
+
+**Step 1 — pre-activations.**
+
+$$
+z^{(1)}_1 = (2)(1) + (1)(-1) + 0.5 = 2 - 1 + 0.5 = 1.5
+$$
+$$
+z^{(1)}_2 = (2)(0) + (1)(2) - 1 = 0 + 2 - 1 = 1
+$$
+
+$$\vec{z}^{(1)} = \begin{bmatrix} 1.5 & 1 \end{bmatrix}$$
+
+**Step 2 — ReLU.** Both entries are positive, so ReLU is the identity here:
+
+$$\vec{a}^{(1)} = \begin{bmatrix} 1.5 & 1 \end{bmatrix}$$
+
+**Step 3 — output.**
+
+$$\hat{y} = (1.5)(2) + (1)(1) - 1 = 3 + 1 - 1 = 3$$
+
+**Answer.** $\vec{a}^{(1)} = (1.5,\ 1)$, $\hat{y} = 3$, and no unit is dead —
+as predicted.
+
+**What this shows.** The set of active units is a function of the input, not of
+the weights alone. The same network is, for each input, effectively a *different*
+linear map — the one obtained by deleting the dead units. A ReLU network is a
+piecewise-linear function, and which piece you are on is decided at the input.
+That observation is the whole of Proposition I.3.P01.
+</SolutionToggle>

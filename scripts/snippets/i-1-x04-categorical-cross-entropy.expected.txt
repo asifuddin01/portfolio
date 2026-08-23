@@ -1,0 +1,4 @@
+true=0  CE=0.3567  NLL=0.3567  equal=True
+true=1  CE=1.6094  NLL=1.6094  equal=True
+true=2  CE=2.3026  NLL=2.3026  equal=True
+entropy of p   0.8018

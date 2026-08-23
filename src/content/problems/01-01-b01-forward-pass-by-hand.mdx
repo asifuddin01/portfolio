@@ -1,0 +1,156 @@
+---
+id: "I.1.B01"
+kind: problem
+chapter: "I.1"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A forward pass, every intermediate written down"
+depends:
+  - "I.1.P01"
+  - "I.1.P02"
+reachesBack: []
+rounding: "All values are exact here; they are printed to 4 d.p. so that they line up with the reproduction snippet."
+hasSolution: true
+verified: true
+snippet: "i-1-b01-forward-pass.py"
+status: published
+---
+
+<Statement>
+A network with two inputs, two hidden units and one output is fully specified
+below. Carry out the forward computation by hand and report every intermediate
+quantity, not only the final number.
+</Statement>
+
+<Given>
+The input, as a row vector:
+
+$$\vec{x} = \begin{bmatrix} 1 & 2 \end{bmatrix} \in \R^{1\times 2}$$
+
+The first layer, with $\mat{W}^{(1)} \in \R^{2\times 2}$ and a bias row
+$\vec{b}^{(1)} \in \R^{1\times 2}$:
+
+$$
+\mat{W}^{(1)} = \begin{bmatrix} 1 & 0 \\ -1 & 2 \end{bmatrix}, \qquad
+\vec{b}^{(1)} = \begin{bmatrix} 0.5 & -1 \end{bmatrix}
+$$
+
+The hidden nonlinearity is $\mathrm{ReLU}(z) = \max(0, z)$, applied to each
+entry separately. The second layer, with $\mat{W}^{(2)} \in \R^{2\times 1}$
+and $b^{(2)} \in \R$:
+
+$$
+\mat{W}^{(2)} = \begin{bmatrix} 2 \\ 1 \end{bmatrix}, \qquad b^{(2)} = -1
+$$
+
+The output layer has no nonlinearity.
+</Given>
+
+<Find>
+The pre-activations $\vec{z}^{(1)}$ (a $1\times 2$ row), the activations
+$\vec{a}^{(1)}$ (a $1\times 2$ row), and the output $\hat{y}$ (a scalar).
+</Find>
+
+<Strategy>
+Follow the definition one operation at a time and name each result, because a
+wrong final number is only useful if you can say which step produced it.
+</Strategy>
+
+<Solution>
+
+**Step 0 — fix the convention.** Elementa is row-major
+(<ApparatusRef ref="0.LA.01" />): a row of $\mat{X}$ is one example, and a
+layer is applied on the right as $\vec{x}\mat{W} + \vec{b}$. The shapes must
+meet as $(1\times 2)(2\times 2) \to (1\times 2)$, and they do.
+
+Getting this wrong is the single most common error in a first hand-computation.
+If you write $\mat{W}\vec{x}$ instead, you are computing with $\mat{W}^{\mathsf T}$
+and every number below changes.
+
+**Step 1 — the first pre-activation.** Each entry of $\vec{z}^{(1)}$ is one
+inner product of $\vec{x}$ with one *column* of $\mat{W}^{(1)}$, plus the
+matching bias.
+
+Column 1 of $\mat{W}^{(1)}$ is $(1, -1)$:
+
+$$z^{(1)}_1 = (1)(1) + (2)(-1) + 0.5 = 1 - 2 + 0.5 = -0.5$$
+
+Column 2 is $(0, 2)$:
+
+$$z^{(1)}_2 = (1)(0) + (2)(2) + (-1) = 0 + 4 - 1 = 3$$
+
+$$\vec{z}^{(1)} = \begin{bmatrix} -0.5 & 3 \end{bmatrix}$$
+
+**Step 2 — the nonlinearity.** ReLU acts on each entry independently. There is
+no mixing here at all; that is what "elementwise" means.
+
+$$
+a^{(1)}_1 = \max(0, -0.5) = 0, \qquad
+a^{(1)}_2 = \max(0, 3) = 3
+$$
+
+$$\vec{a}^{(1)} = \begin{bmatrix} 0 & 3 \end{bmatrix}$$
+
+The first hidden unit has been switched off. It contributes nothing to the
+output, and — as Chapter I.6 will show — it also receives no gradient on this
+example.
+
+**Step 3 — the output layer.** Shapes $(1\times 2)(2\times 1) \to (1\times 1)$:
+
+$$\hat{y} = (0)(2) + (3)(1) + (-1) = 0 + 3 - 1 = 2$$
+
+</Solution>
+
+<Answer>
+$$
+\vec{z}^{(1)} = \begin{bmatrix} -0.5 & 3 \end{bmatrix}, \qquad
+\vec{a}^{(1)} = \begin{bmatrix} 0 & 3 \end{bmatrix}, \qquad
+\hat{y} = 2
+$$
+
+$\vec{z}^{(1)}$ and $\vec{a}^{(1)}$ are $1\times 2$; $\hat{y}$ is a scalar and
+carries whatever units the target carries.
+</Answer>
+
+<CheckNumeric snippet="i-1-b01-forward-pass.py" verified>
+```python
+def relu(v):        return [max(0.0, t) for t in v]
+def matvec(x, W, b): return [sum(x[i] * W[i][j] for i in range(len(x))) + b[j]
+                             for j in range(len(b))]
+z1 = matvec(x, W1, b1); a1 = relu(z1); z2 = matvec(a1, W2, b2)
+```
+
+Prints `z1 = -0.5000  3.0000`, `a1 = 0.0000  3.0000`, `yhat = 2.0000`.
+</CheckNumeric>
+
+<CheckSanity>
+Three independent reasons the answer is right.
+
+**The shapes conform at every step.** $(1\times2)(2\times2)\to(1\times2)$, then
+elementwise, then $(1\times2)(2\times1)\to(1\times1)$. A forward pass whose
+shapes conform is not necessarily correct, but one whose shapes do not conform
+is certainly wrong, and it costs nothing to check.
+
+**The dead unit is consistent.** $a^{(1)}_1 = 0$, so the first row of
+$\mat{W}^{(2)}$ — the value $2$ — cannot influence $\hat{y}$. Change it to
+$200$ and recompute: still $\hat{y}=2$. That is a real test, and it passes.
+
+**Removing the nonlinearity changes the answer.** Without ReLU,
+$\hat{y} = (-0.5)(2) + (3)(1) - 1 = 1$. Since $1 \neq 2$, the nonlinearity is
+doing something on this input — which is the whole content of Chapter I.3.
+</CheckSanity>
+
+<Breaks>
+The answer depends on ReLU being applied *before* the second layer. Swap the
+order — apply the second layer to $\vec{z}^{(1)}$ and take ReLU afterwards —
+and $\hat{y}$ becomes $\max(0, 1) = 1$. Two networks with identical weights and
+identical shapes, differing only in the order of two operations, give different
+outputs. The shape check cannot catch this; only reading the definition can.
+</Breaks>
+
+<Variation>
+Recompute with $\vec{x} = \begin{bmatrix} 2 & 1 \end{bmatrix}$. Before doing
+any arithmetic, predict which hidden unit switches off — and then check whether
+your prediction was right and why.
+</Variation>

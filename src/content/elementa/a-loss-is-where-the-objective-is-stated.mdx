@@ -52,3 +52,8 @@ A weighting, a class balance or a reduction over the wrong axis is more often
 the cause than the model, and it is far cheaper to fix. The question to ask is
 never *is the loss decreasing* but *what exactly is decreasing, and is it the
 thing I would have wanted decreased*.
+
+The quantity training actually minimises is the empirical risk (I.1.2), the
+average loss over the examples in hand. The quantity anyone cares about is the
+expected risk (I.1.3), taken over the distribution the examples came from. They
+are different objects, and only the first can be computed.

@@ -1,0 +1,171 @@
+---
+id: "I.1.B03"
+kind: problem
+chapter: "I.1"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "The squared-loss gradient, and the optimum it points at"
+depends:
+  - "I.1.P03"
+  - "I.1.P04"
+reachesBack: []
+rounding: "All values rounded to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-1-b03-linear-regression-gradient.py"
+status: published
+---
+
+<Statement>
+Derive the gradient of the squared loss for one-dimensional linear regression
+through the origin, evaluate it at $w = 1$ on three data points, and confirm
+that the parameter at which the gradient vanishes is the one the normal
+equation gives.
+</Statement>
+
+<Given>
+The model $\hat{y} = wx$, with a single scalar parameter $w$. The loss
+
+$$\loss(w) = \frac{1}{2n}\sum_{i=1}^{n}\left(w x_i - y_i\right)^2$$
+
+and the three points
+
+$$(x_1,y_1) = (1, 2), \quad (x_2,y_2) = (2, 4), \quad (x_3,y_3) = (3, 5)$$
+</Given>
+
+<Find>
+A closed form for $\mathrm{d}\loss/\mathrm{d}w$; its value at $w = 1$; the
+minimiser $w^\star$; and a demonstration that the two agree.
+</Find>
+
+<Strategy>
+Differentiate under the sum, then set the result to zero. Both steps are legal
+here because the sum is finite and each term is differentiable everywhere —
+worth saying once, because for the absolute-error loss the second step is not
+available.
+</Strategy>
+
+<Solution>
+
+**Step 1 — differentiate one term.** Write $r_i = w x_i - y_i$ for the $i$-th
+residual. By the chain rule (<ApparatusRef ref="0.MC.03" />), with
+$\partial r_i / \partial w = x_i$:
+
+$$\frac{\mathrm{d}}{\mathrm{d}w}\,\tfrac12 r_i^2 = r_i \cdot \frac{\mathrm{d} r_i}{\mathrm{d}w} = x_i\,(w x_i - y_i)$$
+
+The factor $\tfrac12$ in the loss exists precisely to cancel the $2$ that
+differentiating a square produces. It is a convenience, not a modelling choice,
+and it changes no minimiser.
+
+**Step 2 — sum.** Differentiation is linear, so the derivative of the average
+is the average of the derivatives:
+
+$$\frac{\mathrm{d}\loss}{\mathrm{d}w} = \frac{1}{n}\sum_{i=1}^{n} x_i\,(w x_i - y_i) \tag{I.1.5}$$
+
+Read what this says: each point pulls on $w$ in proportion to its own $x_i$ and
+to how wrong the prediction currently is. A point with $x_i = 0$ exerts no pull
+at all, whatever its target.
+
+**Step 3 — evaluate at $w = 1$.** The three residuals are
+
+$$
+r_1 = (1)(1) - 2 = -1, \quad
+r_2 = (1)(2) - 4 = -2, \quad
+r_3 = (1)(3) - 5 = -2
+$$
+
+so
+
+$$
+\frac{\mathrm{d}\loss}{\mathrm{d}w}\bigg|_{w=1}
+= \frac{1}{3}\Big[(1)(-1) + (2)(-2) + (3)(-2)\Big]
+= \frac{-1 - 4 - 6}{3}
+= \frac{-11}{3}
+= -3.6667
+$$
+
+Negative, so increasing $w$ decreases the loss. That matches the residuals:
+every prediction is below its target.
+
+**Step 4 — set the gradient to zero.** Because the loss is a quadratic in a
+single variable with a positive leading coefficient, its unique stationary
+point is its minimum.
+
+$$
+\frac{1}{n}\sum_i x_i(w x_i - y_i) = 0
+\;\Longleftrightarrow\;
+w\sum_i x_i^2 = \sum_i x_i y_i
+\;\Longleftrightarrow\;
+w^\star = \frac{\sum_i x_i y_i}{\sum_i x_i^2}
+$$
+
+This is the normal equation for the through-origin case. It is not a separate
+result to be looked up: it is what step 2 becomes when set to zero.
+
+**Step 5 — evaluate.**
+
+$$
+\sum_i x_i y_i = (1)(2) + (2)(4) + (3)(5) = 2 + 8 + 15 = 25
+$$
+
+$$
+\sum_i x_i^2 = 1 + 4 + 9 = 14
+$$
+
+$$w^\star = \frac{25}{14} = 1.7857$$
+
+</Solution>
+
+<Answer>
+$$
+\frac{\mathrm{d}\loss}{\mathrm{d}w} = \frac{1}{n}\sum_i x_i (w x_i - y_i),
+\qquad
+\frac{\mathrm{d}\loss}{\mathrm{d}w}\bigg|_{w=1} = -\frac{11}{3} = -3.6667,
+\qquad
+w^\star = \frac{25}{14} = 1.7857
+$$
+
+The gradient is a scalar in units of loss per unit $w$; $w^\star$ is
+dimensionless here because $x$ and $y$ share units.
+</Answer>
+
+<CheckNumeric snippet="i-1-b03-linear-regression-gradient.py" verified>
+```python
+def grad(w): return sum(x * (w * x - y) for x, y in data) / len(data)
+w_star = sum(x * y for x, y in data) / sum(x * x for x, y in data)
+```
+
+Prints `grad at w=1  -3.6667`, `w* = Sxy/Sxx  1.7857`, and `grad at w*  0.0000`.
+</CheckNumeric>
+
+<CheckSanity>
+**The gradient vanishes at the claimed optimum.** Substituting $w^\star$ into
+(I.1.5) gives $0.0000$ to four decimal places — which is the definition of the
+optimum, computed independently of the closed form that produced it.
+
+**The loss falls.** $\loss(1) = 1.5000$ and $\loss(w^\star) = 0.0595$. If the
+"optimum" had a higher loss than an arbitrary starting point, the sign of the
+derivation would be wrong somewhere.
+
+**The answer is bracketed by the per-point ratios.** Each point alone would
+give $y_i/x_i$: that is $2$, $2$ and $1.667$. The least-squares fit,
+$1.7857$, lies inside $[1.667, 2]$ — as any weighted compromise must. A value
+outside that interval would mean an arithmetic slip.
+</CheckSanity>
+
+<Breaks>
+The step from "gradient is zero" to "this is the minimum" uses convexity, and
+convexity here comes from the model being *linear in the parameter* — not from
+the loss being squared. Keep the squared loss but make the model $\hat{y} = wx$
+with $w$ replaced by $\sigma(v)$ for a new parameter $v$, and the loss in $v$ is
+no longer convex: stationary points can be maxima or saddles. Every network
+after Chapter I.5 is in that second regime, and this is the last chapter in
+which "set the derivative to zero" is a solution method rather than a hope.
+</Breaks>
+
+<Variation>
+Redo the derivation for $\hat{y} = wx + b$ with two parameters. You will get two
+equations in two unknowns; solve them for the same three points, and say what
+the extra parameter bought in terms of the final loss.
+</Variation>

@@ -1,0 +1,75 @@
+---
+id: "I.1.X04"
+kind: exercise
+chapter: "I.1"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "Cross-entropy for more than two classes"
+depends:
+  - "I.1.P04"
+rounding: "4 d.p., natural logarithms, so losses are in nats."
+hasSolution: true
+verified: true
+snippet: "i-1-x04-categorical-cross-entropy.py"
+status: published
+---
+
+Extend I.1.B04 to $K$ classes. Show that categorical cross-entropy
+$-\sum_k y_k \log p_k$, with $\vec{y}$ one-hot, is the negative log-likelihood
+of a categorical distribution. Then evaluate it for
+$\vec{p} = (0.7, 0.2, 0.1)$ for each possible true class, and compare the
+average of those three losses with the entropy of $\vec{p}$.
+
+<Hint>
+A one-hot $\vec{y}$ turns a sum into a single selected term. For the last part,
+weight each loss by how often that class actually occurs *under $\vec{p}$ itself*.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the likelihood.** Generalising the indicator-exponent trick of
+I.1.B04 from two factors to $K$:
+
+$$P(Y = c) = \prod_{k=1}^{K} p_k^{\,y_k}, \qquad y_k = \mathbb{1}[k = c]$$
+
+Every factor with $y_k = 0$ is $p_k^0 = 1$ and drops out, leaving $p_c$.
+
+**Step 2 — take logarithms and negate.**
+
+$$-\log P(Y = c) = -\sum_{k=1}^{K} y_k \log p_k = \mathrm{CE}(\vec{p}, \vec{y})$$
+
+Identical, for the same reason as the binary case: a product of powers becomes
+a weighted sum of logarithms. Equation (I.1.6) is this result at $K = 2$ with
+$p_2 = 1 - p_1$, so nothing new has been assumed — only an index has been
+allowed to run further.
+
+**Step 3 — evaluate.** With $\vec{p} = (0.7, 0.2, 0.1)$:
+
+| True class | Loss |
+|---|---|
+| 1 | $-\log 0.7 = 0.3567$ |
+| 2 | $-\log 0.2 = 1.6094$ |
+| 3 | $-\log 0.1 = 2.3026$ |
+
+For the true class being the second, as asked: $\mathbf{1.6094}$ nats.
+
+**Step 4 — the comparison.** The plain average of the three is
+$(0.3567 + 1.6094 + 2.3026)/3 = 1.4229$ nats. The entropy of $\vec{p}$ is
+
+$$\mathcal{H}(\vec{p}) = -\sum_k p_k \log p_k = 0.7(0.3567) + 0.2(1.6094) + 0.1(2.3026) = 0.8018$$
+
+These are different numbers, and the difference is instructive. The entropy is
+the *probability-weighted* average — the expected loss if the labels really were
+drawn from $\vec{p}$. The plain average treats all three classes as equally
+likely, which is a different distribution, and its excess over the entropy is
+the KL divergence from uniform to $\vec{p}$ (<ApparatusRef ref="0.IT.03" />):
+
+$$1.4229 - 0.8018 = 0.6211 = \mathrm{KL}\!\left(\text{uniform} \,\|\, \vec{p}\right)$$
+
+**The lesson.** A model's expected cross-entropy equals its entropy *only when
+its predictions match the true distribution*. Any excess is exactly the
+divergence between what the model believes and what is true, which is why
+cross-entropy is bounded below by the data's own entropy and can never be
+trained to zero on genuinely noisy labels.
+</SolutionToggle>

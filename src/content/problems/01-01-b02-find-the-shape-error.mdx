@@ -1,0 +1,134 @@
+---
+id: "I.1.B02"
+kind: problem
+chapter: "I.1"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "One conformability error in five stages"
+depends:
+  - "I.1.P02"
+reachesBack: []
+rounding: "Shapes only; no rounding applies."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+A five-stage pipeline is specified below. Exactly one stage cannot be computed.
+Find it, say why, and state the shape the offending tensor must have for the
+pipeline to run.
+</Statement>
+
+<Given>
+A batch of $B = 32$ examples, each a flattened $28\times 28$ image:
+
+| Stage | Operation | Declared shape |
+|---|---|---|
+| 0 | input $\mat{X}$ | $32 \times 784$ |
+| 1 | $\mat{X}\mat{W}^{(1)}$ | $\mat{W}^{(1)}: 784 \times 256$ |
+| 2 | $\cdot\;\mat{W}^{(2)}$ | $\mat{W}^{(2)}: 256 \times 128$ |
+| 3 | $\cdot\;\mat{W}^{(3)}$ | $\mat{W}^{(3)}: 256 \times 64$ |
+| 4 | $\cdot\;\mat{W}^{(4)}$ | $\mat{W}^{(4)}: 64 \times 10$ |
+
+Elementwise nonlinearities sit between the stages. They do not change shape,
+so they can be ignored for this question — which is itself worth noticing.
+</Given>
+
+<Find>
+The failing stage, the reason, and the corrected shape of the offending weight
+matrix. Then the total parameter count once it is corrected, counting weights
+only.
+</Find>
+
+<Strategy>
+Propagate the shape forward one stage at a time. A matrix product needs the
+inner dimensions to agree, so at each stage compare the running width with the
+first dimension of the next weight matrix; the first disagreement is the error.
+</Strategy>
+
+<Solution>
+
+**Step 1 — propagate.** Write the running shape after each stage. The rule is
+$(a \times b)(b \times c) \to (a \times c)$: the inner pair must match and then
+vanishes, while the outer pair survives.
+
+$$
+\begin{aligned}
+\text{after 0:}\quad & 32 \times 784 \\
+\text{after 1:}\quad & (32\times784)(784\times256) \to 32 \times 256 \\
+\text{after 2:}\quad & (32\times256)(256\times128) \to 32 \times 128 \\
+\text{after 3:}\quad & (32\times \mathbf{128})(\mathbf{256}\times64) \to \text{✗}
+\end{aligned}
+$$
+
+**Step 2 — name the failure.** At stage 3 the running width is $128$, because
+stage 2 projected down to $128$. But $\mat{W}^{(3)}$ expects an input of width
+$256$. The inner dimensions are $128$ and $256$; they disagree, so the product
+is undefined.
+
+Note the batch axis played no part. It is carried along untouched by every
+stage, which is why a shape error in a stack of dense layers is always a
+statement about widths and never about how many examples you fed in.
+
+**Step 3 — correct it.** A weight matrix's first dimension is the width it
+consumes and its second is the width it produces. The width consumed must be
+$128$; the width produced was intended to be $64$ and nothing contradicts that.
+So
+
+$$\mat{W}^{(3)} : 128 \times 64$$
+
+and the pipeline then runs $32\times784 \to 256 \to 128 \to 64 \to 10$.
+
+**Step 4 — count the parameters.** Weights only, so the sum of the products:
+
+$$
+\begin{aligned}
+784 \times 256 &= 200{,}704 \\
+256 \times 128 &= 32{,}768 \\
+128 \times 64 &= 8{,}192 \\
+64 \times 10 &= 640 \\
+\hline
+\text{total} &= 242{,}304
+\end{aligned}
+$$
+
+</Solution>
+
+<Answer>
+Stage 3 fails: the running width is $128$ but $\mat{W}^{(3)}$ declares an input
+width of $256$. The corrected shape is $\mat{W}^{(3)} : 128 \times 64$, and the
+pipeline then holds $\mathbf{242{,}304}$ weights.
+
+Adding biases of widths $256, 128, 64, 10$ would contribute a further $458$,
+for $242{,}762$ parameters in total.
+</Answer>
+
+<CheckSanity>
+**The first layer dominates, as it must.** $200{,}704$ of $242{,}304$ weights —
+$82.8\%$ — sit in the first matrix, because it is the only one touching the
+$784$-dimensional input. Any parameter count for a network with a wide input
+and a narrowing stack should be dominated by its first layer; if yours is not,
+recheck.
+
+**The corrected chain telescopes.** Reading the widths in order gives
+$784 \to 256 \to 128 \to 64 \to 10$, where each weight matrix's second
+dimension is the next one's first. That chain property is the shape rule
+restated, and it is the fastest way to eyeball a whole architecture.
+</CheckSanity>
+
+<Breaks>
+The diagnosis assumes the *declared* stage-2 output is correct and stage 3 is
+at fault. Nothing in the specification proves that. If the author intended a
+$256$-wide trunk throughout, the error is in $\mat{W}^{(2)}$, which should have
+been $256\times256$, and the corrected parameter count is different. A shape
+error localises a contradiction; it does not tell you which side to change.
+That judgement needs the architecture's intent, which lives outside the shapes.
+</Breaks>
+
+<Variation>
+Insert a skip connection adding the stage-1 output to the stage-3 output. State
+the new constraint this imposes on the widths, and say which of the two repairs
+above it rules out.
+</Variation>

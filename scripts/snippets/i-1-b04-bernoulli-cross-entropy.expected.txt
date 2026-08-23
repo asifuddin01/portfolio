@@ -1,0 +1,4 @@
+p=0.8   y=1   CE=0.2231   NLL=0.2231   equal=True
+p=0.8   y=0   CE=1.6094   NLL=1.6094   equal=True
+p=0.5   y=1   CE=0.6931   NLL=0.6931   equal=True
+p=0.99  y=1   CE=0.0101   NLL=0.0101   equal=True
