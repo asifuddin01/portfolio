@@ -11,6 +11,10 @@ import FigSignedDistance from '../components/figures/FigSignedDistance.astro';
 import FigPerceptronUpdate from '../components/figures/FigPerceptronUpdate.astro';
 import FigXorSquare from '../components/figures/FigXorSquare.astro';
 import FigNeuron from '../components/figures/FigNeuron.astro';
+/* Book I, Chapter III — Activation Functions */
+import FigSaturation from '../components/figures/FigSaturation.astro';
+import FigDeadUnit from '../components/figures/FigDeadUnit.astro';
+import FigSmoothVsKink from '../components/figures/FigSmoothVsKink.astro';
 import FigDepthFolds from '../components/figures/FigDepthFolds.astro';
 import FigComputationalGraph from '../components/figures/FigComputationalGraph.astro';
 import FigDescentStep from '../components/figures/FigDescentStep.astro';
@@ -180,6 +184,24 @@ export const FIGURES = {
     caption:
       'XOR puts each class on one diagonal of the square, and the diagonals cross. Any line separating one diagonal must pass between the other.',
     source: 'Book I, Ch. II, Prop. 4',
+  },
+  FigSaturation: {
+    component: FigSaturation,
+    caption:
+      'The sigmoid derivative never exceeds one quarter, and a product of them reaches the smallest half-precision number by depth twelve — in the best case that never occurs.',
+    source: 'Book I, Ch. III, Prop. 2',
+  },
+  FigDeadUnit: {
+    component: FigDeadUnit,
+    caption:
+      'A dead ReLU unit is a fixed point of gradient descent: the derivative that would move its weights is the same zero that killed it.',
+    source: 'Book I, Ch. III, Prop. 3',
+  },
+  FigSmoothVsKink: {
+    component: FigSmoothVsKink,
+    caption:
+      'ReLU and GELU agree away from the origin and differ only in a narrow band around it — which is exactly where the gradient is decided.',
+    source: 'Book I, Ch. III, Prop. 4',
   },
   FigNeuron: {
     component: FigNeuron,

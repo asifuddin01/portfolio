@@ -1,0 +1,70 @@
+---
+id: "I.3.X07"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Why the theorem says non-polynomial"
+depends:
+  - "I.3.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+The second assumption of this chapter is that the activation is non-polynomial —
+the exact hypothesis of I.3.T2. Show that a polynomial activation fails
+universal approximation, by identifying precisely what such a network can
+compute. Then state the smallest change that restores universality.
+
+<Hint>
+What is a polynomial of a polynomial?
+</Hint>
+
+<SolutionToggle>
+
+**The claim.** Let $\varphi$ be a polynomial of degree $k$. Then a network of
+depth $L$ with activation $\varphi$ computes a polynomial of degree at most
+$k^{L}$ in its inputs — and *only* polynomials of that bounded degree.
+
+**Proof.** Induct on depth. A linear layer applied to a polynomial of degree $m$
+gives a polynomial of degree $m$, since it is a linear combination. Applying
+$\varphi$, of degree $k$, to a polynomial of degree $m$ gives degree $km$.
+Starting from degree $1$ at the input, after $L$ layers the degree is at most
+$k^{L}$. $\blacksquare$
+
+**Why that defeats universality.** The set of polynomials of degree $\le k^{L}$
+is a **finite-dimensional vector space** — for $d$ inputs its dimension is
+$\binom{k^L + d}{d}$, a finite number. But the continuous functions on a compact
+set form an infinite-dimensional space. A finite-dimensional subspace is closed
+and nowhere dense in it, so there are continuous functions at a *bounded positive
+distance* from everything the network can compute, no matter how many units it
+has.
+
+**Concretely.** With $\varphi(z) = z^2$ and $L = 2$, the network computes only
+polynomials of degree $\le 4$. Ask it to approximate $\sin(10x)$ on $[0, 2\pi]$
+to within $0.1$: impossible, because the best degree-4 polynomial approximation
+to $\sin(10x)$ on that interval has error close to $1$. Adding a million hidden
+units does not help — width increases the *number* of degree-4 polynomials
+available, not the degree.
+
+**Contrast with a non-polynomial.** ReLU is piecewise linear, and by I.3.X03 a
+ReLU network is piecewise linear with a number of pieces growing exponentially
+in depth. Piecewise-linear functions are dense in the continuous functions on a
+compact set, so the obstruction disappears. Sigmoid, tanh and GELU are all
+non-polynomial too — indeed all three are transcendental.
+
+**The smallest change that restores universality.** Add a single non-polynomial
+element. Even one layer of ReLU somewhere in an otherwise-polynomial network
+breaks the degree argument, because the induction requires *every* layer to be
+polynomial. This is the same structural point as I.3.B05's *Where this breaks*:
+these collapse theorems are chains, and one non-conforming link is enough.
+
+**Why the hypothesis is stated the way it is.** Hornik's 1991 result is often
+quoted as needing a "sigmoidal" activation, which is what Cybenko proved in
+1989. The sharper statement — non-polynomial is necessary *and sufficient* — is
+Leshno, Lin, Pinkus and Schocken (1993). It is worth knowing the sharp version,
+because it explains why ReLU works despite being neither bounded nor sigmoidal.
+</SolutionToggle>

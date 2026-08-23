@@ -1,0 +1,65 @@
+---
+id: "I.3.X06"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "What an elementwise function does to a shape"
+depends:
+  - "I.3.P01"
+rounding: "Exact shapes."
+hasSolution: true
+verified: false
+status: published
+---
+
+State the output shape of an elementwise activation applied to a tensor of shape
+$(B, T, d)$, and the shape of its Jacobian if written out in full. Then name
+three operations that look like activations but do not preserve shape or
+elementwiseness, and say where each belongs.
+
+<Hint>
+The full Jacobian of a map from $n$ numbers to $n$ numbers is $n \times n$, even
+when almost all of it is zero.
+</Hint>
+
+<SolutionToggle>
+
+**The output shape.** $(B, T, d)$ — identical. That is the defining property:
+an elementwise function applies a scalar map to each entry independently, so
+nothing about the arrangement changes.
+
+**The Jacobian's shape.** Flattening the tensor to $n = BTd$ numbers, the full
+Jacobian is $n \times n$. At $B=8$, $T=2048$, $d=4096$ that is
+$(6.71\times10^7)^2 \approx 4.5\times10^{15}$ entries — around $9$ petabytes in
+bf16.
+
+**Nobody stores it, and the reason is the point.** The Jacobian is *diagonal*:
+$\partial a_i/\partial z_j = 0$ whenever $i \neq j$, because $a_i$ depends on
+$z_i$ alone. So it is represented by its $n$ diagonal entries, and the backward
+pass is one elementwise multiply rather than a matrix product. Elementwiseness is
+not a stylistic choice — it is what makes the backward pass affordable
+(I.3.X08 shows the contrast).
+
+**Three impostors.**
+
+*Softmax.* Shape $(B,T,d) \to (B,T,d)$, so it passes the shape test. But entry
+$i$ depends on every entry in its row, so its Jacobian is dense within each row
+— $d \times d$ blocks, not a diagonal. It is a normalisation, and it belongs
+with the losses in Chapter I.4 and with attention in II.3.
+
+*LayerNorm.* Same shape in and out, and again not elementwise: subtracting the
+mean and dividing by the standard deviation couples every entry in the
+normalised group. Its backward pass has three terms rather than one, which is
+exactly problem I.8.B02. It belongs in Chapter I.8.
+
+*Max-pooling.* Not even shape-preserving: $(B, C, H, W) \to (B, C, H/2, W/2)$
+for a $2\times2$ window. It is a downsampling, its Jacobian routes each output
+gradient to exactly one input, and it belongs in Chapter I.11.
+
+**The test to remember.** Ask whether changing one input entry can change any
+*other* output entry. If yes, it is not elementwise, its Jacobian is not
+diagonal, and its backward pass is not one multiply — three consequences that
+always arrive together.
+</SolutionToggle>

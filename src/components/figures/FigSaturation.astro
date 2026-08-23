@@ -1,0 +1,55 @@
+---
+/** Book I, Ch. III, Prop. 2 — the derivative collapses away from the origin. */
+const pts = [];
+for (let i = 0; i <= 120; i++) {
+  const z = -6 + (12 * i) / 120;
+  const s = 1 / (1 + Math.exp(-z));
+  pts.push([80 + (i / 120) * 300, 210 - s * (1 - s) * 4 * 130]);
+}
+const curve = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+const BARS = [
+  { L: 1,  v: '0.25' },
+  { L: 3,  v: '0.016' },
+  { L: 5,  v: '9.8e-4' },
+  { L: 8,  v: '1.5e-5' },
+  { L: 12, v: '6.0e-8' },
+];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sa-t sa-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="sa-t">The sigmoid derivative peaks at one quarter and collapses either side</title>
+  <desc id="sa-d">
+    A curve of the sigmoid derivative against its input, peaking at one quarter
+    at the origin and falling to almost nothing by an input of four. Beside it,
+    the product of that derivative over increasing depth, reaching the smallest
+    number representable in half precision at twelve layers.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">σ′ against z</text>
+  <text x="440" y="22" class="t-lab">0.25 raised to the depth</text>
+
+  <line x1="80" y1="210" x2="392" y2="210" class="axis" />
+  <line x1="80" y1="66" x2="80" y2="216" class="axis" />
+  <path d={curve} class="wire" fill="none" />
+
+  <line x1="236" y1="80" x2="236" y2="210" class="dash" />
+  <text x="236" y="70" class="t-key" text-anchor="middle">max = ¼</text>
+  <text x="80" y="230" class="t-xs" text-anchor="middle">−6</text>
+  <text x="236" y="230" class="t-xs" text-anchor="middle">0</text>
+  <text x="392" y="230" class="t-xs" text-anchor="middle">+6</text>
+  <text x="60" y="72" class="t-xs" text-anchor="end">0.25</text>
+  <text x="60" y="214" class="t-xs" text-anchor="end">0</text>
+
+  {BARS.map((b, i) => (
+    <g>
+      <text x={448} y={82 + i * 30} class="t-sm">L = {b.L}</text>
+      <rect x={514} y={70 + i * 30} width={Math.max(3, 150 * (1 - i / 5.6))} height="14" class="bx-fill" />
+      <text x={676} y={82 + i * 30} class="t-xs" text-anchor="end">{b.v}</text>
+    </g>
+  ))}
+
+  <line x1="440" y1="228" x2="684" y2="228" class="wire-soft" />
+  <text x="440" y="248" class="t-key">fp16 smallest positive: 6.0e−8</text>
+  <text x="440" y="268" class="t-em">at depth 12 the gradient is not small — it is zero</text>
+
+  <text x="0" y="292" class="t-xs">and this is the best case; at |z| = 4 it is depth 5</text>
+</svg>

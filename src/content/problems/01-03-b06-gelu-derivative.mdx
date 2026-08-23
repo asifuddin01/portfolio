@@ -1,0 +1,149 @@
+---
+id: "I.3.B06"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "The GELU derivative, and the kink that is not there"
+depends:
+  - "I.3.P01"
+  - "I.3.P04"
+reachesBack: []
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-3-b06-gelu-derivative.py"
+status: published
+---
+
+<Statement>
+Derive $\mathrm{GELU}'$, evaluate it at seven points, and compare its behaviour
+at the origin with ReLU's. Then state the optimisation consequence of the
+difference and find where the derivative is most negative.
+</Statement>
+
+<Given>
+$\mathrm{GELU}(z) = z\,\Phi(z)$ with $\Phi$ the standard normal CDF and
+$\Phi' = \phi$, the standard normal density
+$\phi(z) = e^{-z^2/2}/\sqrt{2\pi}$.
+</Given>
+
+<Find>
+A closed form for $\mathrm{GELU}'$; its values at
+$z \in \{-3,-1,-0.5,0,0.5,1,3\}$; the value at $z=0$ against ReLU's; and
+$\min_z \mathrm{GELU}'(z)$.
+</Find>
+
+<Strategy>
+Product rule, then evaluate. The interesting content is entirely in what the
+second term does for negative $z$.
+</Strategy>
+
+<Solution>
+
+**Step 1 — differentiate.** By the product rule on $z \cdot \Phi(z)$:
+
+$$\mathrm{GELU}'(z) = \Phi(z) + z\,\phi(z) \tag{I.3.4}$$
+
+Two terms with different characters. $\Phi(z) \in (0,1)$ is a soft gate rising
+from $0$ to $1$. The correction $z\phi(z)$ is positive for $z>0$, negative for
+$z<0$, and decays to zero in both tails because the Gaussian density does.
+
+**Step 2 — evaluate.**
+
+| $z$ | GELU | $\mathrm{GELU}'$ | $\mathrm{ReLU}'$ |
+|---|---|---|---|
+| $-3.0$ | $-0.0040$ | $-0.0119$ | $0$ |
+| $-1.0$ | $-0.1587$ | $-0.0833$ | $0$ |
+| $-0.5$ | $-0.1543$ | $+0.1325$ | $0$ |
+| $0.0$ | $0.0000$ | $+0.5000$ | undefined |
+| $0.5$ | $0.3457$ | $+0.8675$ | $1$ |
+| $1.0$ | $0.8413$ | $+1.0833$ | $1$ |
+| $3.0$ | $2.9960$ | $+1.0119$ | $1$ |
+
+**Step 3 — the origin.** $\mathrm{GELU}'(0) = \Phi(0) + 0 = 0.5$, and it is a
+genuine two-sided derivative: GELU is $C^\infty$ everywhere, being a product of
+smooth functions.
+
+ReLU has no derivative at $0$ at all. Its left slope is $0$, its right slope is
+$1$, and every framework silently picks a subgradient from $[0,1]$ — usually
+$0$, sometimes $0.5$, sometimes $1$. GELU's $0.5$ is not a convention: it is the
+value.
+
+**Step 4 — the minimum.** Setting $\mathrm{GELU}'' = 0$ gives
+$2\phi(z) + z\phi'(z) = \phi(z)(2 - z^2) = 0$, so $z = -\sqrt2 = -1.4142$
+(taking the negative root). There
+
+$$\mathrm{GELU}'(-\sqrt2) = \Phi(-1.4142) + (-1.4142)\phi(-1.4142) = 0.0786 - 0.2075 = -0.1289$$
+
+**The derivative goes negative.** No activation studied so far does this.
+Between roughly $z = -\infty$ and $z \approx -0.75$, increasing the
+pre-activation *decreases* the output.
+
+**Step 5 — the optimisation consequences.** Three, in order of how often they
+are stated correctly.
+
+*No dead region.* $\mathrm{GELU}'(-10) = \Phi(-10) + (-10)\phi(-10)$, which is
+about $-7.6\times10^{-23}$ — vanishingly small but nonzero. So the dead-unit
+failure of I.3.B04 cannot occur exactly, though at $10^{-23}$ the distinction is
+academic and fp16 will round it to zero regardless.
+
+*No kink, so second-order methods are well defined.* Anything relying on
+curvature — natural gradient, K-FAC, or simply a smooth loss landscape — is
+better behaved when the activation is twice differentiable. ReLU's Hessian is a
+sum of Dirac deltas at the kinks.
+
+*The negative lobe is a real functional difference.* It lets a unit express "this
+input is moderately against my feature" with a small negative output rather than
+with silence. Whether that helps is empirical, and the honest answer is that
+GELU's advantage over ReLU in transformers is consistent but small, and no
+convincing theoretical account of it exists.
+
+</Solution>
+
+<Answer>
+$$\mathrm{GELU}'(z) = \Phi(z) + z\,\phi(z)$$
+
+$\mathrm{GELU}'(0) = 0.5$ exactly, where $\mathrm{ReLU}'(0)$ does not exist.
+The minimum is $\mathrm{GELU}'(-\sqrt2) = -0.1289$, so the derivative is
+negative on roughly $(-\infty, -0.75)$.
+</Answer>
+
+<CheckNumeric snippet="i-3-b06-gelu-derivative.py" verified>
+```python
+def dgelu(z): return Phi(z) + z * phi(z)
+lo = min(dgelu(z / 1000.0) for z in range(-3000, 1))
+```
+Prints the table, `most negative dGELU -0.1289`, and `dGELU(0) 0.5000`.
+</CheckNumeric>
+
+<CheckSanity>
+**The tails match ReLU.** At $z = 3$, $\mathrm{GELU}' = 1.0119 \approx 1$; at
+$z=-3$, $-0.0119 \approx 0$. GELU is asymptotically ReLU in both directions, as
+its construction intends.
+
+**The derivative integrates back to the function.** Between $z=0$ and $z=0.5$
+the mean of $\mathrm{GELU}'$ is roughly $(0.5+0.8675)/2 = 0.684$, so the
+predicted rise is $0.684 \times 0.5 = 0.342$ against the actual
+$0.3457 - 0 = 0.3457$. Agreement to two digits from a two-point trapezoid, which
+is as much as that method deserves.
+
+**The minimum is where the second derivative says.** $2 - z^2 = 0$ at
+$z = \pm\sqrt2$, and the numerical scan over $3{,}001$ points found $-0.1289$,
+consistent with the closed-form evaluation at $-\sqrt2$.
+</CheckSanity>
+
+<Breaks>
+Everything above is for the exact GELU. The tanh approximation
+$0.5z(1 + \tanh(\sqrt{2/\pi}(z + 0.044715z^3)))$, which most implementations
+actually use, has a slightly different derivative — the minimum is near
+$-0.1288$ rather than $-0.1289$, and the two functions differ by up to about
+$10^{-3}$ around $|z| \approx 2$. Small, but the two are not the same function,
+and a paper reporting "GELU" may mean either.
+</Breaks>
+
+<Variation>
+Derive the derivative of SiLU, $z\sigma(z)$, and find its minimum. Compare with
+GELU's $-0.1289$ and say which activation has the deeper negative lobe.
+</Variation>

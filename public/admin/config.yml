@@ -109,6 +109,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigSaturation
+          - FigDeadUnit
+          - FigSmoothVsKink
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph
@@ -325,6 +328,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigSaturation
+          - FigDeadUnit
+          - FigSmoothVsKink
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph
@@ -969,6 +975,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigSaturation
+          - FigDeadUnit
+          - FigSmoothVsKink
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph

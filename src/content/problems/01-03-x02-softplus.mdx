@@ -1,0 +1,64 @@
+---
+id: "I.3.X02"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: symbolic
+difficulty: 1
+title: "Softplus and its derivative"
+depends:
+  - "I.3.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Softplus is $\varsigma(z) = \log(1 + e^{z})$. Show that
+$\varsigma'(z) = \sigma(z)$, that $\varsigma(z) > \mathrm{ReLU}(z)$ everywhere,
+and that $\varsigma(z) - \mathrm{ReLU}(z) \to 0$ as $|z| \to \infty$. Then say
+why softplus is nevertheless rarely used.
+
+<Hint>
+For the last part, evaluate $\varsigma$ naively at $z = 100$ in fp32.
+</Hint>
+
+<SolutionToggle>
+
+**The derivative.** By the chain rule,
+
+$$\varsigma'(z) = \frac{1}{1+e^{z}} \cdot e^{z} = \frac{e^{z}}{1+e^{z}} = \frac{1}{1+e^{-z}} = \sigma(z)$$
+
+dividing through by $e^{z}$ at the last step. **Softplus is the antiderivative of
+the sigmoid** — a fact worth carrying, because it means the smooth gate and the
+smooth rectifier are the same object seen at two orders of differentiation.
+
+**It dominates ReLU.** For $z \le 0$, $\varsigma(z) = \log(1+e^{z}) > \log 1 = 0 = \mathrm{ReLU}(z)$.
+For $z > 0$, write $\varsigma(z) = z + \log(1 + e^{-z}) > z = \mathrm{ReLU}(z)$,
+since the log term is positive. So $\varsigma > \mathrm{ReLU}$ everywhere.
+
+**The gap vanishes.** From the two forms above, the gap is $\log(1+e^{z})$ for
+$z<0$ and $\log(1+e^{-z})$ for $z>0$ — in both cases $\log(1+e^{-|z|})$, which
+tends to $\log 1 = 0$. At $|z| = 5$ the gap is already $0.0067$.
+
+**Why it is rarely used.** Three reasons, in decreasing order of importance.
+
+*It overflows if written naively.* At $z = 100$, $e^{100} = 2.7\times10^{43}$ —
+fine in fp32, but at $z = 800$ it is $\infty$ and $\log(\infty) = \infty$. The
+correct implementation is $\max(z,0) + \log(1 + e^{-|z|})$
+(<ApparatusRef ref="0.NU.02" />), which never overflows. Every framework does
+this; the point is that the naive form is a real trap.
+
+*It costs more.* Roughly $6$ FLOPs per element against ReLU's $1$ — though
+I.3.B07 showed that difference is under $0.2\%$ of the layer, so this reason is
+weaker than it is usually stated.
+
+*It has no exact zeros.* $\varsigma(z) > 0$ always, so no unit is ever silent
+and no activation is ever sparse. Sparsity was the original argument for ReLU,
+and whether it matters is still debated — but softplus definitively does not
+have it.
+
+**What it is used for.** Where a strictly positive output is required and
+smoothness matters: a predicted variance, a rate parameter, a scale in a
+distribution. Chapter I.13 uses it exactly there.
+</SolutionToggle>

@@ -6,15 +6,69 @@ title: "Activation Functions"
 summary: "The nonlinearity is what makes depth worth having."
 claim: "Without a nonlinearity a stack of affine maps is a single affine map, so depth buys nothing at all."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "Activation"
+  - "Nonlinearity"
+  - "Saturation"
+  - "Sigmoid and tanh"
+  - "ReLU and LeakyReLU"
+  - "GELU"
+  - "Dead units"
+  - "Universal approximation"
+definitions:
+  - n: 1
+    term: "Activation function"
+    statement: "An activation function φ : ℝ → ℝ is applied elementwise to a pre-activation vector. Being elementwise is the defining property: it introduces curvature without introducing any mixing between coordinates, which is what keeps it cheap and what makes its Jacobian diagonal."
+    introduces:
+      - "sigma"
+  - n: 2
+    term: "Pre-activation"
+    statement: "The pre-activation z is the output of the affine part of a layer, before φ is applied. The distinction matters because gradients are usually derived with respect to z and only then pushed back to the weights."
+    introduces: []
+  - n: 3
+    term: "Saturation"
+    statement: "An activation saturates at an input z when φ′(z) ≈ 0, so that changing z barely changes the output. A saturated unit passes almost no gradient backwards, whatever the error downstream."
+    introduces: []
+  - n: 4
+    term: "Sigmoid"
+    statement: "σ(z) = 1/(1 + e⁻ᶻ), mapping ℝ onto (0, 1) monotonically. Its derivative σ′ = σ(1 − σ) never exceeds 1/4, attained at z = 0."
+    introduces: []
+  - n: 5
+    term: "Hyperbolic tangent"
+    statement: "tanh(z) = (eᶻ − e⁻ᶻ)/(eᶻ + e⁻ᶻ), mapping ℝ onto (−1, 1). It is a rescaled sigmoid: tanh(z) = 2σ(2z) − 1, and its derivative 1 − tanh²(z) reaches 1 at the origin."
+    introduces: []
+  - n: 6
+    term: "Rectified linear unit"
+    statement: "ReLU(z) = max(0, z). It is piecewise linear with derivative 1 for z > 0 and 0 for z < 0, and no derivative at z = 0 — where frameworks silently choose a subgradient, usually 0."
+    introduces: []
+  - n: 7
+    term: "Dead unit"
+    statement: "A unit is dead when its pre-activation is negative for every input in the dataset, so ReLU outputs zero always and its incoming weights receive zero gradient always. A dead unit is permanently dead: nothing in training can revive it."
+    introduces: []
+  - n: 8
+    term: "Gaussian error linear unit"
+    statement: "GELU(z) = z·Φ(z), where Φ is the standard normal CDF. It is smooth everywhere, is not monotonic — it dips below zero for moderately negative z — and approaches ReLU as |z| grows."
+    introduces: []
 beforeYouStart:
   - "I.2"
   - "0.MC.08"
+  - "0.NU.01"
 conceptFigure: FigDepthFolds
-problemStatement: "A reader who has met the perceptron will reasonably ask why not simply stack them. The answer is a theorem, and it decides the shape of every network after it."
-formalResults: []
-assumptions: []
+problemStatement: "The reader has one perceptron and has just been shown it cannot compute XOR. The obvious repair is to stack perceptrons. This chapter shows that stacking alone achieves exactly nothing — a composition of affine maps is affine — and that the entire benefit of depth comes from what is placed between the layers."
+formalResults:
+  - id: "I.3.T1"
+    name: "Collapse of linear stacks"
+    statement: "For any depth L, a network whose activations are all identity or any linear map computes x ↦ xW + b for a single W and b. The composition of affine maps is affine, so such a network has exactly the representational power of one layer, whatever its parameter count."
+    doesNotPromise: "It does not say the deep linear network is useless to study: its *optimisation* differs sharply from the single layer's, its loss surface has saddles the shallow one lacks, and the implicit bias of gradient descent on it is an active research topic. The theorem is about the set of functions reachable, not about the trajectory taken to reach one."
+  - id: "I.3.T2"
+    name: "Universal approximation (Cybenko 1989, Hornik 1991)"
+    statement: "A network with one hidden layer and any non-polynomial activation can approximate any continuous function on a compact set to arbitrary accuracy, given enough hidden units."
+    doesNotPromise: "It gives no bound on the number of units, which may be exponential in the input dimension. It says nothing about whether gradient descent finds the approximating parameters — existence is not reachability. It says nothing about behaviour off the compact set. And it is not a statement about generalisation: the approximating network fits the target on that set and may be arbitrarily wrong on data drawn near it."
+assumptions:
+  - statement: "The activation is applied elementwise, so its Jacobian is diagonal and depth does not multiply full matrices of derivatives."
+    testedBy: "I.3.X08"
+  - statement: "The activation is non-polynomial, which is what universal approximation requires."
+    testedBy: "I.3.X07"
 owns:
   - "activation-function"
   - "saturation"
@@ -23,14 +77,62 @@ owns:
 borrows:
   - "perceptron"
   - "chain-rule"
-implementation: false
-failureModes: []
-references: []
+  - "floating-point"
+implementation: true
+failureModes:
+  - "Sigmoid saturation kills depth. At |z| = 4 the derivative is 0.0177, so a product over ten layers is 2.96e-18 — already below fp16's smallest subnormal, 5.96e-8, by ten orders of magnitude. In fp16 a sigmoid stack underflows to exactly zero at depth 5 even in the best case at z = 0, where the derivative is 0.25."
+  - "A ReLU unit can die permanently. Give a unit weights (1, 1) and bias -10 with all inputs in [0, 1]: the pre-activation never exceeds -8, the output is always zero, and the gradient reaching its weights is always zero. No learning rate, schedule or restart recovers it, because the gradient that would move it is itself zero."
+references:
+  - title: "Approximation by Superpositions of a Sigmoidal Function"
+    authors: "Cybenko"
+    year: 1989
+    venue: "Mathematics of Control, Signals and Systems 2(4)"
+    url: https://doi.org/10.1007/BF02551274
+  - title: "Approximation Capabilities of Multilayer Feedforward Networks"
+    authors: "Hornik"
+    year: 1991
+    venue: "Neural Networks 4(2)"
+    url: https://doi.org/10.1016/0893-6080(91)90009-T
+  - title: "Deep Sparse Rectifier Neural Networks"
+    authors: "Glorot, Bordes and Bengio"
+    year: 2011
+    venue: "AISTATS"
+    url: https://proceedings.mlr.press/v15/glorot11a.html
+  - title: "Rectifier Nonlinearities Improve Neural Network Acoustic Models"
+    authors: "Maas, Hannun and Ng"
+    year: 2013
+    venue: "ICML Workshop on Deep Learning for Audio, Speech and Language"
+    url: https://ai.stanford.edu/~amaas/papers/relu_hybrid_icml2013_final.pdf
+  - title: "Gaussian Error Linear Units (GELUs)"
+    authors: "Hendrycks and Gimpel"
+    year: 2016
+    venue: "arXiv:1606.08415"
+    url: https://arxiv.org/abs/1606.08415
+  - title: "Searching for Activation Functions"
+    authors: "Ramachandran, Zoph and Le"
+    year: 2017
+    venue: "arXiv:1710.05941"
+    url: https://arxiv.org/abs/1710.05941
 notation:
   - "sigma"
+  - "d"
+  - "L"
 apparatus:
   - "0.MC.08"
   - "0.NU.01"
-keyEquations: []
-status: review
+  - "0.NU.02"
+keyEquations:
+  - id: "I.3.1"
+    formula: "σ′(z) = σ(z)(1 − σ(z)),   max σ′ = 1/4"
+    gloss: "The best a sigmoid layer ever does for a gradient is divide it by four."
+  - id: "I.3.2"
+    formula: "tanh(z) = 2σ(2z) − 1"
+    gloss: "Not a different function, only a different framing of the same one."
+  - id: "I.3.3"
+    formula: "(W₁W₂ ⋯ W_L) = W,   so depth without curvature is one layer"
+    gloss: "Stacking affine maps buys parameters, not expressiveness."
+  - id: "I.3.4"
+    formula: "GELU(z) = z·Φ(z),   GELU′(z) = Φ(z) + z·φ(z)"
+    gloss: "Smooth everywhere, and briefly negative — a gate that is not quite a switch."
+status: published
 ---

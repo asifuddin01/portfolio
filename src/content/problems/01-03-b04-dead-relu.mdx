@@ -1,0 +1,145 @@
+---
+id: "I.3.B04"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A unit that can never come back"
+depends:
+  - "I.3.P03"
+reachesBack: []
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Construct explicit weights and a bias for which a ReLU unit's gradient is
+exactly zero for every input in the dataset, forever. Then show LeakyReLU
+repairs it, and quantify how long the repair takes.
+</Statement>
+
+<Given>
+A ReLU unit $a = \max(0, \langle\vec{w},\vec{x}\rangle + b)$ with inputs drawn
+from $[0,1]^2$. Downstream the unit feeds a loss $\loss$ with
+$\partial \loss/\partial a$ of order $1$.
+</Given>
+
+<Find>
+A $(\vec{w}, b)$ making the unit permanently dead; a proof that no update
+revives it; and the number of steps LeakyReLU needs to recover, at a stated
+learning rate.
+</Find>
+
+<Strategy>
+Make the pre-activation negative on the whole input domain, then trace the
+gradient backwards and observe that it is zero at the first multiplication.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the construction.** Take
+
+$$\vec{w} = (1, 1), \qquad b = -10$$
+
+For any $\vec{x} \in [0,1]^2$ the pre-activation is
+
+$$z = x_1 + x_2 - 10 \in [-10, -8]$$
+
+always negative, with a margin of at least $8$ from the kink.
+
+**Step 2 — the output is always zero.** $a = \max(0, z) = 0$ for every input in
+the domain. The unit contributes nothing to any prediction.
+
+**Step 3 — the gradient is always zero.** By the chain rule, the gradient
+reaching the weights is
+
+$$
+\frac{\partial \loss}{\partial \vec{w}}
+= \frac{\partial \loss}{\partial a} \cdot \frac{\partial a}{\partial z} \cdot \frac{\partial z}{\partial \vec{w}}
+= \frac{\partial \loss}{\partial a} \cdot \underbrace{\mathrm{ReLU}'(z)}_{=\,0\ \text{for } z<0} \cdot \vec{x}
+= \vec{0}
+$$
+
+and identically $\partial\loss/\partial b = 0$. **Whatever the downstream error,
+it is multiplied by zero at this unit.**
+
+**Step 4 — the death is permanent.** Any gradient-based update has the form
+$\vec{w} \leftarrow \vec{w} - \eta\,\partial\loss/\partial\vec{w}$. Since the
+gradient is $\vec{0}$, the update is $\vec{w} \leftarrow \vec{w}$. The
+parameters cannot move, so $z$ stays in $[-10,-8]$, so the gradient stays zero.
+The state is a fixed point of training. **No learning rate, no schedule, no
+optimiser and no amount of data changes it.** Momentum does not help either:
+momentum accumulates past gradients, and every past gradient was also zero.
+
+The only escapes are external — weight decay pulling $b$ toward zero, or a
+different unit's weights changing the input distribution — and neither is a
+property of this unit's own learning.
+
+**Step 5 — LeakyReLU repairs it.** With
+$\varphi(z) = z$ for $z>0$ and $0.01z$ otherwise, the derivative on the negative
+side is $0.01$ rather than $0$. Now
+
+$$\frac{\partial \loss}{\partial b} = \frac{\partial \loss}{\partial a}\cdot 0.01$$
+
+Small, but not zero — and a small nonzero gradient applied repeatedly moves.
+
+**Step 6 — how long.** Suppose $\partial\loss/\partial a = -1$ on average (the
+loss wants this unit's output larger) and $\eta = 0.01$. Each step moves the
+bias by
+
+$$\Delta b = -\eta\,\frac{\partial\loss}{\partial b} = -(0.01)(-1)(0.01) = 10^{-4}$$
+
+To raise $b$ from $-10$ to $-1$, where the unit begins firing on part of the
+domain, needs
+
+$$\frac{9}{10^{-4}} = 90{,}000 \text{ steps}$$
+
+**The honest reading.** LeakyReLU converts *impossible* into *slow*. Ninety
+thousand steps is a real cost, and it is why the slope is often set to $0.1$
+rather than $0.01$ — which cuts the recovery to $9{,}000$ steps — and why
+careful initialisation, which prevents the death in the first place, matters
+more than the repair.
+
+</Solution>
+
+<Answer>
+$\vec{w} = (1,1)$, $b = -10$ over $[0,1]^2$ gives $z \le -8$ always, hence
+$a = 0$ and $\nabla = \vec{0}$ always. The state is a fixed point of gradient
+descent, so the unit is permanently dead.
+
+LeakyReLU$(0.01)$ recovers it in about $\mathbf{90{,}000}$ steps at $\eta = 0.01$
+with unit downstream gradient; at slope $0.1$, about $9{,}000$.
+</Answer>
+
+<CheckSanity>
+**The margin is comfortable.** The largest possible pre-activation is
+$1 + 1 - 10 = -8$, not $-0.001$. So this is not a knife-edge construction that a
+single unusual input could disturb — the whole domain is $8$ units from the kink.
+
+**The zero is structural, not numerical.** $\mathrm{ReLU}'(z) = 0$ exactly for
+$z < 0$, not approximately. There is no underflow here and no precision to
+recover: the arithmetic is exact and the answer is exactly zero.
+
+**The LeakyReLU arithmetic is dimensionally right.** $\Delta b$ is
+$\eta \times$ (downstream gradient) $\times$ (slope) $= 0.01 \times 1 \times 0.01$,
+three dimensionless factors, giving $10^{-4}$ per step in the units of $b$. And
+$9 / 10^{-4} = 9\times10^{4}$. ✓
+</CheckSanity>
+
+<Breaks>
+The construction needs the input domain to be bounded. On unbounded inputs — an
+unnormalised feature that occasionally reaches $10^{3}$ — the unit is not dead,
+merely almost always silent, and it will receive a gradient on the rare examples
+that wake it. That is a different and much less severe failure, and it is one
+reason input normalisation (III.1) changes the character of this problem rather
+than only its magnitude.
+</Breaks>
+
+<Variation>
+Show that a GELU unit in the same state is never exactly dead, by computing
+$\mathrm{GELU}'(-10)$. Then say whether the gradient it does receive is large
+enough to matter, and compare with LeakyReLU's $0.01$.
+</Variation>

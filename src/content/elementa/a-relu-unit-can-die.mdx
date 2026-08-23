@@ -1,0 +1,96 @@
+---
+chapter: neural-networks--activations
+proposition: 3
+statement: A ReLU unit can enter a state from which no amount of training recovers it.
+claim: "If a unit's pre-activation is negative on every training input, its output is zero and the gradient reaching its weights is exactly zero. The parameters cannot move, so the state is a fixed point of gradient descent, and the unit is lost permanently."
+given:
+  - saturation-is-where-the-gradient-dies
+figure: FigDeadUnit
+figureType: G
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "nabla"
+apparatus:
+  - "0.MC.03"
+  - "0.OP.02"
+sources:
+  - title: "Deep Sparse Rectifier Neural Networks"
+    url: https://proceedings.mlr.press/v15/glorot11a.html
+  - title: "Rectifier Nonlinearities Improve Neural Network Acoustic Models"
+    url: https://ai.stanford.edu/~amaas/papers/relu_hybrid_icml2013_final.pdf
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+ReLU solves the saturation of the previous proposition by having a derivative of
+exactly 1 wherever it is active. The price is a derivative of exactly 0 wherever
+it is not, and *exactly* is the operative word.
+
+Consider a unit whose pre-activation is negative for every input in the dataset —
+weights (1, 1) and bias −10, with inputs in [0,1]², giving *z* ∈ [−10, −8]. The
+output is zero always. That alone is merely wasteful. The failure is in the
+backward pass.
+
+The gradient reaching the weights is a product along the path:
+
+```
+∂L/∂w = (∂L/∂a) · ReLU′(z) · x
+      = (∂L/∂a) ·     0     · x
+      = 0
+```
+
+Whatever the network downstream wants — however large the error, however many
+examples agree about it — the message is multiplied by zero at this unit and
+arrives as nothing.
+
+## Why it is permanent, not merely slow
+
+Every gradient method updates by **w** ← **w** − η · ∂L/∂**w**. With the
+gradient identically zero the update is **w** ← **w**: the parameters are
+unchanged, so *z* is unchanged, so the gradient is zero again next step.
+
+**The state is a fixed point of training.** Raising the learning rate multiplies
+zero by a larger number. Momentum accumulates a history of zeros. A restart of
+the optimiser state changes nothing, because there is nothing in the state to
+change. This is categorically different from slow learning, and it is worth
+insisting on the distinction: slow learning is a rate, and this is a wall.
+
+The only escapes are external. Weight decay, if applied to the bias, pulls it
+back toward zero over many steps. A change in an earlier layer may shift this
+unit's inputs. Neither is the unit learning; both are things happening to it.
+
+## What actually causes it in practice
+
+Almost never a bad initialisation. With symmetric weights and zero bias, a unit
+is negative on about half its inputs and dead on none — the probability of being
+negative on all *N* examples is around 2⁻ᴺ, which at *N* = 100 is 10⁻³⁰. That
+half-silence is the sparsity ReLU was chosen for, and it is healthy.
+
+What kills units is a large step during training. One update with an unusually
+large gradient drives the bias far negative; the unit stops firing; its gradient
+becomes zero; it is stuck. This is why ReLU networks trained at high learning
+rates can lose a substantial fraction of their units in the first few hundred
+steps, and why the loss curve shows no sign of it.
+
+## Corollary
+
+The repairs form a ladder, and each rung costs something.
+
+**LeakyReLU** replaces the zero with a small slope, typically 0.01. The unit now
+receives a gradient 100 times smaller than an active one — enough to recover,
+but slowly: problem I.3.B04 works out roughly 90,000 steps for a bias of −10 at
+η = 0.01. *Impossible* becomes *slow*, which is a real improvement and not a
+solution.
+
+**GELU and SiLU** are never exactly zero, but GELU′(−10) ≈ −7.6 × 10⁻²³, which
+in fp16 rounds to zero anyway. The guarantee is mathematical rather than
+practical.
+
+**Warmup and normalisation** prevent the large early step and keep
+pre-activations centred. These address the cause rather than the symptom, and
+they are the reason the dying-ReLU problem is discussed much less now than in
+2015 — not because ReLU changed, but because what surrounds it did.

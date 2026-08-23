@@ -1,0 +1,78 @@
+---
+id: "I.3.X04"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "How many units die at initialisation"
+depends:
+  - "I.3.P03"
+rounding: "Percentages to 1 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+At initialisation with symmetric weights and zero bias, roughly half of all
+ReLU pre-activations are negative. Explain why that is *not* the dying-unit
+problem, then construct an initialisation under which it becomes one, and give
+the fraction of units that die.
+
+<Hint>
+A unit is dead only if it is negative for *every* input, not for half of them.
+</Hint>
+
+<SolutionToggle>
+
+**Why half-negative is fine.** With $\vec{w}$ drawn from a symmetric
+distribution and $b = 0$, the pre-activation $z = \langle\vec{w},\vec{x}\rangle$
+is symmetric about zero for any fixed $\vec{x}$, so
+$P(z < 0) = 1/2$ per example. But the unit is *dead* only if $z<0$ for **every**
+example. For $N$ roughly independent examples that probability is about $2^{-N}$
+— at $N = 100$, $10^{-30}$. So at symmetric initialisation essentially no unit
+is dead; each is merely silent on about half its inputs, which is the sparsity
+ReLU was chosen for.
+
+**The construction that does kill units.** Initialise the bias to a large
+negative constant, $b = -c$, keeping weights at He scale
+$\mathrm{Var}(w) = 2/n_{\text{in}}$. Then
+
+$$z = \langle\vec{w},\vec{x}\rangle - c$$
+
+and if $c$ exceeds the largest value $\langle\vec{w},\vec{x}\rangle$ attains over
+the dataset, the unit is dead from step zero.
+
+**The fraction.** With inputs normalised so
+$\langle\vec{w},\vec{x}\rangle \sim \mathcal{N}(0, 1)$ approximately, a unit is
+dead if $c$ exceeds the maximum of $N$ standard normal draws. For $N = 10^4$
+that maximum is about $3.9$. So:
+
+| $b = -c$ | Fraction of units dead |
+|---|---|
+| $0$ | $\approx 0\%$ |
+| $-2$ | $\approx 2.3\%$ |
+| $-3$ | $\approx 0.1\%$ … but of *examples*, not units |
+| $-4$ | $\approx 50\%$ of units |
+| $-6$ | $\approx 100\%$ of units |
+
+The middle rows need care, and the care is the point: a bias of $-2$ makes each
+unit silent on $97.7\%$ of examples but dead on none, because some example
+still exceeds it. A bias of $-4$ exceeds the dataset maximum for about half the
+units, and those are genuinely dead. **The transition is sharp**, and it depends
+on the dataset size through the maximum of $N$ draws — which grows only like
+$\sqrt{2\log N}$.
+
+**The real-world version.** Nobody initialises the bias to $-4$. What happens
+instead is that a large learning rate drives a bias there during training: one
+step with an unusually large gradient pushes $b$ far negative, the unit stops
+firing, its gradient becomes zero, and it is stuck. This is the standard account
+of why ReLU networks trained at high learning rates can lose a substantial
+fraction of their units in the first few hundred steps.
+
+**What prevents it.** Initialising biases to a small *positive* constant such as
+$0.01$ — once common practice — guarantees no unit starts dead. Careful learning
+rate warmup (I.7) prevents the large early steps. And normalisation (I.8) keeps
+pre-activations centred, so a bias would have to fight the normaliser to run
+away.
+</SolutionToggle>

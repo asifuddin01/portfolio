@@ -42,7 +42,7 @@
   symbol: "L"
   meaning: Number of layers.
   kind: scalar
-  introducedIn: "I.5"
+  introducedIn: "I.3"
 - id: V
   symbol: "|V|"
   meaning: Vocabulary size.
@@ -194,7 +194,7 @@
   symbol: "∇"
   meaning: Gradient operator. ∂L/∂W has the shape of W — numerator layout, fixed once (§5.6).
   kind: operator
-  introducedIn: "I.6"
+  introducedIn: "I.2"
   apparatus: "0.MC.01"
 - id: softmax
   symbol: "softmax"

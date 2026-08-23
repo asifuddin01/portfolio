@@ -1,0 +1,56 @@
+---
+/** Book I, Ch. III, Prop. 3 — a fixed point of training that training cannot leave. */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="du-t du-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 580px">
+  <title id="du-t">A dead ReLU unit is a fixed point of gradient descent</title>
+  <desc id="du-d">
+    The whole input domain maps to negative pre-activations, so the unit outputs
+    zero. The backward pass multiplies the downstream error by the ReLU
+    derivative, which is exactly zero there, so no gradient reaches the weights
+    and they never move. The cycle closes on itself.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the loop that cannot be broken</text>
+
+  <rect x="40" y="70" width="140" height="52" class="bx" />
+  <text x="110" y="94" class="t-sm" text-anchor="middle">inputs in [0,1]²</text>
+  <text x="110" y="112" class="t-xs" text-anchor="middle">w = (1,1), b = −10</text>
+
+  <line x1="180" y1="96" x2="252" y2="96" class="wire" />
+  <polygon points="252,91 264,96 252,101" class="head" />
+
+  <rect x="264" y="70" width="130" height="52" class="bx" />
+  <text x="329" y="94" class="t-sm" text-anchor="middle">z ∈ [−10, −8]</text>
+  <text x="329" y="112" class="t-xs" text-anchor="middle">always negative</text>
+
+  <line x1="394" y1="96" x2="466" y2="96" class="wire" />
+  <polygon points="466,91 478,96 466,101" class="head" />
+
+  <rect x="478" y="70" width="130" height="52" class="bx" />
+  <text x="543" y="94" class="t-sm" text-anchor="middle">a = 0</text>
+  <text x="543" y="112" class="t-xs" text-anchor="middle">contributes nothing</text>
+
+  {/* backward path */}
+  <line x1="543" y1="152" x2="543" y2="128" class="wire-soft" />
+  <line x1="543" y1="152" x2="329" y2="152" class="wire-soft" />
+  <polygon points="341,147 325,152 341,157" class="head" />
+  <text x="436" y="144" class="t-key" text-anchor="middle">∂L/∂a from downstream</text>
+
+  <rect x="264" y="166" width="130" height="46" class="bx-fill" />
+  <text x="329" y="186" class="t-sm" text-anchor="middle">× ReLU′(z)</text>
+  <text x="329" y="204" class="t-key" text-anchor="middle" style="fill: var(--oxblood-text)">= 0 exactly</text>
+
+  <line x1="264" y1="189" x2="180" y2="189" class="wire-soft" />
+  <polygon points="192,184 176,189 192,194" class="head" />
+  <text x="110" y="186" class="t-sm" text-anchor="middle">∂L/∂w = 0</text>
+  <text x="110" y="204" class="t-xs" text-anchor="middle">so w never moves</text>
+
+  {/* the closing arrow */}
+  <line x1="110" y1="166" x2="110" y2="130" class="dash" />
+  <polygon points="105,134 110,122 115,134" class="head" />
+
+  <line x1="14" y1="46" x2="608" y2="46" class="wire-soft" />
+  <text x="14" y="40" class="t-key">forward above · backward below · the state never changes</text>
+
+  <text x="0" y="292" class="t-xs">LeakyReLU replaces the exact zero with 0.01 — slow, but no longer stuck</text>
+</svg>

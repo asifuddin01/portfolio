@@ -1,0 +1,145 @@
+---
+id: "I.3.B07"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What activations cost, in memory and in arithmetic"
+depends:
+  - "I.3.P01"
+reachesBack: []
+rounding: "Memory to 1 d.p.; FLOP counts approximate and stated as such."
+hasSolution: true
+verified: true
+snippet: "i-3-b07-activation-cost.py"
+status: published
+---
+
+<Statement>
+For a transformer-scale layer, compute the memory one activation tensor
+occupies and the arithmetic each activation function costs. Then compare both
+with the matrix multiply they sit next to, and draw the conclusion.
+</Statement>
+
+<Given>
+Batch $B = 8$, sequence $T = 2048$, width $d = 4096$, depth $L = 32$. Elementwise
+costs, approximately: ReLU $1$ FLOP (a compare), LeakyReLU $2$, sigmoid $4$
+(exp, add, divide), tanh $6$, GELU with erf about $12$, GELU with the tanh
+approximation about $8$.
+</Given>
+
+<Find>
+The element count and memory of one activation tensor in bf16 and fp32; the
+total across $L$ layers; the GFLOPs each activation costs per layer; and the
+ratio to one $d\times d$ matrix multiply.
+</Find>
+
+<Strategy>
+Count elements once and reuse. Memory scales with the count; arithmetic scales
+with the count times a small constant; the matmul scales with the count times
+$d$ — and that last factor is the whole answer.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the element count.**
+
+$$B \times T \times d = 8 \times 2048 \times 4096 = 67{,}108{,}864 \approx 6.71\times10^{7}$$
+
+**Step 2 — memory.** At $2$ bytes per element in bf16:
+
+$$6.71\times10^{7} \times 2 = 1.342\times10^{8}\ \text{bytes} = 134.2\ \text{MB}$$
+
+and in fp32, $268.4$ MB. Across $32$ layers, storing one activation tensor per
+layer for the backward pass:
+
+$$32 \times 134.2\ \text{MB} = 4.29\ \text{GB (bf16)}, \qquad 8.59\ \text{GB (fp32)}$$
+
+**Step 3 — arithmetic.** Each function is $c$ FLOPs per element:
+
+| Activation | FLOP/element | GFLOP per layer |
+|---|---|---|
+| ReLU | $1$ | $0.07$ |
+| LeakyReLU | $2$ | $0.13$ |
+| sigmoid | $4$ | $0.27$ |
+| tanh | $6$ | $0.40$ |
+| GELU (erf) | $12$ | $0.81$ |
+| GELU (tanh approx) | $8$ | $0.54$ |
+
+**Step 4 — the comparison that settles it.** One $d\times d$ matrix multiply on
+the same tensor costs $2 \times (BTd) \times d$ FLOPs:
+
+$$2 \times 6.71\times10^{7} \times 4096 = 5.50\times10^{11} = 549.8\ \text{GFLOP}$$
+
+against the costliest activation's $0.81$ GFLOP — a ratio of about $\mathbf{680}$.
+
+**The conclusion, in two halves.**
+
+*Arithmetically, activations are free.* Even GELU with erf is under $0.2\%$ of
+the matmul it follows. Choosing ReLU over GELU to save compute is optimising the
+wrong term by a factor of several hundred. Any argument for ReLU on grounds of
+speed is, at this scale, wrong.
+
+*In memory they are not free at all.* $4.29$ GB of stored activations is a
+substantial fraction of an $80$ GB accelerator, and it is why activation
+checkpointing exists (II.8.B03): recompute the activation in the backward pass
+rather than store it, trading that $0.81$ GFLOP — which is free — against
+$134$ MB per layer, which is not.
+
+**That asymmetry is the general shape of the thing.** Elementwise operations are
+bounded by memory bandwidth, matrix operations by arithmetic. An activation
+reads $BTd$ values and writes $BTd$ values to do $c \cdot BTd$ FLOPs, giving an
+arithmetic intensity of about $c/4$ FLOPs per byte in bf16 — for ReLU that is
+$0.25$, against roughly $200$ for the matmul. Chapter VIII.6 turns this into a
+roofline argument; here it is enough to notice that the two operations live in
+different worlds.
+
+</Solution>
+
+<Answer>
+One activation tensor: $6.71\times10^{7}$ elements, $134.2$ MB in bf16,
+$268.4$ MB in fp32. Across $32$ layers, $\mathbf{4.29}$ **GB** in bf16.
+
+Arithmetic ranges from $0.07$ GFLOP (ReLU) to $0.81$ GFLOP (GELU-erf) per
+layer, against $\mathbf{549.8}$ **GFLOP** for the accompanying matmul — a
+ratio of about $680$.
+</Answer>
+
+<CheckNumeric snippet="i-3-b07-activation-cost.py" verified>
+```python
+acts = B * T * d
+print(f"{name}: {acts * bits // 8 / 1e6:.1f} MB each")
+mm = 2 * acts * d
+```
+Prints every figure above, including the $682\times$ ratio.
+</CheckNumeric>
+
+<CheckSanity>
+**Memory scales with elements, not with the function.** ReLU and GELU store
+identical tensors: $134.2$ MB either way. Only the arithmetic column varies.
+If memory had varied by activation, an element would have been double-counted.
+
+**bf16 is exactly half of fp32.** $134.2 \times 2 = 268.4$. Two bytes against
+four.
+
+**The matmul ratio is $d/2$ times the activation constant.** Matmul is
+$2 \cdot BTd \cdot d$ and the activation is $c \cdot BTd$, so the ratio is
+$2d/c = 8192/12 = 683$ for GELU-erf. The snippet printed $682$, differing by
+integer division. Consistent.
+</CheckSanity>
+
+<Breaks>
+The count assumes one stored tensor per layer, which understates reality: a
+transformer block stores several intermediates, and the FFN's inner width is
+typically $4d$, so its activation tensor is four times the size computed here.
+The $4.29$ GB is therefore a floor, not an estimate. II.8.B01 does the full
+accounting; this problem establishes only that the activation's *arithmetic* is
+negligible and its *memory* is not.
+</Breaks>
+
+<Variation>
+Recompute for the FFN's inner activation at width $4d = 16384$. State the new
+per-layer memory and say what fraction of an $80$ GB accelerator $32$ such
+layers would occupy.
+</Variation>

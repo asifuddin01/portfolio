@@ -1,0 +1,85 @@
+---
+chapter: neural-networks--activations
+proposition: 2
+statement: A bounded activation saturates, and a saturated unit passes no gradient at all.
+claim: "Sigmoid and tanh flatten away from the origin, so their derivatives approach zero. A gradient crossing many such layers is multiplied by a small number each time, and the product reaches the floor of the number format long before it reaches the first layer."
+given:
+  - non-linearity-is-what-makes-depth-worth-having
+figure: FigSaturation
+figureType: G
+level: mechanics
+notation:
+  - "sigma"
+  - "L"
+apparatus:
+  - "0.MC.08"
+  - "0.NU.01"
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+A bounded activation has to flatten. If σ maps all of ℝ into (0, 1), then as *z*
+grows the output has nowhere left to go, so the slope must approach zero. That
+is not a defect of the particular function; it follows from boundedness alone.
+
+The quantitative version is short. From σ′ = σ(1 − σ), writing *s* = σ(*z*):
+
+```
+σ′ = s − s²
+```
+
+a downward parabola in *s*, maximised at *s* = ½ — that is, at *z* = 0 — with
+value ¼. **The best a sigmoid layer ever does for a gradient is divide it by
+four**, and it does that at exactly one point.
+
+Away from that point the collapse is fast. At |*z*| = 4 the derivative is
+0.0177, fourteen times smaller. And *z* = 4 is not extreme: it is an ordinary
+pre-activation in a network without normalisation.
+
+## The product is what kills it
+
+Backpropagation multiplies one derivative per layer along a path (Chapter I.6).
+Over *L* sigmoid layers the gradient reaching the first is scaled by a product
+of *L* factors, each at most ¼:
+
+```
+∏ σ′ ≤ (¼)^L
+```
+
+At *L* = 12 that is 6.0 × 10⁻⁸, which is the smallest positive number half
+precision can represent. **Beyond twelve layers the gradient is not small; it is
+zero** — rounded to it by the number format, with no warning and no error.
+
+And twelve is the impossible best case, requiring every unit on every example to
+sit exactly at *z* = 0. At |*z*| = 4 the floor arrives at depth five.
+
+## Why this mattered historically
+
+This single mechanism is most of the answer to why deep networks were not
+trained before about 2010. It was not compute and it was not data. Networks
+deeper than a few layers received no gradient in their early layers, so those
+layers stayed near their initialisation and the network behaved as though it
+were shallow — while looking, from the outside, like a deep network that simply
+would not improve.
+
+## Corollary
+
+Three later chapters are each a different response to this proposition, and it
+is worth seeing them as a set.
+
+**Remove the factor.** ReLU's derivative is exactly 1 for an active unit, at any
+magnitude. There is no shrinkage to compound. This is the change that made depth
+practical, and it is why the next proposition is about the price ReLU charges
+for it.
+
+**Keep *z* in the favourable region.** Normalisation (Chapter I.8) recentres the
+pre-activations at every layer, so units sit near the maximum of σ′ rather than
+in the tails. With normalisation a bounded activation is workable; without it,
+it is not.
+
+**Provide a path with no factor at all.** A residual connection (Chapter II.6)
+carries the gradient with derivative exactly 1, past the activation rather than
+through it. That is why very deep networks work even with activations that
+saturate.

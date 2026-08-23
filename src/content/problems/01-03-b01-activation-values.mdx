@@ -1,0 +1,142 @@
+---
+id: "I.3.B01"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Five activations at five points"
+depends:
+  - "I.3.P01"
+reachesBack: []
+rounding: "All values rounded to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-3-b01-activation-values.py"
+status: published
+---
+
+<Statement>
+Evaluate sigmoid, tanh, ReLU, LeakyReLU with slope $0.01$, and GELU at
+$z \in \{-2,\ -0.5,\ 0,\ 0.5,\ 2\}$. Then read four structural facts off the
+table that no single value shows.
+</Statement>
+
+<Given>
+$$
+\sigma(z) = \frac{1}{1+e^{-z}}, \qquad
+\tanh(z) = \frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}, \qquad
+\mathrm{ReLU}(z) = \max(0, z)
+$$
+
+$$
+\mathrm{LeakyReLU}(z) = \begin{cases} z & z > 0\\ 0.01z & z \le 0\end{cases},
+\qquad
+\mathrm{GELU}(z) = z\,\Phi(z)
+$$
+
+with $\Phi$ the standard normal CDF.
+</Given>
+
+<Find>
+A $5\times 5$ table of values, and four properties visible only across it.
+</Find>
+
+<Strategy>
+Compute the two exponential families first, since tanh follows from sigmoid;
+the two rectifiers need no arithmetic at all; GELU needs $\Phi$.
+</Strategy>
+
+<Solution>
+
+**Step 1 — sigmoid.** $\sigma(-2) = 1/(1+e^{2}) = 1/8.3891 = 0.1192$. By the
+symmetry $\sigma(-z) = 1 - \sigma(z)$, $\sigma(2) = 0.8808$ without further work.
+$\sigma(0) = 1/2$ exactly. $\sigma(-0.5) = 1/(1+e^{0.5}) = 1/2.6487 = 0.3775$,
+so $\sigma(0.5) = 0.6225$.
+
+**Step 2 — tanh from sigmoid.** Using $\tanh(z) = 2\sigma(2z) - 1$:
+$\tanh(0.5) = 2\sigma(1) - 1 = 2(0.7311) - 1 = 0.4621$, and
+$\tanh(2) = 2\sigma(4) - 1 = 2(0.9820) - 1 = 0.9640$. Odd symmetry gives the
+negatives.
+
+**Step 3 — the rectifiers.** No arithmetic. ReLU zeroes the negatives and copies
+the positives; LeakyReLU scales the negatives by $0.01$.
+
+**Step 4 — GELU.** $\Phi(-2) = 0.0228$, so $\mathrm{GELU}(-2) = (-2)(0.0228) = -0.0455$.
+$\Phi(0) = 0.5$ so $\mathrm{GELU}(0) = 0$. $\Phi(2) = 0.9772$, giving $1.9545$.
+
+**The table.**
+
+| $z$ | $\sigma$ | $\tanh$ | ReLU | LeakyReLU | GELU |
+|---|---|---|---|---|---|
+| $-2.0$ | $0.1192$ | $-0.9640$ | $0.0000$ | $-0.0200$ | $-0.0455$ |
+| $-0.5$ | $0.3775$ | $-0.4621$ | $0.0000$ | $-0.0050$ | $-0.1543$ |
+| $0.0$ | $0.5000$ | $0.0000$ | $0.0000$ | $0.0000$ | $0.0000$ |
+| $0.5$ | $0.6225$ | $0.4621$ | $0.5000$ | $0.5000$ | $0.3457$ |
+| $2.0$ | $0.8808$ | $0.9640$ | $2.0000$ | $2.0000$ | $1.9545$ |
+
+**Four structural facts.**
+
+*Only sigmoid fails to pass zero to zero.* $\sigma(0) = 0.5$. Every other
+column has $0 \mapsto 0$. A layer of sigmoids therefore emits a nonzero mean
+even from centred input, and that offset compounds with depth — the historical
+reason tanh replaced sigmoid in hidden layers.
+
+*Sigmoid and tanh are bounded; the rectifiers are not.* At $z = 2$ the bounded
+pair are already at $0.88$ and $0.96$, close to their ceilings, while ReLU
+returns $2$ and would return $200$ at $z = 200$. Boundedness is what causes
+saturation and also what prevents blow-up.
+
+*GELU is not monotonic.* From $z = -2$ to $z = -0.5$ the output *falls* from
+$-0.0455$ to $-0.1543$. No other column does this. GELU is a soft gate, not a
+soft switch, and this dip is where its behaviour genuinely differs from a
+smoothed ReLU.
+
+*GELU is close to ReLU where it matters and different where it does not.* At
+$z = 2$ the two differ by $0.0455$; at $z = -0.5$ they differ by $0.1543$. The
+whole difference lives in a band around the origin, which is exactly where
+gradients are decided.
+
+</Solution>
+
+<Answer>
+The $5\times5$ table above. The four properties: sigmoid alone has
+$\varphi(0) \neq 0$; the bounded pair saturate while the rectifiers do not;
+GELU is non-monotonic on $(-\infty, -0.75)$ roughly; and GELU and ReLU agree
+away from the origin and differ only near it.
+</Answer>
+
+<CheckNumeric snippet="i-3-b01-activation-values.py" verified>
+```python
+def sigmoid(z): return 1.0 / (1.0 + exp(-z))
+def gelu(z):    return 0.5 * z * (1.0 + erf(z / sqrt(2.0)))
+```
+Prints the table above, to 4 d.p.
+</CheckNumeric>
+
+<CheckSanity>
+**The symmetries hold.** $\sigma(-2) + \sigma(2) = 0.1192 + 0.8808 = 1.0000$
+exactly, as $\sigma(-z) = 1 - \sigma(z)$ requires. And
+$\tanh(-2) = -\tanh(2)$ to every printed digit.
+
+**The identity $\tanh(z) = 2\sigma(2z) - 1$ checks out.** At $z = 0.5$:
+$2\sigma(1) - 1 = 2(0.7311) - 1 = 0.4622$, against $\tanh(0.5) = 0.4621$. The
+last digit differs by rounding of the intermediate, not by error.
+
+**GELU is between $0$ and $z$ for $z > 0$.** $0 < 0.3457 < 0.5$ and
+$0 < 1.9545 < 2$. Since $\Phi \in (0,1)$ and $\mathrm{GELU} = z\Phi(z)$, that
+must hold — and it is the fastest way to catch a sign or scale slip.
+</CheckSanity>
+
+<Breaks>
+Every value here assumes the activation is applied to a scalar independently.
+That is what "elementwise" means, and it is why one table of five numbers
+characterises the function completely. Softmax is not elementwise — its output
+at one coordinate depends on all of them — so no such table exists for it, and
+it belongs to Chapter I.4 with the losses rather than here with the activations.
+</Breaks>
+
+<Variation>
+Add SiLU (also called Swish), $z\cdot\sigma(z)$, as a sixth column. Compare it
+with GELU at all five points and say where the two differ most.
+</Variation>

@@ -1,0 +1,95 @@
+---
+id: "I.3.X10"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "Why there is no best activation"
+depends:
+  - "I.3.P01"
+  - "I.3.P04"
+rounding: "Symbolic, with numbers where they help."
+hasSolution: true
+verified: false
+status: published
+---
+
+The chapter's open exercise. Given that universal approximation holds for every
+non-polynomial activation (I.3.T2), argue precisely what is left for the choice
+of activation to decide — and what it cannot decide. Support the argument with
+at least two quantities computed in this chapter.
+
+<Hint>
+If every non-polynomial activation reaches the same set of functions, the
+difference cannot be about which functions are reachable.
+</Hint>
+
+<SolutionToggle>
+
+**The starting point.** I.3.T2 says any non-polynomial activation gives
+universal approximation. ReLU, tanh, GELU and SiLU are all non-polynomial. So
+**the hypothesis classes are the same** in the sense that matters to the
+theorem: each can approximate any continuous function on a compact set.
+
+Therefore the choice of activation cannot be a choice about *what is
+representable*. Whatever it decides, it decides elsewhere.
+
+**What it does decide — four things, each with a number from this chapter.**
+
+*How much gradient survives depth.* I.3.B03: a sigmoid stack underflows fp16 at
+depth $5$ for $|z| = 4$; I.3.X05: a tanh stack at depth $3$; ReLU never, for
+active units. This is not a representational difference — all three classes are
+universal — it is a difference in whether gradient descent can *find* the
+representation. **The activation decides trainability, not expressibility.**
+
+*How many units are permanently lost.* I.3.B04: a ReLU unit driven to $z \le -8$
+is dead forever, and no optimiser recovers it. LeakyReLU converts that to
+$90{,}000$ steps of recovery. GELU makes it $10^{-23}$ of a gradient, which is
+zero in practice. Different activations lose different amounts of the network to
+this failure.
+
+*What the function looks like between the training points.* All four are
+universal, but ReLU interpolates piecewise-linearly (I.3.X03) while GELU
+interpolates smoothly. On the training set they can agree exactly; off it they
+differ, and which behaviour is preferable is a property of the problem, not of
+the activation.
+
+*Almost nothing about cost.* I.3.B07: the most expensive activation is $0.2\%$
+of the matmul beside it. Any argument for one activation over another on
+compute grounds is, at transformer scale, quantitatively wrong.
+
+**What it cannot decide.**
+
+*Whether the target is representable.* Settled by I.3.T2 for all of them.
+
+*Whether the model generalises.* I.1.T1 and I.1.T2 locate that in the hypothesis
+class's size and the data, not in the shape of $\varphi$.
+
+*Whether training converges to a good optimum.* That is the optimiser, the
+initialisation and the loss surface, and Chapter I.7's business.
+
+**The strongest claim available.**
+
+> The activation is a choice about the *conditioning of the optimisation
+> problem*, not about the *set of functions* being optimised over. It changes
+> how easily gradient descent moves through the parameter space and how much of
+> the network stays usable, and it changes almost nothing else.
+
+**A test of that claim.** If it is right, then any intervention that improves
+conditioning by another route should shrink the differences between
+activations — and it does. With batch normalisation keeping pre-activations near
+zero (I.8), the gap between sigmoid and ReLU narrows sharply, because
+normalisation puts every unit in the favourable region that I.3.X05 identified.
+With residual connections (II.6) providing a derivative-$1$ path, the gap
+narrows again. The activation matters most exactly where nothing else is
+managing the gradient, which is what a conditioning story predicts and an
+expressiveness story does not.
+
+**The honest remainder.** None of this explains why GELU consistently beats ReLU
+by a small margin in transformers. The conditioning argument predicts they should
+be nearly equivalent once normalisation and residuals are present, and they are
+nearly equivalent — but not exactly, and the residual difference has no accepted
+account. That is a real open question, and the correct response to it is to
+report the gap rather than to invent a mechanism for it.
+</SolutionToggle>

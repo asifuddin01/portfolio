@@ -1,0 +1,80 @@
+---
+id: "I.3.X03"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "A ReLU network is piecewise linear"
+depends:
+  - "I.3.P01"
+  - "I.3.P03"
+rounding: "Symbolic, with one count."
+hasSolution: true
+verified: false
+status: published
+---
+
+Prove that a network with ReLU activations computes a piecewise-linear function
+of its input, and that the pieces are convex polytopes. Then bound the number of
+pieces for a network with $L$ layers of $n$ units each, and say what that bound
+does and does not tell you.
+
+<Hint>
+Fix which units are active. What does the network compute then?
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — fix an activation pattern.** For a given input, each ReLU unit is
+either active ($z>0$, passing $z$) or inactive ($z \le 0$, passing $0$). Record
+this as a binary pattern $p \in \{0,1\}^{nL}$, one bit per unit.
+
+**Step 2 — the network is affine on each pattern's region.** Hold $p$ fixed.
+Then every ReLU is replaced by either the identity or the zero map, both linear.
+The network becomes a composition of affine maps, which by I.3.B05 is a single
+affine map $\vec{x} \mapsto \vec{x}\mat{W}_p + \vec{b}_p$. So on the set of
+inputs producing pattern $p$, the network is exactly affine. $\blacksquare$
+
+**Step 3 — the regions are convex polytopes.** Each unit's condition is
+$\langle\vec{w},\vec{x}\rangle + b > 0$ or $\le 0$ — a half-space in $\vec{x}$,
+*provided its inputs are affine in $\vec{x}$*, which they are once the earlier
+layers' patterns are fixed. A region is the intersection of $nL$ half-spaces,
+and an intersection of half-spaces is a convex polytope. $\blacksquare$
+
+**Step 4 — counting.** Naively there are $2^{nL}$ patterns, but almost all are
+unrealisable: with $n$ units in the first layer over a $d$-dimensional input,
+the number of regions $n$ hyperplanes cut $\R^{d}$ into is
+$\sum_{k=0}^{d}\binom{n}{k}$, not $2^{n}$. Composing layers gives the standard
+bound
+
+$$
+\#\text{regions} \ \le\ \prod_{\ell=1}^{L}\sum_{k=0}^{d}\binom{n_\ell}{k}
+\ \approx\ O\!\left(n^{dL}\right)
+$$
+
+which is **exponential in depth and polynomial in width**. That asymmetry is the
+usual formal argument for depth: to match a depth-$L$ network's region count, a
+shallow one needs width exponential in $L$.
+
+**What the bound does not tell you.** Three things, and they matter.
+
+*It counts pieces, not usefulness.* A function can have $10^{20}$ linear pieces
+and be a poor model. Region count is a capacity measure, and I.1.T2 already
+warned that capacity is not accuracy.
+
+*It is an upper bound, and trained networks are far below it.* Empirically the
+number of regions a trained network actually uses is orders of magnitude smaller
+than the bound, and grows roughly linearly rather than exponentially with depth.
+
+*It says nothing about optimisation.* The regions exist in the hypothesis class
+whether or not gradient descent can arrange them usefully — the same gap I.3.T2
+flags for universal approximation.
+
+**A consequence worth keeping.** Since the network is affine on each region, it
+is *differentiable* on the interior of each region and non-differentiable only
+on the boundaries, which form a measure-zero set. That is why training works at
+all despite ReLU having no derivative at its kink: the probability of landing
+exactly on a boundary is zero, and the subgradient convention of I.2.X09 covers
+the rest.
+</SolutionToggle>

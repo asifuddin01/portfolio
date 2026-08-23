@@ -1,0 +1,90 @@
+---
+id: "I.3.X08"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "The diagonal Jacobian, and what breaks without it"
+depends:
+  - "I.3.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-3-x08-diagonal-jacobian.py"
+status: published
+---
+
+The first assumption of this chapter is elementwiseness. Compute the Jacobian of
+sigmoid applied to $\vec{z} = (0.5, -1, 2)$, then the Jacobian of softmax on the
+same vector. Count the non-zero off-diagonal entries in each, and state the cost
+consequence.
+
+<Hint>
+For softmax, use $\partial a_i/\partial z_j = a_i(\delta_{ij} - a_j)$ from the
+Apparatus.
+</Hint>
+
+<SolutionToggle>
+
+**Sigmoid.** $\sigma(0.5) = 0.6225$, $\sigma(-1) = 0.2689$, $\sigma(2) = 0.8808$,
+so the diagonal entries are $\sigma(1-\sigma)$:
+
+$$
+\mat{J}_\sigma =
+\begin{bmatrix}
+0.2350 & 0 & 0\\
+0 & 0.1966 & 0\\
+0 & 0 & 0.1050
+\end{bmatrix}
+$$
+
+**Off-diagonal non-zeros: 0**, and not approximately — exactly, because
+$a_i$ does not contain $z_j$ at all.
+
+**Softmax.** With $\vec{a} = \mathrm{softmax}(\vec{z}) = (0.2312, 0.0385, 0.7303)$
+and $\partial a_i/\partial z_j = a_i(\delta_{ij} - a_j)$
+(<ApparatusRef ref="0.MC.06" />):
+
+$$
+\mat{J}_{\text{soft}} =
+\begin{bmatrix}
++0.1446 & -0.0069 & -0.1377\\
+-0.0069 & +0.0376 & -0.0307\\
+-0.1377 & -0.0307 & +0.1684
+\end{bmatrix}
+$$
+
+**Off-diagonal non-zeros: 6** — every one of them.
+
+**The row sums are zero.** $0.1446 - 0.0069 - 0.1377 = 0.0000$, and likewise for
+the other rows. That is the shift-invariance of softmax: adding a constant to
+every logit changes nothing, so the derivative in that direction must vanish.
+
+**The cost consequence.** For a length-$n$ vector:
+
+| | storage | backward pass |
+|---|---|---|
+| elementwise | $n$ | $n$ multiplies |
+| softmax | $n^2$ | $n^2$ multiply–adds |
+
+At $n = 4096$ that is $4096$ against $16.8$ million — a factor of $n$. **This is
+why activations are elementwise.** It is not an aesthetic preference: a
+non-diagonal activation at every layer would make the backward pass cost as much
+as the forward matrix multiplies, doubling training cost for no representational
+gain.
+
+**And why softmax is worth its cost where it is used.** It appears once per
+model at the output, or once per attention head — never at every hidden layer.
+In attention (II.3) the $n^2$ Jacobian is unavoidable and is exactly the
+$T \times T$ score matrix already being formed, so the cost is shared rather than
+added. Placement is the whole difference.
+
+**What breaks if the assumption is dropped.** Everything in I.3.B03's depth
+analysis assumed a scalar derivative per layer. With a dense Jacobian the product
+over layers is a product of *matrices*, whose growth is governed by singular
+values rather than by a single number (<ApparatusRef ref="0.LA.04" />), and
+vanishing becomes a statement about spectral radius — precisely the analysis
+Chapter I.9 has to do for recurrent networks, where the Jacobian genuinely is
+dense.
+</SolutionToggle>

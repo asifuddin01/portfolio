@@ -1,0 +1,87 @@
+---
+chapter: neural-networks--activations
+proposition: 4
+statement: A smooth activation removes the kink, and the removal is a trade rather than an improvement.
+claim: "GELU and SiLU are differentiable everywhere, have no exactly-dead region, and dip below zero for moderately negative inputs. Each property buys something and costs something, and none of them changes what the network can represent."
+given:
+  - a-relu-unit-can-die
+figure: FigSmoothVsKink
+figureType: D
+level: mechanics
+notation:
+  - "sigma"
+apparatus:
+  - "0.MC.03"
+  - "0.PR.01"
+sources:
+  - title: "Gaussian Error Linear Units (GELUs)"
+    url: https://arxiv.org/abs/1606.08415
+  - title: "Searching for Activation Functions"
+    url: https://arxiv.org/abs/1710.05941
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+ReLU has no derivative at zero. Its left slope is 0, its right slope is 1, and
+every framework silently chooses a value from [0, 1] — usually 0. That choice is
+invisible in a loss curve and can change which units die.
+
+GELU removes the ambiguity by construction:
+
+```
+GELU(z) = z · Φ(z)
+GELU′(z) = Φ(z) + z · φ(z)
+```
+
+with Φ the normal CDF and φ its density. Both are smooth, so the product is
+smooth, and GELU′(0) = Φ(0) = ½ is a genuine two-sided derivative rather than a
+convention.
+
+Three properties follow, and they are worth separating because they are usually
+run together.
+
+## The three properties, each a trade
+
+**No kink.** The function is C^∞, so anything relying on curvature is well
+defined — second-order methods, the loss landscape's smoothness, and the theory
+that assumes it. The cost is a slightly more expensive backward pass, which
+problem I.3.B07 shows is under 0.2% of the surrounding matrix multiply and can
+therefore be ignored.
+
+**No exact zero.** GELU′(−10) ≈ −7.6 × 10⁻²³. Strictly nonzero, so the fixed
+point of the previous proposition cannot occur exactly. But 10⁻²³ underflows
+fp16 immediately, so in the arithmetic that is actually used the guarantee does
+not survive. This property is real in ℝ and mostly notional in practice, and
+saying so is more useful than repeating the claim.
+
+**A negative lobe.** GELU′ falls to −0.1289 at *z* = −√2, so the function is not
+monotonic: over part of the negative axis, raising the input lowers the output.
+This is a genuine functional difference from ReLU, not a smoothing of it. It lets
+a unit express *moderately against* with a small negative output rather than with
+silence. Whether that helps is an empirical question, and the honest answer is
+that it helps a little and nobody knows why.
+
+## What none of them change
+
+By the universal approximation theorem, every non-polynomial activation reaches
+the same set of functions. ReLU, GELU and SiLU are all non-polynomial. So the
+choice among them is **not** a choice about what the network can represent.
+
+What is left for it to decide is the conditioning of the optimisation: how much
+gradient survives depth, how many units are lost, and how the function behaves
+between the training points. That is a narrower claim than the literature
+usually makes, and exercise I.3.X10 argues it in full.
+
+## Corollary
+
+A test of the claim, which is also its best evidence. If the activation is
+mainly about conditioning, then anything else that improves conditioning should
+shrink the differences between activations. It does: with normalisation keeping
+pre-activations near zero and residual connections carrying gradient past the
+nonlinearity, the gap between sigmoid, ReLU and GELU narrows sharply.
+
+The activation matters most exactly where nothing else is managing the gradient.
+That is what a conditioning story predicts, and it is not what an
+expressiveness story would predict — which is the reason to prefer the first.

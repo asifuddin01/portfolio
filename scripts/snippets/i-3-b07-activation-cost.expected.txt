@@ -1,0 +1,12 @@
+one activation tensor: B*T*d = 67,108,864 values
+  bf16: 134.2 MB each, 4.29 GB for 32 layers
+  fp32: 268.4 MB each, 8.59 GB for 32 layers
+
+ReLU                 ~ 1 FLOP/element   0.07 GFLOP per layer
+LeakyReLU            ~ 2 FLOP/element   0.13 GFLOP per layer
+sigmoid              ~ 4 FLOP/element   0.27 GFLOP per layer
+tanh                 ~ 6 FLOP/element   0.40 GFLOP per layer
+GELU (erf)           ~12 FLOP/element   0.81 GFLOP per layer
+GELU (tanh approx)   ~ 8 FLOP/element   0.54 GFLOP per layer
+
+one d x d matmul     549.8 GFLOP  (682x the costliest activation)

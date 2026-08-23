@@ -1,0 +1,154 @@
+---
+id: "I.3.B05"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "Depth without curvature is one layer"
+depends:
+  - "I.3.P01"
+reachesBack: []
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Prove that a network of any depth whose activations are all the identity — or
+any linear map — computes a single affine function. Then state exactly what the
+theorem does and does not rule out.
+</Statement>
+
+<Given>
+An $L$-layer network with $\vec{h}^{(0)} = \vec{x}$ and
+$\vec{h}^{(\ell)} = \vec{h}^{(\ell-1)}\mat{W}^{(\ell)} + \vec{b}^{(\ell)}$,
+row-major throughout, with no nonlinearity between layers.
+</Given>
+
+<Find>
+A single $(\mat{W}, \vec{b})$ with $\vec{h}^{(L)} = \vec{x}\mat{W} + \vec{b}$
+for all $\vec{x}$, together with explicit formulas for both.
+</Find>
+
+<Strategy>
+Induct on depth. The base case is one layer; the inductive step substitutes the
+hypothesis into the next layer and collects terms. The only algebra needed is
+that matrix multiplication distributes over addition.
+</Strategy>
+
+<Solution>
+
+**Base case, $L = 1$.** $\vec{h}^{(1)} = \vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}$,
+which is already of the required form with $\mat{W} = \mat{W}^{(1)}$ and
+$\vec{b} = \vec{b}^{(1)}$.
+
+**Inductive hypothesis.** Suppose after $\ell$ layers
+
+$$\vec{h}^{(\ell)} = \vec{x}\,\mat{A}_{\ell} + \vec{c}_{\ell}$$
+
+for some $\mat{A}_\ell$ and $\vec{c}_\ell$ not depending on $\vec{x}$.
+
+**Inductive step.** Apply layer $\ell+1$ and expand, using distributivity:
+
+$$
+\begin{aligned}
+\vec{h}^{(\ell+1)}
+&= \vec{h}^{(\ell)}\mat{W}^{(\ell+1)} + \vec{b}^{(\ell+1)} \\
+&= \big(\vec{x}\mat{A}_{\ell} + \vec{c}_{\ell}\big)\mat{W}^{(\ell+1)} + \vec{b}^{(\ell+1)} \\
+&= \vec{x}\underbrace{\big(\mat{A}_{\ell}\mat{W}^{(\ell+1)}\big)}_{\textstyle \mat{A}_{\ell+1}}
+ + \underbrace{\big(\vec{c}_{\ell}\mat{W}^{(\ell+1)} + \vec{b}^{(\ell+1)}\big)}_{\textstyle \vec{c}_{\ell+1}}
+\end{aligned}
+$$
+
+which is again of the required form. By induction it holds for all $L$, with
+
+$$
+\mat{W} = \mat{W}^{(1)}\mat{W}^{(2)}\cdots\mat{W}^{(L)},
+\qquad
+\vec{b} = \sum_{\ell=1}^{L}\vec{b}^{(\ell)}\!\!\prod_{j=\ell+1}^{L}\!\!\mat{W}^{(j)}
+$$
+
+$\blacksquare$ (I.3.3)
+
+**The same result for any linear activation.** If $\varphi(z) = \alpha z$ then
+applying it elementwise is multiplication by $\alpha\mat{I}$, which is itself a
+linear map and can be absorbed into the neighbouring $\mat{W}$. The proof is
+unchanged with $\mat{W}^{(\ell)}$ replaced by $\alpha\mat{W}^{(\ell)}$.
+
+**Even an affine activation collapses.** $\varphi(z) = \alpha z + \beta$ adds a
+constant row, which merges into the bias. So no affine activation escapes.
+
+**What is ruled out.** The *hypothesis class* of the deep linear network equals
+that of a single layer of the same input and output widths. Nothing reachable by
+the deep one is unreachable by the shallow one. Depth has bought zero
+expressiveness.
+
+**What is not ruled out — and this is the part usually stated wrongly.**
+
+*The parameter counts differ.* The deep network has $\sum d_\ell d_{\ell+1}$
+parameters against the shallow one's $d_0 d_L$. It is over-parameterised for
+what it computes, and the map from parameters to functions is many-to-one.
+
+*The rank can be lower.* If some intermediate width $d_\ell$ is smaller than both
+$d_0$ and $d_L$, the product $\mat{W}$ has rank at most $d_\ell$
+(<ApparatusRef ref="0.LA.04" />). So a deep linear network with a bottleneck is
+*more* restricted than one layer, not equal to it. This is the linear
+autoencoder of Chapter I.12, and its restriction is the whole point.
+
+*The optimisation differs entirely.* The loss surface of the deep linear
+network is non-convex in its parameters even though the function class is
+linear. It has saddle points the single layer does not, gradient descent on it
+has a different implicit bias, and it converges at a different rate. Studying
+deep linear networks is a live research programme precisely because the
+*trajectory* is interesting while the *destination* is not.
+
+</Solution>
+
+<Answer>
+$$\vec{h}^{(L)} = \vec{x}\,\mat{W} + \vec{b}, \qquad \mat{W} = \prod_{\ell=1}^{L}\mat{W}^{(\ell)}$$
+
+The function class is that of one affine layer, for every depth $L$ and any
+linear or affine activation. Expressiveness is unchanged; parameterisation,
+rank and optimisation are not.
+</Answer>
+
+<CheckSanity>
+**Shapes conform.** $\mat{W}^{(1)}$ is $d_0\times d_1$, …, $\mat{W}^{(L)}$ is
+$d_{L-1}\times d_L$, so the product is $d_0\times d_L$ — exactly the shape a
+single layer from input to output would have.
+
+**A two-layer instance checks by hand.** With
+$\mat{W}^{(1)} = \begin{bmatrix}1&2\\0&1\end{bmatrix}$, $\vec{b}^{(1)} = (1,0)$,
+$\mat{W}^{(2)} = \begin{bmatrix}1&0\\1&1\end{bmatrix}$, $\vec{b}^{(2)} = (0,1)$
+and $\vec{x} = (1,1)$: layer by layer, $\vec{h}^{(1)} = (2,3)$ then
+$\vec{h}^{(2)} = (5,4)$. By the formula,
+$\mat{W} = \begin{bmatrix}3&2\\1&1\end{bmatrix}$ and
+$\vec{b} = (1,0)\mat{W}^{(2)} + (0,1) = (1,1)$, so
+$\vec{x}\mat{W} + \vec{b} = (4,3) + (1,1) = (5,4)$. ✓
+
+**It is consistent with I.1.B01.** There, removing the ReLU changed
+$\hat{y}$ from $2$ to $1$. If the collapse theorem said the nonlinearity did
+nothing, that check would have had to give the same number. It did not, which is
+the same fact from the other side.
+</CheckSanity>
+
+<Breaks>
+The proof needs the activation to be applied to the *whole* vector uniformly and
+to be linear. Two near-misses:
+
+*A single nonlinear unit among linear ones does not collapse.* The proof's
+inductive step requires every layer to be affine; one exception breaks the chain.
+
+*Weight sharing does not save it.* Setting $\mat{W}^{(1)} = \cdots = \mat{W}^{(L)}$
+gives $\mat{W} = (\mat{W}^{(1)})^{L}$, still a single matrix. A recurrent
+network without a nonlinearity is a single linear map too, which is worth
+knowing before Chapter I.9.
+</Breaks>
+
+<Variation>
+Take $\mat{W}^{(1)} \in \R^{100\times 2}$ and $\mat{W}^{(2)} \in \R^{2\times 100}$.
+State the rank of the product and describe the set of functions this two-layer
+linear network can compute, compared with one $100\times100$ layer.
+</Variation>

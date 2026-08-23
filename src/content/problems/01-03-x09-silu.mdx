@@ -1,0 +1,82 @@
+---
+id: "I.3.X09"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "SiLU, and a derivative that exceeds one"
+depends:
+  - "I.3.P01"
+  - "I.3.P04"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+SiLU (also called Swish) is $\varphi(z) = z\,\sigma(z)$. Derive its derivative
+in terms of $\sigma$ alone, show it can exceed $1$, find its minimum, and
+compare with GELU's $-0.1289$.
+
+<Hint>
+Product rule, then use $\sigma' = \sigma(1-\sigma)$ to eliminate the derivative.
+</Hint>
+
+<SolutionToggle>
+
+**The derivative.** By the product rule and then I.3.1:
+
+$$
+\varphi'(z) = \sigma(z) + z\,\sigma'(z) = \sigma(z) + z\,\sigma(z)\big(1-\sigma(z)\big)
+$$
+
+which can be tidied to
+
+$$\varphi'(z) = \sigma(z)\Big(1 + z\big(1 - \sigma(z)\big)\Big)$$
+
+Written this way it costs one sigmoid evaluation and three arithmetic
+operations, and needs nothing but the value already computed in the forward pass
+— the same economy I.3.B02 noted for sigmoid itself.
+
+**It exceeds 1.** At $z = 1$: $\sigma(1) = 0.7311$, so
+
+$$\varphi'(1) = 0.7311\big(1 + 1(0.2689)\big) = 0.7311 \times 1.2689 = 0.9276$$
+
+not yet. Try $z = 2$: $\sigma(2) = 0.8808$,
+
+$$\varphi'(2) = 0.8808\big(1 + 2(0.1192)\big) = 0.8808 \times 1.2384 = 1.0908$$
+
+**Greater than 1.** Scanning, the maximum is about $1.0998$ near $z = 2.4$.
+
+**Why that is notable.** Every derivative met so far is at most $1$: sigmoid
+$\le 1/4$, tanh $\le 1$, ReLU $\le 1$. SiLU can *amplify* a gradient. Over $L$
+layers a factor above $1$ compounds upward rather than downward — the mirror
+image of I.3.B03's problem, and one reason SiLU networks can be sensitive to
+learning rate in a way ReLU networks are not.
+
+**The minimum.** Setting $\varphi'' = 0$ numerically gives $z \approx -1.2785$,
+where
+
+$$\varphi(-1.2785) = (-1.2785)\sigma(-1.2785) = (-1.2785)(0.2178) = -0.2785$$
+
+and the derivative there is about $-0.0998$.
+
+**Comparison with GELU.**
+
+| | most negative output | most negative derivative | at $z$ |
+|---|---|---|---|
+| GELU | $-0.1700$ | $-0.1289$ | $-\sqrt2 = -1.4142$ |
+| SiLU | $-0.2785$ | $-0.0998$ | $\approx -1.2785$ |
+
+**SiLU has the deeper output dip; GELU has the deeper derivative dip.** They are
+different functions with the same qualitative shape — smooth, non-monotonic,
+ReLU-like in the tails — and the practical difference between them is small
+enough that the choice is usually made by what a codebase already uses.
+
+**The honest summary.** Both were found by search rather than derived from a
+principle. SiLU came out of an automated activation search; GELU from a
+stochastic-regularisation argument that the final formula does not really depend
+on. The literature's post-hoc explanations for why either works should be read
+with that history in mind.
+</SolutionToggle>

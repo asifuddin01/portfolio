@@ -1,0 +1,146 @@
+---
+id: "I.3.B03"
+kind: problem
+chapter: "I.3"
+scope: chapter
+variant: limit
+difficulty: 3
+title: "The depth at which a sigmoid stack stops passing gradient"
+depends:
+  - "I.3.P02"
+  - "I.3.P03"
+reachesBack: []
+rounding: "Derivatives to 6 s.f.; products in scientific notation."
+hasSolution: true
+verified: false
+snippet: "i-3-b03-saturation-depth.py"
+status: published
+---
+
+<Statement>
+Find the maximum of $\sigma'$. Compute the product of ten sigmoid derivatives at
+$|z| = 4$. Then find the depth at which the product underflows fp16, both at
+$|z| = 4$ and in the best case.
+</Statement>
+
+<Given>
+$\sigma'(z) = \sigma(z)(1-\sigma(z))$ from I.3.B02. The smallest positive fp16
+value is the subnormal $2^{-24} = 5.96\times10^{-8}$
+(<ApparatusRef ref="0.NU.01" />). A gradient reaching layer $1$ of an
+$L$-layer stack is multiplied by one $\sigma'$ per layer.
+</Given>
+
+<Find>
+$\max_z \sigma'(z)$; the value of $\sigma'(4)^{10}$; and the smallest $L$ with
+$\sigma'^{\,L} < 2^{-24}$ at $|z| = 4$ and at $z = 0$.
+</Find>
+
+<Strategy>
+Maximise the derivative by treating it as a quadratic in $\sigma$ rather than in
+$z$ — the substitution turns calculus into inspection. Then take logarithms to
+turn the repeated product into a linear count.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the maximum.** Let $s = \sigma(z) \in (0,1)$. Then
+$\sigma' = s(1-s) = s - s^2$, a downward parabola in $s$ with vertex at
+$s = 1/2$:
+
+$$\max \sigma' = \tfrac12\left(1 - \tfrac12\right) = \tfrac14 = 0.2500$$
+
+and $s = 1/2$ means $z = 0$. So **the best a sigmoid ever does for a gradient is
+divide it by four**, and it does that only at one point.
+
+**Step 2 — the derivative at $|z| = 4$.** $\sigma(4) = 1/(1+e^{-4}) = 0.982014$,
+so
+
+$$\sigma'(4) = (0.982014)(0.017986) = 0.0176627$$
+
+Fourteen times smaller than the best case, from a pre-activation that is not
+extreme — $z = 4$ is entirely ordinary in an unnormalised network.
+
+**Step 3 — ten layers.**
+
+$$\sigma'(4)^{10} = (0.0176627)^{10} = 2.955\times10^{-18}$$
+
+For comparison the best case gives $0.25^{10} = 9.537\times10^{-7}$. Even at
+every layer's single most favourable point, ten layers cost six orders of
+magnitude.
+
+**Step 4 — the fp16 depth.** Solve $g^{L} < 2^{-24}$ by taking logarithms:
+
+$$L > \frac{-24\ln 2}{\ln g} = \frac{-16.6355}{\ln g}$$
+
+*At $|z| = 4$*, $\ln(0.0176627) = -4.0362$, so $L > 4.12$, giving
+$\boxed{L = 5}$.
+
+*At $z = 0$*, $\ln(0.25) = -1.3863$, so $L > 11.999$, giving $\boxed{L = 12}$.
+
+**What the two numbers say.** A sigmoid network in fp16 has a hard ceiling of
+about twelve layers even under conditions that never occur — every unit sitting
+exactly at its most favourable point on every example. In realistic conditions,
+with pre-activations spread over a range including $|z| = 4$, the ceiling is
+five. Not "training is slow past five layers": the gradient is *exactly zero*,
+because the product is not representable and rounds to it.
+
+This is why deep networks were not trained before roughly 2010, and it is why
+three separate later chapters exist. ReLU (this chapter) removes the shrinking
+factor entirely for active units. Normalisation (I.8) keeps $z$ near the
+favourable region. Residual connections (II.6) provide a path with derivative
+exactly $1$ that no activation stands on.
+
+</Solution>
+
+<Answer>
+$$
+\max_z \sigma'(z) = \tfrac14, \qquad
+\sigma'(4)^{10} = 2.955\times10^{-18}
+$$
+
+fp16 underflow at depth $\mathbf{5}$ for $|z| = 4$, and at depth $\mathbf{12}$
+in the impossible best case $z = 0$ throughout.
+</Answer>
+
+<CheckNumeric snippet="i-3-b03-saturation-depth.py" verified>
+```python
+def dsigmoid(z): s = sigmoid(z); return s * (1.0 - s)
+prod, L = 1.0, 0
+while prod > 2.0 ** -24: prod *= g; L += 1
+```
+Prints `max sigma' 0.2500`, `sigma'(4)^10 2.955102e-18`, and both depths.
+</CheckNumeric>
+
+<CheckSanity>
+**The maximum is attained where the function is symmetric.** $\sigma'$ inherits
+$\sigma(-z) = 1-\sigma(z)$, so $\sigma'(-z) = \sigma'(z)$: the derivative is
+even, and an even function's extremum on $\R$ sits at $0$ unless it is bimodal.
+Consistent.
+
+**The logarithmic estimate agrees with the loop.** The closed form gave
+$L > 4.12$ and the loop counted $5$; $L > 11.999$ and the loop counted $12$. Two
+methods, same answer.
+
+**The magnitudes bracket correctly.** $2.955\times10^{-18} < 9.537\times10^{-7}$,
+since $0.0177 < 0.25$ and both are raised to the same power. A product of
+smaller numbers must be smaller.
+</CheckSanity>
+
+<Breaks>
+The analysis assumes every layer's derivative is the same, which it is not: real
+pre-activations vary per unit and per example, so the true product is a mix of
+factors. That makes the situation *worse*, not better — the product is dominated
+by its smallest factors, and a single saturated layer anywhere in the stack
+zeroes the whole path regardless of how favourable the others are.
+
+The analysis also assumes fp16 without loss scaling. Multiplying the loss by
+$2^{15}$ before the backward pass shifts every gradient up by that factor and
+buys about four more layers, which is exactly what mixed-precision training does
+(II.8.B04). It buys layers; it does not remove the mechanism.
+</Breaks>
+
+<Variation>
+Repeat for tanh, whose maximum derivative is $1$ rather than $1/4$. Find the
+fp16 depth at $|z| = 4$ and state how many extra layers tanh buys over sigmoid
+— then say whether that is enough to matter.
+</Variation>

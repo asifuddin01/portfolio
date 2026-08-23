@@ -1,0 +1,6 @@
+max sigma'      0.2500   at z = 0
+sigma'(4)       0.017663
+sigma'(4)^10    2.955102e-18
+0.25^10         9.536743e-07
+|z|=4            underflows fp16 at depth 5
+z=0 (best case)  underflows fp16 at depth 12

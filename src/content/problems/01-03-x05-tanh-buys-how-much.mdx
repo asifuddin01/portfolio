@@ -1,0 +1,71 @@
+---
+id: "I.3.X05"
+kind: exercise
+chapter: "I.3"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "How many layers tanh buys"
+depends:
+  - "I.3.P02"
+rounding: "Depths are integers; derivatives to 4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+Repeat the fp16 depth calculation of I.3.B03 for tanh, whose maximum derivative
+is $1$. Find the depth at $|z| = 4$ and at $z = 0$, compare with sigmoid, and
+say whether the improvement is enough.
+
+<Hint>
+$\tanh'(4) = 1 - \tanh^2(4)$, and $\tanh(4)$ is very close to $1$.
+</Hint>
+
+<SolutionToggle>
+
+**At $z = 0$.** $\tanh'(0) = 1$. A product of ones never underflows: **there is
+no depth limit at all** in the best case. Sigmoid's best case was $12$ layers.
+
+**At $|z| = 4$.** $\tanh(4) = 0.999329$, so
+
+$$\tanh'(4) = 1 - (0.999329)^2 = 1 - 0.998659 = 0.001341$$
+
+That is **thirteen times smaller than $\sigma'(4) = 0.017663$**. Solving
+$g^{L} < 2^{-24}$:
+
+$$L > \frac{-16.6355}{\ln 0.001341} = \frac{-16.6355}{-6.6146} = 2.51 \quad\Rightarrow\quad L = 3$$
+
+against sigmoid's $5$.
+
+**The comparison, which is the opposite of what the headline says.**
+
+| | $z = 0$ | $|z| = 4$ |
+|---|---|---|
+| sigmoid | 12 layers | 5 layers |
+| tanh | unlimited | **3 layers** |
+
+**Tanh is better at the origin and worse in saturation.** Its derivative starts
+four times higher and falls off faster, because $\tanh$ approaches its asymptote
+more quickly than $\sigma$ does. The often-repeated "tanh is better than
+sigmoid" is true only where the pre-activations are small.
+
+**Is it enough?** No, and the table says why: three layers at $|z|=4$. Whether
+tanh helps depends entirely on keeping $|z|$ small — which is not a property of
+the activation but of the initialisation and the normalisation. That is the real
+lesson, and it reframes both chapters that follow:
+
+*Chapter I.8's normalisation* keeps $z$ near zero, moving every unit toward the
+favourable column. With normalisation, tanh's unlimited best case becomes
+reachable; without it, tanh is worse than sigmoid.
+
+*ReLU sidesteps the question.* Its derivative is exactly $1$ for every active
+unit regardless of magnitude, so there is no favourable region to stay in. That
+is a stronger property than a higher maximum, and it is why ReLU rather than
+tanh was the change that made depth practical.
+
+**A caution.** All of this assumes a uniform derivative per layer, which
+I.3.B03's *Where this breaks* already flagged as optimistic. The real product is
+dominated by its smallest factor, so a single saturated layer costs more than
+the average suggests — and tanh, saturating harder, produces smaller minima.
+</SolutionToggle>
