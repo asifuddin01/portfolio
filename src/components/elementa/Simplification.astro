@@ -1,0 +1,15 @@
+---
+/**
+ * §4, Level I — a reader who stops at the intuition should hold a *true*
+ * simplification. Where the intuition requires a lie, the lie is named here
+ * and the correction is pointed at, rather than left to be discovered later.
+ */
+interface Props { correctedIn?: string }
+const { correctedIn } = Astro.props;
+---
+<aside class="simpl">
+  <span class="simpl-tag">
+    ⚠ Simplification{correctedIn ? ` — corrected in ${correctedIn}` : ' — corrected in Level II'}
+  </span>
+  <slot />
+</aside>

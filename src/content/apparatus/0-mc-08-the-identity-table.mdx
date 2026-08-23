@@ -1,0 +1,12 @@
+---
+id: "0.MC.08"
+part: MC
+order: 8
+title: "The identity table"
+statement: "The derivatives used across the corpus, in one place: ∂(aᵀx)/∂x = a · ∂(xᵀAx)/∂x = (A + Aᵀ)x · ∂(xW)/∂W = xᵀ(·) · ∂‖x‖²/∂x = 2x · ∂log det A/∂A = A⁻ᵀ · ∂tr(AB)/∂A = Bᵀ · d(σ)/dz = σ(1 − σ) · d(tanh)/dz = 1 − tanh² · d(ReLU)/dz = 1[z > 0]."
+shapeCheck: "Each identity carries the shape of the object it differentiates against, under numerator layout."
+workedLine: "σ(0) = 0.5, so σ′(0) = 0.25 — the largest the logistic derivative ever gets, and the reason ten stacked sigmoids lose about four orders of magnitude."
+status: review
+---
+
+Every entry here is proved in the entry that introduces it or is a one-line consequence of 0.MC.03. Nothing in this table is asserted without somewhere to check it.

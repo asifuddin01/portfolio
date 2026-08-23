@@ -1,0 +1,18 @@
+---
+/**
+ * One colour per problem variant, reused everywhere, so the taxonomy is
+ * learned by looking rather than by reading the table in §5.3.
+ *
+ * The colour lives in a swatch rather than the text. Nine distinguishable
+ * hues cannot all clear 4.5:1 as small text on both grounds; a swatch is a
+ * non-text mark and only owes 3:1, so the label stays in proven ink.
+ */
+import { VARIANT_LABEL, VARIANT_DOES, type Variant } from '../../lib/elementa-spec';
+
+interface Props { variant: Variant; long?: boolean }
+const { variant, long = false } = Astro.props;
+---
+<span class={`vt vt-${variant}`} title={VARIANT_DOES[variant]}>
+  <span class="vt-swatch" aria-hidden="true"></span>
+  {long ? VARIANT_LABEL[variant] : variant}
+</span>

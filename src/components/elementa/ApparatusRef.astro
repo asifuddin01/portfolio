@@ -1,0 +1,17 @@
+---
+/** An inline link into Book 0, e.g. 0.MC.07 (spec §16). */
+import { getCollection } from 'astro:content';
+import { apparatusPart } from '../../lib/elementa-spec';
+
+interface Props { ref: string; label?: string }
+const { ref, label } = Astro.props;
+
+const [, code] = ref.split('.');
+const part = apparatusPart(code ?? '');
+const all = await getCollection('apparatus');
+const entry = all.find((e) => e.data.id === ref);
+const href = part ? `/elementa/apparatus/${part.slug}#${ref.replace(/\./g, '-').toLowerCase()}` : null;
+---
+{href
+  ? <a class="link app-ref" href={href}>{label ?? entry?.data.title ?? ref} <span aria-hidden="true">·</span> {ref}</a>
+  : <span class="app-ref">{ref}</span>}

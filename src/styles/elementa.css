@@ -1,0 +1,323 @@
+/**
+ * The visual vocabulary of the mathematical spine (spec §5, §13).
+ *
+ * One place, because the reader is meant to learn these marks the way they
+ * learn the lesion rule: a variant tag means the same thing on every page, a
+ * numbered equation looks the same in Book I and Book VI, and a difficulty
+ * mark is read at a glance rather than parsed.
+ *
+ * Text colours are drawn only from the pairs the contrast check proves
+ * (ink, ink-soft, fundus, brass-text, oxblood-text, verdigris). Where a
+ * distinction needs nine values and only six are safe as text, the colour
+ * moves to a swatch — a non-text mark, held to 3:1 — and the label stays
+ * legible.
+ */
+
+/* ── Math tier badge ─────────────────────────────────────────────────── */
+.tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  white-space: nowrap;
+}
+.tier-code {
+  border: var(--rule) solid color-mix(in srgb, var(--brass) 65%, transparent);
+  padding: 0.05em 0.4em;
+  letter-spacing: 0.08em;
+}
+.tier-m3 .tier-code { border-color: var(--fundus); color: var(--fundus); }
+.tier-m0 .tier-code { opacity: 0.6; }
+.tier-name { color: var(--ink-soft); letter-spacing: 0.08em; text-transform: none; }
+
+/* ── Variant tags ────────────────────────────────────────────────────── */
+.vt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.vt-swatch {
+  width: 0.55em;
+  height: 0.55em;
+  flex: none;
+  background: var(--vt-colour, var(--brass));
+}
+.vt-numeric        { --vt-colour: var(--lesion-ves); }
+.vt-symbolic       { --vt-colour: var(--fundus); }
+.vt-shape          { --vt-colour: var(--verdigris); }
+.vt-gradient       { --vt-colour: var(--lesion-ma); }
+.vt-limit          { --vt-colour: var(--brass); }
+.vt-counterexample { --vt-colour: var(--oxblood); }
+.vt-complexity     { --vt-colour: var(--lesion-ex); }
+.vt-probability    { --vt-colour: var(--lesion-ves); filter: saturate(0.5); }
+.vt-proof          { --vt-colour: var(--lesion-cws); }
+
+/* ── Difficulty ──────────────────────────────────────────────────────── */
+.diff {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.18em;
+  color: var(--brass-text);
+}
+
+/* ── Worked problem ──────────────────────────────────────────────────── */
+.pb {
+  max-width: 64rem;
+  margin: 2.6rem 0;
+  border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+  background: var(--paper-raised);
+}
+.pb-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  align-items: baseline;
+  padding: 0.85rem 1.4rem;
+  border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+}
+.pb-id {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+}
+.pb-title {
+  flex: 1 1 16rem;
+  font-family: var(--font-display);
+  font-size: var(--t-md);
+  line-height: 1.3;
+  margin: 0;
+}
+.pb-body { padding: 1.2rem 1.4rem 1.4rem; }
+
+.pb-slot { margin: 1.15rem 0 0; }
+.pb-slot:first-child { margin-top: 0; }
+.pb-slot > h4,
+.pb-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin: 0 0 0.45rem;
+}
+.pb-slot p { margin: 0 0 0.6rem; line-height: 1.65; }
+.pb-slot p:last-child { margin-bottom: 0; }
+
+/**
+ * Prose keeps the reading measure; mathematics, tables and code do not.
+ *
+ * The box is as wide as the widest matrix in it, which is much wider than a
+ * line of text should be. Constraining the sentences rather than the box lets
+ * a 4×4 display stay on one line while the paragraph above it stays readable.
+ */
+.pb-slot p,
+.pb-slot li,
+.pb-answer p,
+.ex > p,
+.ex details > p,
+.ex details > ul,
+.ex details > ol { max-width: var(--measure); }
+.pb-slot .katex-display,
+.pb-slot pre,
+.pb-slot table,
+.ex .katex-display { max-width: none; }
+
+.pb-answer {
+  border: var(--rule) solid var(--fundus);
+  padding: 0.75rem 1rem;
+  margin: 1.3rem 0 0;
+}
+.pb-answer .pb-label { color: var(--fundus); }
+
+.pb-check {
+  margin-top: 1.2rem;
+  border-top: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
+  padding-top: 0.9rem;
+}
+.pb-check > summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  list-style: none;
+}
+.pb-check > summary::-webkit-details-marker { display: none; }
+.pb-check > summary::before { content: '▸ '; }
+.pb-check[open] > summary::before { content: '▾ '; }
+.pb-check > summary:hover { color: var(--fundus); }
+.pb-check-note {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin: 0.5rem 0 0;
+}
+.pb-unverified { color: var(--oxblood-text); }
+
+.pb-breaks {
+  margin-top: 1.2rem;
+  border-left: 2px solid var(--oxblood-text);
+  padding-left: 0.9rem;
+}
+.pb-breaks .pb-label { color: var(--oxblood-text); }
+
+.pb-variation {
+  margin-top: 1.1rem;
+  font-size: var(--t-base);
+  color: var(--ink-soft);
+}
+
+.pb-rounding {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin: 0 0 0.9rem;
+}
+
+/* ── Exercise ────────────────────────────────────────────────────────── */
+.ex {
+  max-width: 64rem;
+  padding: 1rem 0;
+  border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+}
+.ex-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.ex-id {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  color: var(--brass-text);
+}
+.ex-prompt { margin: 0 0 0.6rem; line-height: 1.65; }
+.ex details { margin-top: 0.4rem; }
+.ex summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  list-style: none;
+}
+.ex summary::-webkit-details-marker { display: none; }
+.ex summary::before { content: '▸ '; }
+.ex details[open] summary::before { content: '▾ '; }
+.ex summary:hover { color: var(--fundus); }
+
+/* ── Numbered equations ──────────────────────────────────────────────── */
+.eq {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem 1.5rem;
+  align-items: baseline;
+  max-width: 64rem;
+  margin: 1.6rem 0;
+}
+.eq-body { min-width: 0; overflow-x: auto; }
+.eq-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--brass-text);
+  white-space: nowrap;
+}
+.eq-gloss {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0;
+}
+.eq-ref { font-family: var(--font-mono); font-size: 0.9em; white-space: nowrap; }
+
+/* ── Simplification marker (§4, Level I honesty) ─────────────────────── */
+.simpl {
+  max-width: var(--measure);
+  margin: 1.4rem 0;
+  border-left: 2px solid var(--brass);
+  padding: 0.55rem 0 0.55rem 0.9rem;
+  font-size: var(--t-base);
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.simpl-tag {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin-bottom: 0.3rem;
+}
+
+/* ── Notation and apparatus references ───────────────────────────────── */
+.nota {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+}
+.nota-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+  padding: 0.1rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+}
+.nota-sym { color: var(--ink); }
+.nota-mean { color: var(--ink-soft); }
+.app-ref { font-family: var(--font-mono); font-size: 0.9em; white-space: nowrap; }
+
+/* ── Quota readout ───────────────────────────────────────────────────── */
+.quota {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin: 0;
+}
+.quota-owed { color: var(--oxblood-text); }
+.quota-met { color: var(--verdigris); }
+
+@media (max-width: 640px) {
+  .eq { grid-template-columns: 1fr; }
+  .eq-n { justify-self: end; }
+}
+
+/**
+ * A problem on its own page *is* the page, so its title is the h1. The type
+ * scale has to say so; the heading level alone is invisible.
+ */
+h1.pb-title, .ex-title-page {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  line-height: 1.2;
+  margin: 0;
+}
+.ex-title { font-family: var(--font-display); font-size: var(--t-md); }

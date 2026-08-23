@@ -1,0 +1,12 @@
+---
+id: "0.NU.02"
+part: NU
+order: 2
+title: "Log-sum-exp"
+statement: "log Σ exp(sᵢ) = m + log Σ exp(sᵢ − m) with m = max sᵢ. Subtracting the maximum leaves the result unchanged and removes the overflow."
+shapeCheck: "A vector in, a scalar out. The shift cancels exactly, so this is an identity and not an approximation."
+workedLine: "s = (1000, 1001). Direct exponentiation overflows fp32. With m = 1001: 1001 + log(e⁻¹ + 1) = 1001 + 0.3133."
+status: review
+---
+
+Every softmax in every framework does this. It is worth knowing because a hand-written attention implementation that skips it will produce NaN on real logits.

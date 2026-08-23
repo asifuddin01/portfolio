@@ -1,0 +1,143 @@
+---
+/**
+ * A single problem or exercise on its own page, so it can be cited from
+ * another book by ID and linked to from the propositions it draws on.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../../../components/elementa/Breadcrumb.astro';
+import Problem from '../../../../../components/elementa/Problem.astro';
+import Exercise from '../../../../../components/elementa/Exercise.astro';
+import { ELEMENTA_COMPONENTS } from '../../../../../components/elementa/mdx';
+import { getElementaTree, getProblems, getPropositionContexts } from '../../../../../lib/collections';
+import type { CollectionEntry } from 'astro:content';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../../../styles/math.css';
+
+export async function getStaticPaths() {
+  const [tree, items, contexts] = await Promise.all([
+    getElementaTree(), getProblems(), getPropositionContexts(),
+  ]);
+  const place = new Map(
+    tree.flatMap((b) =>
+      b.chapters.map((c) => [c.id, { book: b.book, numeral: b.numeral, chapter: c.chapter, n: c.n, slug: c.slug }] as const)
+    )
+  );
+  return items.flatMap((item) => {
+    const at = place.get(item.data.chapter);
+    if (!at) return [];
+    return [{
+      params: {
+        book: at.book.id,
+        chapter: at.slug,
+        item: item.data.id.split('.').pop()!.toLowerCase(),
+      },
+      props: {
+        item, ...at,
+        depends: contexts
+          .filter((c) => item.data.depends.includes(c.id))
+          .map((c) => ({
+            id: c.id,
+            statement: c.entry.data.statement,
+            href: `/elementa/${c.book.id}/${c.chapter.id.split('--')[1]}/${c.entry.id}`,
+          })),
+      },
+    }];
+  });
+}
+
+interface Props {
+  item: CollectionEntry<'problems'>;
+  book: CollectionEntry<'books'>;
+  numeral: string;
+  chapter: CollectionEntry<'chapters'>;
+  n: number;
+  slug: string;
+  depends: { id: string; statement: string; href: string }[];
+}
+const { item, book, numeral, chapter, n, slug, depends } = Astro.props;
+const d = item.data;
+const { Content } = await render(item);
+const base = `/elementa/${book.id}`;
+const chapterHref = `${base}/${slug}`;
+---
+<BaseLayout
+  title={`${d.id} — ${d.title}`}
+  description={`${d.kind === 'problem' ? 'Worked problem' : 'Exercise'} ${d.id}, variant ${d.variant}.`}
+  folio={d.id}
+  type="article"
+>
+  <article class="it codex">
+    <Breadcrumb
+      bookNumeral={numeral} bookTitle={book.data.title} bookHref={base}
+      chapterN={n} chapterTitle={chapter.data.title} chapterHref={chapterHref}
+      leaf={d.id} tier={chapter.data.mathTier}
+    />
+
+    {d.kind === 'problem' ? (
+      <Problem id={d.id} variant={d.variant} difficulty={d.difficulty} title={d.title} rounding={d.rounding} level={1}>
+        <Content components={ELEMENTA_COMPONENTS} />
+      </Problem>
+    ) : (
+      <Exercise id={d.id} variant={d.variant} difficulty={d.difficulty} title={d.title} level={1}>
+        <Content components={ELEMENTA_COMPONENTS} />
+      </Exercise>
+    )}
+
+    {depends.length > 0 && (
+      <section class="it-dep" aria-labelledby="it-dep-h">
+        <h2 class="it-label" id="it-dep-h">Draws on</h2>
+        <ul class="it-list">
+          {depends.map((p) => <li><a class="link" href={p.href}>{p.id} — {p.statement}</a></li>)}
+        </ul>
+      </section>
+    )}
+
+    {d.reachesBack.length > 0 && (
+      <section class="it-dep" aria-labelledby="it-back-h">
+        <h2 class="it-label" id="it-back-h">Reaches back into</h2>
+        <p class="it-back">{d.reachesBack.join(' · ')}</p>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <nav class="it-next" aria-label="Back to the set">
+      <a class="it-next-link" href={`${chapterHref}/problems`} data-magnet>
+        <span class="it-next-label">Back to</span>
+        <span class="it-next-t">The problems of {chapter.data.title}</span>
+      </a>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .it { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .it-dep { margin: 1.8rem 0; max-width: 64rem; }
+  .it-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.5rem;
+  }
+  .it-list { list-style: none; margin: 0; padding: 0; }
+  .it-list li { font-size: var(--t-base); line-height: 1.6; margin-bottom: 0.3rem; }
+  .it-back { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+  .it-next { margin: 2rem 0; }
+  .it-next-link { display: inline-block; }
+  .it-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .it-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+</style>

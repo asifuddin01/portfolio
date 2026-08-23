@@ -1,8 +1,11 @@
 ---
+id: "III.4"
 book: large-language-model-llm
 order: 4
 title: "Scaling"
 summary: "What more parameters, data and compute actually buy."
+claim: "Loss falls as a power law in parameters and data, and the compute budget decides how to split the two."
+mathTier: M3
 topics:
   - "Parameter count"
   - "Data"
@@ -10,5 +13,18 @@ topics:
   - "Scaling laws"
   - "Compute and data trade-offs"
   - "Inference scaling"
-status: published
+prerequisites:
+  - "III.3"
+notation:
+  - "N"
+  - "D"
+  - "C"
+  - "L_loss"
+  - "E"
+apparatus:
+  - "0.OP.04"
+  - "0.ST.01"
+keyEquations: []
+status: review
+
 ---

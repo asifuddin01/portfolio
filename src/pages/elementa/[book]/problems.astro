@@ -1,0 +1,121 @@
+---
+/**
+ * The book-level problem set (spec §5.2).
+ *
+ * This is what makes the mathematics cumulative rather than sectional. A book
+ * containing any load-bearing chapter owes at least eight problems that
+ * combine results from two or more of its chapters, and at least two that
+ * reach back into an earlier book.
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
+import ProblemSet from '../../../components/elementa/ProblemSet.astro';
+import { getElementaTree, getProblems, type ElementaBook } from '../../../lib/collections';
+import type { CollectionEntry } from 'astro:content';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../styles/math.css';
+
+export async function getStaticPaths() {
+  const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
+  return tree
+    .filter((node) => node.chapters.some((c) => c.tier === 'M3'))
+    .map((node) => ({
+      params: { book: node.book.id },
+      props: {
+        node,
+        items: items.filter((p) => p.data.chapter === `${node.numeral}.BOOK`),
+      },
+    }));
+}
+
+interface Props { node: ElementaBook; items: CollectionEntry<'problems'>[] }
+const { node, items } = Astro.props;
+const { book, numeral } = node;
+const base = `/elementa/${book.id}`;
+const crossBook = items.filter((p) => p.data.scope === 'cross-book');
+const NEED = 8;
+const NEED_CROSS = 2;
+---
+<BaseLayout
+  title={`Problem set · Book ${numeral} — ${book.data.title}`}
+  description={`Cross-chapter problems for Book ${numeral}: ${book.data.title}.`}
+  folio={`${numeral}.B`}
+>
+  <div class="codex bp">
+    <Breadcrumb
+      bookNumeral={numeral} bookTitle={book.data.title} bookHref={base}
+      leaf="Problem set"
+    />
+
+    <header class="bp-head">
+      <p class="bp-n" data-reveal>Book {numeral} · Problem set</p>
+      <h1 class="bp-h1" data-press>Where the chapters meet</h1>
+      <p class="bp-lede codex-measure" data-reveal>
+        A problem here uses two or more chapters at once. That is the whole
+        purpose of the set: a reader who finishes this book should be able to
+        take a cost derived in one chapter and a parameter count from another
+        and answer a question neither chapter asked.
+      </p>
+      <p class="bp-count" data-reveal>
+        <span class={items.length >= NEED ? 'bp-met' : 'bp-owed'}>{items.length}/{NEED} problems</span>
+        <span class={crossBook.length >= NEED_CROSS ? 'bp-met' : 'bp-owed'}>
+          {crossBook.length}/{NEED_CROSS} reaching back into an earlier book
+        </span>
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <ProblemSet
+      items={items}
+      empty={`Not yet written. Book ${numeral} contains load-bearing chapters, so it owes at least ${NEED} cross-chapter problems and ${NEED_CROSS} that reach back into an earlier book. Those are writable once the chapters they combine are.`}
+    />
+
+    <LesionRule />
+
+    <nav class="bp-next" aria-label="Back to the book">
+      <a class="bp-next-link" href={base} data-magnet>
+        <span class="bp-next-label">Back to</span>
+        <span class="bp-next-t">Book {numeral} — {book.data.title}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .bp { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .bp-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .bp-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .bp-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); margin-bottom: 1rem; }
+  .bp-count {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.2rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    margin: 0;
+  }
+  .bp-met { color: var(--verdigris); }
+  .bp-owed { color: var(--oxblood-text); }
+  .bp-next { margin: 2rem 0; }
+  .bp-next-link { display: inline-block; }
+  .bp-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .bp-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+</style>

@@ -1,0 +1,12 @@
+---
+id: "0.MC.02"
+part: MC
+order: 2
+title: "The Jacobian"
+statement: "For f : ℝⁿ → ℝᵐ, the Jacobian J has Jᵢⱼ = ∂fᵢ/∂xⱼ and shape m×n. The gradient of a scalar function is the transpose of its 1×n Jacobian."
+shapeCheck: "Input n, output m, Jacobian m×n. Composing f then g multiplies J_g J_f, and the inner dimensions are the intermediate width."
+workedLine: "f(x) = Ax with A of shape m×n. J = A, everywhere, because the map is already linear."
+status: review
+---
+
+The Jacobian is the local linear approximation. Every claim in the corpus about what a layer does to a gradient is a claim about its Jacobian.

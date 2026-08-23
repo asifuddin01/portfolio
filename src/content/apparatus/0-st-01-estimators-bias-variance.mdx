@@ -1,0 +1,12 @@
+---
+id: "0.ST.01"
+part: ST
+order: 1
+title: "Estimators, bias and variance"
+statement: "For an estimator θ̂ of θ: bias = 𝔼[θ̂] − θ, and MSE = bias² + Var(θ̂). Unbiased is not the same as good, and a biased estimator with lower variance often beats an unbiased one."
+shapeCheck: "θ̂ has the shape of θ; the MSE is a scalar."
+workedLine: "Sample mean of n iid draws: bias 0, variance σ²/n, so MSE = σ²/n and it falls as 1/n, not 1/√n."
+status: review
+---
+
+The 1/n is why quadrupling a test set halves the width of its interval. It is also why a small medical test set cannot be rescued by a better model.

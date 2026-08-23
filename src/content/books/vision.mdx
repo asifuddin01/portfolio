@@ -1,10 +1,40 @@
 ---
+id: II
 order: 2
 title: Vision
 covers: ViT, DINOv2, self-supervised visual representation
 goal: "Explain how a machine represents and interprets visual information, from pixels to self-supervised representations."
 prerequisites:
   - foundations
+mathPrerequisites:
+  - "0.LA.01"
+  - "0.LA.04"
+  - "0.MC.03"
+  - "0.PR.02"
+  - "0.ST.02"
+practical:
+  implement: "A CNN classifier, then a ViT, then a segmentation model."
+  verifiedAgainst:
+    - "II.2.B01"
+    - "II.6.B01"
+  note: "Train on a patient split, retrain on a site split, and report the gap as the result."
+  laboratory:
+    - task: "Take one image, shuffle its pixels with a fixed permutation, and train the same MLP on the original and the shuffled dataset. Then do it with a small CNN."
+      note: "Chapter I. The MLP should be indifferent and the CNN should not. That gap is the locality prior, measured."
+    - task: "Compute the receptive field of a backbone you use, by hand, layer by layer. Then check it against the size of the structure your task depends on."
+      note: "Chapter II. If it does not cover it, no amount of data will help, and you now know that before training."
+    - task: "Train a linear probe on frozen features from three backbones — a supervised CNN, DINOv2, and a masked autoencoder — on a few hundred labelled images from your own domain."
+      note: "Chapter III and V. This is the cheapest honest comparison of representations available, and it takes an afternoon."
+    - task: "Take a ViT pretrained at 224 and evaluate it at 448, once with interpolated positional embeddings and once without."
+      note: "Chapter IV. The version without is the commonest silent bug in this literature."
+    - task: "Write out what each transform in your augmentation pipeline asserts about your domain, then check the list with someone who reads the images clinically."
+      note: "Chapter V. Ten minutes, and it is the difference between ignoring nuisance and ignoring the diagnosis."
+    - task: "Take a trained classifier and plot its reliability diagram. Then fit a temperature on held-out data and plot it again."
+      note: "Chapter VII. Accuracy and AUROC will be identical before and after, which is the point."
+    - task: "Recompute the precision of a published medical model at the prevalence of the clinic it is meant for, using its reported sensitivity and specificity."
+      note: "Chapter VII. Do this with three papers and the habit will be permanent."
+    - task: "A project, end to end. Pick a public medical dataset with site or scanner metadata. Split it by patient and train. Then split it by site, retrain, and compare. Report Dice, per-lesion detection, calibration error and both splits' numbers."
+      note: "The gap between the two splits is the result. Everything else is method."
 closingFigure: FigVisionMap
 closing:
   equations:
@@ -76,23 +106,6 @@ closing:
       right: "Held out from the same distribution. External validation on data from an institution that contributed nothing to training is the only measurement that answers the question."
     - wrong: "Pretrained on ImageNet, so it understands images."
       right: "Its early layers are edge detectors, which transfer almost anywhere. Its late layers are about the thousand ImageNet classes, and transfer to a retinal photograph considerably less well."
-  exercises:
-    - task: "Take one image, shuffle its pixels with a fixed permutation, and train the same MLP on the original and the shuffled dataset. Then do it with a small CNN."
-      note: "Chapter I. The MLP should be indifferent and the CNN should not. That gap is the locality prior, measured."
-    - task: "Compute the receptive field of a backbone you use, by hand, layer by layer. Then check it against the size of the structure your task depends on."
-      note: "Chapter II. If it does not cover it, no amount of data will help, and you now know that before training."
-    - task: "Train a linear probe on frozen features from three backbones — a supervised CNN, DINOv2, and a masked autoencoder — on a few hundred labelled images from your own domain."
-      note: "Chapter III and V. This is the cheapest honest comparison of representations available, and it takes an afternoon."
-    - task: "Take a ViT pretrained at 224 and evaluate it at 448, once with interpolated positional embeddings and once without."
-      note: "Chapter IV. The version without is the commonest silent bug in this literature."
-    - task: "Write out what each transform in your augmentation pipeline asserts about your domain, then check the list with someone who reads the images clinically."
-      note: "Chapter V. Ten minutes, and it is the difference between ignoring nuisance and ignoring the diagnosis."
-    - task: "Take a trained classifier and plot its reliability diagram. Then fit a temperature on held-out data and plot it again."
-      note: "Chapter VII. Accuracy and AUROC will be identical before and after, which is the point."
-    - task: "Recompute the precision of a published medical model at the prevalence of the clinic it is meant for, using its reported sensitivity and specificity."
-      note: "Chapter VII. Do this with three papers and the habit will be permanent."
-    - task: "A project, end to end. Pick a public medical dataset with site or scanner metadata. Split it by patient and train. Then split it by site, retrain, and compare. Report Dice, per-lesion detection, calibration error and both splits' numbers."
-      note: "The gap between the two splits is the result. Everything else is method."
   papers:
     - title: "Gradient-Based Learning Applied to Document Recognition (LeNet)"
       url: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf

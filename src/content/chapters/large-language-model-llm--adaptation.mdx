@@ -1,8 +1,11 @@
 ---
+id: "III.7"
 book: large-language-model-llm
 order: 7
 title: "Efficient Adaptation"
 summary: "Changing a model you cannot afford to retrain."
+claim: "Adaptation is a rank and a precision decision, and both are bounded by what the update actually needs to express."
+mathTier: M3
 topics:
   - "Fine-tuning"
   - "LoRA"
@@ -11,5 +14,19 @@ topics:
   - "Quantisation"
   - "Pruning"
   - "Distillation"
-status: published
+prerequisites:
+  - "III.5"
+notation:
+  - "r"
+  - "d"
+  - "N"
+  - "W"
+  - "Var"
+apparatus:
+  - "0.LA.04"
+  - "0.NU.01"
+  - "0.PR.03"
+keyEquations: []
+status: review
+
 ---

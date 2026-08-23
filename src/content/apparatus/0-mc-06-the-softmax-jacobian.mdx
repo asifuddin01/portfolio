@@ -1,0 +1,12 @@
+---
+id: "0.MC.06"
+part: MC
+order: 6
+title: "The softmax Jacobian"
+statement: "For a = softmax(s), ∂aᵢ/∂sⱼ = aᵢ(δᵢⱼ − aⱼ). In matrix form, J = diag(a) − aaᵀ."
+shapeCheck: "s and a are both length n, so J is n×n, symmetric, and each of its rows sums to zero."
+workedLine: "a = (0.5, 0.5). J = [[0.25, −0.25], [−0.25, 0.25]]. Rows sum to zero, as they must: adding a constant to every logit changes nothing."
+status: review
+---
+
+The rows summing to zero is the whole reason softmax is shift-invariant, and the reason a cross-entropy gradient collapses to p − y.

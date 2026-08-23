@@ -1,0 +1,12 @@
+---
+id: "0.NU.01"
+part: NU
+order: 1
+title: "Floating point"
+statement: "fp32 carries about 7 decimal digits with exponent range 10^±38. fp16 carries about 3 digits and overflows above 65,504. bf16 keeps fp32's exponent range and drops mantissa bits instead."
+shapeCheck: "A number's storage size and its usable precision are different facts, and mixed precision trades one for the other deliberately."
+workedLine: "In fp16 the smallest normal positive value is about 6.1 × 10⁻⁵. A gradient below that becomes zero, silently."
+status: review
+---
+
+bf16 was adopted over fp16 for training because range, not precision, is what a gradient distribution needs.

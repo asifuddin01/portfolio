@@ -1,73 +1,172 @@
 ---
+/**
+ * A book's frontispiece (spec §6): why the field exists, what must be read
+ * first, the chapters with their declared mathematical tiers, and the closing
+ * matter that follows them.
+ */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../components/ornament/LesionRule.astro';
 import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
 import Progress from '../../../components/elementa/Progress.astro';
-import { getElementaTree, type ElementaBook } from '../../../lib/collections';
-import { toRoman } from '../../../consts';
+import MathTier from '../../../components/elementa/MathTier.astro';
+import Quota from '../../../components/elementa/Quota.astro';
+import ApparatusRef from '../../../components/elementa/ApparatusRef.astro';
+import {
+  getElementaTree, getProblems, chapterMath, type ElementaBook,
+} from '../../../lib/collections';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../styles/math.css';
 
 export async function getStaticPaths() {
-  const tree = await getElementaTree();
+  const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
   return tree.map((node, i) => ({
     params: { book: node.book.id },
-    props: { node, next: tree[i + 1] ?? null },
+    props: {
+      node,
+      next: tree[i + 1] ?? null,
+      items: items.filter((p) => p.data.id.startsWith(`${node.numeral}.`)),
+    },
   }));
 }
 
-interface Props { node: ElementaBook; next: ElementaBook | null }
-const { node, next } = Astro.props;
-const { book, chapters, propositions, n } = node;
+interface Props {
+  node: ElementaBook;
+  next: ElementaBook | null;
+  items: Awaited<ReturnType<typeof getProblems>>;
+}
+const { node, next, items } = Astro.props;
+const { book, chapters, propositions, numeral } = node;
+const base = `/elementa/${book.id}`;
+
+const d = book.data;
+const bookSet = items.filter((p) => p.data.chapter === `${numeral}.BOOK`);
+const hasM3 = chapters.some((c) => c.tier === 'M3');
+const practical = d.practical;
 ---
 <BaseLayout
-  title={`Book ${toRoman(n)} · ${book.data.title} — Elementa`}
+  title={`Book ${numeral} · ${book.data.title} — Elementa`}
   description={book.data.goal ?? book.data.covers}
-  folio={`${n}`}
+  folio={numeral}
 >
   <div class="codex bk">
-    <Breadcrumb bookN={n} bookTitle={book.data.title} bookHref={`/elementa/${book.id}`} />
+    <Breadcrumb bookNumeral={numeral} bookTitle={book.data.title} bookHref={base} />
 
     <header class="bk-head">
-      <p class="bk-n" data-reveal>Book {toRoman(n)}</p>
+      <p class="bk-n" data-reveal>Book {numeral}</p>
       <h1 class="bk-h1" data-press>{book.data.title}</h1>
       <p class="bk-covers" data-reveal>{book.data.covers}</p>
-      {book.data.goal && <p class="bk-goal codex-measure" data-reveal>{book.data.goal}</p>}
+      {d.goal && <p class="bk-goal codex-measure" data-reveal>{d.goal}</p>}
       <div class="bk-progress" data-reveal>
         <Progress done={propositions.length} label={`${chapters.length} chapters`} />
       </div>
     </header>
 
+    {(d.prerequisites.length > 0 || d.mathPrerequisites.length > 0) && (
+      <section class="bk-pre" data-reveal aria-labelledby="bk-pre-h">
+        <h2 class="bk-label" id="bk-pre-h">Read first</h2>
+        {d.prerequisites.length > 0 && (
+          <p class="bk-pre-line">
+            {d.prerequisites.map((p, i) => (
+              <>{i > 0 && <span class="bk-sep"> · </span>}<a class="link" href={`/elementa/${p}`}>{p.replace(/-/g, ' ')}</a></>
+            ))}
+          </p>
+        )}
+        {d.mathPrerequisites.length > 0 && (
+          <>
+            <p class="bk-pre-sub">Mathematics assumed — follow these when a step stops making sense.</p>
+            <p class="bk-pre-line">
+              {d.mathPrerequisites.map((a, i) => (
+                <>{i > 0 && <span class="bk-sep"> · </span>}<ApparatusRef ref={a} /></>
+              ))}
+            </p>
+          </>
+        )}
+      </section>
+    )}
+
     <LesionRule />
 
     <ol class="bk-chapters" data-reveal-stagger>
-      {chapters.map((c) => (
-        <li class="bk-chapter">
-          <a class="bk-chapter-link" href={`/elementa/${book.id}/${c.chapter.id.split('--')[1]}`}>
-            <span class="bk-chapter-n">Chapter {toRoman(c.n)}</span>
-            <span class="bk-chapter-body">
-              <span class="bk-chapter-t">{c.chapter.data.title}</span>
-              <span class="bk-chapter-s">{c.chapter.data.summary}</span>
-              {c.chapter.data.topics.length > 0 && (
-                <span class="bk-topics">{c.chapter.data.topics.join(' · ')}</span>
-              )}
-            </span>
-            <span class="bk-chapter-count">
-              {c.propositions.length > 0
-                ? `${c.propositions.length} written`
-                : 'not yet written'}
-            </span>
-          </a>
-        </li>
-      ))}
+      {chapters.map((c) => {
+        const math = chapterMath(c.tier, items.filter((p) => p.data.chapter === c.id));
+        return (
+          <li class="bk-chapter">
+            <a class="bk-chapter-link" href={`${base}/${c.slug}`}>
+              <span class="bk-chapter-n">
+                Chapter {c.n}
+                <em class="bk-chapter-id">{c.id}</em>
+              </span>
+              <span class="bk-chapter-body">
+                <span class="bk-chapter-t">{c.chapter.data.title}</span>
+                <span class="bk-chapter-s">{c.chapter.data.claim ?? c.chapter.data.summary}</span>
+                {c.chapter.data.topics.length > 0 && (
+                  <span class="bk-topics">{c.chapter.data.topics.join(' · ')}</span>
+                )}
+              </span>
+              <span class="bk-chapter-meta">
+                <MathTier value={c.tier} showName={false} />
+                <em>{c.propositions.length > 0 ? `${c.propositions.length} written` : 'not yet written'}</em>
+              </span>
+            </a>
+            <div class="bk-chapter-quota">
+              <Quota math={math} published={c.chapter.data.status === 'published'} />
+            </div>
+          </li>
+        );
+      })}
     </ol>
 
-    {book.data.closing && (
-      <a class="bk-closing" href={`/elementa/${book.id}/closing`} data-reveal>
-        <span class="bk-closing-label">Closing</span>
-        <span class="bk-closing-t">The whole book on one plate</span>
-        <span class="bk-closing-s">
-          The map, the equations, the vocabulary, the misconceptions that come with
-          them, and the exercises. Read it after the chapters, then again before
-          the next book.
+    {d.synthesis && (
+      <section class="bk-block" data-reveal aria-labelledby="bk-syn-h">
+        <h2 class="bk-label" id="bk-syn-h">Synthesis</h2>
+        <p class="bk-prose codex-measure">{d.synthesis}</p>
+      </section>
+    )}
+
+    {hasM3 && (
+      <a class="bk-card" href={`${base}/problems`} data-reveal>
+        <span class="bk-card-label">Problem set</span>
+        <span class="bk-card-t">Where the chapters have to be used together</span>
+        <span class="bk-card-s">
+          {bookSet.length > 0
+            ? `${bookSet.length} cross-chapter problems, each combining results from two or more chapters of this book.`
+            : 'Not yet written. A book with load-bearing chapters owes at least eight cross-chapter problems and two that reach back into an earlier book.'}
+        </span>
+      </a>
+    )}
+
+    {practical && (
+      <section class="bk-block" data-reveal aria-labelledby="bk-prac-h">
+        <h2 class="bk-label" id="bk-prac-h">Practical connection</h2>
+        <p class="bk-prose codex-measure">{practical.implement}</p>
+        {practical.note && <p class="bk-prose bk-dim codex-measure">{practical.note}</p>}
+        {practical.verifiedAgainst.length > 0 && (
+          <p class="bk-pre-line">
+            <span class="bk-pre-sub">Verified against</span>
+            {practical.verifiedAgainst.map((v, i) => (
+              <>{i > 0 && <span class="bk-sep"> · </span>}<code class="bk-code">{v}</code></>
+            ))}
+          </p>
+        )}
+      </section>
+    )}
+
+    {d.frontier && (
+      <section class="bk-block" data-reveal aria-labelledby="bk-fr-h">
+        <h2 class="bk-label" id="bk-fr-h">Research frontier</h2>
+        <p class="bk-prose codex-measure">{d.frontier}</p>
+      </section>
+    )}
+
+    {d.closing && (
+      <a class="bk-card" href={`${base}/closing`} data-reveal>
+        <span class="bk-card-label">Closing</span>
+        <span class="bk-card-t">The whole book on one plate</span>
+        <span class="bk-card-s">
+          The map, the key equations with their glosses, what you should now be
+          able to derive unaided, the vocabulary, the misconceptions and the
+          laboratory. Read it after the chapters, then again before the next book.
         </span>
       </a>
     )}
@@ -77,7 +176,7 @@ const { book, chapters, propositions, n } = node;
     <nav class="bk-next" aria-label="Next book">
       <a class="bk-next-link" href={next ? `/elementa/${next.book.id}` : '/elementa'} data-magnet>
         <span class="bk-next-label">
-          {next ? `Next — Book ${toRoman(next.n)}` : 'Back to the corpus'}
+          {next ? `Next — Book ${next.numeral}` : 'Back to the corpus'}
         </span>
         <span class="bk-next-t">{next ? next.book.data.title : 'Elementa'}</span>
       </a>
@@ -100,6 +199,36 @@ const { book, chapters, propositions, n } = node;
   .bk-goal { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1.4rem; }
   .bk-progress { margin-bottom: 0.4rem; }
 
+  .bk-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.7rem;
+  }
+  .bk-pre { margin-top: 2rem; }
+  .bk-pre-line {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 2;
+    margin: 0 0 0.5rem;
+    max-width: 64rem;
+  }
+  .bk-pre-sub {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.6rem 0 0.3rem;
+  }
+  .bk-sep { color: var(--brass-text); }
+  .bk-code { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .bk-block { margin: 2.4rem 0; }
+  .bk-prose { font-size: var(--t-base); line-height: 1.7; margin: 0 0 0.6rem; }
+  .bk-dim { color: var(--ink-soft); }
+
   .bk-chapters {
     list-style: none;
     margin: 0;
@@ -113,7 +242,7 @@ const { book, chapters, propositions, n } = node;
     grid-template-columns: 8rem 1fr auto;
     gap: 1.2rem;
     align-items: baseline;
-    padding: 1.15rem 0;
+    padding: 1.15rem 0 0.5rem;
     color: var(--ink);
   }
   .bk-chapter-n {
@@ -123,9 +252,10 @@ const { book, chapters, propositions, n } = node;
     text-transform: uppercase;
     color: var(--brass-text);
   }
+  .bk-chapter-id { display: block; font-style: normal; color: var(--ink-soft); letter-spacing: 0.08em; margin-top: 0.15rem; }
   .bk-chapter-t { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.3; }
   .bk-chapter-link:hover .bk-chapter-t { color: var(--fundus); }
-  .bk-chapter-s { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.5; }
+  .bk-chapter-s { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.5; max-width: 58ch; }
   .bk-topics {
     display: block;
     font-family: var(--font-mono);
@@ -135,15 +265,17 @@ const { book, chapters, propositions, n } = node;
     margin-top: 0.4rem;
     line-height: 1.7;
   }
-  .bk-chapter-count {
+  .bk-chapter-meta {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
     color: var(--brass-text);
     white-space: nowrap;
     text-align: right;
   }
+  .bk-chapter-meta em { display: block; font-style: normal; color: var(--ink-soft); margin-top: 0.3rem; }
+  .bk-chapter-quota { padding: 0 0 1rem 9.2rem; }
 
-  .bk-closing {
+  .bk-card {
     display: block;
     margin-top: 2.4rem;
     padding: 1.4rem 1.6rem;
@@ -152,8 +284,8 @@ const { book, chapters, propositions, n } = node;
     background: var(--paper-raised);
     color: var(--ink);
   }
-  .bk-closing:hover { border-color: var(--fundus); }
-  .bk-closing-label {
+  .bk-card:hover { border-color: var(--fundus); }
+  .bk-card-label {
     display: block;
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -162,9 +294,9 @@ const { book, chapters, propositions, n } = node;
     color: var(--brass-text);
     margin-bottom: 0.5rem;
   }
-  .bk-closing-t { display: block; font-family: var(--font-display); font-size: var(--t-md); }
-  .bk-closing:hover .bk-closing-t { color: var(--fundus); }
-  .bk-closing-s {
+  .bk-card-t { display: block; font-family: var(--font-display); font-size: var(--t-md); }
+  .bk-card:hover .bk-card-t { color: var(--fundus); }
+  .bk-card-s {
     display: block;
     font-size: var(--t-base);
     color: var(--ink-soft);
@@ -173,7 +305,7 @@ const { book, chapters, propositions, n } = node;
     max-width: 62ch;
   }
 
-  .bk-next { margin-bottom: 2rem; }
+  .bk-next { margin: 2.4rem 0 2rem; }
   .bk-next-link { display: inline-block; }
   .bk-next-label {
     display: block;
@@ -188,6 +320,7 @@ const { book, chapters, propositions, n } = node;
 
   @media (max-width: 720px) {
     .bk-chapter-link { grid-template-columns: 1fr; gap: 0.25rem; }
-    .bk-chapter-count { text-align: left; }
+    .bk-chapter-meta { text-align: left; }
+    .bk-chapter-quota { padding-left: 0; }
   }
 </style>

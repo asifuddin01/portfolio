@@ -5,8 +5,12 @@ import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { unified } from '@astrojs/markdown-remark';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 import { SITE } from './src/consts.ts';
+import { KATEX_MACROS } from './src/lib/katex-macros.ts';
+import { runAllGuards } from './scripts/elementa/guards.mjs';
 
 /**
  * @typedef {object} HastNode
@@ -77,12 +81,48 @@ export default defineConfig({
   markdown: {
     // Astro 7 takes the pipeline as a processor; the old top-level
     // remarkPlugins/rehypePlugins keys are deprecated.
-    processor: unified({ rehypePlugins: [rehypeProseDefaults] }),
+    //
+    // KaTeX, not MathJax: server-rendered at build, zero client JS, no layout
+    // shift. `strict: 'error'` means a malformed formula stops the build
+    // instead of shipping as red text nobody notices (spec §5.8).
+    processor: unified({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [
+        rehypeProseDefaults,
+        [rehypeKatex, { macros: KATEX_MACROS, strict: 'error' }],
+      ],
+    }),
   },
   vite: {
     plugins: [tailwindcss()],
   },
   integrations: [
+    /**
+     * The five Elementa guards (spec §12), wired as a build hook so a
+     * structural violation fails `astro build` rather than a test suite
+     * somebody remembers to run. Same philosophy as the plate embargo guard:
+     * rules that depend on discipline are not rules.
+     */
+    {
+      name: 'elementa-guards',
+      hooks: {
+        'astro:build:start': async ({ logger }) => {
+          const results = await runAllGuards();
+          const errors = results.flatMap((r) => r.errors);
+          const owed = results.reduce((n, r) => n + r.warnings.length, 0);
+          if (errors.length) {
+            throw new Error(
+              `\n\n  ELEMENTA — ${errors.length} violation(s) of the specification\n\n` +
+              errors.map((e) => `   ✗ ${e}`).join('\n') +
+              `\n\n  See §12. Run \`npm run check:elementa -- --verbose\` for the full picture.\n`
+            );
+          }
+          logger.info(
+            `five guards pass · ${owed} outstanding obligation(s) across chapters still in review`
+          );
+        },
+      },
+    },
     mdx(),
     // The editor is noindex'd, but listing it in the sitemap invites crawlers
     // to it anyway.

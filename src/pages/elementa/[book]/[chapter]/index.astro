@@ -1,22 +1,37 @@
 ---
+/**
+ * A chapter (spec §7). The declared tier decides what the chapter owes: at M0
+ * the mathematical sections may be absent, at M2 and M3 they are the body of
+ * it, and the quota readout says how much of that debt has been paid.
+ */
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../../components/ornament/LesionRule.astro';
 import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
-import { getElementaTree } from '../../../../lib/collections';
+import MathTier from '../../../../components/elementa/MathTier.astro';
+import Quota from '../../../../components/elementa/Quota.astro';
+import VariantTag from '../../../../components/elementa/VariantTag.astro';
+import Difficulty from '../../../../components/elementa/Difficulty.astro';
+import Notation from '../../../../components/elementa/Notation.astro';
+import ApparatusRef from '../../../../components/elementa/ApparatusRef.astro';
+import { getElementaTree, getProblems, chapterMath } from '../../../../lib/collections';
+import { TIER_NOTE } from '../../../../lib/elementa-spec';
 import type { CollectionEntry } from 'astro:content';
-import { toRoman } from '../../../../consts';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../../styles/math.css';
 
 export async function getStaticPaths() {
-  const tree = await getElementaTree();
+  const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
   return tree.flatMap((b) =>
     b.chapters.map((c, i) => ({
-      params: { book: b.book.id, chapter: c.chapter.id.split('--')[1]! },
+      params: { book: b.book.id, chapter: c.slug },
       props: {
         book: b.book,
-        bookN: b.n,
+        bookNumeral: b.numeral,
         chapter: c.chapter,
         chapterN: c.n,
         propositions: c.propositions,
+        items: items.filter((p) => p.data.chapter === c.id),
         next: b.chapters[i + 1] ?? null,
       },
     }))
@@ -25,39 +40,75 @@ export async function getStaticPaths() {
 
 interface Props {
   book: CollectionEntry<'books'>;
-  bookN: number;
+  bookNumeral: string;
   chapter: CollectionEntry<'chapters'>;
   chapterN: number;
   propositions: CollectionEntry<'elementa'>[];
-  next: { chapter: CollectionEntry<'chapters'>; n: number } | null;
+  items: CollectionEntry<'problems'>[];
+  next: { chapter: CollectionEntry<'chapters'>; n: number; slug: string } | null;
 }
-const { book, bookN, chapter, chapterN, propositions, next } = Astro.props;
+const { book, bookNumeral, chapter, chapterN, propositions, items, next } = Astro.props;
+const d = chapter.data;
 const base = `/elementa/${book.id}`;
 const here = `${base}/${chapter.id.split('--')[1]}`;
+const math = chapterMath(d.mathTier, items);
+const published = d.status === 'published';
 ---
 <BaseLayout
-  title={`Chapter ${toRoman(chapterN)} · ${chapter.data.title} — Elementa`}
-  description={chapter.data.summary}
-  folio={`${bookN}.${chapterN}`}
+  title={`Chapter ${chapterN} · ${d.title} — Elementa`}
+  description={d.claim ?? d.summary}
+  folio={d.id}
 >
   <div class="codex ch">
     <Breadcrumb
-      bookN={bookN} bookTitle={book.data.title} bookHref={base}
-      chapterN={chapterN} chapterTitle={chapter.data.title} chapterHref={here}
+      bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
+      chapterN={chapterN} chapterTitle={d.title} chapterHref={here}
+      tier={d.mathTier}
     />
 
     <header class="ch-head">
-      <p class="ch-n" data-reveal>Chapter {toRoman(chapterN)}</p>
-      <h1 class="ch-h1" data-press>{chapter.data.title}</h1>
-      <p class="ch-summary codex-measure" data-reveal>{chapter.data.summary}</p>
+      <p class="ch-n" data-reveal>Chapter {chapterN} <em class="ch-id">{d.id}</em></p>
+      <h1 class="ch-h1" data-press>{d.title}</h1>
+      {d.claim && <p class="ch-claim codex-measure" data-reveal>{d.claim}</p>}
+      <p class="ch-summary codex-measure" data-reveal>{d.summary}</p>
     </header>
 
-    {chapter.data.topics.length > 0 && (
+    <section class="ch-tierblock" data-reveal aria-labelledby="ch-tier-h">
+      <h2 class="ch-label" id="ch-tier-h">Mathematical density</h2>
+      <p class="ch-tierline"><MathTier value={d.mathTier} /></p>
+      <p class="ch-tiernote codex-measure">{TIER_NOTE[d.mathTier]}</p>
+      {d.tierRationale && <p class="ch-tiernote codex-measure">{d.tierRationale}</p>}
+      <Quota math={math} published={published} />
+    </section>
+
+    {d.topics.length > 0 && (
       <section class="ch-topics" data-reveal aria-labelledby="ch-topics-h">
         <h2 class="ch-label" id="ch-topics-h">What this chapter covers</h2>
         <ul class="ch-topic-list">
-          {chapter.data.topics.map((t) => <li>{t}</li>)}
+          {d.topics.map((t) => <li>{t}</li>)}
         </ul>
+      </section>
+    )}
+
+    {(d.prerequisites.length > 0 || d.apparatus.length > 0) && (
+      <section class="ch-pre" data-reveal aria-labelledby="ch-pre-h">
+        <h2 class="ch-label" id="ch-pre-h">Assumed</h2>
+        <p class="ch-preline">
+          {d.prerequisites.map((p, i) => (
+            <>{i > 0 && <span class="ch-sep"> · </span>}<code class="ch-code">{p}</code></>
+          ))}
+          {d.prerequisites.length > 0 && d.apparatus.length > 0 && <span class="ch-sep"> · </span>}
+          {d.apparatus.map((a, i) => (
+            <>{i > 0 && <span class="ch-sep"> · </span>}<ApparatusRef ref={a} /></>
+          ))}
+        </p>
+      </section>
+    )}
+
+    {d.notation.length > 0 && (
+      <section class="ch-nota" data-reveal aria-labelledby="ch-nota-h">
+        <h2 class="ch-label" id="ch-nota-h">Notation</h2>
+        <Notation symbols={d.notation} />
       </section>
     )}
 
@@ -87,16 +138,56 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
       )}
     </section>
 
+    {d.keyEquations.length > 0 && (
+      <section class="ch-eqs" data-reveal aria-labelledby="ch-eq-h">
+        <h2 class="ch-label" id="ch-eq-h">Numbered equations</h2>
+        <ol class="ch-eqlist">
+          {d.keyEquations.map((e) => (
+            <li class="ch-eq" id={`eq-${e.id.replace(/\./g, '-')}`}>
+              <p class="ch-eq-f">{e.formula}</p>
+              <p class="ch-eq-g">{e.gloss}</p>
+              <span class="ch-eq-n">({e.id})</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {math.rule.minProblems > 0 && (
+      <section class="ch-math" data-reveal aria-labelledby="ch-math-h">
+        <h2 class="ch-label" id="ch-math-h">Worked problems</h2>
+        {math.problems.length === 0 ? (
+          <p class="ch-empty">
+            Not yet written. At {d.mathTier} this chapter owes {math.rule.minProblems} worked
+            problems across {math.rule.minVariants} distinct variants, and {math.rule.minExercises} exercises,
+            every one with a published solution. The build enforces that from the day the
+            chapter is marked published.
+          </p>
+        ) : (
+          <>
+            <ol class="ch-plist">
+              {math.problems.map((p) => (
+                <li class="ch-pitem">
+                  <a class="link ch-pt" href={`${here}/problems/${p.data.id.split('.').pop()!.toLowerCase()}`}>
+                    {p.data.id} — {p.data.title}
+                  </a>
+                  <VariantTag variant={p.data.variant} />
+                  <Difficulty level={p.data.difficulty} />
+                </li>
+              ))}
+            </ol>
+            <p class="ch-more"><a class="link" href={`${here}/problems`}>The whole problem set, with the exercises →</a></p>
+          </>
+        )}
+      </section>
+    )}
+
     <LesionRule />
 
     <nav class="ch-next" aria-label="Next chapter">
-      <a
-        class="ch-next-link"
-        href={next ? `${base}/${next.chapter.id.split('--')[1]}` : base}
-        data-magnet
-      >
+      <a class="ch-next-link" href={next ? `${base}/${next.slug}` : base} data-magnet>
         <span class="ch-next-label">
-          {next ? `Next — Chapter ${toRoman(next.n)}` : `Back to Book ${toRoman(bookN)}`}
+          {next ? `Next — Chapter ${next.n}` : `Back to Book ${bookNumeral}`}
         </span>
         <span class="ch-next-t">{next ? next.chapter.data.title : book.data.title}</span>
       </a>
@@ -114,8 +205,15 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
     color: var(--brass-text);
     margin-bottom: 0.7rem;
   }
+  .ch-id { font-style: normal; color: var(--ink-soft); letter-spacing: 0.1em; margin-left: 0.6rem; }
   .ch-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
-  .ch-summary { font-size: var(--body-size); line-height: var(--body-leading); }
+  .ch-claim {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    line-height: 1.45;
+    margin-bottom: 0.8rem;
+  }
+  .ch-summary { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
 
   .ch-label {
     font-family: var(--font-mono);
@@ -126,7 +224,12 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
     color: var(--brass-text);
     margin: 0 0 0.9rem;
   }
-  .ch-topics { margin-top: 2rem; }
+
+  .ch-tierblock { margin-top: 2.2rem; }
+  .ch-tierline { margin: 0 0 0.5rem; }
+  .ch-tiernote { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.6; margin: 0 0 0.6rem; }
+
+  .ch-topics, .ch-pre, .ch-nota, .ch-eqs, .ch-math { margin-top: 2.2rem; }
   .ch-topic-list {
     list-style: none;
     margin: 0;
@@ -141,6 +244,43 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
   }
   .ch-topic-list li::after { content: ' ·'; color: var(--brass-text); }
   .ch-topic-list li:last-child::after { content: ''; }
+
+  .ch-preline { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 2; margin: 0; max-width: 64rem; }
+  .ch-sep { color: var(--brass-text); }
+  .ch-code { font-family: var(--font-mono); color: var(--ink-soft); }
+
+  .ch-eqlist { list-style: none; margin: 0; padding: 0; max-width: 64rem; }
+  .ch-eq {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.3rem 1.2rem;
+    padding: 0.85rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 25%, transparent);
+  }
+  .ch-eq-f { grid-column: 1; margin: 0; font-family: var(--font-mono); font-size: var(--t-sm); overflow-x: auto; }
+  .ch-eq-n { grid-column: 2; grid-row: 1; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .ch-eq-g {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .ch-plist { list-style: none; margin: 0 0 0.9rem; padding: 0; max-width: 64rem; }
+  .ch-pitem {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: baseline;
+    padding: 0.6rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 25%, transparent);
+  }
+  .ch-pt { flex: 1 1 22rem; }
+  .ch-more { font-family: var(--font-mono); font-size: var(--t-xs); margin: 0; }
 
   .ch-props {
     list-style: none;
@@ -182,7 +322,7 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
     line-height: 1.6;
   }
 
-  .ch-next { margin-bottom: 2rem; }
+  .ch-next { margin: 2.2rem 0 2rem; }
   .ch-next-link { display: inline-block; }
   .ch-next-label {
     display: block;
@@ -197,5 +337,6 @@ const here = `${base}/${chapter.id.split('--')[1]}`;
 
   @media (max-width: 640px) {
     .ch-prop-link { grid-template-columns: 1fr; gap: 0.25rem; }
+    .ch-eq { grid-template-columns: 1fr; }
   }
 </style>

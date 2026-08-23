@@ -4,9 +4,13 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../components/ornament/LesionRule.astro';
 import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
 import FigureFrame from '../../../components/elementa/FigureFrame.astro';
-import { getElementaTree, type ElementaBook } from '../../../lib/collections';
+import {
+  getElementaTree, getChapterProblems, chapterMath, type ElementaBook,
+} from '../../../lib/collections';
 import { FIGURES, isFigureName } from '../../../lib/figures';
-import { toRoman } from '../../../consts';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../styles/math.css';
 
 export async function getStaticPaths() {
   const tree = await getElementaTree();
@@ -38,6 +42,9 @@ interface Props { node: ElementaBook; next: ElementaBook | null }
 const { node, next } = Astro.props;
 const { book, chapters, propositions, n } = node;
 const c = book.data.closing!;
+const numeral = node.numeral;
+const lab = book.data.practical?.laboratory ?? [];
+const math = chapterMath('M3', await getChapterProblems(`${numeral}.BOOK`));
 
 const figName = book.data.closingFigure && isFigureName(book.data.closingFigure)
   ? book.data.closingFigure
@@ -49,15 +56,15 @@ const { Content } = await render(book);
 const base = `/elementa/${book.id}`;
 ---
 <BaseLayout
-  title={`Book ${toRoman(n)} · Closing — ${book.data.title}`}
-  description={`The closing of Book ${toRoman(n)}: the map, the equations, the vocabulary, the misconceptions and the exercises.`}
+  title={`Book ${numeral} · Closing — ${book.data.title}`}
+  description={`The closing of Book ${numeral}: the map, the equations, the vocabulary, the misconceptions, the derivations and the laboratory.`}
   folio={`${n}.omega`}
 >
   <div class="codex cl">
-    <Breadcrumb bookN={n} bookTitle={book.data.title} bookHref={base} />
+    <Breadcrumb bookNumeral={numeral} bookTitle={book.data.title} bookHref={base} />
 
     <header class="cl-head">
-      <p class="cl-n" data-reveal>Book {toRoman(n)} · Closing</p>
+      <p class="cl-n" data-reveal>Book {numeral} · Closing</p>
       <h1 class="cl-h1" data-press>{book.data.title}, gathered</h1>
       <p class="cl-meta codex-measure" data-reveal>
         {chapters.length} chapters · {propositions.length} propositions
@@ -117,11 +124,44 @@ const base = `/elementa/${book.id}`;
       </section>
     )}
 
-    {c.exercises.length > 0 && (
-      <section class="cl-sec" data-reveal aria-labelledby="cl-ex">
-        <h2 class="cl-label" id="cl-ex">Exercises</h2>
+    {c.derivations.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-de">
+        <h2 class="cl-label" id="cl-de">What you should now be able to derive</h2>
+        <p class="cl-note codex-measure">
+          Unaided, on paper. This list, not the reading, is the proof that the
+          book was finished.
+        </p>
         <ol class="cl-exs">
-          {c.exercises.map((e) => (
+          {c.derivations.map((d) => (
+            <li class="cl-ex">
+              <p class="cl-ex-t">{d.result}</p>
+              {d.from && <p class="cl-ex-n">{d.from}</p>}
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    <section class="cl-sec" data-reveal aria-labelledby="cl-pr">
+      <h2 class="cl-label" id="cl-pr">The problem set</h2>
+      <p class="cl-note codex-measure">
+        Cross-chapter problems, which is where the mathematics of a book stops
+        being sectional. {math.problems.length === 0
+          ? 'Not yet written for this book.'
+          : `${math.problems.length} worked, ${math.exercises.length} to work yourself.`}
+      </p>
+      <a class="link" href={`${base}/problems`}>Book {numeral} problem set →</a>
+    </section>
+
+    {lab.length > 0 && (
+      <section class="cl-sec" data-reveal aria-labelledby="cl-lab">
+        <h2 class="cl-label" id="cl-lab">Laboratory</h2>
+        <p class="cl-note codex-measure">
+          Things to go and run. A worked problem is checked against arithmetic;
+          these are checked against a machine.
+        </p>
+        <ol class="cl-exs">
+          {lab.map((e) => (
             <li class="cl-ex">
               <p class="cl-ex-t">{e.task}</p>
               {e.note && <p class="cl-ex-n">{e.note}</p>}
@@ -159,10 +199,10 @@ const base = `/elementa/${book.id}`;
     <nav class="cl-nav" aria-label="Where to go next">
       <a class="cl-nav-link" href={base}>
         <span class="cl-nav-label">← Back</span>
-        <span class="cl-nav-t">Book {toRoman(n)}</span>
+        <span class="cl-nav-t">Book {numeral}</span>
       </a>
       <a class="cl-nav-link cl-nav-right" href={next ? `/elementa/${next.book.id}` : '/elementa'} data-magnet>
-        <span class="cl-nav-label">{next ? `Next — Book ${toRoman(next.n)}` : 'Back to the corpus'}</span>
+        <span class="cl-nav-label">{next ? `Next — Book ${next.numeral}` : 'Back to the corpus'}</span>
         <span class="cl-nav-t">{next ? next.book.data.title : 'Elementa'}</span>
       </a>
     </nav>
@@ -257,6 +297,12 @@ const base = `/elementa/${book.id}`;
   .cl-exs { margin: 0; padding-left: 1.4rem; display: grid; gap: 1.2rem; max-width: 64rem; }
   .cl-ex::marker { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
   .cl-ex-t { margin: 0; font-size: var(--t-base); line-height: 1.65; max-width: 60ch; }
+  .cl-note {
+    font-size: var(--t-base);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin: 0 0 0.9rem;
+  }
   .cl-ex-n {
     margin: 0.35rem 0 0;
     font-family: var(--font-mono);

@@ -1,0 +1,161 @@
+---
+/**
+ * One part of Book 0. Every entry is one screen: the statement, the shape
+ * check, one worked line, and the list of chapters and propositions that
+ * cite it — which is generated, never written.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
+import { getApparatus, getApparatusUsage, type ApparatusPart } from '../../../lib/collections';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../styles/math.css';
+
+export async function getStaticPaths() {
+  const parts = await getApparatus();
+  return parts.map((part, i) => ({
+    params: { part: part.slug },
+    props: { part, next: parts[i + 1] ?? null },
+  }));
+}
+
+interface Props {
+  part: ApparatusPart;
+  next: ApparatusPart | null;
+}
+const { part, next } = Astro.props as Props;
+const usage = await getApparatusUsage();
+const bodies = Object.fromEntries(
+  await Promise.all(part.entries.map(async (e) => [e.data.id, (await render(e)).Content] as const))
+);
+---
+<BaseLayout
+  title={`0.${part.code} · ${part.title} — Apparatus`}
+  description={`${part.title}: ${part.covers}.`}
+  folio={`0.${part.code}`}
+>
+  <div class="codex pt">
+    <Breadcrumb leaf={`Book 0 · ${part.title}`} />
+
+    <header class="pt-head">
+      <p class="pt-n" data-reveal>Book 0 · {part.code}</p>
+      <h1 class="pt-h1" data-press>{part.title}</h1>
+      <p class="pt-c codex-measure" data-reveal>{part.covers}</p>
+    </header>
+
+    <LesionRule />
+
+    {part.entries.map((e) => {
+      const Body = bodies[e.data.id];
+      const cites = usage.get(e.data.id) ?? [];
+      return (
+        <article class="en" id={e.data.id.replace(/\./g, '-').toLowerCase()}>
+          <header class="en-head">
+            <span class="en-id">{e.data.id}</span>
+            <h2 class="en-t">{e.data.title}</h2>
+          </header>
+          <dl class="en-body">
+            <dt>Statement</dt>
+            <dd>{e.data.statement}</dd>
+            {e.data.shapeCheck && (<><dt>Shape check</dt><dd>{e.data.shapeCheck}</dd></>)}
+            {e.data.workedLine && (<><dt>Worked line</dt><dd>{e.data.workedLine}</dd></>)}
+          </dl>
+          {Body && <div class="prose en-note"><Body /></div>}
+          {cites.length > 0 && (
+            <p class="en-used">
+              <span class="en-used-label">Used by</span>
+              {cites.join(' · ')}
+            </p>
+          )}
+        </article>
+      );
+    })}
+
+    <LesionRule />
+
+    <nav class="pt-next" aria-label="Next part">
+      <a class="pt-next-link" href={next ? `/elementa/apparatus/${next.slug}` : '/elementa/apparatus'} data-magnet>
+        <span class="pt-next-label">{next ? `Next — 0.${next.code}` : 'Back to'}</span>
+        <span class="pt-next-t">{next ? next.title : 'Apparatus'}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .pt { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pt-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .pt-h1 { font-size: var(--t-2xl); margin-bottom: 0.8rem; }
+  .pt-c { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
+
+  .en {
+    max-width: 64rem;
+    padding: 1.6rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    scroll-margin-top: 6rem;
+  }
+  .en-head { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; align-items: baseline; margin-bottom: 0.7rem; }
+  .en-id {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+  }
+  .en-t { font-family: var(--font-display); font-size: var(--t-md); margin: 0; line-height: 1.3; }
+  .en-body {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 0.35rem 1.2rem;
+    margin: 0 0 0.8rem;
+  }
+  .en-body dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .en-body dd { margin: 0; font-size: var(--t-base); line-height: 1.65; }
+  .en-note { font-size: var(--t-base); color: var(--ink-soft); }
+  .en-note :global(p) { margin: 0.5rem 0 0; line-height: 1.65; }
+  .en-used {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.8rem 0 0;
+    line-height: 1.8;
+  }
+  .en-used-label {
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-right: 0.6rem;
+  }
+
+  .pt-next { margin: 2rem 0; }
+  .pt-next-link { display: inline-block; }
+  .pt-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .pt-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 640px) {
+    .en-body { grid-template-columns: 1fr; gap: 0.15rem; }
+    .en-body dt { margin-top: 0.5rem; }
+  }
+</style>

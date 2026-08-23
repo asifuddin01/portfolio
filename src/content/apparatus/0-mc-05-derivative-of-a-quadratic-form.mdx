@@ -1,0 +1,12 @@
+---
+id: "0.MC.05"
+part: MC
+order: 5
+title: "The derivative of a quadratic form"
+statement: "∂(xᵀAx)/∂x = (A + Aᵀ)x, which is 2Ax when A is symmetric. ∂(aᵀx)/∂x = a."
+shapeCheck: "x is n×1, A is n×n, the form is a scalar, and the gradient is n×1."
+workedLine: "A = I, so xᵀAx = ‖x‖² and the gradient is 2x. At x = (1, 2) the gradient is (2, 4)."
+status: review
+---
+
+Squared loss, weight decay and the variance of a linear estimator are all quadratic forms, and all differentiate by this line.

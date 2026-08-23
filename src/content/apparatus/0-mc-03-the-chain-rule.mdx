@@ -1,0 +1,12 @@
+---
+id: "0.MC.03"
+part: MC
+order: 3
+title: "The chain rule"
+statement: "If z = g(y) and y = f(x), then ∂z/∂x = (∂z/∂y)(∂y/∂x). For vector-valued maps this is a product of Jacobians, taken right to left in the direction of the forward pass."
+shapeCheck: "J_g (p×m) · J_f (m×n) → (p×n). If the shapes do not meet, the composition was written in the wrong order."
+workedLine: "y = 2x, z = y². ∂z/∂x = 2y · 2 = 4y = 8x. Check at x = 1: z = 4, and a step of 0.01 in x moves z by about 0.08."
+status: review
+---
+
+Backpropagation is this identity applied to a computation graph, and nothing else. Whatever else a framework does is bookkeeping.

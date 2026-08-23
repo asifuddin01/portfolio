@@ -1,9 +1,40 @@
 ---
+id: I
 order: 1
 title: Foundations
 covers: tokenisation, attention, the transformer block
 goal: "Build the conceptual and mathematical footing the rest of the corpus stands on. By the end you should understand how a network represents information and how a transformer processes a sequence."
 prerequisites: []
+mathPrerequisites:
+  - "0.LA.01"
+  - "0.LA.02"
+  - "0.MC.01"
+  - "0.MC.03"
+  - "0.PR.02"
+  - "0.IT.01"
+  - "0.OP.01"
+practical:
+  implement: "Linear regression, then an MLP, then attention, then a full transformer block — in NumPy, no framework."
+  verifiedAgainst:
+    - "I.2.B01"
+    - "I.5.B01"
+    - "I.7.B02"
+  note: "Your implementation must reproduce the hand-computed numbers to four decimal places before you move on. A reader who skipped the derivations cannot pass their own unit test."
+  laboratory:
+    - task: "Tokenise the same paragraph with two different tokenisers and count the tokens. Then find a string the two segment differently and explain what the model can no longer distinguish under each."
+      note: "Chapter III. Numbers and code are the fastest places to find one."
+    - task: "Implement scaled dot-product attention from the equation alone, in about fifteen lines, and check it against a library implementation on random inputs."
+      note: "Chapter V. Then remove the √dₖ and watch the attention distribution collapse as you raise the head width."
+    - task: "Take a small trained transformer, shuffle the input tokens and compare the outputs with and without the positional encoding."
+      note: "Chapter VI. Without it, the outputs should be a permutation of one another."
+    - task: "Count the parameters of one transformer block by hand for a given d and h, split between attention and the feed-forward network. Compare with what the framework reports."
+      note: "Chapter VII. If the two disagree, the disagreement is the exercise."
+    - task: "Plot the attention score matrix memory footprint against sequence length for a real configuration, and find the length at which it exceeds the model weights."
+      note: "Chapter V, Proposition 5. Do the same for the KV cache at inference."
+    - task: "Take any dataset with a natural grouping — patient, site, author, session — and evaluate the same model under a random split and a grouped split."
+      note: "Chapter VIII, Proposition 5. The difference between the two numbers is the size of the problem."
+    - task: "Write down the objective you actually care about for a project of your own, then write the loss you would train with, and list what the second omits."
+      note: "Chapter I, Proposition 4. The list is where the failures will come from."
 closingFigure: FigTransformerMap
 closing:
   equations:
@@ -78,21 +109,6 @@ closing:
       right: "The window is a buffer size. What matters is what fraction of training contained sequences of that length, and it is testable in ten minutes by putting the answer at the far end."
     - wrong: "Mixed precision is a speed optimisation."
       right: "It is first a range problem. Half precision has ample mantissa and a narrow exponent, and late-training gradients fall through its floor to zero."
-  exercises:
-    - task: "Tokenise the same paragraph with two different tokenisers and count the tokens. Then find a string the two segment differently and explain what the model can no longer distinguish under each."
-      note: "Chapter III. Numbers and code are the fastest places to find one."
-    - task: "Implement scaled dot-product attention from the equation alone, in about fifteen lines, and check it against a library implementation on random inputs."
-      note: "Chapter V. Then remove the √dₖ and watch the attention distribution collapse as you raise the head width."
-    - task: "Take a small trained transformer, shuffle the input tokens and compare the outputs with and without the positional encoding."
-      note: "Chapter VI. Without it, the outputs should be a permutation of one another."
-    - task: "Count the parameters of one transformer block by hand for a given d and h, split between attention and the feed-forward network. Compare with what the framework reports."
-      note: "Chapter VII. If the two disagree, the disagreement is the exercise."
-    - task: "Plot the attention score matrix memory footprint against sequence length for a real configuration, and find the length at which it exceeds the model weights."
-      note: "Chapter V, Proposition 5. Do the same for the KV cache at inference."
-    - task: "Take any dataset with a natural grouping — patient, site, author, session — and evaluate the same model under a random split and a grouped split."
-      note: "Chapter VIII, Proposition 5. The difference between the two numbers is the size of the problem."
-    - task: "Write down the objective you actually care about for a project of your own, then write the loss you would train with, and list what the second omits."
-      note: "Chapter I, Proposition 4. The list is where the failures will come from."
   papers:
     - title: "Attention Is All You Need"
       url: https://arxiv.org/abs/1706.03762

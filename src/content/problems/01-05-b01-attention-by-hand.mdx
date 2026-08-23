@@ -1,0 +1,163 @@
+---
+id: "I.5.B01"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Attention on three tokens, by hand"
+depends:
+  - "I.5.P01"
+  - "I.5.P02"
+reachesBack: []
+rounding: "All values rounded to 4 d.p. Intermediate quantities carry full precision; only what is printed is rounded."
+hasSolution: true
+verified: true
+snippet: "i-5-b01-attention-by-hand.py"
+status: published
+---
+
+<Statement>
+Three tokens attend to one another under scaled dot-product attention. Compute
+the whole forward pass by hand and confirm that every attention row is a
+probability distribution.
+</Statement>
+
+<Given>
+$$
+\mat{Q} = \mat{K} = \mat{V} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 1 & 1 \end{bmatrix}
+\in \R^{3 \times 2}, \qquad \dk = 2 .
+$$
+
+Row $i$ of each matrix belongs to token $i$. Row-major throughout, as fixed in
+the Apparatus.
+</Given>
+
+<Find>
+The score matrix $\mat{S}$, the scaled scores $\mat{Z}$, the attention weights
+$\mat{A}$, and the output $\mat{O}$ — each a $3 \times 3$ matrix except
+$\mat{O}$, which is $3 \times 2$.
+</Find>
+
+<Strategy>
+Name each intermediate rather than nesting them, so a wrong digit can be traced
+to the step that produced it.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the scores.** $\mat{S} = \mat{Q}\mat{K}^{\mathsf T}$, so $S_{ij}$ is
+the inner product of query row $i$ with key row $j$.
+
+$$
+\mat{S} = \begin{bmatrix} 1 & 0 & 1 \\ 0 & 1 & 1 \\ 1 & 1 & 2 \end{bmatrix}
+$$
+
+Token 3's query is $(1,1)$, which agrees with both basis directions, so its row
+is the largest. Nothing about position enters: $S_{ij}$ is a function of content
+alone.
+
+**Step 2 — the scaling.** Divide by $\sqrt{\dk} = \sqrt 2 \approx 1.4142$.
+
+$$
+\mat{Z} = \begin{bmatrix}
+0.7071 & 0 & 0.7071 \\
+0 & 0.7071 & 0.7071 \\
+0.7071 & 0.7071 & 1.4142
+\end{bmatrix}
+$$
+
+**Step 3 — the softmax, row by row.** Take row 1, $\vec{z} = (0.7071, 0, 0.7071)$.
+Subtract the row maximum first, which changes nothing and removes the overflow
+(<ApparatusRef ref="0.NU.02" />):
+
+$$
+\vec{z} - \max = (0,\; -0.7071,\; 0), \qquad
+e^{0} = 1, \quad e^{-0.7071} = 0.4931 .
+$$
+
+The denominator is $1 + 0.4931 + 1 = 2.4931$, so
+
+$$
+\vec{a}_1 = \left(\tfrac{1}{2.4931},\; \tfrac{0.4931}{2.4931},\; \tfrac{1}{2.4931}\right)
+= (0.4011,\; 0.1978,\; 0.4011) .
+$$
+
+Row 2 is row 1 with the first two entries exchanged, by the symmetry of the
+inputs. Row 3 has $\vec{z} = (0.7071, 0.7071, 1.4142)$; subtracting the maximum
+gives $(-0.7071, -0.7071, 0)$, exponentials $0.4931, 0.4931, 1$, denominator
+$1.9862$, and
+
+$$
+\vec{a}_3 = (0.2483,\; 0.2483,\; 0.5035) .
+$$
+
+**Step 4 — the aggregation.** $\mat{O} = \mat{A}\mat{V}$. For row 1, column 1:
+
+$$
+O_{11} = 0.4011(1) + 0.1978(0) + 0.4011(1) = 0.8022 ,
+$$
+
+and column 2 is $0.4011(0) + 0.1978(1) + 0.4011(1) = 0.5989$.
+
+</Solution>
+
+<Answer>
+$$
+\mat{A} = \begin{bmatrix}
+0.4011 & 0.1978 & 0.4011 \\
+0.1978 & 0.4011 & 0.4011 \\
+0.2483 & 0.2483 & 0.5035
+\end{bmatrix}, \qquad
+\mat{O} = \begin{bmatrix}
+0.8022 & 0.5989 \\
+0.5989 & 0.8022 \\
+0.7517 & 0.7517
+\end{bmatrix}
+$$
+
+$\mat{A}$ is $3 \times 3$ and dimensionless; $\mat{O}$ is $3 \times 2$ and
+carries the units of $\mat{V}$.
+</Answer>
+
+<CheckNumeric snippet="i-5-b01-attention-by-hand.py" verified>
+```python
+S = [[sum(q[i] * k[i] for i in range(d_k)) for k in K] for q in Q]
+Z = [[s / sqrt(d_k) for s in row] for row in S]
+A = [softmax(row) for row in Z]
+O = [[sum(a[j] * V[j][c] for j in range(3)) for c in range(2)] for a in A]
+```
+
+The full twenty-line script is `scripts/snippets/i-5-b01-attention-by-hand.py`,
+and its output is diffed against the digits above on every build.
+</CheckNumeric>
+
+<CheckSanity>
+Three independent reasons the answer is right.
+
+**Rows sum to one.** $0.4011 + 0.1978 + 0.4011 = 1.0000$, and likewise for the
+other two. A softmax row that does not sum to one is an arithmetic slip, not a
+modelling choice.
+
+**Every output lies inside the convex hull of $\mat{V}$.** The value rows are
+$(1,0)$, $(0,1)$ and $(1,1)$; every entry of $\mat{O}$ lies in $[0,1]$, as a
+convex combination must. This is the whole content of Proposition 1: attention
+mixes, and cannot leave the hull.
+
+**The symmetry survives.** $\mat{Q} = \mat{K}$ here, so $\mat{S}$ is symmetric,
+and rows 1 and 2 of the answer are exchanged copies of one another. They are.
+</CheckSanity>
+
+<Breaks>
+The convex-hull argument holds only because the weights are non-negative and
+sum to one. Remove the softmax — score-weighted sums, or normalisation by
+anything other than the total — and the output can leave the hull entirely.
+That is why the feed-forward block after attention is not decoration.
+</Breaks>
+
+<Variation>
+Recompute with $\mat{V} = \begin{bmatrix} 2 & 0 \\ 0 & 2 \\ 2 & 2 \end{bmatrix}$
+and predict $\mat{O}$ before doing any arithmetic. Then set $\dk = 8$ with the
+same $\mat{Q}$ and $\mat{K}$ and say what happens to the sharpness of
+$\mat{A}$, and why.
+</Variation>

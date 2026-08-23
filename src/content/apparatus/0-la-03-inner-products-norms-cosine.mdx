@@ -1,0 +1,12 @@
+---
+id: "0.LA.03"
+part: LA
+order: 3
+title: "Inner products, norms and cosine similarity"
+statement: "⟨a, b⟩ = Σ aᵢbᵢ = ‖a‖‖b‖cos θ. The Euclidean norm is ‖a‖ = √⟨a, a⟩. Cosine similarity is the inner product of the normalised vectors, and lives in [−1, 1]."
+shapeCheck: "Two vectors of the same length give a scalar. A dot product that will not conform is a shape error dressed as a similarity."
+workedLine: "a = (1, 0), b = (1, 1). ⟨a, b⟩ = 1, ‖a‖ = 1, ‖b‖ = √2, so cos θ = 1/√2 ≈ 0.7071, and θ = 45°."
+status: review
+---
+
+Every attention score, every contrastive logit and every retrieval ranking in the corpus is this quantity. The difference between them is what is normalised and what is scaled.

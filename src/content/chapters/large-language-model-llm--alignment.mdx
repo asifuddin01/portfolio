@@ -1,8 +1,11 @@
 ---
+id: "III.5"
 book: large-language-model-llm
 order: 5
 title: "Instruction Following"
 summary: "From a text predictor to something that answers."
+claim: "A preference dataset defines an implicit reward, and the KL-regularised optimum of that reward has a closed form."
+mathTier: M3
 topics:
   - "Instruction tuning"
   - "Supervised fine-tuning"
@@ -10,5 +13,19 @@ topics:
   - "RLHF"
   - "DPO"
   - "Alignment"
-status: published
+prerequisites:
+  - "III.3"
+notation:
+  - "beta"
+  - "sigma"
+  - "softmax"
+  - "nabla"
+  - "E"
+apparatus:
+  - "0.IT.03"
+  - "0.PR.06"
+  - "0.OP.04"
+keyEquations: []
+status: review
+
 ---

@@ -1,0 +1,12 @@
+---
+id: "0.PR.04"
+part: PR
+order: 4
+title: "Bayes' rule"
+statement: "P(A|B) = P(B|A)P(A) / P(B), with P(B) = Σ P(B|Aᵢ)P(Aᵢ)."
+shapeCheck: "Posterior, likelihood, prior, evidence — four scalars for a binary question, four vectors of the same length for a categorical one."
+workedLine: "Se = 0.95, Sp = 0.95, prevalence 0.01. P(D|+) = (0.95)(0.01) / [(0.95)(0.01) + (0.05)(0.99)] = 0.0095/0.0590 ≈ 0.161."
+status: review
+---
+
+That worked line is the single most consequential arithmetic in Book II. A test that is right 95% of the time, applied to a rare disease, is wrong about five times out of six when it says yes.

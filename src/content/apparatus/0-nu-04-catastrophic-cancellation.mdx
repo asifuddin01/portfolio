@@ -1,0 +1,12 @@
+---
+id: "0.NU.04"
+part: NU
+order: 4
+title: "Catastrophic cancellation"
+statement: "Subtracting two nearly equal floating-point numbers destroys the leading significant digits and leaves the trailing noise. Reformulate to avoid the subtraction."
+shapeCheck: "The result keeps its type and its magnitude, and loses its accuracy without any signal that it has."
+workedLine: "𝔼[X²] − 𝔼[X]² with both terms near 10⁶ and a true variance near 1: in fp32 the answer can come back negative."
+status: review
+---
+
+The one-pass variance formula in 0.PR.03 is correct algebra and poor arithmetic. Welford's method computes the same quantity without the cancellation.

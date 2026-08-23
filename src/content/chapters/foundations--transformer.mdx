@@ -1,8 +1,11 @@
 ---
+id: "I.7"
 book: foundations
 order: 7
 title: "The Transformer"
 summary: "The block, assembled."
+claim: "A transformer block mixes across positions and then computes within them, and the residual stream is what every layer edits rather than replaces."
+mathTier: M3
 topics:
   - "Transformer block"
   - "Multi-head attention"
@@ -14,5 +17,25 @@ topics:
   - "Encoder-decoder models"
   - "Causal masking"
   - "Full forward pass"
-status: published
+prerequisites:
+  - "I.5"
+  - "I.6"
+notation:
+  - "d"
+  - "T"
+  - "L"
+  - "h"
+  - "N"
+  - "W"
+  - "I_mat"
+  - "J"
+  - "B"
+apparatus:
+  - "0.LA.02"
+  - "0.MC.07"
+  - "0.PR.01"
+  - "0.NU.02"
+keyEquations: []
+status: review
+
 ---

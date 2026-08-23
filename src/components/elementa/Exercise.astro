@@ -1,0 +1,30 @@
+---
+/**
+ * An exercise: the reader does the work, and the solution is published (§5.5).
+ * Ordered mechanical → composite → open within a chapter.
+ */
+import VariantTag from './VariantTag.astro';
+import Difficulty from './Difficulty.astro';
+import type { Variant } from '../../lib/elementa-spec';
+
+interface Props {
+  id: string;
+  variant: Variant;
+  difficulty: number;
+  title?: string;
+  /** 1 when the exercise is the page; otherwise it is plain text in a list. */
+  level?: 1 | 0;
+}
+const { id, variant, difficulty, title, level = 0 } = Astro.props;
+---
+<article class="ex" id={id.replace(/\./g, '-').toLowerCase()}>
+  <header class="ex-head">
+    <span class="ex-id">{id}</span>
+    {title && (level === 1
+      ? <h1 class="ex-title ex-title-page">{title}</h1>
+      : <span class="ex-title">{title}</span>)}
+    <VariantTag variant={variant} />
+    <Difficulty level={difficulty} />
+  </header>
+  <slot />
+</article>

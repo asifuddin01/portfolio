@@ -1,14 +1,36 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
+import {
+  APPARATUS_PARTS, TIER_RULES, propositionId, type MathTier,
+} from './elementa-spec';
 
-/** Draft entries are excluded from production builds, kept in dev. */
-const visible = <T extends { data: { status: 'draft' | 'published' } }>(e: T): boolean =>
-  !import.meta.env.PROD || e.data.status === 'published';
+/**
+ * Draft entries are excluded from production builds, kept in dev.
+ *
+ * `review` ships. It marks a page that is written and structurally complete
+ * but has not yet met the Math Mandate (spec §5.2) — which is the state most
+ * of the corpus is in while it is brought up to v2. Promoting to `published`
+ * is what switches the quota guard on for that page.
+ */
+const visible = <T extends { data: { status: 'draft' | 'review' | 'published' } }>(
+  e: T
+): boolean => !import.meta.env.PROD || e.data.status !== 'draft';
 
-/** Books in reading order. */
+/** Book 0 is a reference volume, not a book in the reading order (§16). */
+export const APPARATUS_BOOK = 'apparatus';
+
+/** Books in reading order. Book 0 is not one of them. */
 export async function getBooks(): Promise<CollectionEntry<'books'>[]> {
   const all = await getCollection('books');
-  return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+  return all
+    .filter(visible)
+    .filter((b) => b.data.id !== '0')
+    .sort((a, b) => a.data.order - b.data.order);
+}
+
+/** Book 0 itself, when a page needs its prose. */
+export async function getApparatusBook() {
+  return getEntry('books', APPARATUS_BOOK);
 }
 
 /** Chapters, in book order then chapter order. */
@@ -47,7 +69,13 @@ export async function getPropositions(): Promise<CollectionEntry<'elementa'>[]> 
 export interface ElementaChapter {
   chapter: CollectionEntry<'chapters'>;
   propositions: CollectionEntry<'elementa'>[];
+  /** Position in the book, for ordering. */
   n: number;
+  /** The permanent identifier, "I.5". Displayed, cited, never recomputed. */
+  id: string;
+  /** The chapter's own slug segment, "attention". */
+  slug: string;
+  tier: MathTier;
 }
 
 export interface ElementaBook {
@@ -55,6 +83,8 @@ export interface ElementaBook {
   chapters: ElementaChapter[];
   propositions: CollectionEntry<'elementa'>[];
   n: number;
+  /** The Roman numeral from the book's own id — not from its position. */
+  numeral: string;
 }
 
 /** Books, their chapters and the propositions inside them, in reading order. */
@@ -69,11 +99,15 @@ export async function getElementaTree(): Promise<ElementaBook[]> {
     const tree = own.map((chapter, ci) => ({
       chapter,
       n: ci + 1,
+      id: chapter.data.id,
+      slug: chapter.id.split('--')[1]!,
+      tier: chapter.data.mathTier,
       propositions: props.filter((p) => p.data.chapter.id === chapter.id),
     }));
     return {
       book,
       n: bi + 1,
+      numeral: book.data.id,
       chapters: tree,
       propositions: tree.flatMap((c) => c.propositions),
     };
@@ -86,6 +120,8 @@ export interface PropositionContext {
   chapter: CollectionEntry<'chapters'>;
   bookN: number;
   chapterN: number;
+  /** "I.5.P04" — the citable identifier (§3.1). */
+  id: string;
   /** Position in the whole corpus, for "proposition 4 of 24". */
   index: number;
   total: number;
@@ -94,6 +130,8 @@ export interface PropositionContext {
   given: CollectionEntry<'elementa'>[];
   /** Propositions that name this one as a prerequisite. */
   usedBy: CollectionEntry<'elementa'>[];
+  /** Problems and exercises that draw on it (§17). Derived, never declared. */
+  problems: CollectionEntry<'problems'>[];
 }
 
 /**
@@ -102,7 +140,11 @@ export interface PropositionContext {
  * declared, so a dependency can never be recorded on one side only.
  */
 export async function getPropositionContexts(): Promise<PropositionContext[]> {
-  const [tree, props] = await Promise.all([getElementaTree(), getPropositions()]);
+  const [tree, props, items] = await Promise.all([
+    getElementaTree(),
+    getPropositions(),
+    getProblems(),
+  ]);
 
   const chapterOf = new Map<string, { chapter: CollectionEntry<'chapters'>; chapterN: number; book: CollectionEntry<'books'>; bookN: number }>();
   for (const b of tree) {
@@ -127,9 +169,11 @@ export async function getPropositionContexts(): Promise<PropositionContext[]> {
 
   return props.map((entry, i) => {
     const place = chapterOf.get(entry.data.chapter.id)!;
+    const id = propositionId(place.chapter.data.id, entry.data.proposition);
     return {
       entry,
       ...place,
+      id,
       index: i + 1,
       total: props.length,
       previous: props[i - 1] ?? null,
@@ -138,8 +182,108 @@ export async function getPropositionContexts(): Promise<PropositionContext[]> {
         .map((g) => byId.get(g.id))
         .filter((g): g is CollectionEntry<'elementa'> => Boolean(g)),
       usedBy: usedBy.get(entry.id) ?? [],
+      problems: items.filter((it) => it.data.depends.includes(id)),
     };
   });
+}
+
+// ── The mathematical spine ─────────────────────────────────────────────────
+
+/** Problems and exercises, in ID order within a chapter. */
+export async function getProblems(): Promise<CollectionEntry<'problems'>[]> {
+  const all = await getCollection('problems');
+  return all.filter(visible).sort((a, b) => a.data.id.localeCompare(b.data.id));
+}
+
+export interface ChapterMath {
+  problems: CollectionEntry<'problems'>[];
+  exercises: CollectionEntry<'problems'>[];
+  variants: Set<string>;
+  tier: MathTier;
+  rule: (typeof TIER_RULES)[MathTier];
+  /** How far the chapter is from its quota. Zero means the mandate is met. */
+  owed: { problems: number; variants: number; exercises: number };
+  meetsQuota: boolean;
+}
+
+/**
+ * What a chapter owes the Math Mandate, and what it has paid (§5.2).
+ *
+ * The same arithmetic the build guard runs, so a page can show the debt in
+ * the terms the guard will one day fail on. Nothing here is maintained by
+ * hand: promote a chapter to `published` and the guard starts enforcing
+ * exactly the numbers this returns.
+ */
+export function chapterMath(
+  tier: MathTier,
+  items: CollectionEntry<'problems'>[]
+): ChapterMath {
+  const problems = items.filter((i) => i.data.kind === 'problem');
+  const exercises = items.filter((i) => i.data.kind === 'exercise');
+  const variants = new Set(problems.map((p) => p.data.variant));
+  const rule = TIER_RULES[tier];
+  const owed = {
+    problems: Math.max(0, rule.minProblems - problems.length),
+    variants: Math.max(0, rule.minVariants - variants.size),
+    exercises: Math.max(0, rule.minExercises - exercises.length),
+  };
+  return {
+    problems, exercises, variants, tier, rule, owed,
+    meetsQuota: owed.problems === 0 && owed.variants === 0 && owed.exercises === 0,
+  };
+}
+
+/** Everything filed under one chapter ID, e.g. "I.5" or "I.BOOK". */
+export async function getChapterProblems(chapterId: string) {
+  return (await getProblems()).filter((p) => p.data.chapter === chapterId);
+}
+
+// ── Book 0 · Apparatus ─────────────────────────────────────────────────────
+
+export interface ApparatusPart {
+  code: string;
+  slug: string;
+  title: string;
+  covers: string;
+  entries: CollectionEntry<'apparatus'>[];
+}
+
+/**
+ * The Apparatus, grouped into its seven parts.
+ *
+ * The "Used by" line on each entry is generated from the chapters and
+ * propositions that cite it, never written by hand — hand-maintained
+ * back-links rot within a month (§17).
+ */
+export async function getApparatus(): Promise<ApparatusPart[]> {
+  const all = (await getCollection('apparatus')).filter(visible);
+  return APPARATUS_PARTS.map((part) => ({
+    ...part,
+    entries: all
+      .filter((e) => e.data.part === part.code)
+      .sort((a, b) => a.data.order - b.data.order),
+  }));
+}
+
+/** Which chapters and propositions cite each Apparatus entry. */
+export async function getApparatusUsage(): Promise<Map<string, string[]>> {
+  const [chapters, contexts] = await Promise.all([
+    getChapters(),
+    getPropositionContexts(),
+  ]);
+  const use = new Map<string, string[]>();
+  const add = (ref: string, by: string) => {
+    if (!use.has(ref)) use.set(ref, []);
+    if (!use.get(ref)!.includes(by)) use.get(ref)!.push(by);
+  };
+  for (const c of chapters) for (const a of c.data.apparatus) add(a, c.data.id);
+  for (const ctx of contexts) for (const a of ctx.entry.data.apparatus) add(a, ctx.id);
+  return use;
+}
+
+/** The notation registry (§5.6), in the order the file declares it. */
+export async function getNotation(): Promise<CollectionEntry<'notation'>[]> {
+  return getCollection('notation');
 }
 
 export async function getMarginalia(): Promise<CollectionEntry<'marginalia'>[]> {

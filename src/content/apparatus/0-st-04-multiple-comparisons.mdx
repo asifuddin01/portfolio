@@ -1,0 +1,12 @@
+---
+id: "0.ST.04"
+part: ST
+order: 4
+title: "Multiple comparisons"
+statement: "Testing m hypotheses at α gives a family-wise error rate of 1 − (1 − α)^m. Bonferroni tests each at α/m. Benjamini–Hochberg controls the false discovery rate instead, and rejects more."
+shapeCheck: "m p-values in, a set of rejections out."
+workedLine: "m = 20 at α = 0.05: 1 − 0.95²⁰ = 0.64. Roughly two chances in three of at least one spurious win."
+status: review
+---
+
+That number is why a method reported as best on one of twenty benchmarks has reported almost nothing.

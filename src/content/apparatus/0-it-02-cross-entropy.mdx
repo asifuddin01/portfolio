@@ -1,0 +1,12 @@
+---
+id: "0.IT.02"
+part: IT
+order: 2
+title: "Cross-entropy"
+statement: "H(p, q) = −Σ p(x) log q(x) = ℋ(p) + KL(p ‖ q). It is never below ℋ(p), and equals it only when q = p."
+shapeCheck: "Two distributions of the same length give a scalar."
+workedLine: "p = (1, 0), q = (0.8, 0.2): H = −log 0.8 = 0.2231 nats."
+status: review
+---
+
+Training a classifier minimises this with p a one-hot target, which is why the loss reduces to the negative log-probability of the correct class.

@@ -1,0 +1,12 @@
+---
+id: "0.NU.03"
+part: NU
+order: 3
+title: "Conditioning and stability"
+statement: "The condition number κ(A) = σ_max/σ_min bounds how far an input error is amplified. A problem can be ill-conditioned even when the algorithm solving it is stable."
+shapeCheck: "κ is a scalar ≥ 1, from the singular values of A."
+workedLine: "A = diag(1, 10⁻⁶) has κ = 10⁶: six digits of the input's accuracy are gone before the algorithm begins."
+status: review
+---
+
+Conditioning is a property of the problem, stability a property of the method. Confusing them leads to replacing a solver that was never at fault.

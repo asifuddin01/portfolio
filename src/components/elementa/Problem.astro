@@ -1,0 +1,40 @@
+---
+/**
+ * The worked-problem shell (spec §5.4). The template is normative: this
+ * component renders exactly the slots the specification names, in order, so
+ * a problem is a document with a fixed anatomy rather than free prose.
+ */
+import VariantTag from './VariantTag.astro';
+import Difficulty from './Difficulty.astro';
+import type { Variant } from '../../lib/elementa-spec';
+
+interface Props {
+  id: string;
+  variant: Variant;
+  difficulty: number;
+  title: string;
+  /** Stated once at the top and applied consistently (R-6). */
+  rounding?: string | null;
+  href?: string;
+  /**
+   * The title's heading level. A problem inside a set sits under the page's
+   * own h1 and is an h3; the same problem on its own page *is* the page, and
+   * has to be the h1 — otherwise the document has no heading at all.
+   */
+  level?: 1 | 3;
+}
+const { id, variant, difficulty, title, rounding, href, level = 3 } = Astro.props;
+const Heading = `h${level}` as 'h1' | 'h3';
+---
+<article class="pb" id={id.replace(/\./g, '-').toLowerCase()}>
+  <header class="pb-head">
+    <span class="pb-id">Problem {id}</span>
+    <Heading class="pb-title">{href ? <a href={href}>{title}</a> : title}</Heading>
+    <VariantTag variant={variant} />
+    <Difficulty level={difficulty} />
+  </header>
+  <div class="pb-body">
+    {rounding && <p class="pb-rounding">{rounding}</p>}
+    <slot />
+  </div>
+</article>

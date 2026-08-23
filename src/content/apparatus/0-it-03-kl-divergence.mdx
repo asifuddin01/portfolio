@@ -1,0 +1,12 @@
+---
+id: "0.IT.03"
+part: IT
+order: 3
+title: "Kullback–Leibler divergence"
+statement: "KL(p ‖ q) = Σ p(x) log(p(x)/q(x)) ≥ 0, with equality only when p = q. It is not symmetric and is not a metric."
+shapeCheck: "Two distributions of the same length give a non-negative scalar. It is infinite where q is zero and p is not."
+workedLine: "p = (0.5, 0.5), q = (0.9, 0.1): KL = 0.5 log(0.5/0.9) + 0.5 log(0.5/0.1) = −0.2939 + 0.8047 = 0.5108 nats."
+status: review
+---
+
+The asymmetry is load-bearing. KL(p ‖ q) punishes q for being small where p is large; the reverse punishes q for being large where p is small, and the two produce visibly different fits.

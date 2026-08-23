@@ -1,0 +1,16 @@
+---
+/**
+ * A numbered equation with its gloss (spec §5.7).
+ *
+ * The gloss names what the equation *says*, not what it contains. An equation
+ * numbered here must be referenced somewhere; one that is never referenced
+ * should not be numbered, and lint-prose says so.
+ */
+interface Props { id?: string; gloss?: string }
+const { id, gloss } = Astro.props;
+---
+<div class="eq" id={id ? `eq-${id.replace(/\./g, '-')}` : undefined}>
+  <div class="eq-body"><slot /></div>
+  {id && <span class="eq-n">({id})</span>}
+  {gloss && <p class="eq-gloss">{gloss}</p>}
+</div>

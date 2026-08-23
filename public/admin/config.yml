@@ -226,6 +226,14 @@ collections:
     summary: "{{order}} · {{title}}"
     sortable_fields: [ order, title ]
     fields:
+      - label: Book numeral
+        name: id
+        widget: string
+        pattern:
+          - "^(0|I{1,3}|IV|VI{0,2}|V)$"
+          - "Roman, one of 0 I II III IV V VI VII."
+        hint: >-
+          The book's permanent identifier. Every chapter, equation and problem ID in the corpus is built on this letter, so it must never change once anything is published — reordering the shelf is a display decision, identity is not.
       - label: Title
         name: title
         widget: string
@@ -249,6 +257,48 @@ collections:
         multiple: true
         required: false
         hint: "Books that should be read first."
+      - label: Mathematics assumed
+        name: mathPrerequisites
+        widget: list
+        required: false
+        field: { label: Apparatus entry, name: ref, widget: string }
+        hint: >-
+          Book 0 entries the reader will want, e.g. 0.MC.07. Not a gate — a reader may start on day one and follow the links when a step stops making sense.
+      - label: Synthesis
+        name: synthesis
+        widget: text
+        required: false
+        hint: "How the chapters compose into one idea."
+      - label: Research frontier
+        name: frontier
+        widget: text
+        required: false
+        hint: "What is still unsolved in this field."
+      - label: Practical connection
+        name: practical
+        widget: object
+        required: false
+        collapsed: true
+        hint: >-
+          The implementation exercise that follows the book. Its rule: your code must reproduce the hand-computed numbers to four decimal places before you move on.
+        fields:
+          - { label: Implement, name: implement, widget: text }
+          - label: Verified against
+            name: verifiedAgainst
+            widget: list
+            required: false
+            field: { label: Problem ID, name: id, widget: string }
+            hint: "Problem IDs whose numbers the implementation has to reproduce, e.g. I.5.B01."
+          - { label: Note, name: note, widget: text, required: false }
+          - label: Laboratory
+            name: laboratory
+            widget: list
+            required: false
+            hint: >-
+              Things to go and run. Kept apart from the problem set on purpose: a worked problem is checked against arithmetic, a laboratory exercise against a machine.
+            fields:
+              - { label: Task, name: task, widget: text }
+              - { label: Note, name: note, widget: text, required: false }
       - label: Reading order
         name: order
         widget: number
@@ -388,13 +438,15 @@ collections:
             fields:
               - { label: What is said, name: wrong, widget: text }
               - { label: What is true, name: right, widget: text }
-          - label: Exercises
-            name: exercises
+          - label: Key derivations
+            name: derivations
             widget: list
             required: false
+            hint: >-
+              What the reader should now be able to reproduce unaided, on paper. This list, not the reading, is the proof that the book was finished.
             fields:
-              - { label: Task, name: task, widget: text }
-              - { label: Note, name: note, widget: text, required: false }
+              - { label: Result, name: result, widget: text }
+              - { label: From, name: from, widget: text, required: false }
           - label: Recommended papers
             name: papers
             widget: list
@@ -414,6 +466,14 @@ collections:
             widget: text
             required: false
             hint: "What the books after this one do with it."
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review — live, mathematics not yet to quota", value: review }
+          - { label: "Published", value: published }
       - label: Closing prose
         name: body
         widget: markdown
@@ -442,11 +502,42 @@ collections:
         search_fields: [title]
         display_fields: [title]
         value_field: "{{slug}}"
+      - label: Chapter ID
+        name: id
+        widget: string
+        pattern:
+          - "^(0|I{1,3}|IV|VI{0,2}|V)\\.\\d+$"
+          - "Book numeral, a dot, the chapter number — e.g. I.5."
+        hint: >-
+          Permanent, and citable from any other book. Equations, problems and propositions are all numbered beneath it, so it must not change once anything is published.
       - { label: Title, name: title, widget: string }
       - label: Summary
         name: summary
         widget: text
         hint: "One line. What the chapter is for."
+      - label: The claim
+        name: claim
+        widget: text
+        required: false
+        hint: >-
+          The chapter's one-sentence thesis. A title is not a claim: "Attention" has failed, "attention is a content-dependent weighted aggregation" has not.
+      - label: Mathematical density
+        name: mathTier
+        widget: select
+        default: M1
+        options:
+          - { label: "M0 — Narrative. Nothing is derived.", value: M0 }
+          - { label: "M1 — Definitional. Mathematics defines and stops there.", value: M1 }
+          - { label: "M2 — Substantive. The derivations are the chapter.", value: M2 }
+          - { label: "M3 — Load-bearing. The content is mathematics.", value: M3 }
+        hint: >-
+          A claim about the chapter's content, and the build enforces its consequences. M2 owes 3 worked problems and 6 exercises; M3 owes 5 problems across 4 distinct variants and 10 exercises. M3 is expensive on purpose.
+      - label: Why not M3
+        name: tierRationale
+        widget: text
+        required: false
+        hint: >-
+          Required when a chapter about a mechanism is set below M3. If you cannot write this line, the chapter is M3.
       - label: Topics
         name: topics
         widget: list
@@ -455,6 +546,35 @@ collections:
         hint: >-
           What the chapter will cover. Shown before any proposition exists, so
           a reader can see the plan for a chapter that is not written yet.
+      - label: Prerequisites
+        name: prerequisites
+        widget: list
+        required: false
+        field: { label: Chapter or proposition ID, name: ref, widget: string }
+        hint: "Chapter IDs like I.5, or proposition IDs like I.5.P04. Every one must resolve, or the build stops."
+      - label: Notation
+        name: notation
+        widget: list
+        required: false
+        field: { label: Registry key, name: symbol, widget: string }
+        hint: >-
+          Keys from src/content/notation.yaml — d_k, tau, nabla. A symbol absent from the registry, or one the registry says is introduced in a later chapter, fails the build.
+      - label: Apparatus
+        name: apparatus
+        widget: list
+        required: false
+        field: { label: Entry, name: ref, widget: string }
+        hint: "Book 0 anchors this chapter leans on, e.g. 0.MC.07."
+      - label: Numbered equations
+        name: keyEquations
+        widget: list
+        required: false
+        hint: >-
+          Number an equation only if something later refers to it. The gloss names what the equation says, not what it contains — not "softmax of QK transpose" but "each output row is a convex combination of value rows".
+        fields:
+          - { label: ID, name: id, widget: string, hint: "Chapter ID, dot, number — e.g. I.5.4." }
+          - { label: Formula, name: formula, widget: string }
+          - { label: Gloss, name: gloss, widget: text }
       - label: Order
         name: order
         widget: number
@@ -464,10 +584,199 @@ collections:
       - label: Status
         name: status
         widget: select
-        default: published
+        default: review
         options:
           - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review — live, mathematics not yet to quota", value: review }
+          - { label: "Published — the quota guard now enforces the tier", value: published }
+        hint: >-
+          Publishing is the commitment. From that moment the build refuses to pass until the chapter meets every number its tier demands.
+
+  # ------------------------------------------------------------------
+  - name: problems
+    label: Elementa problems
+    label_singular: Problem or exercise
+    description: >-
+      The mathematical spine. A worked problem is a document with a fixed
+      anatomy, not free prose: statement, given, find, strategy, solution,
+      answer, two checks, where it breaks. Write it with the components —
+      <Statement>, <Given>, <Find>, <Strategy>, <Solution>, <Answer>,
+      <CheckNumeric>, <CheckSanity>, <Breaks>, <Variation> — and the page
+      renders the template for you.
+    folder: src/content/problems
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{fields.id}}-{{slug}}"
+    summary: "{{id}} · {{variant}} — {{title}}"
+    sortable_fields: [ id, variant, difficulty ]
+    fields:
+      - label: ID
+        name: id
+        widget: string
+        pattern:
+          - "^(0|I{1,3}|IV|VI{0,2}|V)\\.(\\d+|BOOK)\\.[BX]\\d{2}$"
+          - "Chapter, then B for a problem or X for an exercise, then two digits — e.g. I.5.B03 or I.5.X07."
+        hint: >-
+          Numbered per chapter and never per proposition, because a problem may draw on several. A deleted number is retired, not reused.
+      - label: Kind
+        name: kind
+        widget: select
+        default: problem
+        options:
+          - { label: "Worked problem — you show the work", value: problem }
+          - { label: "Exercise — the reader does the work", value: exercise }
+      - label: Chapter
+        name: chapter
+        widget: string
+        hint: "The chapter ID, e.g. I.5 — or I.BOOK for a book-level item."
+      - label: Scope
+        name: scope
+        widget: select
+        default: chapter
+        options:
+          - { label: "Chapter", value: chapter }
+          - { label: "Book — combines two or more chapters", value: book }
+          - { label: "Cross-book — reaches back into an earlier book", value: cross-book }
+      - label: Variant
+        name: variant
+        widget: select
+        options:
+          - { label: "numeric — compute the mechanism end to end, by hand", value: numeric }
+          - { label: "symbolic — derive a closed form from the definitions", value: symbolic }
+          - { label: "shape — track tensor shapes; find the error", value: shape }
+          - { label: "gradient — a derivative, Jacobian or backward rule", value: gradient }
+          - { label: "limit — behaviour as a parameter goes to 0, 1 or ∞", value: limit }
+          - { label: "counterexample — build an input that breaks the claim", value: counterexample }
+          - { label: "complexity — FLOPs, memory, parameters, intensity", value: complexity }
+          - { label: "probability — expectation, variance, estimator, likelihood", value: probability }
+          - { label: "proof — establish a result, or show it cannot be done", value: proof }
+        hint: >-
+          Nine variants, and a chapter must span several of them. Five problems of one variant are one problem repeated, and the build says so.
+      - label: Difficulty
+        name: difficulty
+        widget: select
+        default: 2
+        options:
+          - { label: "▲△△ mechanical — apply the definition once", value: 1 }
+          - { label: "▲▲△ composite — combine two or three results", value: 2 }
+          - { label: "▲▲▲ research-adjacent — the step is not in the text", value: 3 }
+      - { label: Title, name: title, widget: string }
+      - label: Draws on
+        name: depends
+        widget: list
+        required: false
+        field: { label: Proposition ID, name: ref, widget: string }
+        hint: "Proposition IDs like I.5.P04. This is what puts the problem on that proposition's page."
+      - label: Reaches back into
+        name: reachesBack
+        widget: list
+        required: false
+        field: { label: Chapter ID, name: ref, widget: string }
+        hint: "Chapter IDs in EARLIER books. Required when the scope is cross-book."
+      - label: Rounding
+        name: rounding
+        widget: string
+        required: false
+        hint: "Stated once at the top and applied consistently, e.g. 'All values rounded to 4 d.p.'"
+      - label: Has a published solution
+        name: hasSolution
+        widget: boolean
+        default: false
+        hint: >-
+          Elementa has no answer-less items. A hidden solution is a solution; a missing one is an abandonment, and the build refuses to ship one.
+      - label: Verified
+        name: verified
+        widget: boolean
+        default: false
+        hint: "The reproduction snippet was executed and its output matched. Required for any variant that prints numbers."
+      - label: Snippet
+        name: snippet
+        widget: string
+        required: false
+        hint: "Filename under scripts/snippets. Run on every build and diffed against its .expected.txt."
+      - label: Status
+        name: status
+        widget: select
+        default: draft
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review", value: review }
           - { label: "Published", value: published }
+      - label: The problem
+        name: body
+        widget: markdown
+        hint: >-
+          Use the template components. Every algebraic step is a line: if a step took you thought, it takes the reader a line.
+
+  # ------------------------------------------------------------------
+  - name: apparatus
+    label: Book 0 · Apparatus
+    label_singular: Entry
+    description: >-
+      The mathematics the other seven books assume. One screen, never more.
+      An entry that only one chapter needs does not belong here — it belongs
+      in that chapter.
+    folder: src/content/apparatus
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{fields.id}}-{{slug}}"
+    summary: "{{id}} — {{title}}"
+    sortable_fields: [ id, order, title ]
+    fields:
+      - label: ID
+        name: id
+        widget: string
+        pattern:
+          - "^0\\.[A-Z]{2}\\.\\d{2}$"
+          - "Zero, the two-letter part, two digits — e.g. 0.MC.07."
+      - label: Part
+        name: part
+        widget: select
+        options:
+          - { label: "0.LA — Linear Algebra", value: LA }
+          - { label: "0.MC — Matrix Calculus", value: MC }
+          - { label: "0.PR — Probability", value: PR }
+          - { label: "0.IT — Information Theory", value: IT }
+          - { label: "0.OP — Optimisation", value: OP }
+          - { label: "0.ST — Statistics", value: ST }
+          - { label: "0.NU — Numerics", value: NU }
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+      - { label: Title, name: title, widget: string }
+      - label: Statement
+        name: statement
+        widget: text
+        hint: "The result itself, stated once."
+      - label: Shape check
+        name: shapeCheck
+        widget: text
+        required: false
+        hint: "Why the shapes conform. Usually the line the reader actually came for."
+      - label: Worked line
+        name: workedLine
+        widget: text
+        required: false
+        hint: "One three-line instantiation. Never longer."
+      - label: Status
+        name: status
+        widget: select
+        default: review
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review", value: review }
+          - { label: "Published", value: published }
+      - label: Note
+        name: body
+        widget: markdown
+        required: false
+        hint: "Why the fact is worth having, in a paragraph or two."
 
   # ------------------------------------------------------------------
   - name: elementa
@@ -630,12 +939,48 @@ collections:
           - FigDomainShift
           - FigVisionMap
         hint: "Registered in src/lib/figures.ts, and checked against it by `npm run check:cms`. A new figure needs a developer."
+      - label: Figure type
+        name: figureType
+        widget: select
+        required: false
+        options:
+          - { label: "A — Definition. What something is.", value: A }
+          - { label: "B — Construction. How it is built, in stages.", value: B }
+          - { label: "C — Flow. A process over time or layers.", value: C }
+          - { label: "D — Comparison. Two approaches side by side.", value: D }
+          - { label: "E — Architecture. A full model.", value: E }
+          - { label: "F — Equation. The relationship, drawn.", value: F }
+          - { label: "G — Failure. Where a method breaks.", value: G }
+          - { label: "H — Research map. How papers and methods relate.", value: H }
+        hint: >-
+          Eight types, no more, so a reader learns to read the figures themselves. A load-bearing chapter must carry at least one Type F: an equation you can only parse has been taught once, one you can also see has been taught twice.
+      - label: Level
+        name: level
+        widget: select
+        default: mechanics
+        options:
+          - { label: "Intuition — no mathematics, and a true simplification", value: intuition }
+          - { label: "Mechanics — how it works, with the derivation", value: mechanics }
+          - { label: "Research — what happens past the textbook", value: research }
+      - label: Notation
+        name: notation
+        widget: list
+        required: false
+        field: { label: Registry key, name: symbol, widget: string }
+        hint: "Keys from src/content/notation.yaml. Checked against the registry on every build."
+      - label: Apparatus
+        name: apparatus
+        widget: list
+        required: false
+        field: { label: Entry, name: ref, widget: string }
+        hint: "Book 0 anchors this proposition leans on, e.g. 0.MC.03."
       - label: Status
         name: status
         widget: select
         default: draft
         options:
           - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review — live, mathematics not yet to quota", value: review }
           - { label: "Published", value: published }
       - label: Updated
         name: updated

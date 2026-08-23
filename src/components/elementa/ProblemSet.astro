@@ -1,0 +1,94 @@
+---
+/**
+ * A problem set: the worked problems first, then the exercises the reader
+ * does themselves, ordered mechanical → composite → open (§5.5).
+ *
+ * Used unchanged by a chapter's set and a book's, because they differ only in
+ * which chapter ID they are filed under.
+ */
+import { render, type CollectionEntry } from 'astro:content';
+import Problem from './Problem.astro';
+import Exercise from './Exercise.astro';
+import VariantTag from './VariantTag.astro';
+import { ELEMENTA_COMPONENTS } from './mdx';
+
+interface Props {
+  items: CollectionEntry<'problems'>[];
+  hrefBase?: string;
+  empty?: string;
+}
+const { items, hrefBase, empty } = Astro.props;
+
+const problems = items.filter((i) => i.data.kind === 'problem');
+const exercises = items
+  .filter((i) => i.data.kind === 'exercise')
+  .sort((a, b) => a.data.difficulty - b.data.difficulty || a.data.id.localeCompare(b.data.id));
+
+const rendered = await Promise.all(
+  [...problems, ...exercises].map(async (i) => [i.data.id, (await render(i)).Content] as const)
+);
+const bodyOf = Object.fromEntries(rendered);
+
+const variants = [...new Set(problems.map((p) => p.data.variant))];
+---
+{items.length === 0 ? (
+  <p class="ps-empty">{empty ?? 'Not yet written.'}</p>
+) : (
+  <>
+    {variants.length > 0 && (
+      <p class="ps-legend">
+        {variants.map((v) => <VariantTag variant={v} long />)}
+      </p>
+    )}
+
+    {problems.map((p) => {
+      const Body = bodyOf[p.data.id];
+      return (
+        <Problem
+          id={p.data.id}
+          variant={p.data.variant}
+          difficulty={p.data.difficulty}
+          title={p.data.title}
+          rounding={p.data.rounding}
+          href={hrefBase ? `${hrefBase}/${p.data.id.split('.').pop()!.toLowerCase()}` : undefined}
+        >
+          <Body components={ELEMENTA_COMPONENTS} />
+        </Problem>
+      );
+    })}
+
+    {exercises.length > 0 && (
+      <section class="ps-ex" aria-labelledby="ps-ex-h">
+        <h2 class="ps-label" id="ps-ex-h">Exercises</h2>
+        <p class="ps-note">
+          Every one has a published solution. A hidden solution is a solution;
+          a missing one is an abandonment.
+        </p>
+        {exercises.map((e) => {
+          const Body = bodyOf[e.data.id];
+          return (
+            <Exercise id={e.data.id} variant={e.data.variant} difficulty={e.data.difficulty} title={e.data.title}>
+              <Body components={ELEMENTA_COMPONENTS} />
+            </Exercise>
+          );
+        })}
+      </section>
+    )}
+  </>
+)}
+
+<style>
+  .ps-empty { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.65; max-width: var(--measure); }
+  .ps-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin: 0 0 1.6rem; }
+  .ps-ex { margin-top: 3rem; }
+  .ps-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .ps-note { font-size: var(--t-base); color: var(--ink-soft); margin: 0 0 1.2rem; max-width: var(--measure); }
+</style>

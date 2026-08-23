@@ -1,0 +1,12 @@
+---
+id: "0.MC.04"
+part: MC
+order: 4
+title: "The derivative of a linear map"
+statement: "For y = xW with x a row vector, ∂L/∂W = xᵀ δ and ∂L/∂x = δ Wᵀ, where δ = ∂L/∂y."
+shapeCheck: "x is 1×d, δ is 1×d_out, so xᵀδ is d×d_out — the shape of W, as numerator layout requires."
+workedLine: "d = 2, d_out = 1, x = (1, 2), δ = (3). Then ∂L/∂W = (3, 6)ᵀ and ∂L/∂x = (3W₁, 3W₂)."
+status: review
+---
+
+This is the single most reused identity in Books I to IV. It is worth being able to write down without hesitation, in both directions.

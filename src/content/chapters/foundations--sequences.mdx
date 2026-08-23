@@ -1,8 +1,11 @@
 ---
+id: "I.4"
 book: foundations
 order: 4
 title: "Sequence Representation"
 summary: "What came before attention, and why it was replaced."
+claim: "A recurrence compresses a sequence into a fixed state, and the gradient of that compression either vanishes or explodes with length."
+mathTier: M3
 topics:
   - "Sequences"
   - "RNNs"
@@ -11,5 +14,20 @@ topics:
   - "CNNs for sequences"
   - "Long-range dependencies"
   - "Why transformers emerged"
-status: published
+prerequisites:
+  - "I.2"
+notation:
+  - "T"
+  - "d"
+  - "W"
+  - "J"
+  - "nabla"
+  - "lambda"
+apparatus:
+  - "0.LA.04"
+  - "0.MC.03"
+  - "0.NU.01"
+keyEquations: []
+status: review
+
 ---

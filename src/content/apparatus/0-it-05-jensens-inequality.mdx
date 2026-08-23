@@ -1,0 +1,12 @@
+---
+id: "0.IT.05"
+part: IT
+order: 5
+title: "Jensen's inequality"
+statement: "For convex φ, φ(𝔼[X]) ≤ 𝔼[φ(X)]. For concave φ the inequality reverses. Applying it to log gives log 𝔼[X] ≥ 𝔼[log X]."
+shapeCheck: "Both sides are scalars; the inequality is between them, not between shapes."
+workedLine: "X uniform on {1, 4}, φ(x) = x². φ(𝔼[X]) = 6.25 and 𝔼[φ(X)] = 8.5, so 6.25 ≤ 8.5."
+status: review
+---
+
+The evidence lower bound is one application of the concave case to log p(x). Everything else in a variational derivation is bookkeeping around this step.

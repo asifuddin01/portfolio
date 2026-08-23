@@ -1,0 +1,12 @@
+---
+id: "0.LA.04"
+part: LA
+order: 4
+title: "Rank, eigenvalues and the singular value decomposition"
+statement: "rank(A) is the number of linearly independent rows, equal to the number of independent columns. Any A ∈ ℝ^{m×n} factors as A = UΣVᵀ with Σ diagonal and non-negative. The number of non-zero singular values is the rank."
+shapeCheck: "U is m×m, Σ is m×n, Vᵀ is n×n. The best rank-r approximation keeps the r largest singular values and zeroes the rest."
+workedLine: "A = diag(3, 1, 0) has rank 2, singular values 3, 1, 0. The best rank-1 approximation is diag(3, 0, 0), with error equal to the discarded singular value, 1."
+status: review
+---
+
+This entry is why a low-rank adapter can be small and still useful, why a deep attention stack can collapse, and why the explained variance of a principal component is a squared singular value.

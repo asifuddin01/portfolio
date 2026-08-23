@@ -20,7 +20,7 @@ const C = [
   <text x="0" y="22" class="t-lab">224px image</text>
 
   {C.map((c, i) => {
-    const n = 224 / c.p, s = Math.min(120 / n, 22);
+    const n = 224 / c.p;
     return (
       <g>
         <text x={i * 234} y="56" class="t-md">ViT-B/{c.p}</text>

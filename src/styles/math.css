@@ -1,0 +1,45 @@
+/**
+ * Mathematics styling. Imported only by the Elementa routes, because the rest
+ * of the site has no equations and should not carry KaTeX's stylesheet.
+ *
+ * The typeface break is deliberate (spec §5.8): mathematics renders in
+ * Computer Modern and is *not* matched to Bodoni Moda or EB Garamond, so the
+ * eye knows instantly which register it is reading.
+ */
+@import 'katex/dist/katex.min.css';
+
+.katex { font-size: 1.05em; }
+
+/**
+ * Where inline mathematics may break.
+ *
+ * Left to itself the browser splits a `.katex` span anywhere between its
+ * children, so $S_{ij}$ comes out as "S" at the end of one line and "ij" at
+ * the start of the next. Forbidding breaks in the whole expression fixes
+ * that and causes the opposite failure: a long inline sum then runs off a
+ * narrow screen and drags the page sideways with it.
+ *
+ * KaTeX already marks the right unit. Each `.base` is one uninterruptible
+ * group — a symbol with its scripts, a bracketed interval — and the gaps
+ * between bases are exactly the relations and binary operators a typesetter
+ * would break at. So the rule goes on `.base`, not on the expression.
+ */
+.katex .base { white-space: nowrap; }
+
+/**
+ * A wide equation scrolls inside its own box. Without this the page itself
+ * scrolls sideways, which breaks every other column on it — and a derivation
+ * with a long line is exactly what an M3 chapter is full of.
+ */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.35rem 0;
+  margin: 1.1rem 0;
+}
+
+/* Inline maths must not stretch the line it sits on. */
+.katex-display > .katex { text-align: left; }
+
+/* The prose colour, so an equation is ink rather than pure black. */
+.katex, .katex-display { color: var(--ink); }

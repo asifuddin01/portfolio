@@ -1,0 +1,12 @@
+---
+id: "0.IT.01"
+part: IT
+order: 1
+title: "Entropy"
+statement: "ℋ(p) = −Σ p(x) log p(x). In nats with the natural log, in bits with log₂. It is maximised by the uniform distribution and zero for a point mass."
+shapeCheck: "A scalar, from a distribution of any size."
+workedLine: "p = (0.5, 0.5): ℋ = log 2 = 0.6931 nats = 1 bit. p = (1, 0): ℋ = 0."
+status: review
+---
+
+Elementa reports entropy in nats unless bits are named, because every loss in the corpus is a natural log. Perplexity is exp of it.

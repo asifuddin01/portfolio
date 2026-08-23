@@ -1,8 +1,11 @@
 ---
+id: "II.4"
 book: vision
 order: 4
 title: "Vision Transformers"
 summary: "Patches as tokens."
+claim: "A patch is a token, and once an image is a sequence the attention cost of a picture is the attention cost of its resolution squared."
+mathTier: M3
 topics:
   - "image patches"
   - "patch embeddings"
@@ -10,5 +13,21 @@ topics:
   - "ViT"
   - "hierarchical transformers"
   - "Swin Transformer"
-status: published
+prerequisites:
+  - "II.2"
+  - "I.5"
+notation:
+  - "P"
+  - "H"
+  - "W_spatial"
+  - "T"
+  - "d"
+  - "C"
+  - "h"
+apparatus:
+  - "0.LA.01"
+  - "0.LA.03"
+keyEquations: []
+status: review
+
 ---

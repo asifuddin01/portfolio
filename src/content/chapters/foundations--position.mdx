@@ -1,8 +1,11 @@
 ---
+id: "I.6"
 book: foundations
 order: 6
 title: "Position and Order"
 summary: "Attention has no sense of order; this is the repair."
+claim: "Self-attention is permutation-equivariant, so order has to be supplied separately or it is not there at all."
+mathTier: M3
 topics:
   - "Why attention loses order"
   - "Positional encodings"
@@ -11,5 +14,20 @@ topics:
   - "Relative position"
   - "Rotary position embeddings"
   - "Position extrapolation"
-status: published
+prerequisites:
+  - "I.5"
+notation:
+  - "T"
+  - "d"
+  - "Q"
+  - "K"
+  - "q"
+  - "k"
+apparatus:
+  - "0.LA.02"
+  - "0.LA.05"
+  - "0.LA.03"
+keyEquations: []
+status: review
+
 ---

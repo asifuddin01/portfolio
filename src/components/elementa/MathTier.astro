@@ -1,0 +1,17 @@
+---
+/**
+ * The chapter's declared mathematical density (spec §5.1).
+ *
+ * Shown wherever a chapter is named, because the tier is a promise about what
+ * the reader will be asked to do — and, once the chapter is published, the
+ * quota the build enforces against it.
+ */
+import { TIER_LABEL, TIER_NOTE, type MathTier } from '../../lib/elementa-spec';
+
+interface Props { value: MathTier; showName?: boolean }
+const { value, showName = true } = Astro.props;
+---
+<span class={`tier tier-${value.toLowerCase()}`} title={TIER_NOTE[value]}>
+  <span class="tier-code">{value}</span>
+  {showName && <span class="tier-name">{TIER_LABEL[value]}</span>}
+</span>

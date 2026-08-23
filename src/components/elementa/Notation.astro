@@ -1,0 +1,28 @@
+---
+/**
+ * Hover cards from the registry (spec §5.6). A symbol means the same thing in
+ * Book I and Book VI, and this component is where the reader can check that
+ * without leaving the page.
+ */
+import { getNotation } from '../../lib/collections';
+
+interface Props { symbols: string[]; label?: string }
+const { symbols, label = 'Notation' } = Astro.props;
+
+const registry = await getNotation();
+const rows = symbols
+  .map((s) => registry.find((r) => r.id === s))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+---
+{rows.length > 0 && (
+  <section class="nota-block" aria-label={label}>
+    <ul class="nota">
+      {rows.map((r) => (
+        <li class="nota-item" title={r.data.meaning}>
+          <span class="nota-sym">{r.data.symbol}</span>
+          <span class="nota-mean">{r.data.meaning.split('.')[0]}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

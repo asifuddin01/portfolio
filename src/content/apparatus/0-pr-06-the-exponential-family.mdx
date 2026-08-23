@@ -1,0 +1,12 @@
+---
+id: "0.PR.06"
+part: PR
+order: 6
+title: "The exponential family"
+statement: "p(x | η) = h(x) exp(ηᵀ T(x) − A(η)). The log-partition A generates the moments: ∇A(η) = 𝔼[T(X)]."
+shapeCheck: "η and T(x) have the same length; A(η) is a scalar."
+workedLine: "Bernoulli: η = log(p/(1 − p)), T(x) = x, A(η) = log(1 + e^η). Then A′(η) = σ(η) = p, which is 𝔼[X]."
+status: review
+---
+
+A logit is a natural parameter. That is why the last layer of a classifier is linear and the loss is what it is.

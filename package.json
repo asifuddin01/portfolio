@@ -15,14 +15,15 @@
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
     "og": "node scripts/make-og.mjs",
-    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check",
+    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs",
     "predev": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs",
     "deploy:manual": "npm run build && wrangler pages deploy dist --project-name=codex",
     "dev:plain": "astro dev",
     "check:cms": "node scripts/check-cms.mjs",
     "cv": "node scripts/build-cv.mjs",
-    "tidy:plates": "node scripts/tidy-plates.mjs"
+    "tidy:plates": "node scripts/tidy-plates.mjs",
+    "check:elementa": "node scripts/check-elementa.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",
@@ -33,7 +34,10 @@
     "@pdf-lib/fontkit": "^1.1.1",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.2.3",
+    "katex": "^0.18.4",
     "pdf-lib": "^1.17.1",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "tailwindcss": "^4.3.3",
     "zod": "^4.4.3"
   },

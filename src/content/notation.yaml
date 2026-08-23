@@ -1,0 +1,256 @@
+# The global symbol registry (spec §5.6).
+#
+# One symbol, one meaning, across seven books. A chapter that lists a symbol
+# in its `notation:` frontmatter which is absent here fails the build, and so
+# does a symbol introduced later than a chapter that uses it.
+#
+# `id` is the registry key and the anchor; `symbol` is what the reader sees.
+
+# ── Shapes and sizes ───────────────────────────────────────────────────────
+- id: d
+  symbol: "d"
+  meaning: Model width. The residual-stream dimension, written d_model where a second width is in play.
+  kind: scalar
+  introducedIn: "I.1"
+  apparatus: "0.LA.01"
+- id: d_k
+  symbol: "d_k"
+  meaning: Key and query width inside one attention head.
+  kind: scalar
+  introducedIn: "I.5"
+- id: d_v
+  symbol: "d_v"
+  meaning: Value width inside one attention head.
+  kind: scalar
+  introducedIn: "I.5"
+- id: T
+  symbol: "T"
+  meaning: Sequence length in tokens.
+  kind: scalar
+  introducedIn: "I.3"
+- id: B
+  symbol: "B"
+  meaning: Batch size.
+  kind: scalar
+  introducedIn: "I.7"
+- id: h
+  symbol: "h"
+  meaning: Number of attention heads.
+  kind: scalar
+  introducedIn: "I.5"
+- id: L
+  symbol: "L"
+  meaning: Number of layers.
+  kind: scalar
+  introducedIn: "I.7"
+- id: V
+  symbol: "|V|"
+  meaning: Vocabulary size.
+  kind: scalar
+  introducedIn: "I.3"
+- id: N
+  symbol: "N"
+  meaning: Parameter count.
+  kind: scalar
+  introducedIn: "I.1"
+- id: D
+  symbol: "D"
+  meaning: Dataset size in tokens.
+  kind: scalar
+  introducedIn: "III.3"
+- id: C
+  symbol: "C"
+  meaning: Channels in vision; compute in FLOPs in the scaling chapters. Disambiguated in context, never in the same equation.
+  kind: scalar
+  introducedIn: "II.1"
+- id: H
+  symbol: "H"
+  meaning: Spatial height in pixels.
+  kind: scalar
+  introducedIn: "II.1"
+- id: W_spatial
+  symbol: "W (spatial)"
+  meaning: Spatial width in pixels. Distinguished from the weight matrix by being italic and scalar.
+  kind: scalar
+  introducedIn: "II.1"
+- id: P
+  symbol: "P"
+  meaning: Patch size, in pixels along one side.
+  kind: scalar
+  introducedIn: "II.4"
+- id: r
+  symbol: "r"
+  meaning: Rank of a low-rank update.
+  kind: scalar
+  introducedIn: "III.7"
+
+# ── Objects ────────────────────────────────────────────────────────────────
+- id: X
+  symbol: "X"
+  meaning: A batch of token representations, T×d, rows are tokens. Row-major throughout (§5.6).
+  kind: matrix
+  introducedIn: "I.1"
+  apparatus: "0.LA.01"
+- id: Q
+  symbol: "Q"
+  meaning: Query matrix, T×d_k.
+  kind: matrix
+  introducedIn: "I.5"
+- id: K
+  symbol: "K"
+  meaning: Key matrix, T×d_k.
+  kind: matrix
+  introducedIn: "I.5"
+- id: V_mat
+  symbol: "V"
+  meaning: Value matrix, T×d_v. Bold, unlike the vocabulary size.
+  kind: matrix
+  introducedIn: "I.5"
+- id: W
+  symbol: "W"
+  meaning: A weight matrix.
+  kind: matrix
+  introducedIn: "I.2"
+- id: b
+  symbol: "b"
+  meaning: A bias vector.
+  kind: vector
+  introducedIn: "I.2"
+- id: x
+  symbol: "x"
+  meaning: An input vector. Column by default.
+  kind: vector
+  introducedIn: "I.1"
+- id: q
+  symbol: "q"
+  meaning: A single query vector.
+  kind: vector
+  introducedIn: "I.5"
+- id: k
+  symbol: "k"
+  meaning: A single key vector.
+  kind: vector
+  introducedIn: "I.5"
+- id: theta
+  symbol: "θ"
+  meaning: All parameters of a model, taken together.
+  kind: vector
+  introducedIn: "I.1"
+- id: J
+  symbol: "J"
+  meaning: A Jacobian matrix.
+  kind: matrix
+  introducedIn: "I.2"
+  apparatus: "0.MC.03"
+- id: I_mat
+  symbol: "I"
+  meaning: The identity matrix.
+  kind: matrix
+  introducedIn: "I.7"
+  apparatus: "0.LA.02"
+- id: Dset
+  symbol: "𝒟"
+  meaning: A dataset, as a set of examples.
+  kind: set
+  introducedIn: "I.1"
+- id: Vset
+  symbol: "𝒱"
+  meaning: The vocabulary, as a set of tokens.
+  kind: set
+  introducedIn: "I.3"
+
+# ── Training ───────────────────────────────────────────────────────────────
+- id: eta
+  symbol: "η"
+  meaning: Learning rate.
+  kind: scalar
+  introducedIn: "I.2"
+- id: tau
+  symbol: "τ"
+  meaning: Temperature, in a softmax or a contrastive loss.
+  kind: scalar
+  introducedIn: "I.5"
+- id: lambda
+  symbol: "λ"
+  meaning: A regularisation coefficient, or an eigenvalue where the context is linear algebra.
+  kind: scalar
+  introducedIn: "I.2"
+- id: beta
+  symbol: "β"
+  meaning: A momentum coefficient in an optimiser; the KL weight in a preference objective.
+  kind: scalar
+  introducedIn: "I.8"
+- id: sigma
+  symbol: "σ"
+  meaning: The logistic function, or a standard deviation. Never both in one derivation.
+  kind: operator
+  introducedIn: "I.2"
+- id: L_loss
+  symbol: "ℒ"
+  meaning: The loss. Scalar, and the thing every gradient in the corpus is taken of. Written in script so it can never be read as the layer count L.
+  kind: scalar
+  introducedIn: "I.1"
+- id: nabla
+  symbol: "∇"
+  meaning: Gradient operator. ∂L/∂W has the shape of W — numerator layout, fixed once (§5.6).
+  kind: operator
+  introducedIn: "I.2"
+  apparatus: "0.MC.01"
+- id: softmax
+  symbol: "softmax"
+  meaning: The normalised exponential, applied row-wise unless stated.
+  kind: operator
+  introducedIn: "I.5"
+
+# ── Probability and information ────────────────────────────────────────────
+- id: E
+  symbol: "𝔼"
+  meaning: Expectation.
+  kind: operator
+  introducedIn: "I.1"
+  apparatus: "0.PR.02"
+- id: Var
+  symbol: "Var"
+  meaning: Variance.
+  kind: operator
+  introducedIn: "I.2"
+  apparatus: "0.PR.03"
+- id: Hent
+  symbol: "ℋ"
+  meaning: Entropy, in nats unless bits are named.
+  kind: operator
+  introducedIn: "I.1"
+  apparatus: "0.IT.01"
+- id: KL
+  symbol: "KL"
+  meaning: Kullback–Leibler divergence. Not symmetric, and the asymmetry is load-bearing.
+  kind: operator
+  introducedIn: "VI.5"
+  apparatus: "0.IT.03"
+- id: RVX
+  symbol: "X (random)"
+  meaning: A random variable. Upright uppercase, against the italic lowercase of its realisation.
+  kind: random
+  introducedIn: "V.1"
+- id: do
+  symbol: "do(·)"
+  meaning: The intervention operator. Deletes the mechanism for its argument.
+  kind: operator
+  introducedIn: "V.3"
+- id: indep
+  symbol: "⫫"
+  meaning: Statistical independence.
+  kind: operator
+  introducedIn: "V.1"
+  apparatus: "0.PR.05"
+- id: hat
+  symbol: "θ̂"
+  meaning: An estimate, as against the quantity it estimates.
+  kind: scalar
+  introducedIn: "I.1"
+  apparatus: "0.ST.01"
+- id: Rset
+  symbol: "ℝ"
+  meaning: The reals. ℝ^{T×d} is the shape of a batch.
+  kind: set
+  introducedIn: "I.1"

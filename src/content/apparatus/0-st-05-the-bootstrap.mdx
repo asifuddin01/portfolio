@@ -1,0 +1,12 @@
+---
+id: "0.ST.05"
+part: ST
+order: 5
+title: "The bootstrap"
+statement: "Resample the data with replacement B times, recompute the statistic each time, and take the 2.5th and 97.5th percentiles of the resulting distribution as a 95% interval."
+shapeCheck: "B resamples of size n each, giving B statistics and two percentiles."
+workedLine: "From 5 resampled AUROC values 0.81, 0.84, 0.86, 0.88, 0.91, the extremes bracket [0.81, 0.91]. Five is far too few; a thousand is ordinary."
+status: review
+---
+
+The bootstrap needs no distributional assumption, which is why it is the default interval for AUROC, Dice and every other statistic in this corpus without a closed form.

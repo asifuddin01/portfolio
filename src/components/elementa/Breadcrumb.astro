@@ -1,21 +1,30 @@
 ---
 /**
- * Where the reader is. Every Elementa page shows its own position, so the
- * corpus reads as a structure rather than a pile of pages.
+ * Where the reader is (spec §17). Every Elementa page shows its own position,
+ * so the corpus reads as a structure rather than a pile of pages.
+ *
+ * The numerals come from the ids the content declares, never from a page's
+ * position in a list — reordering the shelf must not renumber Book V.
  */
-import { toRoman } from '../../consts';
+import MathTier from './MathTier.astro';
+import type { MathTier as Tier } from '../../lib/elementa-spec';
 
 interface Props {
-  bookN?: number;
+  bookNumeral?: string;
   bookTitle?: string;
   bookHref?: string;
   chapterN?: number;
   chapterTitle?: string;
   chapterHref?: string;
   proposition?: number;
+  tier?: Tier;
+  /** A trailing step that is not a chapter, e.g. "Problems". */
+  leaf?: string;
 }
-const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposition } =
-  Astro.props;
+const {
+  bookNumeral, bookTitle, bookHref, chapterN, chapterTitle, chapterHref,
+  proposition, tier, leaf,
+} = Astro.props;
 ---
 <nav class="bc" aria-label="Position in the corpus">
   <a class="bc-root" href="/elementa">Elementa</a>
@@ -23,7 +32,7 @@ const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposi
     <>
       <span class="bc-sep" aria-hidden="true">·</span>
       <a class="bc-step" href={bookHref}>
-        <span class="bc-n">Book {toRoman(bookN ?? 0)}</span> {bookTitle}
+        <span class="bc-n">Book {bookNumeral}</span> {bookTitle}
       </a>
     </>
   )}
@@ -31,7 +40,7 @@ const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposi
     <>
       <span class="bc-sep" aria-hidden="true">·</span>
       <a class="bc-step" href={chapterHref}>
-        <span class="bc-n">Chapter {toRoman(chapterN ?? 0)}</span> {chapterTitle}
+        <span class="bc-n">Chapter {chapterN}</span> {chapterTitle}
       </a>
     </>
   )}
@@ -41,6 +50,13 @@ const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposi
       <span class="bc-step bc-here">Proposition {proposition}</span>
     </>
   )}
+  {leaf && (
+    <>
+      <span class="bc-sep" aria-hidden="true">·</span>
+      <span class="bc-step bc-here">{leaf}</span>
+    </>
+  )}
+  {tier && <span class="bc-tier"><MathTier value={tier} showName={false} /></span>}
 </nav>
 
 <style>
@@ -48,17 +64,20 @@ const { bookN, bookTitle, bookHref, chapterN, chapterTitle, chapterHref, proposi
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5rem;
+    gap: 0.45rem;
     font-family: var(--font-mono);
     font-size: var(--t-xs);
-    line-height: 1.7;
-    letter-spacing: 0.06em;
-    margin-bottom: 1.4rem;
+    color: var(--ink-soft);
+    margin-bottom: 1.8rem;
   }
-  .bc-root { color: var(--brass-text); text-transform: uppercase; letter-spacing: 0.16em; }
-  .bc-sep { color: var(--brass-text); opacity: 0.6; }
-  .bc-step { color: var(--ink-soft); }
-  a.bc-step:hover { color: var(--fundus); }
-  .bc-n { color: var(--brass-text); text-transform: uppercase; letter-spacing: 0.12em; }
+  .bc-root, .bc-step { color: var(--ink-soft); }
+  .bc-root:hover, .bc-step:hover { color: var(--fundus); }
+  .bc-sep { color: var(--brass-text); }
+  .bc-n {
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
   .bc-here { color: var(--ink); }
+  .bc-tier { margin-left: auto; }
 </style>

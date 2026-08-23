@@ -1,0 +1,34 @@
+---
+/**
+ * What a chapter owes the Math Mandate (spec §5.2).
+ *
+ * The same arithmetic the build guard runs. Showing the debt is the point:
+ * a chapter at M3 with two problems is visibly unfinished, rather than
+ * quietly so.
+ */
+import type { ChapterMath } from '../../lib/collections';
+
+interface Props { math: ChapterMath; published: boolean }
+const { math, published } = Astro.props;
+const { problems, exercises, variants, rule, owed, meetsQuota } = math;
+const cell = (have: number, need: number) =>
+  need === 0 ? '' : have >= need ? 'quota-met' : 'quota-owed';
+---
+{rule.minProblems > 0 && (
+  <p class="quota">
+    <span class={cell(problems.length, rule.minProblems)}>
+      {problems.length}/{rule.minProblems} problems
+    </span>
+    <span class={cell(variants.size, rule.minVariants)}>
+      {variants.size}/{rule.minVariants} variants
+    </span>
+    <span class={cell(exercises.length, rule.minExercises)}>
+      {exercises.length}/{rule.minExercises} exercises
+    </span>
+    <span>
+      {meetsQuota
+        ? published ? 'quota met, and enforced' : 'quota met'
+        : `owes ${owed.problems + owed.exercises} more`}
+    </span>
+  </p>
+)}

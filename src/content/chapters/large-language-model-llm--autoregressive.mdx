@@ -1,13 +1,32 @@
 ---
+id: "III.2"
 book: large-language-model-llm
 order: 2
 title: "Autoregressive Transformers"
 summary: "Decoder-only models, and what makes them generate."
+claim: "Generation is a different computation from training: prefill is compute-bound, decode is bandwidth-bound, and the cache is what separates them."
+mathTier: M3
 topics:
   - "Causal masking"
   - "Decoder-only architecture"
   - "GPT-style models"
   - "Context windows"
   - "KV cache"
-status: published
+prerequisites:
+  - "III.1"
+  - "I.7"
+notation:
+  - "T"
+  - "d"
+  - "L"
+  - "h"
+  - "B"
+  - "tau"
+  - "softmax"
+apparatus:
+  - "0.NU.02"
+  - "0.PR.01"
+keyEquations: []
+status: review
+
 ---

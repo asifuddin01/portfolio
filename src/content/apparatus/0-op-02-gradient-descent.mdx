@@ -1,0 +1,12 @@
+---
+id: "0.OP.02"
+part: OP
+order: 2
+title: "Gradient descent"
+statement: "θ ← θ − η ∇L(θ). The gradient supplies the direction; η supplies the distance, and nothing in the gradient tells you what it should be."
+shapeCheck: "∇L has the shape of θ, so the update is elementwise and shape-preserving."
+workedLine: "L(w) = w², w₀ = 1, η = 0.1: w₁ = 1 − 0.1(2) = 0.8, w₂ = 0.8 − 0.1(1.6) = 0.64. Each step multiplies by 0.8."
+status: review
+---
+
+For a quadratic, convergence requires η < 2/λ_max. That single condition explains most learning-rate failures, including the ones blamed on the data.

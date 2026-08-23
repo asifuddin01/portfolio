@@ -1,0 +1,13 @@
+---
+/**
+ * One labelled slot of the worked-problem template (spec §5.4). The template
+ * is normative, so the slots are components rather than headings an author
+ * has to remember to write.
+ */
+interface Props { label: string; kind?: string }
+const { label, kind } = Astro.props;
+---
+<div class={`pb-slot${kind ? ` pb-${kind}` : ''}`}>
+  <p class="pb-label">{label}</p>
+  <slot />
+</div>

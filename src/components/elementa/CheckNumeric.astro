@@ -1,0 +1,19 @@
+---
+/**
+ * The reproduction snippet (invariant I-4). Collapsed by default, executed by
+ * verify-snippets in CI, and diffed against the digits the ANSWER block
+ * prints — so a number edited in prose and forgotten in the snippet stops
+ * the build.
+ */
+interface Props { snippet?: string; verified?: boolean }
+const { snippet, verified = false } = Astro.props;
+---
+<details class="pb-check">
+  <summary>Check — numeric{snippet ? ` · ${snippet}` : ''}</summary>
+  <slot />
+  <p class={`pb-check-note${verified ? '' : ' pb-unverified'}`}>
+    {verified
+      ? 'Executed in CI. The digits above are the digits it printed.'
+      : 'Not yet executed. Until it is, treat every digit above as unchecked.'}
+  </p>
+</details>

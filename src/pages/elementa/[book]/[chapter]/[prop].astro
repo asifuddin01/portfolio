@@ -4,8 +4,14 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../../components/ornament/LesionRule.astro';
 import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
 import FigureFrame from '../../../../components/elementa/FigureFrame.astro';
+import Deps from '../../../../components/elementa/Deps.astro';
+import { ELEMENTA_COMPONENTS } from '../../../../components/elementa/mdx';
 import { getPropositionContexts, type PropositionContext } from '../../../../lib/collections';
 import { FIGURES, isFigureName } from '../../../../lib/figures';
+import { FIGURE_TYPE_LABEL } from '../../../../lib/elementa-spec';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../../styles/math.css';
 
 
 export async function getStaticPaths() {
@@ -18,18 +24,30 @@ export async function getStaticPaths() {
       chapter: ctx.chapter.id.split('--')[1]!,
       prop: ctx.entry.id,
     },
-    props: { ctx, hrefs: Object.fromEntries(contexts.map((c) => [c.entry.id, href(c)])) },
+    props: {
+      ctx,
+      hrefs: Object.fromEntries(contexts.map((c) => [c.entry.id, href(c)])),
+      idOf: Object.fromEntries(contexts.map((c) => [c.entry.id, c.id])),
+    },
   }));
 }
 
-interface Props { ctx: PropositionContext; hrefs: Record<string, string> }
-const { ctx, hrefs } = Astro.props;
-const { entry, book, chapter, bookN, chapterN, index, total, previous, next, given, usedBy } = ctx;
+interface Props {
+  ctx: PropositionContext;
+  hrefs: Record<string, string>;
+  idOf: Record<string, string>;
+}
+const { ctx, hrefs, idOf } = Astro.props;
+const { entry, book, chapter, chapterN, index, total, previous, next } = ctx;
 const d = entry.data;
 const { Content } = await render(entry);
 
+const bookNumeral = book.data.id;
 const base = `/elementa/${book.id}`;
-const chapterHref = `${base}/${chapter.id.split('--')[1]}`;
+const chapterSlug = chapter.id.split('--')[1];
+const chapterHref = `${base}/${chapterSlug}`;
+const problemHref = (id: string) =>
+  `${chapterHref}/problems/${id.split('.').pop()!.toLowerCase()}`;
 
 const figName = d.figure && isFigureName(d.figure) ? d.figure : null;
 const fig = figName ? FIGURES[figName] : null;
@@ -38,48 +56,42 @@ const Figure = fig?.component;
 <BaseLayout
   title={`${d.statement} — Elementa`}
   description={d.claim ?? d.statement}
-  folio={`${bookN}.${chapterN}.${d.proposition}`}
+  folio={ctx.id}
   type="article"
 >
   <article class="codex pp">
     <Breadcrumb
-      bookN={bookN} bookTitle={book.data.title} bookHref={base}
+      bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
       chapterN={chapterN} chapterTitle={chapter.data.title} chapterHref={chapterHref}
       proposition={d.proposition}
+      tier={chapter.data.mathTier}
     />
 
     <header class="pp-head">
       <p class="pp-ref" data-reveal>
         Proposition {d.proposition}
+        <span class="pp-id">{ctx.id}</span>
         <span class="pp-of">{index} of {total} in the corpus</span>
-        {d.status === 'draft' && <span class="pp-draft">draft</span>}
+        {d.status !== 'published' && <span class="pp-draft">{d.status}</span>}
       </p>
       <h1 class="pp-st" data-press>{d.statement}</h1>
       {d.claim && <p class="pp-claim codex-measure" data-reveal>{d.claim}</p>}
     </header>
 
-    <section class="pp-given" data-reveal aria-labelledby="pp-given-h">
-      <h2 class="pp-label" id="pp-given-h">Depends on</h2>
-      {given.length === 0 ? (
-        <p class="pp-none">Nothing. This proposition stands on its own.</p>
-      ) : (
-        <ul class="pp-list">
-          {given.map((g) => (
-            <li><a class="link" href={hrefs[g.id]}>Prop. {g.data.proposition} — {g.data.statement}</a></li>
-          ))}
-        </ul>
-      )}
-    </section>
-
     {Figure && fig && (
       <div class="fig-draw" data-reveal>
-        <FigureFrame n={d.proposition} numeral="arabic" caption={fig.caption} id={figName ?? undefined}>
+        <FigureFrame
+          n={d.proposition}
+          numeral="arabic"
+          caption={d.figureType ? `Type ${d.figureType} · ${FIGURE_TYPE_LABEL[d.figureType]} — ${fig.caption}` : fig.caption}
+          id={figName ?? undefined}
+        >
           <Figure />
         </FigureFrame>
       </div>
     )}
 
-    <div class="prose pp-body"><Content /></div>
+    <div class="prose pp-body"><Content components={ELEMENTA_COMPONENTS} /></div>
 
     {d.sources.length > 0 && (
       <section class="pp-sources" data-reveal aria-labelledby="pp-src-h">
@@ -92,16 +104,7 @@ const Figure = fig?.component;
       </section>
     )}
 
-    {usedBy.length > 0 && (
-      <section class="pp-usedby" data-reveal aria-labelledby="pp-used-h">
-        <h2 class="pp-label" id="pp-used-h">Used by</h2>
-        <ul class="pp-list">
-          {usedBy.map((u) => (
-            <li><a class="link" href={hrefs[u.id]}>Prop. {u.data.proposition} — {u.data.statement}</a></li>
-          ))}
-        </ul>
-      </section>
-    )}
+    <Deps ctx={ctx} hrefs={hrefs} idOf={idOf} problemHref={problemHref} />
 
     <LesionRule />
 
@@ -127,6 +130,7 @@ const Figure = fig?.component;
 <style>
   .pp { padding-top: clamp(2.5rem, 7vh, 5rem); }
   .pp-head { margin-bottom: 1.6rem; }
+  .pp-id { color: var(--ink-soft); letter-spacing: 0.12em; }
   .pp-ref {
     display: flex;
     flex-wrap: wrap;

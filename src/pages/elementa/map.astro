@@ -1,0 +1,221 @@
+---
+/**
+ * The whole work as a graph (spec §17).
+ *
+ * Books as regions, chapters as clusters, propositions as nodes, tier as node
+ * weight. Every edge here is read from frontmatter — a prerequisite declared
+ * on one side and a dependency declared on the other are the same edge, and
+ * neither is maintained by hand.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../components/elementa/Breadcrumb.astro';
+import MathTier from '../../components/elementa/MathTier.astro';
+import { getElementaTree, getPropositionContexts, getApparatus } from '../../lib/collections';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../styles/math.css';
+
+const tree = await getElementaTree();
+const contexts = await getPropositionContexts();
+const parts = await getApparatus();
+
+const hrefOf = new Map(
+  contexts.map((c) => [c.id, `/elementa/${c.book.id}/${c.chapter.id.split('--')[1]}/${c.entry.id}`])
+);
+const byChapter = new Map<string, typeof contexts>();
+for (const c of contexts) {
+  const key = c.chapter.data.id;
+  if (!byChapter.has(key)) byChapter.set(key, []);
+  byChapter.get(key)!.push(c);
+}
+
+/** Cross-chapter dependency edges — where one chapter's work feeds another's. */
+const edges = new Map<string, Set<string>>();
+for (const c of contexts) {
+  for (const g of c.given) {
+    const from = contexts.find((x) => x.entry.id === g.id)?.chapter.data.id;
+    const to = c.chapter.data.id;
+    if (!from || from === to) continue;
+    if (!edges.has(from)) edges.set(from, new Set());
+    edges.get(from)!.add(to);
+  }
+}
+
+const apparatusCount = parts.reduce((n, p) => n + p.entries.length, 0);
+const written = contexts.length;
+const orphans = contexts.filter((c) => c.given.length === 0 && c.usedBy.length === 0);
+---
+<BaseLayout
+  title="Map — Elementa"
+  description="The whole corpus as a graph: books as regions, chapters as clusters, propositions as nodes."
+  folio="M"
+>
+  <div class="codex mp">
+    <Breadcrumb leaf="Map" />
+
+    <header class="mp-head">
+      <p class="mp-n" data-reveal>Elementa</p>
+      <h1 class="mp-h1" data-press>The map</h1>
+      <p class="mp-lede codex-measure" data-reveal>
+        {written} propositions across {tree.reduce((n, b) => n + b.chapters.length, 0)} chapters
+        and {tree.length} books, plus {apparatusCount} entries in the Apparatus. Every
+        edge below is read from frontmatter. A dependency recorded on one side
+        only cannot exist, because the reverse index is derived rather than
+        written.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {tree.map((b) => (
+      <section class="mp-book" data-reveal aria-labelledby={`mp-${b.book.id}`}>
+        <h2 class="mp-book-h" id={`mp-${b.book.id}`}>
+          <a href={`/elementa/${b.book.id}`}>
+            <span class="mp-book-n">Book {b.numeral}</span> {b.book.data.title}
+          </a>
+        </h2>
+        <ol class="mp-chapters">
+          {b.chapters.map((c) => {
+            const props = byChapter.get(c.id) ?? [];
+            const feeds = [...(edges.get(c.id) ?? [])];
+            return (
+              <li class={`mp-ch mp-${c.tier.toLowerCase()}`}>
+                <div class="mp-ch-head">
+                  <a class="mp-ch-t" href={`/elementa/${b.book.id}/${c.slug}`}>
+                    <span class="mp-ch-id">{c.id}</span> {c.chapter.data.title}
+                  </a>
+                  <MathTier value={c.tier} showName={false} />
+                </div>
+                {props.length > 0 ? (
+                  <ul class="mp-nodes">
+                    {props.map((p) => (
+                      <li>
+                        <a class="mp-node" href={hrefOf.get(p.id)} title={p.entry.data.statement}>
+                          {p.id.split('.').pop()}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p class="mp-empty">not yet written</p>
+                )}
+                {feeds.length > 0 && (
+                  <p class="mp-feeds"><span class="mp-feeds-l">feeds</span> {feeds.join(' · ')}</p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    ))}
+
+    <LesionRule />
+
+    <section class="mp-orphans" data-reveal aria-labelledby="mp-orph-h">
+      <h2 class="mp-label" id="mp-orph-h">Unattached</h2>
+      <p class="mp-note codex-measure">
+        A proposition that depends on nothing and that nothing depends on is
+        either the first idea in a chain or a page that has not been wired in.
+        The graph guard reports these; it does not fail on them, because some
+        of them are genuinely first.
+      </p>
+      {orphans.length === 0 ? (
+        <p class="mp-note">None. Every proposition sits on an edge.</p>
+      ) : (
+        <ul class="mp-orph-list">
+          {orphans.map((o) => (
+            <li><a class="link" href={hrefOf.get(o.id)}>{o.id} — {o.entry.data.statement}</a></li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .mp { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .mp-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .mp-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .mp-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
+
+  .mp-book { margin: 2.4rem 0; }
+  .mp-book-h { font-family: var(--font-display); font-size: var(--t-lg); margin: 0 0 0.9rem; }
+  .mp-book-h a { color: var(--ink); }
+  .mp-book-h a:hover { color: var(--fundus); }
+  .mp-book-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-right: 0.5rem;
+  }
+
+  .mp-chapters {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.9rem;
+    max-width: 72rem;
+  }
+  .mp-ch {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 32%, transparent);
+    border-left-width: 2px;
+    border-left-color: color-mix(in srgb, var(--brass) 45%, transparent);
+    padding: 0.7rem 0.85rem;
+    background: var(--paper-raised);
+  }
+  .mp-m3 { border-left-color: var(--fundus); }
+  .mp-m2 { border-left-color: var(--brass); }
+  .mp-m0 { opacity: 0.75; }
+  .mp-ch-head { display: flex; gap: 0.6rem; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; }
+  .mp-ch-t { font-family: var(--font-display); font-size: var(--t-base); line-height: 1.3; color: var(--ink); }
+  .mp-ch-t:hover { color: var(--fundus); }
+  .mp-ch-id { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+
+  .mp-nodes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .mp-node {
+    display: inline-block;
+    min-width: 2.1rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    padding: 0.1rem 0.25rem;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    color: var(--ink-soft);
+  }
+  .mp-node:hover { border-color: var(--fundus); color: var(--fundus); }
+  .mp-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); opacity: 0.7; margin: 0; }
+  .mp-feeds {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.5rem 0 0;
+    line-height: 1.6;
+  }
+  .mp-feeds-l { color: var(--brass-text); letter-spacing: 0.12em; text-transform: uppercase; margin-right: 0.35rem; }
+
+  .mp-orphans { margin: 2.2rem 0 3rem; }
+  .mp-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .mp-note { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.65; margin: 0 0 0.9rem; }
+  .mp-orph-list { list-style: none; margin: 0; padding: 0; max-width: 64rem; }
+  .mp-orph-list li { font-size: var(--t-base); line-height: 1.6; padding: 0.25rem 0; }
+</style>

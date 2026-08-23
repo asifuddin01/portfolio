@@ -1,0 +1,168 @@
+---
+/**
+ * Book 0 — the Apparatus (spec §16). A reference volume: the other seven
+ * books link into it, and it links nowhere forward.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
+import { getApparatus, getApparatusBook, getApparatusUsage } from '../../../lib/collections';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../styles/math.css';
+
+const parts = await getApparatus();
+const book = await getApparatusBook();
+const usage = await getApparatusUsage();
+const total = parts.reduce((n, p) => n + p.entries.length, 0);
+const Body = book ? (await render(book)).Content : null;
+
+const busiest = parts
+  .flatMap((p) => p.entries.map((e) => ({ e, part: p, uses: usage.get(e.data.id)?.length ?? 0 })))
+  .sort((a, b) => b.uses - a.uses)
+  .slice(0, 6)
+  .filter((x) => x.uses > 0);
+---
+<BaseLayout
+  title="Book 0 · Apparatus — Elementa"
+  description="The mathematics the other seven books assume: linear algebra, matrix calculus, probability, information, optimisation, statistics and numerics."
+  folio="0"
+>
+  <div class="codex ap">
+    <Breadcrumb leaf="Book 0 · Apparatus" />
+
+    <header class="ap-head">
+      <p class="ap-n" data-reveal>Book 0</p>
+      <h1 class="ap-h1" data-press>Apparatus</h1>
+      {Body && <div class="prose ap-lede codex-measure" data-reveal><Body /></div>}
+      <p class="ap-count" data-reveal>{total} entries · seven parts · nothing longer than one screen</p>
+    </header>
+
+    <LesionRule />
+
+    <ol class="ap-parts" data-reveal-stagger>
+      {parts.map((p) => (
+        <li class="ap-part">
+          <a class="ap-part-link" href={`/elementa/apparatus/${p.slug}`}>
+            <span class="ap-part-code">0.{p.code}</span>
+            <span class="ap-part-body">
+              <span class="ap-part-t">{p.title}</span>
+              <span class="ap-part-c">{p.covers}</span>
+            </span>
+            <span class="ap-part-n">{p.entries.length} entries</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+
+    {busiest.length > 0 && (
+      <section class="ap-busy" data-reveal aria-labelledby="ap-busy-h">
+        <h2 class="ap-label" id="ap-busy-h">Most cited</h2>
+        <p class="ap-note codex-measure">
+          Generated from what actually links here, not chosen. It is the most
+          useful line on the page, because it says why a fact is worth learning.
+        </p>
+        <ul class="ap-busy-list">
+          {busiest.map(({ e, part, uses }) => (
+            <li>
+              <a class="link" href={`/elementa/apparatus/${part.slug}#${e.data.id.replace(/\./g, '-').toLowerCase()}`}>
+                {e.data.id} — {e.data.title}
+              </a>
+              <em>{uses} {uses === 1 ? 'citation' : 'citations'}</em>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <nav class="ap-next" aria-label="Back to the corpus">
+      <a class="ap-next-link" href="/elementa" data-magnet>
+        <span class="ap-next-label">Back to</span>
+        <span class="ap-next-t">Elementa</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .ap { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .ap-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .ap-h1 { font-size: var(--t-2xl); margin-bottom: 1rem; }
+  .ap-lede { margin-bottom: 1rem; }
+  .ap-count { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+  .ap-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .ap-note { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.6; margin: 0 0 0.9rem; }
+  .ap-parts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .ap-part { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .ap-part-link {
+    display: grid;
+    grid-template-columns: 5rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.15rem 0;
+    color: var(--ink);
+  }
+  .ap-part-code {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    color: var(--brass-text);
+  }
+  .ap-part-t { display: block; font-family: var(--font-display); font-size: var(--t-md); }
+  .ap-part-link:hover .ap-part-t { color: var(--fundus); }
+  .ap-part-c { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.5; }
+  .ap-part-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); white-space: nowrap; }
+
+  .ap-busy { margin-top: 2.6rem; }
+  .ap-busy-list { list-style: none; margin: 0; padding: 0; max-width: 64rem; }
+  .ap-busy-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: var(--t-base);
+    padding: 0.4rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent);
+  }
+  .ap-busy-list em { font-family: var(--font-mono); font-size: var(--t-xs); font-style: normal; color: var(--ink-soft); white-space: nowrap; }
+
+  .ap-next { margin: 2rem 0; }
+  .ap-next-link { display: inline-block; }
+  .ap-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .ap-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+
+  @media (max-width: 640px) {
+    .ap-part-link { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>

@@ -1,0 +1,11 @@
+---
+/** ▲△△ mechanical · ▲▲△ composite · ▲▲▲ research-adjacent (spec §5.4). */
+import { DIFFICULTY_MARK, DIFFICULTY_LABEL } from '../../lib/elementa-spec';
+
+interface Props { level: number }
+const { level } = Astro.props;
+const i = Math.min(3, Math.max(1, level)) - 1;
+---
+<span class="diff" title={DIFFICULTY_LABEL[i]} aria-label={`Difficulty: ${DIFFICULTY_LABEL[i]}`}>
+  {DIFFICULTY_MARK[i]}
+</span>

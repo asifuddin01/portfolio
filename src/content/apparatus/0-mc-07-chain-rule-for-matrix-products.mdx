@@ -1,0 +1,12 @@
+---
+id: "0.MC.07"
+part: MC
+order: 7
+title: "The chain rule for matrix products"
+statement: "For C = AB with L a scalar function of C: ∂L/∂A = (∂L/∂C) Bᵀ and ∂L/∂B = Aᵀ (∂L/∂C)."
+shapeCheck: "A is m×k, B is k×n, ∂L/∂C is m×n. Then (m×n)(n×k) → m×k, the shape of A; and (k×m)(m×n) → k×n, the shape of B. The shapes decide where the transpose goes, so the rule never has to be memorised."
+workedLine: "A 2×3, B 3×2, ∂L/∂C 2×2. ∂L/∂A is 2×2 times 2×3 → 2×3. Correct."
+status: review
+---
+
+This is the highest-traffic entry in the Apparatus. Every backward pass in the corpus is a sequence of applications of it, and the shape check above is faster than recalling which side the transpose belongs on.

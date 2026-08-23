@@ -1,0 +1,98 @@
+---
+/**
+ * The edges of a proposition (spec §17): what it stands on, what stands on
+ * it, and which problems make the reader use it.
+ *
+ * Every list here is derived from frontmatter by the graph builder. Nothing
+ * is maintained by hand — hand-maintained back-links rot within a month.
+ */
+import VariantTag from './VariantTag.astro';
+import Difficulty from './Difficulty.astro';
+import ApparatusRef from './ApparatusRef.astro';
+import type { PropositionContext } from '../../lib/collections';
+
+interface Props {
+  ctx: PropositionContext;
+  hrefs: Record<string, string>;
+  /**
+   * Slug to permanent ID. "Prop. 1" is ambiguous the moment a second chapter
+   * has one, and both of a proposition's neighbours usually live in other
+   * chapters — so the edge is labelled with the ID that says where it goes.
+   */
+  idOf: Record<string, string>;
+  problemHref: (id: string) => string;
+}
+const { ctx, hrefs, idOf, problemHref } = Astro.props;
+const { given, usedBy, problems, entry } = ctx;
+const appar = entry.data.apparatus;
+---
+<div class="dp">
+  <section class="dp-col">
+    <h2 class="dp-label">Depends on</h2>
+    {given.length === 0 && appar.length === 0 ? (
+      <p class="dp-none">Nothing. This proposition stands on its own.</p>
+    ) : (
+      <ul class="dp-list">
+        {given.map((g) => (
+          <li><a class="link" href={hrefs[g.id]}>{idOf[g.id]} — {g.data.statement}</a></li>
+        ))}
+        {appar.map((a) => <li><ApparatusRef ref={a} /></li>)}
+      </ul>
+    )}
+  </section>
+
+  <section class="dp-col">
+    <h2 class="dp-label">Used by</h2>
+    {usedBy.length === 0 ? (
+      <p class="dp-none">Nothing yet.</p>
+    ) : (
+      <ul class="dp-list">
+        {usedBy.map((u) => (
+          <li><a class="link" href={hrefs[u.id]}>{idOf[u.id]} — {u.data.statement}</a></li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  {problems.length > 0 && (
+    <section class="dp-col dp-wide">
+      <h2 class="dp-label">Problems using this</h2>
+      <ul class="dp-list dp-problems">
+        {problems.map((p) => (
+          <li>
+            <a class="link" href={problemHref(p.data.id)}>{p.data.id} — {p.data.title}</a>
+            <VariantTag variant={p.data.variant} />
+            <Difficulty level={p.data.difficulty} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</div>
+
+<style>
+  .dp {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.6rem 2.5rem;
+    max-width: 64rem;
+    margin: 2rem 0;
+    padding-top: 1.2rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+  }
+  .dp-wide { grid-column: 1 / -1; }
+  .dp-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .dp-list { list-style: none; margin: 0; padding: 0; }
+  .dp-list li { font-size: var(--t-base); line-height: 1.55; margin-bottom: 0.4rem; }
+  .dp-problems li { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: baseline; }
+  .dp-none { font-size: var(--t-base); color: var(--ink-soft); margin: 0; }
+  @media (max-width: 640px) { .dp { grid-template-columns: 1fr; } }
+</style>

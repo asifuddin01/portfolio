@@ -1,8 +1,11 @@
 ---
+id: "I.2"
 book: foundations
 order: 2
 title: "Neural Networks"
 summary: "Layers, non-linearity, and how gradients move through them."
+claim: "Depth is only worth having because of the non-linearity between the layers, and backpropagation is the chain rule applied to the graph that results."
+mathTier: M3
 topics:
   - "Neurons"
   - "Linear layers"
@@ -14,5 +17,29 @@ topics:
   - "Optimisers"
   - "Learning rates"
   - "Regularisation"
-status: published
+prerequisites:
+  - "I.1"
+notation:
+  - "W"
+  - "b"
+  - "x"
+  - "theta"
+  - "eta"
+  - "L_loss"
+  - "nabla"
+  - "J"
+  - "sigma"
+  - "lambda"
+  - "Var"
+apparatus:
+  - "0.MC.01"
+  - "0.MC.03"
+  - "0.MC.04"
+  - "0.MC.06"
+  - "0.MC.08"
+  - "0.OP.02"
+  - "0.PR.03"
+keyEquations: []
+status: review
+
 ---

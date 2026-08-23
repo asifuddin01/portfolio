@@ -1,0 +1,12 @@
+---
+id: "0.LA.01"
+part: LA
+order: 1
+title: "Vectors, matrices and the row-major convention"
+statement: "A batch of token representations is X ∈ ℝ^{T×d}: rows are tokens, columns are features. A linear map is applied on the right, XW with W ∈ ℝ^{d×d_out}."
+shapeCheck: "X (T×d) · W (d×d_out) → (T×d_out). The inner dimensions meet; T is untouched."
+workedLine: "T = 2, d = 3, d_out = 2. A 2×3 times a 3×2 is a 2×2. Two tokens in, two tokens out, each now two features wide."
+status: review
+---
+
+Elementa fixes this once and never revisits it. Papers differ, and a paper that writes **Wx** with column vectors is doing the same arithmetic transposed. Where a cited paper uses the other convention the citation says so inline, rather than leaving the reader to discover it in a shape error.

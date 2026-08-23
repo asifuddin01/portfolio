@@ -1,6 +1,9 @@
 import { defineCollection, reference } from 'astro:content';
 import { z } from 'zod';
-import { glob } from 'astro/loaders';
+import { glob, file } from 'astro/loaders';
+import {
+  MATH_TIERS, VARIANTS, APPARATUS_CODES, FIGURE_TYPES,
+} from './lib/elementa-spec';
 
 /**
  * Clearing an optional field in /admin writes an empty string rather than
@@ -21,6 +24,19 @@ const optionalUrl = z
   }, z.union([z.url(), z.null()]))
   .optional()
   .transform((v) => v ?? null);
+
+/**
+ * Three states, not two (spec §12.2).
+ *
+ *   draft      hidden from the live site
+ *   review     live, structurally complete, mathematics not yet to quota
+ *   published  Definition of Done met — and the Math Mandate is enforced
+ *
+ * The middle state is what lets the corpus stay online while it is being
+ * brought up to v2. Promoting a chapter to `published` is what switches its
+ * quota guard on, so the promotion is the commitment, not the intention.
+ */
+const shipStatus = z.enum(['draft', 'review', 'published']);
 
 const optionalText = z
   .union([z.string(), z.null()])
@@ -72,6 +88,13 @@ const works = defineCollection({
 const books = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/books' }),
   schema: z.object({
+    /**
+     * The permanent identifier (spec §3.1). Roman, and never re-derived from
+     * `order` — reordering the shelf is a display decision, identity is not,
+     * and every chapter, equation and problem ID in the corpus is built on
+     * this letter.
+     */
+    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)$/),
     order: z.number(),
     title: z.string(),
     covers: z.string(),
@@ -79,6 +102,32 @@ const books = defineCollection({
     goal: z.string().optional(),
     /** Books that should be read first, by slug. */
     prerequisites: z.array(z.string()).default([]),
+    /** Apparatus entries the book assumes, e.g. "0.MC.07" (spec §6). */
+    mathPrerequisites: z.array(z.string()).default([]),
+    /** How the chapters compose into one idea. Rendered before the closing. */
+    synthesis: optionalText,
+    /** What is still unsolved in this field. */
+    frontier: optionalText,
+    /**
+     * §19 — the implementation exercise that follows the book, bound to the
+     * problems whose hand-computed numbers it has to reproduce.
+     */
+    practical: z
+      .object({
+        implement: z.string(),
+        verifiedAgainst: z.array(z.string()).default([]),
+        note: optionalText,
+        /**
+         * Laboratory work: things to go and run. Kept apart from the problem
+         * set on purpose — a worked problem is checked against arithmetic, a
+         * laboratory exercise is checked against a machine, and pretending
+         * the second is one of the nine variants (§5.3) would be a false label.
+         */
+        laboratory: z
+          .array(z.object({ task: z.string(), note: optionalText }))
+          .default([]),
+      })
+      .optional(),
     /** The plate for the closing page — the whole book on one drawing. */
     closingFigure: z.string().nullable().default(null),
     /**
@@ -98,12 +147,17 @@ const books = defineCollection({
         vocabulary: z
           .array(z.object({ term: z.string(), definition: z.string() }))
           .default([]),
+        /**
+         * §6 — what the reader should now be able to reproduce unaided. The
+         * proof of progress is not "I read Book I", it is "I can derive the
+         * softmax Jacobian without looking".
+         */
+        derivations: z
+          .array(z.object({ result: z.string(), from: optionalText }))
+          .default([]),
         /** Stated wrongly, then corrected. Both halves are the point. */
         misconceptions: z
           .array(z.object({ wrong: z.string(), right: z.string() }))
-          .default([]),
-        exercises: z
-          .array(z.object({ task: z.string(), note: optionalText }))
           .default([]),
         papers: z
           .array(z.object({ title: z.string(), url: optionalUrl, note: optionalText }))
@@ -112,7 +166,7 @@ const books = defineCollection({
         bridge: optionalText,
       })
       .optional(),
-    status: z.enum(['draft', 'published']).default('published'),
+    status: shipStatus.default('published'),
   }),
 });
 
@@ -124,13 +178,196 @@ const books = defineCollection({
 const chapters = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/chapters' }),
   schema: z.object({
+    /** Permanent identifier, "I.5" (spec §3.1). Cited from any other book. */
+    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)\.\d+$/),
     book: reference('books'),
     order: z.number(),
     title: z.string(),
     summary: z.string(),
+    /** The chapter's one-sentence thesis. A title is not a claim. */
+    claim: z.string().optional(),
+    /**
+     * §5.1 — the declared mathematical density. This is a claim about the
+     * chapter's content, and check-math-quota enforces the consequences of
+     * the claim once the chapter is published. M3 is expensive on purpose.
+     */
+    mathTier: z.enum(MATH_TIERS).default('M1'),
+    /** Required when a mechanism chapter is downgraded below M3 (§5.1). */
+    tierRationale: optionalText,
     /** What the chapter covers, shown before any proposition is written. */
     topics: z.array(z.string()).default([]),
-    status: z.enum(['draft', 'published']).default('published'),
+    /** Chapter or proposition IDs that come first (§12.2). */
+    prerequisites: z.array(z.string()).default([]),
+    /** Symbols used here, checked against the notation registry (§5.6). */
+    notation: z.array(z.string()).default([]),
+    /** Book 0 anchors the chapter leans on, e.g. "0.MC.07" (§16). */
+    apparatus: z.array(z.string()).default([]),
+    /**
+     * §5.7 — every numbered equation, with a gloss naming what it *says*.
+     * These become the book's key-equation table without being retyped.
+     */
+    keyEquations: z
+      .array(z.object({
+        id: z.string(),
+        formula: z.string(),
+        gloss: z.string().min(10),
+      }))
+      .default([]),
+    status: shipStatus.default('review'),
+  }).superRefine((data, ctx) => {
+    // §5.1: a mechanism chapter dropped below M3 owes the reader a reason.
+    if ((data.mathTier === 'M1' || data.mathTier === 'M2') &&
+        data.keyEquations.length > 6 && !data.tierRationale) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `Chapter ${data.id} declares ${data.keyEquations.length} key equations ` +
+          `at tier ${data.mathTier}. Either write a tierRationale saying why the ` +
+          `mathematics is not load-bearing, or promote it to M3.`,
+      });
+    }
+    // Every equation ID must belong to the chapter that declares it.
+    for (const eq of data.keyEquations) {
+      if (!eq.id.startsWith(`${data.id}.`)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Equation "${eq.id}" is declared by chapter ${data.id} but numbered elsewhere. Equations are numbered per chapter (§3.1).`,
+        });
+      }
+    }
+  }),
+});
+
+/**
+ * Worked problems and exercises — the spine of v2 (spec §5). A problem is a
+ * document with a fixed anatomy, not free prose, and the quota guard counts
+ * these by chapter, by variant and by difficulty.
+ */
+const problems = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/problems' }),
+  schema: z.object({
+    /** "I.5.B03" for a problem, "I.5.X07" for an exercise (§3.1). */
+    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)\.(\d+|BOOK)\.[BX]\d{2}$/),
+    kind: z.enum(['problem', 'exercise']),
+    /** "I.5", or "I.BOOK" for a book-level item. */
+    chapter: z.string(),
+    scope: z.enum(['chapter', 'book', 'cross-book']).default('chapter'),
+    variant: z.enum(VARIANTS),
+    /** 1 mechanical · 2 composite · 3 research-adjacent (§5.4). */
+    difficulty: z.number().int().min(1).max(3),
+    title: z.string(),
+    /** Proposition IDs the item draws on. */
+    depends: z.array(z.string()).default([]),
+    /** Chapter IDs in EARLIER books, for cross-book items. */
+    reachesBack: z.array(z.string()).default([]),
+    /** Rounding convention, stated once per solution (R-6). */
+    rounding: optionalText,
+    /**
+     * §12.2 — no answer-less items ship. A hidden solution is a solution; a
+     * missing one is an abandonment.
+     */
+    hasSolution: z.boolean().default(false),
+    /** I-4: the reproduction snippet ran in CI and printed these digits. */
+    verified: z.boolean().default(false),
+    /** Path to the snippet under scripts/snippets, relative to that folder. */
+    snippet: optionalText,
+    status: shipStatus.default('draft'),
+  }).superRefine((p, ctx) => {
+    const shipped = p.status !== 'draft';
+
+    if (shipped && !p.hasSolution) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${p.id}: shipped with no solution. Elementa has no answer-less items (§5.5).`,
+      });
+    }
+
+    // A problem that prints numbers must be machine-checkable (I-4).
+    const numericish = ['numeric', 'complexity', 'probability', 'gradient'];
+    if (shipped && numericish.includes(p.variant) && !p.verified) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `${p.id}: variant "${p.variant}" prints numbers, so it MUST carry a ` +
+          `reproduction snippet and be marked verified: true (invariant I-4).`,
+      });
+    }
+    if (p.verified && !p.snippet) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${p.id}: marked verified but names no snippet. Nothing was run.`,
+      });
+    }
+    if (p.scope === 'cross-book' && p.reachesBack.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${p.id}: scope "cross-book" but reachesBack is empty.`,
+      });
+    }
+    // The ID's letter and the kind have to agree, or the quota counts wrongly.
+    const letter = p.id.split('.').pop()![0];
+    if ((p.kind === 'problem') !== (letter === 'B')) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${p.id}: kind "${p.kind}" disagrees with the ID. Problems are B, exercises are X (§3.1).`,
+      });
+    }
+    if (!p.id.startsWith(`${p.chapter}.`)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${p.id}: filed under chapter "${p.chapter}", which its ID does not name.`,
+      });
+    }
+  }),
+});
+
+/**
+ * Book 0 — the Apparatus (§16). A reference volume: Books I–VII link into it,
+ * it links nowhere forward. An entry that only one chapter needs does not
+ * belong here; it belongs in that chapter.
+ */
+const apparatus = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/apparatus' }),
+  schema: z.object({
+    /** "0.MC.07". */
+    id: z.string().regex(/^0\.[A-Z]{2}\.\d{2}$/),
+    part: z.enum(APPARATUS_CODES as unknown as [string, ...string[]]),
+    order: z.number(),
+    title: z.string(),
+    /** The result itself, stated once. */
+    statement: z.string(),
+    /** Why the shapes conform. The line most readers actually came for. */
+    shapeCheck: optionalText,
+    /** One three-line instantiation. Never longer. */
+    workedLine: optionalText,
+    status: shipStatus.default('review'),
+  }).superRefine((e, ctx) => {
+    if (!e.id.startsWith(`0.${e.part}.`)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${e.id}: filed under part "${e.part}", which its ID does not name.`,
+      });
+    }
+  }),
+});
+
+/**
+ * §5.6 — the global symbol registry. Inconsistent notation is the single
+ * largest source of confusion in machine-learning writing, so d_k means the
+ * same thing in Book I and Book VI, and the build says so.
+ */
+const notation = defineCollection({
+  loader: file('./src/content/notation.yaml'),
+  schema: z.object({
+    id: z.string(),
+    symbol: z.string(),
+    meaning: z.string(),
+    /** Scalar, vector, matrix, tensor, set, operator (the §5.6 conventions). */
+    kind: z.enum(['scalar', 'vector', 'matrix', 'tensor', 'set', 'operator', 'random']),
+    /** Chapter ID that introduces it. Nothing may use it earlier. */
+    introducedIn: z.string(),
+    /** Apparatus anchor where it is defined properly. */
+    apparatus: optionalText,
   }),
 });
 
@@ -150,7 +387,18 @@ const elementa = defineCollection({
       .array(z.object({ title: z.string(), url: optionalUrl }))
       .default([]),
     figure: z.string().nullable().default(null), // figure component name
-    status: z.enum(['draft', 'published']),
+    /** §9 — which of the eight kinds of drawing this is. */
+    figureType: z.enum(FIGURE_TYPES).optional(),
+    /**
+     * §4 — where the proposition sits. Intuition holds a true simplification,
+     * mechanics builds the thing, research is what happens past the textbook.
+     */
+    level: z.enum(['intuition', 'mechanics', 'research']).default('mechanics'),
+    /** Symbols this proposition uses, checked against the registry (§5.6). */
+    notation: z.array(z.string()).default([]),
+    /** Book 0 anchors this proposition leans on. */
+    apparatus: z.array(z.string()).default([]),
+    status: shipStatus,
     updated: z.date(),
   }),
 });
@@ -362,4 +610,5 @@ const axioms = defineCollection({
 export const collections = {
   works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
   papers, education, projects, images, axioms, chapters,
+  problems, apparatus, notation,
 };

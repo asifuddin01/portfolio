@@ -1,0 +1,165 @@
+---
+/**
+ * A chapter's problem set (spec §5.2). What it owes is decided by the tier the
+ * chapter declares, and shown here whether or not it has been paid.
+ */
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../../../components/ornament/LesionRule.astro';
+import Breadcrumb from '../../../../../components/elementa/Breadcrumb.astro';
+import MathTier from '../../../../../components/elementa/MathTier.astro';
+import Quota from '../../../../../components/elementa/Quota.astro';
+import ProblemSet from '../../../../../components/elementa/ProblemSet.astro';
+import { getElementaTree, getProblems, chapterMath } from '../../../../../lib/collections';
+import { TIER_RULES, M3_REQUIRED_GROUPS } from '../../../../../lib/elementa-spec';
+import type { CollectionEntry } from 'astro:content';
+// KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
+// site has no equations and should not carry it.
+import '../../../../../styles/math.css';
+
+export async function getStaticPaths() {
+  const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
+  return tree.flatMap((b) =>
+    b.chapters
+      .filter((c) => TIER_RULES[c.tier].minProblems > 0)
+      .map((c) => ({
+        params: { book: b.book.id, chapter: c.slug },
+        props: {
+          book: b.book,
+          bookNumeral: b.numeral,
+          chapter: c.chapter,
+          chapterN: c.n,
+          items: items.filter((p) => p.data.chapter === c.id),
+        },
+      }))
+  );
+}
+
+interface Props {
+  book: CollectionEntry<'books'>;
+  bookNumeral: string;
+  chapter: CollectionEntry<'chapters'>;
+  chapterN: number;
+  items: CollectionEntry<'problems'>[];
+}
+const { book, bookNumeral, chapter, chapterN, items } = Astro.props;
+const d = chapter.data;
+const base = `/elementa/${book.id}`;
+const chapterHref = `${base}/${chapter.id.split('--')[1]}`;
+const math = chapterMath(d.mathTier, items);
+const rule = math.rule;
+const groups = d.mathTier === 'M3'
+  ? M3_REQUIRED_GROUPS.map((g) => ({
+      names: g.join(' or '),
+      met: g.some((v) => math.variants.has(v)),
+    }))
+  : [];
+---
+<BaseLayout
+  title={`Problems · Chapter ${chapterN} — ${d.title}`}
+  description={`The worked problems and exercises of ${d.title}, at tier ${d.mathTier}.`}
+  folio={`${d.id}.B`}
+>
+  <div class="codex pr">
+    <Breadcrumb
+      bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
+      chapterN={chapterN} chapterTitle={d.title} chapterHref={chapterHref}
+      leaf="Problems" tier={d.mathTier}
+    />
+
+    <header class="pr-head">
+      <p class="pr-n" data-reveal>Chapter {chapterN} · {d.id}</p>
+      <h1 class="pr-h1" data-press>Problems</h1>
+      <p class="pr-lede codex-measure" data-reveal>
+        A chapter that uses mathematics has to teach that mathematics by making
+        the reader compute. A chapter that only displays equations has failed,
+        however correct the equations are.
+      </p>
+      <p class="pr-tier" data-reveal><MathTier value={d.mathTier} /></p>
+      <Quota math={math} published={d.status === 'published'} />
+    </header>
+
+    <section class="pr-contract" data-reveal aria-labelledby="pr-con-h">
+      <h2 class="pr-label" id="pr-con-h">The contract</h2>
+      <ul class="pr-conlist">
+        <li>{rule.minProblems} worked problems, minimum.</li>
+        <li>{rule.minVariants} distinct variants, and no variant more than half of them.</li>
+        <li>{rule.minExercises} exercises, every one with a published solution.</li>
+        {groups.map((g) => (
+          <li class={g.met ? 'pr-met' : 'pr-owed'}>At least one {g.names} problem — {g.met ? 'present' : 'missing'}.</li>
+        ))}
+        {d.mathTier === 'M3' && (
+          <li class={math.problems.some((p) => p.data.difficulty === 3) ? 'pr-met' : 'pr-owed'}>
+            At least one ▲▲▲ problem — {math.problems.some((p) => p.data.difficulty === 3) ? 'present' : 'missing'}.
+          </li>
+        )}
+      </ul>
+    </section>
+
+    <LesionRule />
+
+    <ProblemSet
+      items={items}
+      hrefBase={`${chapterHref}/problems`}
+      empty={`Not yet written. This chapter is at ${d.mathTier}, so it owes ${rule.minProblems} worked problems and ${rule.minExercises} exercises before it can be marked published — and from that moment the build refuses to pass without them.`}
+    />
+
+    <LesionRule />
+
+    <nav class="pr-next" aria-label="Back to the chapter">
+      <a class="pr-next-link" href={chapterHref} data-magnet>
+        <span class="pr-next-label">Back to</span>
+        <span class="pr-next-t">{d.title}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .pr { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .pr-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.7rem;
+  }
+  .pr-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .pr-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); margin-bottom: 1rem; }
+  .pr-tier { margin: 0 0 0.5rem; }
+  .pr-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .pr-contract { margin: 2.2rem 0; }
+  .pr-conlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.9;
+    color: var(--ink-soft);
+    max-width: 64rem;
+  }
+  .pr-conlist li::before { content: '— '; color: var(--brass-text); }
+  .pr-met { color: var(--verdigris); }
+  .pr-owed { color: var(--oxblood-text); }
+  .pr-next { margin: 2rem 0; }
+  .pr-next-link { display: inline-block; }
+  .pr-next-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.4rem;
+  }
+  .pr-next-t { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
+</style>

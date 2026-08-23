@@ -1,0 +1,12 @@
+---
+id: "0.OP.03"
+part: OP
+order: 3
+title: "Momentum"
+statement: "v ← βv + ∇L, θ ← θ − ηv. The velocity accumulates a geometric sum of past gradients with effective horizon 1/(1 − β)."
+shapeCheck: "v has the shape of θ, and is a second copy of the parameters in memory."
+workedLine: "β = 0.9 gives a horizon of 10 steps, and a constant gradient g reaches a steady velocity of 10g."
+status: review
+---
+
+The factor 1/(1 − β) is why raising β also raises the effective step size, and why the two cannot be tuned independently.

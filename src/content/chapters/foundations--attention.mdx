@@ -1,8 +1,11 @@
 ---
+id: "I.5"
 book: foundations
 order: 5
 title: "Attention"
 summary: "Content-addressed aggregation, in full."
+claim: "Attention is a content-dependent weighted aggregation: each output row is a convex combination of value rows."
+mathTier: M3
 topics:
   - "Queries"
   - "Keys"
@@ -14,5 +17,29 @@ topics:
   - "Scaled dot-product attention"
   - "Self-attention"
   - "Cross-attention"
-status: published
+prerequisites:
+  - "I.2"
+  - "I.4"
+notation:
+  - "Q"
+  - "K"
+  - "V_mat"
+  - "d_k"
+  - "d_v"
+  - "T"
+  - "h"
+  - "q"
+  - "k"
+  - "tau"
+  - "softmax"
+  - "Var"
+  - "nabla"
+apparatus:
+  - "0.LA.03"
+  - "0.MC.06"
+  - "0.PR.03"
+  - "0.NU.02"
+keyEquations: []
+status: review
+
 ---

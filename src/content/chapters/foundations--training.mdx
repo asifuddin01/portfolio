@@ -1,8 +1,11 @@
 ---
+id: "I.8"
 book: foundations
 order: 8
 title: "Training Deep Models"
 summary: "Turning an architecture into a model that has learned something."
+claim: "Training is an accounting problem: what the optimiser stores, what precision it stores it in, and what the schedule does to the step size."
+mathTier: M3
 topics:
   - "Dataset"
   - "Batch"
@@ -14,5 +17,26 @@ topics:
   - "Mixed precision"
   - "Checkpoints"
   - "Evaluation"
-status: published
+prerequisites:
+  - "I.2"
+  - "I.7"
+notation:
+  - "eta"
+  - "beta"
+  - "B"
+  - "N"
+  - "L_loss"
+  - "nabla"
+  - "Var"
+  - "theta"
+  - "lambda"
+apparatus:
+  - "0.OP.02"
+  - "0.OP.03"
+  - "0.PR.03"
+  - "0.NU.01"
+  - "0.ST.01"
+keyEquations: []
+status: review
+
 ---

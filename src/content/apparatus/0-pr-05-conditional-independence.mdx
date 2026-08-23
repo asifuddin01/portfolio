@@ -1,0 +1,12 @@
+---
+id: "0.PR.05"
+part: PR
+order: 5
+title: "Conditional independence"
+statement: "X ⫫ Y | Z means P(X, Y | Z) = P(X | Z)P(Y | Z). It neither implies nor is implied by marginal independence."
+shapeCheck: "For binary variables this is four equalities, one for each value of the pair, at each value of Z."
+workedLine: "X and Y independent fair coins, Z = X ⊕ Y. Then X ⫫ Y, but conditioning on Z makes each determine the other exactly."
+status: review
+---
+
+That worked line is collider bias with the labels removed. Book V spends a chapter on why conditioning can create a dependence that was not there.

@@ -1,8 +1,11 @@
 ---
+id: "V.2"
 book: causal-inference
 order: 2
 title: "Causal Graphs"
 summary: "Drawing the assumptions you cannot test."
+claim: "A DAG encodes conditional independences, and d-separation reads them off the graph without touching the data."
+mathTier: M3
 topics:
   - "DAGs"
   - "Nodes"
@@ -12,5 +15,15 @@ topics:
   - "Descendants"
   - "Colliders"
   - "Confounders"
-status: published
+prerequisites:
+  - "V.1"
+notation:
+  - "RVX"
+  - "indep"
+apparatus:
+  - "0.PR.05"
+  - "0.PR.01"
+keyEquations: []
+status: review
+
 ---

@@ -1,0 +1,56 @@
+---
+id: "I.5.X01"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: limit
+difficulty: 1
+title: "Softmax at three temperatures"
+depends:
+  - "I.5.P03"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+Compute $\softmax(\vec{s}/\tau)$ for $\vec{s} = (2, 1, 0)$ at
+$\tau = 1$, $\tau = 0.5$ and $\tau = 2$. State what each result says about
+the temperature's role, and name the two limits.
+
+<Hint>
+Divide before exponentiating, and subtract the largest entry of the scaled
+vector first. The three denominators are all you need.
+</Hint>
+
+<SolutionToggle>
+
+**τ = 1.** Scaled scores $(2,1,0)$. Subtract the maximum: $(0,-1,-2)$, giving
+exponentials $1$, $0.3679$, $0.1353$, and a denominator of $1.5032$.
+
+$$\vec{a} = (0.6652,\; 0.2447,\; 0.0900)$$
+
+**τ = 0.5.** Scaled scores $(4,2,0)$. Shifted: $(0,-2,-4)$, exponentials
+$1$, $0.1353$, $0.0183$, denominator $1.1536$.
+
+$$\vec{a} = (0.8668,\; 0.1173,\; 0.0159)$$
+
+**τ = 2.** Scaled scores $(1, 0.5, 0)$. Shifted: $(0,-0.5,-1)$, exponentials
+$1$, $0.6065$, $0.3679$, denominator $1.9744$.
+
+$$\vec{a} = (0.5065,\; 0.3072,\; 0.1863)$$
+
+Each row sums to $1.0000$.
+
+**What it says.** Lowering $\tau$ multiplies every score gap by $1/\tau$ before
+exponentiating, so the distribution concentrates on the largest entry; raising
+$\tau$ shrinks the gaps toward zero and flattens it. The mass on the top token
+moves from $0.5065$ to $0.8668$ as $\tau$ falls from 2 to 0.5, on unchanged
+scores.
+
+**The two limits.** As $\tau \to 0^{+}$ the distribution approaches
+$\text{one-hot}(\arg\max \vec{s})$; as $\tau \to \infty$ it approaches the
+uniform distribution over the three entries, $(1/3, 1/3, 1/3)$. Neither limit
+is reached at any finite $\tau$.
+
+</SolutionToggle>

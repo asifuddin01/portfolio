@@ -1,0 +1,12 @@
+---
+id: "0.MC.01"
+part: MC
+order: 1
+title: "The gradient, and the layout convention"
+statement: "For scalar L and matrix W, ∂L/∂W is the matrix of partial derivatives with the same shape as W. Elementa uses numerator layout throughout, so a gradient always has the shape of the thing it differentiates with respect to."
+shapeCheck: "W is d×d_out, so ∂L/∂W is d×d_out. An optimiser step W ← W − η ∂L/∂W is well formed only under this convention."
+workedLine: "L = ½‖W‖², so ∂L/∂W = W. Same shape, no transpose."
+status: review
+---
+
+Denominator layout is not used anywhere in the corpus. Half the transposes that appear mysteriously in published derivations are a layout difference and nothing more.
