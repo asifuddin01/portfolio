@@ -1,0 +1,40 @@
+# Redirects for the v3 restructure (Neural Networks promoted to Book I).
+#
+# Twenty-five propositions changed book, and three chapter pages were split
+# or moved. Their old addresses were live and indexed, so each gets a
+# permanent redirect; no proposition changed file, slug, or prose.
+#
+# Served by Cloudflare Workers static assets, so these are real 301s rather
+# than a meta-refresh.
+
+# ── chapters that moved or were split ─────────────────────────────────
+/elementa/foundations/computation  /elementa/neural-networks/computation  301
+/elementa/foundations/neural-networks  /elementa/neural-networks/mlp  301
+/elementa/foundations/sequences  /elementa/neural-networks/recurrence  301
+
+# ── propositions that changed book ────────────────────────────────────
+/elementa/foundations/computation/a-loss-is-where-the-objective-is-stated  /elementa/neural-networks/computation/a-loss-is-where-the-objective-is-stated  301
+/elementa/foundations/computation/a-model-is-a-parameterised-function  /elementa/neural-networks/computation/a-model-is-a-parameterised-function  301
+/elementa/foundations/computation/a-tensor-carries-its-meaning-in-its-shape  /elementa/neural-networks/computation/a-tensor-carries-its-meaning-in-its-shape  301
+/elementa/foundations/computation/generalisation-is-not-memorisation  /elementa/neural-networks/computation/generalisation-is-not-memorisation  301
+/elementa/foundations/computation/learning-changes-parameters-not-rules  /elementa/neural-networks/computation/learning-changes-parameters-not-rules  301
+/elementa/foundations/neural-networks/a-linear-layer-is-an-affine-map  /elementa/neural-networks/mlp/a-linear-layer-is-an-affine-map  301
+/elementa/foundations/neural-networks/backpropagation-is-the-chain-rule-over-a-graph  /elementa/neural-networks/backpropagation/backpropagation-is-the-chain-rule-over-a-graph  301
+/elementa/foundations/neural-networks/non-linearity-is-what-makes-depth-worth-having  /elementa/neural-networks/activations/non-linearity-is-what-makes-depth-worth-having  301
+/elementa/foundations/neural-networks/optimisation-follows-the-gradient  /elementa/neural-networks/optimisation/optimisation-follows-the-gradient  301
+/elementa/foundations/neural-networks/regularisation-decides-which-fit-you-get  /elementa/neural-networks/normalisation/regularisation-decides-which-fit-you-get  301
+/elementa/foundations/sequences/attention-answers-the-bottleneck  /elementa/foundations/recurrence-to-attention/attention-answers-the-bottleneck  301
+/elementa/foundations/sequences/convolution-buys-parallelism-with-range  /elementa/neural-networks/recurrence/convolution-buys-parallelism-with-range  301
+/elementa/foundations/sequences/gating-is-a-learned-memory  /elementa/neural-networks/gating/gating-is-a-learned-memory  301
+/elementa/foundations/sequences/long-recurrences-vanish-or-explode  /elementa/neural-networks/recurrence/long-recurrences-vanish-or-explode  301
+/elementa/foundations/sequences/recurrence-compresses-a-sequence-into-a-state  /elementa/neural-networks/recurrence/recurrence-compresses-a-sequence-into-a-state  301
+/elementa/foundations/training/a-batch-is-a-variance-decision  /elementa/neural-networks/optimisation/a-batch-is-a-variance-decision  301
+/elementa/foundations/training/an-evaluation-is-only-as-good-as-its-split  /elementa/practice/datasets/an-evaluation-is-only-as-good-as-its-split  301
+/elementa/foundations/training/the-schedule-matters-as-much-as-the-rate  /elementa/neural-networks/optimisation/the-schedule-matters-as-much-as-the-rate  301
+/elementa/foundations/transformer/causal-masking-makes-a-language-model  /elementa/foundations/encoder-decoder/causal-masking-makes-a-language-model  301
+/elementa/foundations/transformer/encoder-and-decoder-differ-in-what-they-may-see  /elementa/foundations/encoder-decoder/encoder-and-decoder-differ-in-what-they-may-see  301
+/elementa/foundations/transformer/multiple-heads-divide-one-budget  /elementa/foundations/multi-head/multiple-heads-divide-one-budget  301
+/elementa/vision/convolution/a-convolution-is-one-filter-everywhere  /elementa/neural-networks/convolution/a-convolution-is-one-filter-everywhere  301
+/elementa/vision/convolution/depth-buys-receptive-field  /elementa/neural-networks/convolution/depth-buys-receptive-field  301
+/elementa/vision/convolution/padding-and-stride-decide-the-output-size  /elementa/neural-networks/convolution/padding-and-stride-decide-the-output-size  301
+/elementa/vision/convolution/pooling-trades-location-for-invariance  /elementa/neural-networks/convolution/pooling-trades-location-for-invariance  301
