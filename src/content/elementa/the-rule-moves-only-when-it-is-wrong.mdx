@@ -1,0 +1,90 @@
+---
+chapter: neural-networks--perceptron
+proposition: 3
+statement: The rule moves the boundary toward the point it got wrong, and only then.
+claim: "The perceptron update adds y·x to the weight vector, which turns the normal toward a misclassified positive point and away from a misclassified negative one. On a correctly classified point nothing happens at all, and that idleness is what the convergence proof depends on."
+given:
+  - the-score-is-a-signed-distance
+figure: FigPerceptronUpdate
+figureType: B
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "x"
+apparatus:
+  - "0.LA.03"
+  - "0.MC.04"
+  - "0.OP.02"
+sources:
+  - title: "On Convergence Proofs for Perceptrons"
+    url: https://cs.uwaterloo.ca/~y328yu/classics/novikoff.pdf
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+The rule is one line:
+
+```
+if y(⟨w, x⟩ + b) ≤ 0:   w ← w + y·x ,  b ← b + y
+```
+
+Its shape is not arbitrary, and the quickest way to see that is to ask what the
+update does to the very score that triggered it. Write **w**′ = **w** + *y***x**
+and *b*′ = *b* + *y*, and recompute the margin of the same example:
+
+```
+y(⟨w′, x⟩ + b′) = y(⟨w, x⟩ + b)  +  y²(⟨x, x⟩ + 1)
+                = m  +  (‖x‖² + 1)
+```
+
+using *y*² = 1. The margin increases by ‖**x**‖² + 1, which is strictly
+positive. **Every update strictly improves the example that caused it.** The
+improvement may not be enough to fix it in one step, and fixing it may break
+another example, but the direction is never wrong.
+
+Geometrically: adding *y***x** to **w** tilts the normal toward **x** when
+*y* = +1 and away from it when *y* = −1. Since the normal fixes the orientation
+(Proposition 1), the boundary swings with it.
+
+## The idleness is the substance
+
+The clause that looks like a mere efficiency — *do nothing when the point is
+already right* — is the load-bearing part.
+
+In the convergence proof (I.2.B03) the norm of **w** is bounded by expanding
+
+```
+‖w + y·x‖² = ‖w‖² + 2y⟨w, x⟩ + ‖x‖²
+```
+
+and discarding the middle term because it is **non-positive**. It is non-positive
+precisely because the update only happens when *y*(⟨**w**, **x**⟩ + *b*) ≤ 0. An
+algorithm that updated on every example would have that term unsigned, the norm
+could grow faster than √k, and the proof would collapse.
+
+So "only when wrong" is not a shortcut. It is the hypothesis that makes the
+theorem true.
+
+## What kind of algorithm this is
+
+The rule is exactly subgradient descent, at learning rate 1, on
+
+```
+ℓ = max(0, −y(⟨w, x⟩ + b))
+```
+
+— a loss that is zero on the correct side and linear on the wrong side. That
+identification is worked out in full in problem I.2.B07, and it is worth having
+because it places the perceptron inside a family rather than leaving it as a
+curiosity. Change the loss to `max(0, 1 − m)` and the same derivation yields the
+support-vector machine's update. Change it to the logistic loss of Chapter I.4
+and the idle region disappears entirely: every example, however well classified,
+contributes a small gradient forever.
+
+That last difference is the one to carry forward. **The perceptron has a region
+where it does nothing; almost nothing after Chapter I.4 does.** A loss with no
+flat region is what allows a model to keep improving a point it already gets
+right — which is how margins get large without anyone asking for it.

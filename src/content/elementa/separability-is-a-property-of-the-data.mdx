@@ -1,0 +1,80 @@
+---
+chapter: neural-networks--perceptron
+proposition: 4
+statement: Linear separability is a property of the data, and no learning rule creates it.
+claim: "Whether a hyperplane separating the classes exists is decided before any algorithm runs. XOR has no such hyperplane, and the proof is four inequalities that cannot hold together — so the failure is in the hypothesis class, not in the training."
+given:
+  - a-perceptron-is-a-hyperplane
+  - the-rule-moves-only-when-it-is-wrong
+figure: FigXorSquare
+figureType: G
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "x"
+apparatus:
+  - "0.LA.03"
+sources:
+  - title: "Perceptrons: An Introduction to Computational Geometry"
+    url: https://mitpress.mit.edu/9780262534772/perceptrons/
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+A perceptron draws one flat boundary. If the two classes cannot be separated by
+a flat boundary, nothing about the algorithm is at fault — the object being
+searched for does not exist.
+
+XOR is the smallest case. Its four points sit at the corners of the unit square:
+the positives at (0,1) and (1,0), the negatives at (0,0) and (1,1). The
+positives are the ends of one diagonal and the negatives the ends of the other,
+and the two diagonals cross.
+
+Any line separating the ends of one diagonal must pass between them, at the
+crossing. But that is also between the ends of the other diagonal, so it
+separates those too — putting one negative on each side. The picture is the
+proof, and I.2.B04 writes it as four inequalities that contradict each other in
+three lines of algebra.
+
+## Why this is a claim about the class, not the run
+
+Notice what the argument does not mention: no initialisation, no learning rate,
+no number of epochs, no quantity of data. It quantifies over **every**
+(**w**, *b*) that could exist. So it rules out not merely this training run but
+every possible one, and every future improvement in optimisation.
+
+This distinction — recorded in Chapter I.1 as the difference between the
+hypothesis class ℱ and the search within it — is the most useful diagnostic
+available when a model fails. There are exactly two possibilities:
+
+**The target is not in ℱ.** More data, longer training and better optimisers
+change nothing. The architecture must change.
+
+**The target is in ℱ but was not found.** The architecture is adequate and the
+search failed. Now the optimiser, the initialisation and the data are the things
+to look at.
+
+Confusing the two wastes more effort than any other single error in practice,
+and XOR is the cleanest place to learn to tell them apart, because here the
+answer is provable in three lines.
+
+## Corollary
+
+Two escapes exist, and both matter later.
+
+**Change the representation.** Append the feature *x*₁*x*₂. In three dimensions
+the four points are linearly separable, and (1, 1, −2, −0.5) does it. The
+function did not become easier; the space did. Every kernel method is this idea
+taken seriously, and so is every claim that a pretrained backbone "makes the
+task linear".
+
+**Change the class.** Two hidden units with a nonlinearity between them solve
+XOR directly, with weights that can be written down by hand — problem I.5.B04
+does exactly that. This is the path Book I takes, and Chapter I.3 explains why
+the nonlinearity is not optional in it.
+
+Both escapes were known in 1969. What was missing was a way to *train* the second
+one, and that gap is Chapter I.6.

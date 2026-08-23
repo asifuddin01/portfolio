@@ -1,0 +1,53 @@
+---
+id: "I.2.X01"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A second hyperplane"
+depends:
+  - "I.2.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-2-x01-classify-and-measure.py"
+status: published
+---
+
+For $\vec{w} = (1, 3)$ and $b = -6$, write the boundary equation and give the
+class and signed distance of $P=(3,2)$, $Q=(0,0)$, $R=(6,1)$, $S=(1,0)$. Then
+say which point the boundary would reach first if $b$ were increased.
+
+<Hint>
+Increasing $b$ raises every score by the same amount, so it slides the boundary
+without rotating it. The first point to flip is the one with the smallest
+positive score.
+</Hint>
+
+<SolutionToggle>
+
+**Boundary.** $x_1 + 3x_2 - 6 = 0$, i.e. $x_2 = 2 - x_1/3$.
+
+**Norm.** $\lVert\vec{w}\rVert = \sqrt{1 + 9} = \sqrt{10} = 3.1623$.
+
+| Point | Score | Distance | Class |
+|---|---|---|---|
+| $P=(3,2)$ | $3 + 6 - 6 = +3$ | $+0.9487$ | $+1$ |
+| $Q=(0,0)$ | $0 + 0 - 6 = -6$ | $-1.8974$ | $-1$ |
+| $R=(6,1)$ | $6 + 3 - 6 = +3$ | $+0.9487$ | $+1$ |
+| $S=(1,0)$ | $1 + 0 - 6 = -5$ | $-1.5811$ | $-1$ |
+
+**Which flips first.** Decreasing $b$ lowers every score equally. $P$ and $R$
+tie at $+3$, so both flip together at $b = -9$. Going the other way, increasing
+$b$ raises scores: $S$ at $-5$ flips before $Q$ at $-6$, at $b = -1$.
+
+**What that shows.** The bias is a translation, not a rotation. It moves the
+boundary along its own normal $\vec{w}$ and cannot change which side of the
+*plane through the origin* a point sits on. Any question that requires
+re-orienting the boundary needs $\vec{w}$ to change, and the bias cannot help.
+
+The tie between $P$ and $R$ is worth noting: two points at different locations
+can be equidistant from a boundary, because distance to a hyperplane collapses
+$d$ coordinates into one number.
+</SolutionToggle>

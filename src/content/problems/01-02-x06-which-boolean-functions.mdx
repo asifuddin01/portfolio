@@ -1,0 +1,72 @@
+---
+id: "I.2.X06"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Fourteen of sixteen"
+depends:
+  - "I.2.P04"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+There are $16$ Boolean functions of two variables. Determine how many a
+perceptron computes, exhibit weights for AND, OR and NAND, and prove that XNOR
+joins XOR among the failures. Then state the general characterisation.
+
+<Hint>
+XNOR is the negation of XOR. What does negating a perceptron's output do to its
+parameters?
+</Hint>
+
+<SolutionToggle>
+
+**Three that work.**
+
+| Function | $(w_1, w_2, b)$ | Check |
+|---|---|---|
+| AND | $(1, 1, -1.5)$ | $(1,1)\!:\!0.5>0$; all others $\le -0.5$ |
+| OR | $(1, 1, -0.5)$ | $(0,0)\!:\!-0.5$; all others $\ge 0.5$ |
+| NAND | $(-1, -1, 1.5)$ | the negation of AND, so negate every parameter |
+
+Verify NAND fully: $(0,0) \to 1.5 > 0 \to 1$; $(0,1) \to 0.5 > 0 \to 1$;
+$(1,0) \to 0.5 > 0 \to 1$; $(1,1) \to -0.5 \le 0 \to 0$. Correct.
+
+**XNOR fails.** Negating a perceptron's output is achieved by negating all its
+parameters, since $\mathrm{sign}(-s) = -\mathrm{sign}(s)$ away from zero. So if
+some $(\vec{w}, b)$ computed XNOR, then $(-\vec{w}, -b)$ would compute XOR —
+which I.2.B04 proved impossible. Hence no perceptron computes XNOR either.
+$\blacksquare$
+
+Directly, its four inequalities are the mirror image:
+
+$$b > 0, \quad w_2 + b \le 0, \quad w_1 + b \le 0, \quad w_1 + w_2 + b > 0$$
+
+Adding the middle two gives $w_1 + w_2 + 2b \le 0$; the fourth gives
+$w_1 + w_2 > -b$; together $-b + 2b < 0$, so $b < 0$, contradicting the first.
+
+**The count.** Sixteen functions, two failures, so a perceptron computes
+$\mathbf{14}$ of them.
+
+**The general characterisation.** A Boolean function is computable by a
+perceptron exactly when its true points and false points are *linearly
+separable* as subsets of the hypercube $\{0,1\}^n$ — such functions are called
+**threshold functions**. XOR and XNOR are the only two of the sixteen whose
+true and false sets interleave along both diagonals of the square.
+
+**The scale of the failure grows.** For $n$ inputs there are $2^{2^n}$ Boolean
+functions but only about $2^{n^2}$ threshold functions. At $n = 2$ the ratio is
+$14/16 = 87.5\%$; at $n = 4$ it is roughly $2^{16}$ against $65{,}536$ total —
+already under $2\%$; and it collapses to zero as $n$ grows. **The perceptron
+looks adequate on two variables and is arbitrarily inadequate in general**,
+which is the honest version of the story usually told with XOR alone.
+
+**The escape, once more.** Every one of these functions is computable by a
+network with one hidden layer, because AND, OR and NOT are, and those three
+compose to give all of them. That is the constructive half of the universal
+approximation story, and it is Chapter I.5's business.
+</SolutionToggle>

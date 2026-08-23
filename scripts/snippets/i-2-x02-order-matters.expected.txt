@@ -1,0 +1,9 @@
+updates  5   w=(-2,+2) b=+1    6 of 24 orders
+updates  8   w=(-3,+2) b=+2    5 of 24 orders
+updates  9   w=(-2,+2) b=+1    2 of 24 orders
+updates 10   w=(-2,+3) b=+0    4 of 24 orders
+updates 12   w=(-3,+2) b=+2    5 of 24 orders
+updates 14   w=(-3,+4) b=+0    2 of 24 orders
+
+range: 5 to 14 updates on identical data
+R = 2.2361   gamma = 0.3536   bound = 40.0

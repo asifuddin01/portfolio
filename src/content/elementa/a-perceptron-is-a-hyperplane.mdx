@@ -1,0 +1,90 @@
+---
+chapter: neural-networks--perceptron
+proposition: 1
+statement: A perceptron is a hyperplane, and its weight vector is the direction across it.
+claim: "A perceptron partitions space with one flat boundary. The weight vector is perpendicular to that boundary, so it fixes the orientation; the bias only slides the boundary along that direction."
+given:
+  - a-model-is-a-parameterised-function
+figure: FigHyperplane
+figureType: A
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "x"
+apparatus:
+  - "0.LA.03"
+  - "0.LA.05"
+sources:
+  - title: "The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain"
+    url: https://doi.org/10.1037/h0042519
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+The perceptron is usually introduced as a model of a neuron. That framing costs
+more than it gives: it invites questions about biology that the mathematics does
+not answer, and it hides the one fact that makes everything else easy.
+
+The fact is geometric. Take the definition,
+
+```
+ŷ = sign(⟨w, x⟩ + b)
+```
+
+and ask where the prediction changes. It changes on the set where the score is
+zero — and that set is a **hyperplane**: a flat surface of dimension one less
+than the space it sits in. A line in the plane, a plane in three dimensions, and
+in general a $(d-1)$-dimensional sheet.
+
+Now take two points **x** and **x′** both on that surface. Subtracting their
+defining equations,
+
+```
+⟨w, x⟩ + b = 0
+⟨w, x′⟩ + b = 0
+⟹ ⟨w, x − x′⟩ = 0
+```
+
+The difference **x** − **x′** is a direction *along* the boundary, and its inner
+product with **w** is zero. So **w is perpendicular to every direction the
+boundary runs in**. The weight vector is the normal.
+
+This is worth pausing on, because it converts an algebraic object into a
+picture that can be reasoned with. The weights are not "importances" in any
+loose sense — they are the components of one arrow, and the arrow points across
+the fence.
+
+## What each parameter controls
+
+The separation is clean, and it explains a great deal of behaviour.
+
+**w sets the orientation.** Rotating **w** rotates the boundary. No choice of
+*b* can do this: *b* appears in every point's score identically, so it cannot
+change which directions are along the boundary.
+
+**b sets the offset.** Increasing *b* raises every score by the same amount,
+which slides the boundary in the direction of −**w**. The distance it moves is
+the change in *b* divided by ‖**w**‖.
+
+That is the whole parameterisation. A perceptron over *d* inputs has *d*
+numbers choosing a direction and one choosing a position, and a direction in *d*
+dimensions has *d* − 1 degrees of freedom — the remaining one being the overall
+scale, which changes nothing at all.
+
+## Corollary
+
+Two consequences follow immediately and are used repeatedly.
+
+First, **a perceptron with no bias must pass through the origin**. If *b* = 0
+then **x** = **0** always scores zero, so the origin sits on the boundary. Data
+that needs a boundary away from the origin cannot be fitted without a bias, and
+this is the entire argument for having one.
+
+Second, **the number of distinct classifiers is far smaller than the number of
+parameter settings**. Every positive multiple of (**w**, *b*) gives the same
+boundary and the same predictions. The parameterisation is redundant by exactly
+one dimension, which is why any statement about margins has to be made
+scale-free before it can mean anything — the subject of the next proposition.

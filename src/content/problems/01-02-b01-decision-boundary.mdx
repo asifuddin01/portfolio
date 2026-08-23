@@ -1,0 +1,139 @@
+---
+id: "I.2.B01"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One hyperplane, four points, four signed distances"
+depends:
+  - "I.2.P01"
+  - "I.2.P02"
+reachesBack: []
+rounding: "All values rounded to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-2-b01-decision-boundary.py"
+status: published
+---
+
+<Statement>
+A perceptron's parameters are given. Write the equation of its decision
+boundary, classify four points, and compute each point's signed distance from
+the boundary.
+</Statement>
+
+<Given>
+$$\vec{w} = \begin{bmatrix} 2 \\ -1 \end{bmatrix}, \qquad b = -1$$
+
+and the four points
+
+$$A = (2, 1), \quad B = (0, 1), \quad C = (1, -1), \quad D = (0, 3)$$
+</Given>
+
+<Find>
+The boundary as an equation in $x_1, x_2$; the predicted label of each point;
+and each signed distance, a scalar in the same units as the coordinates.
+</Find>
+
+<Strategy>
+Compute the raw score $s = \langle \vec{w}, \vec{x}\rangle + b$ once per point.
+The sign of $s$ gives the class and $s/\lVert\vec{w}\rVert$ gives the distance,
+so one quantity answers both questions.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the boundary.** By Definition 2 the boundary is the set where the
+score is zero:
+
+$$2x_1 - x_2 - 1 = 0 \qquad\text{equivalently}\qquad x_2 = 2x_1 - 1$$
+
+A line of slope $2$ through $(0.5, 0)$. Note that $\vec{w} = (2, -1)$ is
+perpendicular to it: the direction along the line is $(1, 2)$, and
+$\langle (2,-1),(1,2)\rangle = 2 - 2 = 0$. **The weight vector is always the
+normal to the boundary.** That single fact makes every later step geometric
+rather than algebraic.
+
+**Step 2 — the norm.** Needed once, for all four points:
+
+$$\lVert \vec{w}\rVert = \sqrt{2^2 + (-1)^2} = \sqrt{5} = 2.2361$$
+
+**Step 3 — the scores.**
+
+$$
+\begin{aligned}
+s_A &= (2)(2) + (-1)(1) - 1 = 4 - 1 - 1 = +2 \\
+s_B &= (2)(0) + (-1)(1) - 1 = 0 - 1 - 1 = -2 \\
+s_C &= (2)(1) + (-1)(-1) - 1 = 2 + 1 - 1 = +2 \\
+s_D &= (2)(0) + (-1)(3) - 1 = 0 - 3 - 1 = -4
+\end{aligned}
+$$
+
+**Step 4 — labels and distances.** Divide each score by $\sqrt5$
+(<ApparatusRef ref="0.LA.05" />):
+
+| Point | Score | Distance | Class |
+|---|---|---|---|
+| $A = (2,1)$ | $+2$ | $+0.8944$ | $+1$ |
+| $B = (0,1)$ | $-2$ | $-0.8944$ | $-1$ |
+| $C = (1,-1)$ | $+2$ | $+0.8944$ | $+1$ |
+| $D = (0,3)$ | $-4$ | $-1.7889$ | $-1$ |
+
+</Solution>
+
+<Answer>
+Boundary: $2x_1 - x_2 - 1 = 0$.
+
+$$
+\text{dist}(A) = +0.8944,\quad
+\text{dist}(B) = -0.8944,\quad
+\text{dist}(C) = +0.8944,\quad
+\text{dist}(D) = -1.7889
+$$
+
+Classes: $A, C \to +1$ and $B, D \to -1$. Distances are scalars in the units of
+the coordinate axes; the scores are not, which is why the division by
+$\lVert\vec{w}\rVert$ is not optional.
+</Answer>
+
+<CheckNumeric snippet="i-2-b01-decision-boundary.py" verified>
+```python
+norm = sqrt(w[0] ** 2 + w[1] ** 2)
+score = w[0] * x[0] + w[1] * x[1] + b
+dist  = score / norm
+```
+Prints `||w|| = 2.2361` and the four distances above.
+</CheckNumeric>
+
+<CheckSanity>
+**A point on the boundary has distance zero.** Take $x = (0.5, 0)$, which
+satisfies $x_2 = 2x_1 - 1$. Its score is $(2)(0.5) - 0 - 1 = 0$, so its distance
+is $0$. The formula agrees with the definition it came from.
+
+**Rescaling the parameters changes nothing geometric.** Double both:
+$\vec{w} = (4,-2)$, $b = -2$. Then $s_A = 4$ and $\lVert\vec{w}\rVert = 2\sqrt5$,
+so the distance is $4/(2\sqrt5) = 0.8944$ — unchanged. The scores doubled and
+the distances did not, which is exactly the difference between the functional
+margin (Definition 4) and the geometric one (Definition 5).
+
+**Moving a point along the boundary direction changes nothing.** Shift $A$ by
+$(1,2)$, the direction along the line, to get $(3,3)$: its score is
+$6 - 3 - 1 = 2$, identical. Moving perpendicular to $\vec{w}$ cannot change the
+score, because $\vec{w}$ is what the score measures against.
+</CheckSanity>
+
+<Breaks>
+The distance formula requires $\lVert\vec{w}\rVert \neq 0$. At $\vec{w} = \vec{0}$
+the score is the constant $b$ for every input, the "boundary" is empty or all of
+$\R^2$, and the division is undefined. That is not a pathological corner: it is
+the state a perceptron is initialised in, which is why the first update of
+I.2.B02 has margin exactly zero and the rule must treat $\le 0$ rather than
+$< 0$ as a mistake.
+</Breaks>
+
+<Variation>
+Keep $\vec{w}$ and change $b$ from $-1$ to $-5$. Predict, before computing,
+which points change class — then verify, and state in one sentence what the
+bias does geometrically.
+</Variation>

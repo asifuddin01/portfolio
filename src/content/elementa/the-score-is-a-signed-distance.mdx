@@ -1,0 +1,84 @@
+---
+chapter: neural-networks--perceptron
+proposition: 2
+statement: The score is a signed distance once it is divided by the length of the weight vector.
+claim: "A single number answers two questions at once: its sign gives the predicted class, and its magnitude — after division by ‖w‖ — gives the Euclidean distance to the boundary. Without that division the number is not a distance and cannot be compared across models."
+given:
+  - a-perceptron-is-a-hyperplane
+figure: FigSignedDistance
+figureType: A
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "x"
+apparatus:
+  - "0.LA.03"
+  - "0.LA.05"
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+The raw score $s = \langle \mathbf{w}, \mathbf{x}\rangle + b$ is the only
+quantity a perceptron computes. It is tempting to read it as a confidence, and
+tempting for a reason: it does grow as a point moves away from the boundary. But
+it is not yet a distance, and the difference matters.
+
+Drop a perpendicular from **x** to the boundary, meeting it at a point **p**.
+Since **w** is normal to the boundary (Proposition 1), the segment from **p** to
+**x** points along **w**, so
+
+```
+x = p + t · w/‖w‖
+```
+
+for some signed scalar *t*, which is the quantity wanted. Take the score of
+**x**:
+
+```
+s = ⟨w, x⟩ + b
+  = ⟨w, p⟩ + b  +  t · ⟨w, w⟩/‖w‖
+  =      0      +  t · ‖w‖
+```
+
+using $\langle \mathbf{w},\mathbf{p}\rangle + b = 0$ because **p** is on the
+boundary, and $\langle \mathbf{w},\mathbf{w}\rangle = \lVert\mathbf{w}\rVert^2$.
+Therefore
+
+```
+t = s / ‖w‖
+```
+
+The score is the distance, multiplied by ‖**w**‖.
+
+## Why the division cannot be skipped
+
+Multiply both **w** and *b* by 10. Every score becomes ten times larger. The
+boundary has not moved, no prediction has changed, and no point is further from
+anything — yet a reader looking at raw scores would conclude the model became
+ten times more confident.
+
+This makes the raw score useless for any purpose that compares:
+
+- comparing two points under one model is fine, since ‖**w**‖ cancels;
+- comparing two *models* is not, because their weight norms differ arbitrarily;
+- putting a score into a theorem is not, because the theorem could be satisfied
+  by rescaling rather than by learning.
+
+The scale-free quantity — the **geometric margin** — is what survives. It is the
+one that appears in the convergence theorem, and it is the one worth reporting.
+
+## Corollary
+
+The same distinction reappears in a different costume in almost every later
+chapter. A logit is a raw score; a temperature is a rescaling of it; softmax
+sharpness is a statement about scale rather than about content. When Chapter II.3
+divides attention scores by √d_k, it is doing exactly what the division by
+‖**w**‖ does here — removing a scale that would otherwise grow with dimension
+and be mistaken for information.
+
+The habit to build: whenever a number is about to be interpreted, ask what
+rescaling of the parameters would change it. If the answer is "any", the number
+is not yet a measurement.

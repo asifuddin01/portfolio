@@ -1,0 +1,88 @@
+---
+id: "I.2.X10"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "A mistake bound is not a generalisation bound"
+depends:
+  - "I.2.P03"
+  - "I.2.P04"
+rounding: "Symbolic, with one numeric illustration."
+hasSolution: true
+verified: false
+status: published
+---
+
+The chapter's open exercise. I.2.T1 bounds mistakes on the training sequence.
+Chapter I.1 was about the gap between training and expected error. Determine
+precisely what — if anything — I.2.T1 says about performance on unseen data.
+Argue both directions, and state the strongest true claim you can.
+
+<Hint>
+An online mistake bound counts errors on examples the algorithm has not yet
+seen when it makes them. Ask whether that is the same as a test set.
+</Hint>
+
+<SolutionToggle>
+
+**The naive reading, and why it is wrong.** "The perceptron makes at most
+$(R/\gamma)^2$ mistakes, so it will make at most that many on new data." False.
+The bound is over the *whole sequence presented*, and once the algorithm has
+converged it makes no further updates — but it can still be arbitrarily wrong on
+a point drawn from a region the training sequence never visited. The theorem is
+silent about points outside the sequence.
+
+**The counterexample.** Take a separable set concentrated in a small region and
+a test point far away. The perceptron returns *some* separating hyperplane —
+whichever the order happened to produce (I.2.X02). Four different hyperplanes
+were possible there, all with zero training error, and they disagree on distant
+points. So training error zero, and test error entirely undetermined by the
+theorem.
+
+**The direction that does work.** There is a real result, and it is subtler than
+the naive reading. In the **online** setting, each mistake is made on an example
+*before* the algorithm has seen it. So the bound really does count errors on
+unseen data — it just counts them cumulatively over one pass rather than in
+expectation over a distribution.
+
+This gives the strongest true claim:
+
+> **On a single pass through $n$ separable examples, the perceptron's error
+> rate is at most $(R/\gamma)^2 / n$, and every one of those errors was on an
+> example not previously seen.**
+
+At $n = 10^6$ with $R/\gamma = 10$, that is at most $100$ mistakes, an online
+error rate below $0.01\%$ — a genuine statement about unseen data, obtained
+without any distributional assumption at all.
+
+**Converting online to distributional.** An **online-to-batch conversion** does
+exist: if the examples are i.i.d., then averaging the hypotheses visited during
+the run — or picking one uniformly at random — yields expected risk at most
+$M/n$, where $M$ is the mistake bound. Note what this costs:
+
+*It needs the i.i.d. assumption*, which the mistake bound itself never used.
+The online bound holds against an adversarial order; the batch guarantee does
+not.
+
+*It is a guarantee about the averaged hypothesis*, not about the final one. The
+last hyperplane, which is what anyone would actually deploy, is not covered.
+
+**The honest summary in three lines.**
+
+1. As stated, I.2.T1 says nothing about a held-out test set.
+2. Read as an online bound, it says something genuinely strong and
+   assumption-free about errors on unseen examples during the pass.
+3. Turning that into a statement about a deployed classifier requires i.i.d.
+   sampling and a change to which hypothesis is returned — two additions, both
+   easy to forget.
+
+**Why this belongs in Book I.** It is the first instance of a pattern the rest
+of Elementa repeats: a theorem about the *algorithm* is quietly read as a
+theorem about the *model*. The distinction between what an optimisation
+guarantee covers and what a generalisation guarantee covers is the same one that
+separates I.1.T1's "unbiased for fixed $\theta$" from "unbiased for the $\theta$
+you chose". Get it wrong here, with three lines of algebra in view, and it will
+be got wrong later where nothing is in view.
+</SolutionToggle>

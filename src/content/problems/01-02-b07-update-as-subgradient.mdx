@@ -1,0 +1,141 @@
+---
+id: "I.2.B07"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "The learning rule is a subgradient step"
+depends:
+  - "I.2.P03"
+reachesBack: []
+rounding: "Symbolic throughout."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+The perceptron rule looks like a hand-made heuristic. Show that it is exactly
+one step of subgradient descent, with learning rate $1$, on a specific loss —
+and identify that loss.
+</Statement>
+
+<Given>
+The perceptron loss for one example, sometimes called the hinge-at-zero loss:
+
+$$\ell(\vec{w}, b) = \max\big(0,\; -y(\langle\vec{w},\vec{x}\rangle + b)\big)$$
+
+and the update rule of Definition 7: on a mistake,
+$\vec{w} \leftarrow \vec{w} + y\vec{x}$ and $b \leftarrow b + y$.
+</Given>
+
+<Find>
+The subgradient of $\ell$ with respect to $\vec{w}$ and $b$ in both regimes, and
+the resulting descent step at $\eta = 1$.
+</Find>
+
+<Strategy>
+Split on the sign of the margin, differentiate each branch, and compare the
+resulting step with the rule. The function is not differentiable at the join,
+which is why "subgradient" rather than "gradient" — and that is a feature worth
+naming rather than glossing.
+</Strategy>
+
+<Solution>
+
+**Step 1 — name the inner quantity.** Let $m = y(\langle\vec{w},\vec{x}\rangle + b)$
+be the functional margin, so $\ell = \max(0, -m)$.
+
+**Step 2 — the case $m > 0$ (correct).** Then $-m < 0$, the maximum is achieved
+by the constant $0$, and $\ell$ is identically zero in a neighbourhood. A
+locally constant function has zero derivative:
+
+$$\nabla_{\vec{w}}\,\ell = \vec{0}, \qquad \partial \ell/\partial b = 0$$
+
+The descent step changes nothing. **This matches the rule's "otherwise do
+nothing" exactly.**
+
+**Step 3 — the case $m < 0$ (wrong).** Then $\ell = -m = -y(\langle\vec{w},\vec{x}\rangle + b)$,
+which is affine in the parameters and so differentiable. Using
+$\nabla_{\vec{w}}\langle\vec{w},\vec{x}\rangle = \vec{x}$
+(<ApparatusRef ref="0.MC.04" />):
+
+$$
+\nabla_{\vec{w}}\,\ell = -y\vec{x},
+\qquad
+\frac{\partial \ell}{\partial b} = -y
+$$
+
+**Step 4 — take a descent step.** Gradient descent moves against the gradient
+(<ApparatusRef ref="0.OP.02" />), with $\eta = 1$:
+
+$$
+\vec{w} \leftarrow \vec{w} - \eta\,\nabla_{\vec{w}}\ell = \vec{w} - (1)(-y\vec{x}) = \vec{w} + y\vec{x}
+$$
+
+$$
+b \leftarrow b - \eta\,\frac{\partial\ell}{\partial b} = b - (1)(-y) = b + y
+$$
+
+These are the update rule, term for term.
+
+**Step 5 — the join at $m = 0$.** At exactly zero the function has a kink and no
+derivative exists. The subdifferential is the whole interval between the two
+one-sided slopes, $\{\,-\alpha\, y\vec{x} : \alpha \in [0,1]\,\}$. Any element is
+a legal subgradient step; the perceptron picks $\alpha = 1$, which is why it
+updates on $m \le 0$ rather than $m < 0$. That convention, which looked arbitrary
+in I.2.B02, is a choice of subgradient.
+
+</Solution>
+
+<Answer>
+The perceptron rule is subgradient descent on
+$\ell = \max(0, -y(\langle\vec{w},\vec{x}\rangle + b))$ with $\eta = 1$, taking
+the subgradient $\alpha = 1$ at the kink:
+
+$$
+\nabla_{\vec{w}}\,\ell =
+\begin{cases}
+\vec{0} & m > 0\\
+-y\vec{x} & m \le 0
+\end{cases}
+\qquad\Longrightarrow\qquad
+\vec{w} \leftarrow \vec{w} + y\vec{x} \ \text{ on a mistake.}
+$$
+</Answer>
+
+<CheckSanity>
+**The loss is zero exactly when the rule is idle.** $\ell = 0 \iff m \ge 0 \iff$
+no update. The two descriptions of "nothing to do here" agree, which they must
+if one is to be a restatement of the other.
+
+**The loss is convex.** It is the maximum of two affine functions of the
+parameters, and a pointwise maximum of convex functions is convex
+(<ApparatusRef ref="0.OP.01" />). So the perceptron *is* minimising a convex
+objective — and yet it still fails to terminate on XOR, because the minimum of
+that objective is not zero there. Convexity buys a well-posed problem, not a
+useful answer.
+
+**The learning rate is genuinely irrelevant here.** Any $\eta > 0$ gives
+$\vec{w} \leftarrow \vec{w} + \eta y\vec{x}$, which rescales $\vec{w}$ but not
+the sign of any score when starting from $\vec{0}$ — so the sequence of
+predictions is identical. This is unique to the perceptron and stops being true
+the moment Chapter I.4 introduces a loss with curvature.
+</CheckSanity>
+
+<Breaks>
+The identification needs $\eta = 1$ and $\vec{w}_0 = \vec{0}$ for the *sequence*
+to match; only the *form* of the step matches for general $\eta$. It also needs
+the loss to be this one. The very similar hinge loss $\max(0, 1 - m)$ — which
+demands a margin of at least $1$ rather than merely a correct sign — gives the
+same-shaped update but a different idle region, and converges to a
+maximum-margin solution the perceptron never finds. One symbol's difference in
+the loss changes what the algorithm is for.
+</Breaks>
+
+<Variation>
+Derive the update for the hinge loss $\max(0, 1 - m)$ and state, in one
+sentence, what the extra $1$ changes about which hyperplanes are stationary
+points.
+</Variation>

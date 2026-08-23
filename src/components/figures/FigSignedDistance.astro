@@ -1,0 +1,41 @@
+---
+/** Book I, Ch. II, Prop. 2 — one number carries the class and the distance. */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="sd-t sd-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 560px">
+  <title id="sd-t">The score divided by the norm of w is a signed distance</title>
+  <desc id="sd-d">
+    A point sits away from the boundary. The perpendicular dropped from it to
+    the boundary has length equal to the score divided by the length of the
+    weight vector; the sign of the score says which side, and the magnitude says
+    how far.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one number, two facts</text>
+
+  {/* boundary, gentle slope: (80,244) -> (520,84) */}
+  <line x1="60" y1="250" x2="540" y2="76" class="wire" />
+  <text x="552" y="72" class="t-key">boundary</text>
+
+  {/* point A on the positive side */}
+  <circle cx="352" cy="72" r="7" class="bx-fill" />
+  <text x="364" y="66" class="t-sm">x</text>
+  {/* foot of perpendicular, roughly (392,187) direction of normal (160,440)?  keep simple */}
+  <line x1="352" y1="72" x2="404" y2="216" class="dash" />
+  <circle cx="404" cy="216" r="4" class="bx" />
+  <rect x="392" y="204" width="12" height="12" transform="rotate(-20 404 216)" class="bx" opacity="0.7" />
+  <text x="416" y="150" class="t-key">|⟨w,x⟩+b| / ‖w‖</text>
+
+  {/* point B on the negative side */}
+  <circle cx="176" cy="272" r="7" class="bx" />
+  <text x="188" y="290" class="t-sm">x′</text>
+  <line x1="176" y1="272" x2="146" y2="188" class="dash" />
+  <circle cx="146" cy="188" r="4" class="bx" />
+
+  <text x="556" y="132" class="t-key">sign → the class</text>
+  <text x="556" y="152" class="t-key">size → the distance</text>
+
+  <line x1="14" y1="46" x2="540" y2="46" class="wire-soft" />
+  <text x="14" y="40" class="t-key">scores rescale with w; distances do not</text>
+
+  <text x="0" y="296" class="t-xs">doubling w and b doubles every score and moves nothing</text>
+</svg>

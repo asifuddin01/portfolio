@@ -1,0 +1,5 @@
+||w|| = 2.2361
+A  score +2.0000   dist +0.8944   class +1
+B  score -2.0000   dist -0.8944   class -1
+C  score +2.0000   dist +0.8944   class +1
+D  score -4.0000   dist -1.7889   class -1

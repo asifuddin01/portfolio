@@ -1,0 +1,46 @@
+---
+/** Book I, Ch. II, Prop. 3 — the boundary turns toward the point it got wrong. */
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="pu-t pu-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 580px">
+  <title id="pu-t">An update rotates the boundary toward the misclassified point</title>
+  <desc id="pu-d">
+    Before the update a positive point lies on the negative side. Adding y times
+    x to the weight vector turns the weight vector toward that point, which
+    swings the boundary until the point is on the correct side. Points already
+    classified correctly produce no change at all.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">before</text>
+  <text x="380" y="22" class="t-lab">after one update</text>
+
+  {/* LEFT panel */}
+  <line x1="40" y1="250" x2="300" y2="82" class="wire" />
+  <circle cx="120" cy="120" r="7" class="bx-fill" />
+  <text x="132" y="114" class="t-sm">x, y = +1</text>
+  <text x="52" y="286" class="t-key" style="fill: var(--oxblood-text)">margin ≤ 0 — a mistake</text>
+  {/* old w, pointing up-right from the line */}
+  <line x1="170" y1="166" x2="228" y2="212" class="wire-soft" />
+  <polygon points="222,203 238,221 219,222" class="head" />
+  <text x="238" y="240" class="t-key">w</text>
+
+  {/* divider */}
+  <line x1="340" y1="60" x2="340" y2="280" class="dash" />
+
+  {/* RIGHT panel: boundary rotated so the point is on the + side */}
+  <line x1="420" y1="268" x2="700" y2="196" class="wire" />
+  <circle cx="500" cy="120" r="7" class="bx-fill" />
+  <text x="512" y="114" class="t-sm">x, y = +1</text>
+  <text x="432" y="300" class="t-key" style="fill: var(--verdigris)">margin &gt; 0 — correct</text>
+  {/* new w rotated toward x */}
+  <line x1="548" y1="230" x2="566" y2="160" class="wire" />
+  <polygon points="558,166 570,146 574,166" class="head" />
+  <text x="580" y="150" class="t-key">w + y·x</text>
+  {/* the added vector, dashed */}
+  <line x1="548" y1="230" x2="600" y2="272" class="dash" />
+  <text x="606" y="286" class="t-xs">old w</text>
+
+  <line x1="14" y1="46" x2="300" y2="46" class="wire-soft" />
+  <line x1="380" y1="46" x2="706" y2="46" class="wire-soft" />
+
+  <text x="0" y="316" class="t-xs">w ← w + y·x turns the normal toward the point; the boundary follows</text>
+</svg>

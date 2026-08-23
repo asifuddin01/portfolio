@@ -1,0 +1,50 @@
+---
+/** Book I, Ch. II, Prop. 1 — the weight vector is the normal to the boundary. */
+const PLUS  = [[300, 96], [356, 128], [268, 62]];
+const MINUS = [[168, 208], [116, 176], [212, 240]];
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="hp-t hp-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 560px">
+  <title id="hp-t">A perceptron draws one hyperplane, and w is perpendicular to it</title>
+  <desc id="hp-d">
+    A straight boundary divides the plane into two half-spaces, one labelled
+    plus and one minus. The weight vector is drawn as an arrow leaving the
+    boundary at a right angle and pointing into the positive side; the bias
+    slides the boundary along that arrow without turning it.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">one boundary, two half-spaces</text>
+
+  {/* the half-space wash */}
+  <polygon points="96,264 456,48 664,48 664,264" class="bx-soft" opacity="0.35" />
+
+  {/* boundary: from (96,264) to (456,48), direction (360,-216) ~ (5,-3) */}
+  <line x1="72" y1="278" x2="480" y2="34" class="wire" />
+  <text x="492" y="30" class="t-key">⟨w, x⟩ + b = 0</text>
+
+  {/* normal at the midpoint (276,156); direction perpendicular to (5,-3) is (3,5) normalised */}
+  <line x1="276" y1="156" x2="345" y2="197" class="wire" />
+  <polygon points="341,187 356,204 337,206" class="head" />
+  <text x="352" y="226" class="t-key">w</text>
+  <rect x="276" y="145" width="13" height="13" transform="rotate(31 276 156)" class="bx" opacity="0.7" />
+
+  {PLUS.map(([x, y]) => (
+    <g>
+      <circle cx={x} cy={y} r="6" class="bx-fill" />
+      <text x={x + 12} y={y + 5} class="t-sm">+</text>
+    </g>
+  ))}
+  {MINUS.map(([x, y]) => (
+    <g>
+      <circle cx={x} cy={y} r="6" class="bx" />
+      <text x={x + 12} y={y + 5} class="t-sm">−</text>
+    </g>
+  ))}
+
+  <text x="470" y="120" class="t-key">score &gt; 0</text>
+  <text x="96" y="120" class="t-key">score &lt; 0</text>
+
+  <line x1="14" y1="46" x2="480" y2="46" class="wire-soft" />
+  <text x="14" y="40" class="t-key">the only shape a perceptron can draw</text>
+
+  <text x="0" y="296" class="t-xs">b slides the line along w · it cannot turn it</text>
+</svg>

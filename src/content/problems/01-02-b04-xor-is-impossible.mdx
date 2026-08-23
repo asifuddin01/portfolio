@@ -1,0 +1,139 @@
+---
+id: "I.2.B04"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Four inequalities that cannot all hold"
+depends:
+  - "I.2.P01"
+  - "I.2.P04"
+reachesBack: []
+rounding: "Exact; the argument is algebraic."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Prove that no perceptron computes XOR on $\{0,1\}^2$, by writing the four
+requirements as inequalities in $(w_1, w_2, b)$ and showing they are jointly
+inconsistent.
+</Statement>
+
+<Given>
+The XOR function:
+
+| $x_1$ | $x_2$ | target |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+A perceptron predicts $1$ when $w_1x_1 + w_2x_2 + b > 0$ and $0$ otherwise.
+</Given>
+
+<Find>
+Either parameters that work, or a proof that none exist.
+</Find>
+
+<Strategy>
+Substitute each of the four inputs to turn the truth table into four linear
+inequalities. Then add pairs of them to derive a contradiction — the point being
+that this is ordinary algebra, not an appeal to geometry or intuition.
+</Strategy>
+
+<Solution>
+
+**Step 1 — write the four requirements.** Substituting each row:
+
+$$
+\begin{aligned}
+(0,0) \to 0: &\qquad b \le 0 &&(1)\\
+(0,1) \to 1: &\qquad w_2 + b > 0 &&(2)\\
+(1,0) \to 1: &\qquad w_1 + b > 0 &&(3)\\
+(1,1) \to 0: &\qquad w_1 + w_2 + b \le 0 &&(4)
+\end{aligned}
+$$
+
+**Step 2 — add (2) and (3).** Adding two strict inequalities of the same
+direction is legal and preserves strictness:
+
+$$w_1 + w_2 + 2b > 0 \qquad (5)$$
+
+**Step 3 — combine with (4).** From (4), $w_1 + w_2 \le -b$. Substituting that
+upper bound into (5):
+
+$$0 < w_1 + w_2 + 2b \le (-b) + 2b = b$$
+
+so $b > 0$.
+
+**Step 4 — the contradiction.** Step 3 concludes $b > 0$. Requirement (1) says
+$b \le 0$. Both cannot hold. Therefore no $(w_1, w_2, b)$ satisfies all four,
+and no perceptron computes XOR. $\blacksquare$
+
+**Why this is stronger than "training fails".** Nothing here mentions an
+algorithm, an initialisation, a learning rate, or a quantity of data. The
+inequalities describe every perceptron that could ever exist. The failure is a
+property of the hypothesis class $\mathcal{F}$ of Definition 3 in Chapter I.1 —
+XOR is simply not in it.
+
+**The geometric reading.** The two positive points $(0,1)$ and $(1,0)$ lie on
+one diagonal of the unit square; the two negatives $(0,0)$ and $(1,1)$ lie on the
+other. The diagonals cross. Any straight line separating one diagonal's endpoints
+must pass between them, and therefore also separates the other diagonal's
+endpoints — putting one negative on each side. The algebra above is that picture
+with the geometry removed.
+
+</Solution>
+
+<Answer>
+No such perceptron exists. Requirements (2) and (3) force $b > 0$ while
+requirement (1) forces $b \le 0$.
+
+The obstruction is exactly one dimension of freedom short: adding a third
+feature $x_1x_2$ makes the four points linearly separable in $\R^3$, with
+$(w_1, w_2, w_3, b) = (1, 1, -2, -0.5)$ solving it.
+</Answer>
+
+<CheckSanity>
+**The proposed three-dimensional solution works.** With the extra feature
+$x_3 = x_1x_2$ and $(1, 1, -2, -0.5)$:
+
+| Input | Score | Predicted | Target |
+|---|---|---|---|
+| $(0,0,0)$ | $-0.5$ | 0 | 0 |
+| $(0,1,0)$ | $+0.5$ | 1 | 1 |
+| $(1,0,0)$ | $+0.5$ | 1 | 1 |
+| $(1,1,1)$ | $1 + 1 - 2 - 0.5 = -0.5$ | 0 | 0 |
+
+All four correct. So the impossibility really is about the representation and
+not about XOR being hard.
+
+**Three of the four are satisfiable.** Drop requirement (4) and
+$(w_1,w_2,b) = (1,1,-0.5)$ satisfies (1), (2), (3). This confirms the
+contradiction genuinely needs all four rows, rather than arising from a slip in
+transcribing one of them.
+
+**AND and OR are fine.** AND: $(1,1,-1.5)$. OR: $(1,1,-0.5)$. So the perceptron
+is not simply weak — it computes fourteen of the sixteen Boolean functions of
+two variables. XOR and its negation are the exceptions.
+</CheckSanity>
+
+<Breaks>
+The proof needs the exact convention that a score of $0$ predicts class $0$.
+If ties were resolved the other way, requirement (1) becomes $b < 0$ and
+requirement (4) becomes $w_1 + w_2 + b < 0$ — both strict — and the same
+addition still yields $b > 0$ against $b < 0$. The contradiction survives the
+convention change, which is worth checking rather than assuming: a proof that
+depended on the tie-breaking rule would be a proof about the rule, not about
+XOR.
+</Breaks>
+
+<Variation>
+Show that parity on three bits — output $1$ when an odd number of inputs are
+$1$ — is also not computable by a perceptron, by exhibiting a contradiction
+among its eight inequalities. Then state the general pattern.
+</Variation>

@@ -554,6 +554,25 @@ export async function lintProse(data) {
     }
   }
 
+  /**
+   * A `$$` fence that opens with content after it and closes on a later line
+   * is read as *inline* math, which then never closes — so every brace after
+   * it leaks out and MDX reports a missing closing tag hundreds of lines away.
+   * The build does fail, but it points at the wrong place, so catch it here
+   * where the message can name the actual line.
+   */
+  for (const f of files) {
+    const lines = f.text.split('\n');
+    for (const [i, line] of lines.entries()) {
+      const s = line.trim();
+      if (!s.startsWith('$$') || s === '$$' || s.split('$$').length > 2) continue;
+      errors.push(
+        `${rel(f.file)}:${i + 1}: a display-maths block opens inline here and ` +
+        `closes on a later line. Put both $$ fences on their own lines (§5.8).`
+      );
+    }
+  }
+
   // §5.7 — an equation numbered but never referenced should not be numbered.
   const cited = new Set();
   for (const f of files) for (const m of f.text.matchAll(/\(([IVX]+\.\d+\.\d+)\)/g)) cited.add(m[1]);

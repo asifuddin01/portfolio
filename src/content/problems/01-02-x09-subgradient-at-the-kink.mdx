@@ -1,0 +1,72 @@
+---
+id: "I.2.X09"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "The subgradient at the join"
+depends:
+  - "I.2.P03"
+rounding: "1 d.p.; the quantities are small integers."
+hasSolution: true
+verified: true
+snippet: "i-2-x09-subgradient-at-the-kink.py"
+status: published
+---
+
+Using the perceptron loss of I.2.B07, compute the loss and a subgradient at
+three states: one with positive margin, one with negative margin, and one
+exactly at the kink. Then explain why the third case has a *set* of valid
+answers and which element the perceptron rule chooses.
+
+<Hint>
+At the kink, the two branches disagree about the slope. Every value between
+them is legitimate.
+</Hint>
+
+<SolutionToggle>
+
+**The three states.** All with $\vec{w}$, $b$ and $(\vec{x}, y)$ as given:
+
+| Case | $m = y(\langle\vec{w},\vec{x}\rangle+b)$ | $\ell$ | $\nabla_{\vec{w}}$ | $\partial/\partial b$ |
+|---|---|---|---|---|
+| $\vec{w}=(2,1), b=0, \vec{x}=(1,1), y=+1$ | $+3$ | $0$ | $(0, 0)$ | $0$ |
+| $\vec{w}=(2,1), b=0, \vec{x}=(-1,-1), y=+1$ | $-3$ | $3$ | $(+1, +1)$ | $-1$ |
+| $\vec{w}=(1,-1), b=0, \vec{x}=(1,1), y=+1$ | $0$ | $0$ | $(-1, -1)$ | $-1$ |
+
+**Case 1, $m > 0$.** $\ell = \max(0, -3) = 0$, and $\ell$ is identically zero
+nearby, so every derivative is zero. The rule is idle, and gradient descent
+agrees.
+
+**Case 2, $m < 0$.** $\ell = \max(0, 3) = 3$. On this branch
+$\ell = -y(\langle\vec{w},\vec{x}\rangle+b)$, so
+$\nabla_{\vec{w}}\ell = -y\vec{x} = -(+1)(-1,-1) = (+1,+1)$ and
+$\partial\ell/\partial b = -y = -1$. The descent step is
+$\vec{w} \leftarrow \vec{w} - (+1,+1) = (1, 0)$, which equals
+$\vec{w} + y\vec{x} = (2,1) + (-1,-1)$. The rule and the gradient step coincide.
+
+**Case 3, $m = 0$.** $\ell = \max(0, 0) = 0$, but the function is not
+differentiable here. Approaching from $m > 0$ the slope is $\vec{0}$;
+approaching from $m < 0$ it is $-y\vec{x} = (-1,-1)$. The **subdifferential** is
+the whole segment joining them:
+
+$$\partial_{\vec{w}}\,\ell = \{\,-\alpha\, y\vec{x} : \alpha \in [0, 1]\,\} = \{\,(-\alpha, -\alpha) : \alpha \in [0,1]\,\}$$
+
+Every element is a valid subgradient, and each gives a different — equally
+legitimate — algorithm.
+
+**Which one the perceptron picks.** $\alpha = 1$, the most aggressive element.
+That is exactly what the condition "update when $m \le 0$" encodes: at the kink
+it behaves as though the example were wrong. Choosing $\alpha = 0$ instead would
+give "update only when $m < 0$", and starting from $\vec{w} = \vec{0}$ that
+algorithm never takes a first step at all, because the initial margin of every
+example is exactly zero.
+
+**Why this matters beyond the perceptron.** ReLU has precisely this structure at
+the origin (Chapter I.3), and every framework silently chooses a subgradient
+there — usually $0$, occasionally $\tfrac12$ or $1$. The choice is invisible in
+the loss curve and can change which units are dead. Knowing that a kink means a
+*set* rather than a *value*, and that someone has chosen for you, is worth
+carrying into every chapter that uses a piecewise-linear activation.
+</SolutionToggle>

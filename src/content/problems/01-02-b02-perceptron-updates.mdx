@@ -1,0 +1,139 @@
+---
+id: "I.2.B02"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Running the learning rule to convergence"
+depends:
+  - "I.2.P02"
+  - "I.2.P03"
+reachesBack: []
+rounding: "Exact integers throughout; no rounding is needed."
+hasSolution: true
+verified: true
+snippet: "i-2-b02-perceptron-updates.py"
+status: published
+---
+
+<Statement>
+Run the perceptron learning rule on a separable four-point set until it stops
+changing. Show every weight update and every margin you tested, including the
+ones that produced no change.
+</Statement>
+
+<Given>
+Four labelled points, presented cyclically in this order:
+
+$$
+(1,1)\!:\,+1, \qquad
+(2,0)\!:\,+1, \qquad
+(-1,0)\!:\,-1, \qquad
+(0,-1)\!:\,-1
+$$
+
+Initialise $\vec{w} = (0,0)$ and $b = 0$. The rule (Definition 7): if
+$y(\langle\vec{w},\vec{x}\rangle + b) \le 0$, set $\vec{w} \leftarrow \vec{w} + y\vec{x}$
+and $b \leftarrow b + y$; otherwise do nothing.
+</Given>
+
+<Find>
+The sequence of parameter states, the total number of updates, and the final
+$(\vec{w}, b)$.
+</Find>
+
+<Strategy>
+Test the margin of every point in order, updating immediately when one is
+non-positive rather than at the end of a pass. Convergence is declared when a
+whole pass produces no update — which is the only stopping condition the rule
+has.
+</Strategy>
+
+<Solution>
+
+**Epoch 1.**
+
+*Point $(1,1)$, $y=+1$.* Margin $= 1\cdot(0 + 0 + 0) = 0$. Non-positive, so
+this counts as a mistake even though nothing is strictly misclassified. Update:
+
+$$\vec{w} = (0,0) + (+1)(1,1) = (1,1), \qquad b = 0 + 1 = 1$$
+
+*Point $(2,0)$, $y=+1$.* Margin $= 1\cdot\big((1)(2) + (1)(0) + 1\big) = 3 > 0$.
+Correct — no change.
+
+*Point $(-1,0)$, $y=-1$.* Margin
+$= (-1)\cdot\big((1)(-1) + (1)(0) + 1\big) = (-1)(0) = 0$. Non-positive again.
+Update:
+
+$$\vec{w} = (1,1) + (-1)(-1,0) = (1+1,\; 1+0) = (2,1), \qquad b = 1 - 1 = 0$$
+
+*Point $(0,-1)$, $y=-1$.* Margin
+$= (-1)\cdot\big((2)(0) + (1)(-1) + 0\big) = (-1)(-1) = 1 > 0$. Correct.
+
+**Epoch 2.** With $\vec{w} = (2,1)$, $b = 0$:
+
+| Point | $y$ | Margin | Action |
+|---|---|---|---|
+| $(1,1)$ | $+1$ | $+3$ | none |
+| $(2,0)$ | $+1$ | $+4$ | none |
+| $(-1,0)$ | $-1$ | $+2$ | none |
+| $(0,-1)$ | $-1$ | $+1$ | none |
+
+A complete pass with no update. The rule has converged.
+
+**Reading the updates.** Both updates came from a margin of exactly zero, not
+from a confidently wrong prediction. The rule is not waiting to be badly wrong;
+it moves whenever a point is not *strictly* on the right side. That choice is
+what makes the zero-initialised first step happen at all.
+
+</Solution>
+
+<Answer>
+$$\vec{w} = \begin{bmatrix} 2 \\ 1\end{bmatrix}, \qquad b = 0, \qquad \textbf{2 updates}$$
+
+The final boundary is $2x_1 + x_2 = 0$, and every point has a functional margin
+of at least $1$.
+</Answer>
+
+<CheckNumeric snippet="i-2-b02-perceptron-updates.py" verified>
+```python
+margin = y * (w[0] * x[0] + w[1] * x[1] + b)
+if margin <= 0:
+    w = [w[0] + y * x[0], w[1] + y * x[1]]; b += y
+```
+Prints both updates, the four clean margins of epoch 2, and
+`converged after 2 updates`.
+</CheckNumeric>
+
+<CheckSanity>
+**Every point is now correctly classified.** The four margins in epoch 2 are
+$+3, +4, +2, +1$, all strictly positive. That is the definition of having
+separated the data, checked directly rather than inferred from the algorithm
+stopping.
+
+**The bound is respected.** Here $R = \max\lVert\vec{x}_i\rVert = 2$ (from
+$(2,0)$). The final geometric margin is $\min_i y_i s_i / \lVert\vec{w}\rVert
+= 1/\sqrt5 = 0.4472$. Novikoff's bound (I.2.4) gives
+$(R/\gamma)^2 = (2/0.4472)^2 = 20$. Two updates is comfortably under twenty, as
+a valid upper bound requires.
+
+**Each update moves toward the point that caused it.** After the first update
+$\vec{w} = (1,1)$, which points at $(1,1)$ — the very example that triggered it.
+That is what $\vec{w} \leftarrow \vec{w} + y\vec{x}$ means geometrically, and it
+is the whole intuition of the rule.
+</CheckSanity>
+
+<Breaks>
+Convergence in two updates depended on the presentation order. Present the same
+four points as $(-1,0), (0,-1), (1,1), (2,0)$ and the trace differs, though the
+theorem still caps the total. What no order changes is the *bound*: I.2.T1 holds
+for every order, which is what makes it a theorem about the data rather than
+about the shuffling.
+</Breaks>
+
+<Variation>
+Add a fifth point $(0.2, 0.1)$ with label $-1$. The set is still separable but
+the margin is much smaller. Predict the effect on the mistake bound before
+running the rule, then run it and count.
+</Variation>

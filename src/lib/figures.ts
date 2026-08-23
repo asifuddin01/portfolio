@@ -5,7 +5,11 @@ import FigTensorShape from '../components/figures/FigTensorShape.astro';
 import FigParameterSpace from '../components/figures/FigParameterSpace.astro';
 import FigLossLandscape from '../components/figures/FigLossLandscape.astro';
 import FigGeneralisation from '../components/figures/FigGeneralisation.astro';
-/* Book I, Chapter II — Neural Networks */
+/* Book I, Chapter II — The Perceptron */
+import FigHyperplane from '../components/figures/FigHyperplane.astro';
+import FigSignedDistance from '../components/figures/FigSignedDistance.astro';
+import FigPerceptronUpdate from '../components/figures/FigPerceptronUpdate.astro';
+import FigXorSquare from '../components/figures/FigXorSquare.astro';
 import FigNeuron from '../components/figures/FigNeuron.astro';
 import FigDepthFolds from '../components/figures/FigDepthFolds.astro';
 import FigComputationalGraph from '../components/figures/FigComputationalGraph.astro';
@@ -153,6 +157,30 @@ export const FIGURES = {
     source: 'Book I, Ch. I, Prop. 5',
   },
 
+  FigHyperplane: {
+    component: FigHyperplane,
+    caption:
+      'The weight vector is the normal to the boundary, so the bias slides the boundary along w and can never turn it.',
+    source: 'Book I, Ch. II, Prop. 1',
+  },
+  FigSignedDistance: {
+    component: FigSignedDistance,
+    caption:
+      'One number carries both facts: its sign is the predicted class and its magnitude, once divided by the norm of w, is the distance to the boundary.',
+    source: 'Book I, Ch. II, Prop. 2',
+  },
+  FigPerceptronUpdate: {
+    component: FigPerceptronUpdate,
+    caption:
+      'An update turns the weight vector toward the point it got wrong, and the boundary swings with it. A point already correct produces no change at all.',
+    source: 'Book I, Ch. II, Prop. 3',
+  },
+  FigXorSquare: {
+    component: FigXorSquare,
+    caption:
+      'XOR puts each class on one diagonal of the square, and the diagonals cross. Any line separating one diagonal must pass between the other.',
+    source: 'Book I, Ch. II, Prop. 4',
+  },
   FigNeuron: {
     component: FigNeuron,
     caption:

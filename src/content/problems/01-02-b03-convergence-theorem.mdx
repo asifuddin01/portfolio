@@ -1,0 +1,169 @@
+---
+id: "I.2.B03"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "Proving the mistake bound"
+depends:
+  - "I.2.P03"
+  - "I.2.P04"
+reachesBack: []
+rounding: "Symbolic throughout."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Prove Novikoff's theorem: on separable data the perceptron makes at most
+$(R/\gamma)^2$ mistakes. State every assumption where it is used, and say at the
+end which step each assumption was load-bearing for.
+</Statement>
+
+<Given>
+A dataset $\{(\vec{x}_i, y_i)\}$ with $y_i \in \{-1,+1\}$ and
+$\lVert\vec{x}_i\rVert \le R$ for all $i$. Assume separability: there exists a
+unit vector $\vec{u}$, $\lVert\vec{u}\rVert = 1$, with
+
+$$y_i \langle \vec{u}, \vec{x}_i \rangle \ge \gamma > 0 \quad\text{for every } i$$
+
+The perceptron starts at $\vec{w}_0 = \vec{0}$ and updates
+$\vec{w}_{k+1} = \vec{w}_k + y_i\vec{x}_i$ on the $k$-th mistake. The bias is
+absorbed by appending a constant $1$ to every $\vec{x}_i$, so only $\vec{w}$
+appears.
+</Given>
+
+<Find>
+An upper bound on $k$, the total number of updates, in terms of $R$ and $\gamma$
+only.
+</Find>
+
+<Strategy>
+Track one scalar from below and another from above. The inner product
+$\langle\vec{u},\vec{w}_k\rangle$ can only grow, and $\lVert\vec{w}_k\rVert^2$
+cannot grow fast. Cauchy–Schwarz then traps $k$ between them. The whole proof is
+the observation that a quantity growing linearly cannot stay below one growing
+as a square root forever.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the lower bound on the projection.** Suppose the $k$-th mistake is on
+example $(\vec{x}_i, y_i)$. Take the inner product of the update with
+$\vec{u}$, using linearity:
+
+$$
+\langle \vec{u}, \vec{w}_{k} \rangle
+= \langle \vec{u}, \vec{w}_{k-1} + y_i\vec{x}_i \rangle
+= \langle \vec{u}, \vec{w}_{k-1} \rangle + y_i\langle \vec{u}, \vec{x}_i \rangle
+$$
+
+By the separability assumption the last term is at least $\gamma$. So each
+mistake advances the projection by at least $\gamma$:
+
+$$\langle \vec{u}, \vec{w}_{k} \rangle \ \ge\ \langle \vec{u}, \vec{w}_{k-1} \rangle + \gamma$$
+
+Starting from $\vec{w}_0 = \vec{0}$, whose projection is $0$, induction over $k$
+mistakes gives
+
+$$\langle \vec{u}, \vec{w}_{k} \rangle \ \ge\ k\gamma \tag{lower}$$
+
+*Where the assumption entered:* separability, and only there.
+
+**Step 2 — the upper bound on the norm.** Expand the squared norm of the same
+update:
+
+$$
+\lVert \vec{w}_{k}\rVert^2
+= \lVert \vec{w}_{k-1} + y_i\vec{x}_i \rVert^2
+= \lVert \vec{w}_{k-1}\rVert^2
++ 2y_i\langle \vec{w}_{k-1}, \vec{x}_i\rangle
++ y_i^2\lVert \vec{x}_i\rVert^2
+$$
+
+Now use the two facts available. First, the update happened *because* the
+example was a mistake, so its margin was non-positive:
+$y_i\langle\vec{w}_{k-1},\vec{x}_i\rangle \le 0$, and the cross term can only
+help. Second, $y_i^2 = 1$ and $\lVert\vec{x}_i\rVert^2 \le R^2$. Therefore
+
+$$\lVert \vec{w}_{k}\rVert^2 \ \le\ \lVert \vec{w}_{k-1}\rVert^2 + R^2$$
+
+and by induction from $\lVert\vec{w}_0\rVert = 0$:
+
+$$
+\lVert \vec{w}_{k}\rVert^2 \ \le\ kR^2
+\qquad\text{so}\qquad
+\lVert \vec{w}_{k}\rVert \ \le\ R\sqrt{k} \tag{upper}
+$$
+
+*Where the assumptions entered:* the bounded radius, and — crucially — the fact
+that updates occur only on mistakes. Take that away and the cross term is
+unsigned, and the bound fails.
+
+**Step 3 — squeeze with Cauchy–Schwarz.** For any vectors,
+$\langle \vec{u}, \vec{w}\rangle \le \lVert\vec{u}\rVert\,\lVert\vec{w}\rVert$
+(<ApparatusRef ref="0.LA.03" />), and $\lVert\vec{u}\rVert = 1$. Chaining the
+two bounds:
+
+$$k\gamma \ \overset{\text{(lower)}}{\le}\ \langle \vec{u}, \vec{w}_k\rangle \ \le\ \lVert\vec{w}_k\rVert \ \overset{\text{(upper)}}{\le}\ R\sqrt{k}$$
+
+**Step 4 — solve for $k$.** From $k\gamma \le R\sqrt{k}$, and since $k > 0$,
+divide by $\sqrt{k}$:
+
+$$\sqrt{k}\,\gamma \le R \quad\Longrightarrow\quad \sqrt{k} \le \frac{R}{\gamma} \quad\Longrightarrow\quad k \le \left(\frac{R}{\gamma}\right)^{2}$$
+
+$\blacksquare$
+
+**What made it work.** The projection grows *linearly* in the number of
+mistakes, while the norm grows only as $\sqrt{k}$. A vector cannot have its
+shadow on a unit direction outrun its own length, so the two rates must collide,
+and the collision point is the bound.
+
+</Solution>
+
+<Answer>
+$$k \ \le\ \left(\frac{R}{\gamma}\right)^{2}$$
+
+A dimensionless count. Note what it does *not* contain: the number of examples
+$n$, the dimension $d$, and the presentation order. The bound holds for a
+million points in a million dimensions arriving adversarially.
+</Answer>
+
+<CheckSanity>
+**Dimensional consistency.** $R$ and $\gamma$ are both lengths — $R$ a norm,
+$\gamma$ a projection onto a unit vector — so $R/\gamma$ is dimensionless and
+so is its square. A bound on a count must be dimensionless, and this one is.
+
+**It reproduces the run of I.2.B02.** There $R = 2$ and $\gamma = 0.4472$, giving
+$k \le 20$. The observed count was $2$. A valid upper bound must be at least the
+truth, and $2 \le 20$.
+
+**Both monotonicities are right.** Larger $R$ (data further from the origin)
+raises the bound; larger $\gamma$ (an easier separation) lowers it. If the
+inequality had come out the other way round in either variable, a sign was lost.
+
+**The degenerate case behaves.** If the data is already separated at the start,
+no mistake occurs, $k = 0$, and $0 \le (R/\gamma)^2$ holds for any positive right-hand side.
+</CheckSanity>
+
+<Breaks>
+Every step of Step 2 used *updates occur only on mistakes*. Change the rule to
+update on every example regardless of margin and the cross term
+$2y_i\langle\vec{w}_{k-1},\vec{x}_i\rangle$ is no longer $\le 0$; the norm can
+grow faster than $R\sqrt k$, and the squeeze collapses. This is why the
+perceptron is not gradient descent on a smooth loss: it is a rule that acts only
+on its own errors, and the proof depends on exactly that.
+
+Separability is load-bearing in Step 1 alone, but its failure is total: without
+some $\vec{u}$ achieving margin $\gamma > 0$, there is no lower bound at all,
+$k$ is unbounded, and the algorithm cycles forever (I.2.X07).
+</Breaks>
+
+<Variation>
+Suppose $\vec{w}_0 \neq \vec{0}$. Redo Steps 1 and 2 carrying the initial terms,
+and show the bound becomes
+$k \le \big(R + \lVert\vec{w}_0\rVert\big)^2/\gamma^2$ up to constants. Then say
+why the theorem is usually stated from zero.
+</Variation>

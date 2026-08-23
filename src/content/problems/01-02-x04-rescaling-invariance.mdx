@@ -1,0 +1,70 @@
+---
+id: "I.2.X04"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "What rescaling the parameters does and does not change"
+depends:
+  - "I.2.P02"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Let $c > 0$ and replace $(\vec{w}, b)$ by $(c\vec{w}, cb)$. Determine what
+happens to the decision boundary, the predicted labels, the functional margin,
+and the geometric margin. Then say which of the two margins can appear in a
+theorem and why.
+
+<Hint>
+Write each quantity out with the $c$ in place and see whether it cancels.
+</Hint>
+
+<SolutionToggle>
+
+**The boundary.** The set $\{\vec{x} : c\langle\vec{w},\vec{x}\rangle + cb = 0\}$
+equals $\{\vec{x} : c(\langle\vec{w},\vec{x}\rangle + b) = 0\}$, and since
+$c \neq 0$ this is the same set as before. **Unchanged.**
+
+**The labels.** $\mathrm{sign}(c\,s) = \mathrm{sign}(s)$ for $c > 0$.
+**Unchanged.**
+
+**The functional margin.** $m = y(\langle\vec{w},\vec{x}\rangle + b)$ becomes
+
+$$y\big(c\langle\vec{w},\vec{x}\rangle + cb\big) = c\,m$$
+
+**Scaled by $c$.** It can be made as large as one likes by taking $c$ large,
+without moving the boundary an inch.
+
+**The geometric margin.** Both numerator and denominator scale:
+
+$$\frac{y(c\langle\vec{w},\vec{x}\rangle + cb)}{\lVert c\vec{w}\rVert} = \frac{c\,m}{c\lVert\vec{w}\rVert} = \frac{m}{\lVert\vec{w}\rVert}$$
+
+**Unchanged.** The $c$ cancels exactly.
+
+**Which one can appear in a theorem.** Only the geometric margin. A theorem
+whose hypothesis was "the functional margin is at least $\gamma$" would be
+vacuous: given *any* separating hyperplane, multiply its parameters by
+$c = \gamma / m_{\min}$ and the hypothesis is satisfied, with no change to the
+classifier at all. The statement would constrain nothing.
+
+This is why I.2.T1 is stated with a **unit** vector $\vec{u}$, and why the proof
+in I.2.B03 uses $\lVert\vec{u}\rVert = 1$ in its Cauchy–Schwarz step. Normalising
+is not tidiness; it is what makes the quantity a property of the data rather
+than of an arbitrary scaling.
+
+**A consequence worth carrying forward.** Any quantity you plan to threshold,
+compare across models, or put in a bound must be checked for this kind of
+spurious freedom first. The same question recurs for attention scores in II.3
+— where the answer is that $\sqrt{d_k}$ removes a scale that would otherwise
+grow with width — and for logits in IV.8, where a temperature does exactly what
+$c$ does here.
+
+**One asymmetry.** For $c < 0$ the boundary is still unchanged but every label
+flips, since $\mathrm{sign}(cs) = -\mathrm{sign}(s)$. So the invariance is to
+*positive* rescaling only, and the sign of $\vec{w}$ carries the orientation —
+which side is which.
+</SolutionToggle>

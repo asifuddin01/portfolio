@@ -105,6 +105,10 @@ collections:
           - FigParameterSpace
           - FigLossLandscape
           - FigGeneralisation
+          - FigHyperplane
+          - FigSignedDistance
+          - FigPerceptronUpdate
+          - FigXorSquare
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph
@@ -317,6 +321,10 @@ collections:
           - FigParameterSpace
           - FigLossLandscape
           - FigGeneralisation
+          - FigHyperplane
+          - FigSignedDistance
+          - FigPerceptronUpdate
+          - FigXorSquare
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph
@@ -957,6 +965,10 @@ collections:
           - FigParameterSpace
           - FigLossLandscape
           - FigGeneralisation
+          - FigHyperplane
+          - FigSignedDistance
+          - FigPerceptronUpdate
+          - FigXorSquare
           - FigNeuron
           - FigDepthFolds
           - FigComputationalGraph

@@ -1,0 +1,3 @@
+correct, m>0  m=+3.0  loss=0.0  dW=(+0.0,+0.0)  db=+0.0
+wrong,   m<0  m=-3.0  loss=3.0  dW=(+1.0,+1.0)  db=-1.0
+kink,    m=0  m=+0.0  loss=0.0  dW=(-1.0,-1.0)  db=-1.0

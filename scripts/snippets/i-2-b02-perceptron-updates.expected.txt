@@ -1,0 +1,11 @@
+epoch 1
+  x=(1.0, 1.0) y=+1  margin +0.0  UPDATE -> w=(1.0,1.0) b=1.0
+  x=(2.0, 0.0) y=+1  margin +3.0  ok
+  x=(-1.0, 0.0) y=-1  margin -0.0  UPDATE -> w=(2.0,1.0) b=0.0
+  x=(0.0, -1.0) y=-1  margin +1.0  ok
+epoch 2
+  x=(1.0, 1.0) y=+1  margin +3.0  ok
+  x=(2.0, 0.0) y=+1  margin +4.0  ok
+  x=(-1.0, 0.0) y=-1  margin +2.0  ok
+  x=(0.0, -1.0) y=-1  margin +1.0  ok
+converged after 2 updates

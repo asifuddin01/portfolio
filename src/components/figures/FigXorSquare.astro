@@ -1,0 +1,53 @@
+---
+/** Book I, Ch. II, Prop. 4 — the diagonals cross, so no line separates them. */
+const TRY = [
+  { x1: 88,  y1: 92,  x2: 264, y2: 250, o: 0.55 },
+  { x1: 92,  y1: 200, x2: 268, y2: 66,  o: 0.55 },
+  { x1: 176, y1: 54,  x2: 176, y2: 262, o: 0.55 },
+];
+---
+<svg class="fig" viewBox="0 0 720 310" role="img" aria-labelledby="xs-t xs-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 560px">
+  <title id="xs-t">XOR puts each class on one diagonal of the square, and the diagonals cross</title>
+  <desc id="xs-d">
+    The four corners of the unit square carry XOR's labels. The two positive
+    corners lie on one diagonal and the two negative corners on the other. Any
+    straight line separating the ends of one diagonal must pass between the ends
+    of the other, so no line can separate the classes.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">XOR on the unit square</text>
+
+  {/* square */}
+  <rect x="112" y="90" width="128" height="128" class="bx" />
+
+  {/* attempted separators */}
+  {TRY.map((l) => <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} class="dash" opacity={l.o} />)}
+
+  {/* diagonals */}
+  <line x1="112" y1="218" x2="240" y2="90" class="wire" />
+  <line x1="112" y1="90" x2="240" y2="218" class="wire-soft" />
+
+  {/* corners: (0,0) bottom-left = 112,218 ; (1,1) top-right = 240,90 */}
+  <circle cx="112" cy="218" r="7" class="bx" />
+  <text x="80" y="240" class="t-sm">0,0 → 0</text>
+  <circle cx="240" cy="90" r="7" class="bx" />
+  <text x="212" y="80" class="t-sm">1,1 → 0</text>
+  <circle cx="240" cy="218" r="7" class="bx-fill" />
+  <text x="248" y="240" class="t-sm">1,0 → 1</text>
+  <circle cx="112" cy="90" r="7" class="bx-fill" />
+  <text x="80" y="80" class="t-sm">0,1 → 1</text>
+
+  {/* the algebra, alongside */}
+  <text x="340" y="96"  class="t-key">b ≤ 0</text>
+  <text x="340" y="126" class="t-key">w₂ + b &gt; 0</text>
+  <text x="340" y="156" class="t-key">w₁ + b &gt; 0</text>
+  <text x="340" y="186" class="t-key">w₁ + w₂ + b ≤ 0</text>
+  <line x1="336" y1="202" x2="560" y2="202" class="wire-soft" />
+  <text x="340" y="228" class="t-em">add the middle two: b &gt; 0</text>
+  <text x="340" y="252" class="t-em">against the first: impossible</text>
+
+  <line x1="14" y1="46" x2="240" y2="46" class="wire-soft" />
+  <text x="14" y="40" class="t-key">filled = 1 · hollow = 0</text>
+
+  <text x="0" y="304" class="t-xs">no straight line separates the filled corners from the hollow ones</text>
+</svg>

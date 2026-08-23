@@ -6,15 +6,70 @@ title: "The Perceptron"
 summary: "One unit, one hyperplane, and a rule that moves it toward every point it gets wrong."
 claim: "A perceptron is a hyperplane that moves toward every point it misclassifies, and it converges only if such a hyperplane exists."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "The perceptron"
+  - "Weight vector and bias"
+  - "Decision boundary"
+  - "Signed distance and margin"
+  - "Linear separability"
+  - "The perceptron learning rule"
+  - "The convergence theorem"
+  - "XOR"
+definitions:
+  - n: 1
+    term: "Perceptron"
+    statement: "A perceptron is a function ŷ = sign(⟨w, x⟩ + b) with w ∈ ℝᵈ and b ∈ ℝ. It partitions ℝᵈ into two half-spaces and assigns one label to each. It is the smallest object in Elementa that both computes and learns."
+    introduces:
+      - "W"
+      - "b"
+  - n: 2
+    term: "Decision boundary"
+    statement: "The decision boundary of a perceptron is the set { x : ⟨w, x⟩ + b = 0 }. It is a hyperplane: a flat set of dimension d − 1. In two dimensions it is a line, in three a plane, and in every dimension it is the only shape a perceptron can draw."
+    introduces: []
+  - n: 3
+    term: "Signed distance"
+    statement: "The signed distance from a point x to the boundary is (⟨w, x⟩ + b)/‖w‖. Its magnitude is the Euclidean distance and its sign is the predicted class, so one number carries both the decision and the confidence in it."
+    introduces: []
+  - n: 4
+    term: "Functional margin"
+    statement: "The functional margin of an example (x, y) with y ∈ {−1, +1} is y(⟨w, x⟩ + b). It is positive exactly when the prediction is correct, so the whole learning rule can be written as a condition on its sign."
+    introduces: []
+  - n: 5
+    term: "Geometric margin"
+    statement: "The geometric margin of a dataset under (w, b) is the smallest signed distance of any correctly classified point, γ = minᵢ yᵢ(⟨w, xᵢ⟩ + b)/‖w‖. Unlike the functional margin it does not change when w and b are both rescaled."
+    introduces: []
+  - n: 6
+    term: "Linear separability"
+    statement: "A labelled set is linearly separable when some (w, b) gives every example a positive functional margin. Separability is a property of the data, not of the algorithm, and no learning rule creates it."
+    introduces: []
+  - n: 7
+    term: "The perceptron learning rule"
+    statement: "On an example with margin ≤ 0, update w ← w + y x and b ← b + y; otherwise change nothing. The rule touches the parameters only when it is wrong, which is why a run on already-separated data terminates immediately."
+    introduces: []
+  - n: 8
+    term: "Mistake bound"
+    statement: "A mistake bound is a cap on the total number of updates an online algorithm makes, valid for any presentation order of the data. It is not a bound on running time or on epochs, and it says nothing about the quality of the solution reached."
+    introduces: []
 beforeYouStart:
   - "I.1"
   - "0.LA.03"
+  - "0.LA.05"
 conceptFigure: FigNeuron
-problemStatement: "The simplest learning machine that is genuinely a learning machine. Its convergence proof is the first real theorem in Elementa, and its failure on XOR is the reason every later chapter exists."
-formalResults: []
-assumptions: []
+problemStatement: "The reader now knows a model is a parameterised function, but has seen no procedure that changes the parameters. The perceptron is the smallest thing that is genuinely a learning machine: its rule fits on one line, its convergence is a theorem with a proof short enough to write out, and its single failure — XOR — is the reason every remaining chapter of this book exists."
+formalResults:
+  - id: "I.2.T1"
+    name: "Perceptron convergence theorem (Novikoff, 1962)"
+    statement: "If a dataset with ‖xᵢ‖ ≤ R for all i is separable with geometric margin γ > 0, then the perceptron learning rule makes at most (R/γ)² updates before classifying every example correctly — whatever order the examples arrive in, and whatever the initialisation scale."
+    doesNotPromise: "It promises nothing at all for non-separable data, where the rule does not terminate and cycles indefinitely — and there is no way to distinguish that case from slow convergence by watching it run. It also does not promise a maximum-margin solution: the hyperplane returned is merely the first one that happens to separate, and can sit arbitrarily close to a training point. Finally, the bound is on mistakes, not on epochs or wall-clock time."
+  - id: "I.2.T2"
+    name: "The XOR impossibility"
+    statement: "No perceptron computes XOR on {0,1}². The four required inequalities are jointly inconsistent, so the failure is not one of training, initialisation or data volume — it is a property of the hypothesis class."
+    doesNotPromise: "It does not say XOR is hard. Two hidden units solve it exactly, with weights that can be written down by hand (I.5.B04). Nor does it generalise to a claim that linear models are weak: with a feature map that adds the product x₁x₂, XOR becomes linearly separable in three dimensions. The impossibility is relative to a fixed representation, and choosing the representation is the escape."
+assumptions:
+  - statement: "The data is linearly separable, so a hyperplane with positive margin exists."
+    testedBy: "I.2.X07"
+  - statement: "The margin γ is bounded away from zero, so the mistake bound is finite."
+    testedBy: "I.2.X08"
 owns:
   - "perceptron"
   - "linear-separability"
@@ -22,9 +77,41 @@ owns:
 borrows:
   - "model-as-function"
   - "loss-function"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "On non-separable data the rule never halts. Give it the four XOR points and it cycles forever, revisiting the same weight vectors with period 4; after ten thousand epochs the training accuracy is still 75% and the weights are back where they were at epoch 2. Nothing in the run distinguishes this from a hard but solvable problem."
+  - "Near-separable data makes the bound useless. Move one point of a separable set until γ falls from 0.5 to 0.01 with R = 1: the mistake bound rises from 4 to 10,000. The problem is visually unchanged and the guarantee has become vacuous."
+references:
+  - title: "The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain"
+    authors: "Rosenblatt"
+    year: 1958
+    venue: "Psychological Review 65(6)"
+    url: https://doi.org/10.1037/h0042519
+  - title: "On Convergence Proofs for Perceptrons"
+    authors: "Novikoff"
+    year: 1962
+    venue: "Symposium on the Mathematical Theory of Automata"
+    url: https://cs.uwaterloo.ca/~y328yu/classics/novikoff.pdf
+  - title: "Perceptrons: An Introduction to Computational Geometry"
+    authors: "Minsky and Papert"
+    year: 1969
+    venue: "MIT Press"
+    url: https://mitpress.mit.edu/9780262534772/perceptrons/
+  - title: "Large Margin Classification Using the Perceptron Algorithm"
+    authors: "Freund and Schapire"
+    year: 1999
+    venue: "Machine Learning 37(3)"
+    url: https://doi.org/10.1023/A:1007662407062
+  - title: "Online Learning and Online Convex Optimization"
+    authors: "Shalev-Shwartz"
+    year: 2011
+    venue: "Foundations and Trends in Machine Learning 4(2)"
+    url: https://www.cs.huji.ac.il/~shais/papers/OLsurvey.pdf
+  - title: "Pattern Recognition and Machine Learning, chapter 4"
+    authors: "Bishop"
+    year: 2006
+    venue: "Springer"
+    url: https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/
 notation:
   - "W"
   - "b"
@@ -34,6 +121,18 @@ apparatus:
   - "0.LA.03"
   - "0.LA.05"
   - "0.OP.01"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.2.1"
+    formula: "ŷ = sign(⟨w, x⟩ + b)"
+    gloss: "One inner product and one sign. Everything else in this book is an elaboration of it."
+  - id: "I.2.2"
+    formula: "dist(x) = (⟨w, x⟩ + b) / ‖w‖"
+    gloss: "One number carrying both the decision and the distance to the fence."
+  - id: "I.2.3"
+    formula: "w ← w + y x,   b ← b + y   whenever y(⟨w, x⟩ + b) ≤ 0"
+    gloss: "Move the fence toward the point it got wrong, and only then."
+  - id: "I.2.4"
+    formula: "updates ≤ (R / γ)²"
+    gloss: "The price of learning is set by the ratio of the data's radius to its margin."
+status: published
 ---

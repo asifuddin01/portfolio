@@ -1,0 +1,130 @@
+---
+id: "I.2.B06"
+kind: problem
+chapter: "I.2"
+scope: chapter
+variant: complexity
+difficulty: 1
+title: "What one perceptron costs, and what a bank of them costs"
+depends:
+  - "I.2.P01"
+reachesBack: []
+rounding: "Exact counts."
+hasSolution: true
+verified: true
+snippet: "i-2-b06-perceptron-cost.py"
+status: published
+---
+
+<Statement>
+Count the parameters and the forward FLOPs of a single perceptron over $d$
+inputs, then extend to a one-vs-rest bank of $K$ perceptrons. Evaluate at two
+realistic sizes.
+</Statement>
+
+<Given>
+A perceptron $\hat{y} = \mathrm{sign}(\langle\vec{w},\vec{x}\rangle + b)$ with
+$\vec{w} \in \R^{d}$. Count a multiply and an add as one FLOP each; ignore the
+sign, which is one comparison.
+</Given>
+
+<Find>
+Parameters and FLOPs as functions of $d$; then of $d$ and $K$; then numbers at
+$(d, K) = (784, 10)$ and $(4096, 1000)$.
+</Find>
+
+<Strategy>
+Count the arithmetic in the definition literally rather than recalling a rule.
+The inner product is the only expensive part, and everything else is $O(1)$.
+</Strategy>
+
+<Solution>
+
+**Step 1 — one perceptron, parameters.** The weight vector holds $d$ numbers
+and the bias holds one:
+
+$$N_{\text{params}} = d + 1$$
+
+**Step 2 — one perceptron, FLOPs.** The inner product
+$\sum_{j=1}^{d} w_j x_j$ needs $d$ multiplications and $d-1$ additions. Adding
+the bias is one more addition, bringing the additions to $d$. Total:
+
+$$N_{\text{FLOPs}} = d + d = 2d$$
+
+The convenient way to remember this: **one multiply–add per parameter**, and
+there are $d$ weights doing real work. That rule of thumb survives all the way
+to Chapter II.8, where the $2N$ per token in $C \approx 6ND$ is the same count.
+
+**Step 3 — a bank of $K$.** One-vs-rest trains $K$ independent perceptrons, one
+per class, each over the same $d$ inputs. Nothing is shared:
+
+$$N_{\text{params}} = K(d+1), \qquad N_{\text{FLOPs}} = 2dK$$
+
+Equivalently the bank is one matrix $\mat{W} \in \R^{d\times K}$ and one bias
+row, so the forward pass is a single $(1\times d)(d\times K)$ product — the same
+object as a linear layer in Chapter I.5, arrived at from the other direction.
+
+**Step 4 — evaluate.**
+
+| $d$ | Params | FLOPs |
+|---|---|---|
+| $2$ | $3$ | $4$ |
+| $784$ | $785$ | $1{,}568$ |
+| $4096$ | $4{,}097$ | $8{,}192$ |
+
+| $d$ | $K$ | Params | FLOPs |
+|---|---|---|---|
+| $784$ | $10$ | $7{,}850$ | $15{,}680$ |
+| $4096$ | $1000$ | $4{,}097{,}000$ | $8{,}192{,}000$ |
+
+</Solution>
+
+<Answer>
+$$
+\text{one:}\quad N = d + 1,\quad F = 2d
+\qquad\qquad
+\text{bank of }K:\quad N = K(d+1),\quad F = 2dK
+$$
+
+At $d = 784$, $K = 10$: $7{,}850$ parameters and $15{,}680$ FLOPs per example.
+At $d = 4096$, $K = 1000$: $4{,}097{,}000$ parameters and $8{,}192{,}000$ FLOPs.
+</Answer>
+
+<CheckNumeric snippet="i-2-b06-perceptron-cost.py" verified>
+```python
+params = d + 1
+flops  = 2 * d
+print(f"d={d} K={K} params {K * (d + 1)} flops {2 * d * K}")
+```
+Prints all six rows above.
+</CheckNumeric>
+
+<CheckSanity>
+**FLOPs are about twice the parameters.** $8{,}192{,}000 / 4{,}097{,}000 = 1.9995$,
+approaching $2$ as $d$ grows because the bias becomes negligible. If your ratio
+were near $1$ or near $4$, a multiply or an add went missing.
+
+**Both scale linearly in each variable separately.** Ten times the classes gives
+ten times the cost; ten times the input width gives ten times the cost. There is
+no interaction term, because a one-vs-rest bank shares nothing between classes.
+
+**The $d = 784$, $K = 10$ figure is checkable against a known object.** That is
+MNIST with a linear classifier, and $7{,}850$ is the familiar parameter count for
+exactly that model. Landing on a number that appears in the literature is weak
+evidence, but it is evidence.
+</CheckSanity>
+
+<Breaks>
+The count assumes the input is dense. For sparse $\vec{x}$ with only $s \ll d$
+non-zeros, the inner product costs $2s$ rather than $2d$, and a bag-of-words
+perceptron over a $10^6$-word vocabulary with $20$ words per document costs $40$
+FLOPs and not two million. The parameter count is unchanged — the memory is
+still $d+1$ — which is why sparsity helps compute far more than it helps storage.
+</Breaks>
+
+<Variation>
+Add the backward pass. The perceptron rule updates $d+1$ numbers on a mistake
+and none otherwise. Compute the expected cost per example when a fraction $p$ of
+examples cause updates, and compare with a gradient method that updates on every
+example.
+</Variation>

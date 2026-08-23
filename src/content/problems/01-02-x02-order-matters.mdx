@@ -1,0 +1,79 @@
+---
+id: "I.2.X02"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Twenty-four orders, six answers"
+depends:
+  - "I.2.P02"
+  - "I.2.P03"
+rounding: "Exact counts; the margin to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-2-x02-order-matters.py"
+status: published
+---
+
+Take the separable set
+$(1,1)\!:\!+1$, $(-2,0)\!:\!+1$, $(2,1)\!:\!-1$, $(1,0)\!:\!-1$.
+Run the perceptron on every one of the $4! = 24$ presentation orders. Report
+the range of update counts and the number of distinct final hyperplanes, then
+reconcile that variability with I.2.T1.
+
+<Hint>
+The theorem bounds the mistakes for *every* order. It does not claim they are
+equal.
+</Hint>
+
+<SolutionToggle>
+
+**The outcomes.**
+
+| Updates | Final $(\vec{w}, b)$ | Orders |
+|---|---|---|
+| 5 | $(-2, +2),\ +1$ | 6 |
+| 8 | $(-3, +2),\ +2$ | 5 |
+| 9 | $(-2, +2),\ +1$ | 2 |
+| 10 | $(-2, +3),\ 0$ | 4 |
+| 12 | $(-3, +2),\ +2$ | 5 |
+| 14 | $(-3, +4),\ 0$ | 2 |
+
+**The range: 5 to 14 updates**, a factor of $2.8$, on byte-identical data. And
+**four distinct hyperplanes**, so the algorithm's output — not merely its
+runtime — depends on the order the examples happened to arrive in.
+
+**Reconciling with the theorem.** Here
+
+$$R = \max_i \lVert\vec{x}_i\rVert = \lVert(2,1)\rVert = \sqrt5 = 2.2361, \qquad \gamma = 0.3536$$
+
+so the bound is
+
+$$k \le \left(\frac{2.2361}{0.3536}\right)^2 = 40$$
+
+Every one of the 24 orders lands under 40, and the worst — 14 — uses about a
+third of the allowance. There is no contradiction: I.2.T1 is an upper bound
+holding uniformly over orders, and a uniform bound must accommodate the worst
+one. It never claimed the orders agree.
+
+**What this costs in practice.** Three things follow, and none of them is
+obvious from the theorem alone.
+
+*The solution is not a function of the data.* Two researchers running the same
+algorithm on the same file get different classifiers. Any claim about "the"
+perceptron solution for a dataset is under-specified until the order is fixed.
+
+*The margin achieved is arbitrary.* The order giving 5 updates lands on
+$(-2,2,1)$, with geometric margin $\min_i y_i s_i/\lVert\vec{w}\rVert = 1/(2\sqrt2) = 0.3536$
+— which happens to be optimal here. Other orders land on hyperplanes with worse
+margins. Nothing in the rule prefers the good one.
+
+*Shuffling is not a nuisance to be eliminated.* It is the reason the algorithm
+terminates quickly on average, and the reason a single run's update count is
+not a measurement of anything about the data. Chapter VIII.4 makes that
+argument quantitative for training runs generally.
+
+Compare with the set of I.2.B02, where all 24 orders give 2 updates and the
+same weights. Order-independence happens; it is not guaranteed.
+</SolutionToggle>

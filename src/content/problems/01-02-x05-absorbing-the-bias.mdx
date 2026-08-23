@@ -1,0 +1,69 @@
+---
+id: "I.2.X05"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Absorbing the bias, and what it costs"
+depends:
+  - "I.2.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+The proof in I.2.B03 assumed the bias had been absorbed by appending a constant
+$1$ to every input. Prove the two formulations are equivalent, then show that
+absorption changes $R$ — and quantify the effect on the mistake bound.
+
+<Hint>
+Appending a coordinate changes the norm of every input. Compute the new $R$.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the construction.** Define augmented vectors
+
+$$\tilde{\vec{x}} = \begin{bmatrix}\vec{x} \\ 1\end{bmatrix} \in \R^{d+1}, \qquad \tilde{\vec{w}} = \begin{bmatrix}\vec{w} \\ b\end{bmatrix} \in \R^{d+1}$$
+
+**Step 2 — the scores agree.** By the definition of the inner product,
+
+$$\langle \tilde{\vec{w}}, \tilde{\vec{x}}\rangle = \sum_{j=1}^{d} w_j x_j + b \cdot 1 = \langle \vec{w},\vec{x}\rangle + b$$
+
+Identical for every $\vec{x}$, so the two models classify identically and have
+the same decision boundary in $\R^d$. $\blacksquare$
+
+**Step 3 — the updates agree.** The augmented update is
+$\tilde{\vec{w}} \leftarrow \tilde{\vec{w}} + y\tilde{\vec{x}}$. Reading off its
+components: the first $d$ give $\vec{w} \leftarrow \vec{w} + y\vec{x}$, and the
+last gives $b \leftarrow b + y\cdot 1 = b + y$. Exactly Definition 7. So the
+two runs are the same run, step for step.
+
+**Step 4 — what it costs.** The norm grows:
+
+$$\lVert\tilde{\vec{x}}\rVert = \sqrt{\lVert\vec{x}\rVert^2 + 1}$$
+
+so the radius becomes $\tilde{R} = \sqrt{R^2 + 1}$, and the bound becomes
+
+$$k \le \frac{R^2 + 1}{\tilde\gamma^{\,2}}$$
+
+**Step 5 — quantify.** For the data of I.2.B02, $R = 2$ so $\tilde R = \sqrt5 = 2.2361$,
+and $R^2 + 1 = 5$ against $R^2 = 4$: the numerator rises by $25\%$. For data
+scaled so that $R = 10$, the rise is $101/100$, or $1\%$. **The penalty is
+severe only when the data lies close to the origin**, because then the appended
+$1$ is comparable to the data's own scale.
+
+**The practical reading.** This is the same phenomenon as feature scaling. The
+constant feature has magnitude $1$ regardless of the units the other features
+are measured in, so if the inputs are in millimetres the bias feature is
+negligible and if they are normalised to unit variance it is not. A bound that
+changes when you change units is telling you the units matter — and here they do.
+
+**Why the theorem is stated in the absorbed form anyway.** With $b$ separate,
+Step 2 of I.2.B03 acquires a $b$-update term that must be bounded separately,
+and the proof becomes two interleaved inductions instead of one. Absorption buys
+a clean proof at the price of a slightly looser constant, which is the usual
+trade and worth naming as such rather than hiding.
+</SolutionToggle>

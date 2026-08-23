@@ -1,0 +1,83 @@
+---
+id: "I.2.X08"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "A guarantee that stops being worth anything"
+depends:
+  - "I.2.P03"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+The second assumption is that $\gamma$ is bounded away from zero. Construct a
+family of two-point datasets indexed by $\varepsilon$, separable for every
+$\varepsilon > 0$, whose mistake bound diverges as $\varepsilon \to 0$. Give the
+bound at three values, and state the exact sense in which the theorem is still
+true when it has become useless.
+
+<Hint>
+Two points, one of each class, moved toward each other.
+</Hint>
+
+<SolutionToggle>
+
+**The family.** In one dimension, for $\varepsilon > 0$:
+
+$$x_+ = +\varepsilon \ \text{ with } y = +1, \qquad x_- = -\varepsilon \ \text{ with } y = -1$$
+
+with the bias absorbed, so the augmented points are $(\varepsilon, 1)$ and
+$(-\varepsilon, 1)$.
+
+**Separable for every $\varepsilon > 0$.** The unit vector $\vec{u} = (1, 0)$
+gives margins $y_i\langle\vec{u},\tilde{\vec{x}}_i\rangle = \varepsilon$ for
+both points. Positive, so separable.
+
+**The radius.** $\lVert\tilde{\vec{x}}\rVert = \sqrt{\varepsilon^2 + 1}$, so
+$R = \sqrt{\varepsilon^2 + 1} \to 1$ as $\varepsilon \to 0$.
+
+**The margin.** $\gamma = \varepsilon$ (the direction above is optimal here by
+symmetry).
+
+**The bound.**
+
+$$k \le \left(\frac{\sqrt{\varepsilon^2+1}}{\varepsilon}\right)^{2} = \frac{\varepsilon^2 + 1}{\varepsilon^2} = 1 + \frac{1}{\varepsilon^2}$$
+
+| $\varepsilon$ | $\gamma$ | Bound |
+|---|---|---|
+| $0.1$ | $0.1$ | $101$ |
+| $0.01$ | $0.01$ | $10{,}001$ |
+| $0.001$ | $0.001$ | $1{,}000{,}001$ |
+
+$$\lim_{\varepsilon \to 0^{+}} k_{\max} = +\infty$$
+
+**In what sense the theorem is still true.** Precisely this: for every fixed
+$\varepsilon > 0$ the number of mistakes is **finite**, the algorithm **does**
+terminate, and the bound **is** correct. Nothing about the theorem weakens as
+$\varepsilon$ shrinks. What changes is only its usefulness — a true bound of
+$10^{6}$ tells a practitioner nothing they can act on.
+
+**The distinction that matters.** Compare two failures:
+
+*Here.* The guarantee holds and is uninformative. More patience genuinely
+suffices.
+
+*In I.2.X07.* The guarantee does not hold at all. No amount of patience
+suffices.
+
+These are different situations with the same observable signature — a run that
+has not finished. That is the honest content of "the theorem assumes
+$\gamma > 0$": not that small margins are difficult, but that the boundary case
+$\gamma = 0$ is a different mathematical object and the algorithm cannot see
+which side of it the data lies on.
+
+**Where this recurs.** The same shape appears throughout Elementa: a bound that
+is true, tight, and vacuous. Positivity in causal inference (VI.7) fails the same
+way — the estimator remains unbiased as the propensity approaches zero while its
+variance diverges. Recognising "true but vacuous" as a category, distinct from
+"false", is one of the habits this book is trying to build.
+</SolutionToggle>

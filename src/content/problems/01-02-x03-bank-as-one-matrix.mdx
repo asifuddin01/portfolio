@@ -1,0 +1,72 @@
+---
+id: "I.2.X03"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "A bank of perceptrons is one matrix"
+depends:
+  - "I.2.P01"
+rounding: "Exact shapes."
+hasSolution: true
+verified: false
+status: published
+---
+
+Write a one-vs-rest bank of $K$ perceptrons over $d$ inputs as a single matrix
+operation on a batch of $B$ examples. Give every shape, and state what the bank
+can and cannot express that $K$ separately-stored perceptrons can.
+
+<Hint>
+Stack the $K$ weight vectors as columns, not rows. Then check the shapes meet
+under the row-major convention.
+</Hint>
+
+<SolutionToggle>
+
+**The stacking.** Place the $k$-th perceptron's weight vector in the $k$-th
+*column*:
+
+$$\mat{W} = \begin{bmatrix} \vec{w}_1 & \vec{w}_2 & \cdots & \vec{w}_K \end{bmatrix} \in \R^{d\times K}, \qquad \vec{b} \in \R^{1\times K}$$
+
+**The forward pass.** With a batch $\mat{X} \in \R^{B\times d}$, one row per
+example:
+
+$$\mat{S} = \mat{X}\mat{W} + \vec{b} \in \R^{B\times K}$$
+
+Shapes: $(B\times d)(d\times K) \to (B\times K)$, then the bias broadcasts along
+the batch axis. Entry $S_{ik}$ is the score of example $i$ under perceptron $k$,
+so one product computes $BK$ scores.
+
+**Every shape.**
+
+| Object | Shape |
+|---|---|
+| $\mat{X}$ | $B \times d$ |
+| $\mat{W}$ | $d \times K$ |
+| $\vec{b}$ | $1 \times K$ (broadcast to $B \times K$) |
+| $\mat{S}$ | $B \times K$ |
+| prediction | $B \times 1$, by $\arg\max$ along the $K$ axis |
+
+**What is identical.** The arithmetic. $K$ separate perceptrons compute exactly
+these numbers; the matrix form only arranges them so one call does the work of
+$K$. The parameter count $K(d+1)$ from I.2.B06 is unchanged.
+
+**What the matrix form adds.** Nothing expressive — and that is the point worth
+taking. It is the same hypothesis class. What it adds is:
+
+*A single decision rule.* Separate perceptrons each answer yes or no, and can
+answer yes twice or never. Taking $\arg\max$ over the score row forces exactly
+one answer, which the $K$ independent models do not.
+
+*The object of Chapter I.5.* $\mat{X}\mat{W} + \vec{b}$ is precisely a linear
+layer. A bank of perceptrons and the first layer of an MLP are the same
+computation; only the training rule and what sits after it differ. Arriving at
+the linear layer from the perceptron rather than from the definition is worth
+doing once, because it makes clear that depth — not the layer — is the new idea.
+
+**What neither can express.** Any function requiring a non-linear boundary,
+XOR included (I.2.B04). Stacking $K$ hyperplanes side by side gives $K$
+hyperplanes, not a curve.
+</SolutionToggle>

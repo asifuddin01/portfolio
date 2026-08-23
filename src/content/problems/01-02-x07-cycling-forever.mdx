@@ -1,0 +1,85 @@
+---
+id: "I.2.X07"
+kind: exercise
+chapter: "I.2"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "The run that never ends"
+depends:
+  - "I.2.P03"
+  - "I.2.P04"
+rounding: "Exact integers."
+hasSolution: true
+verified: false
+status: published
+---
+
+The first assumption of this chapter is separability. Remove it: run the
+perceptron on the four XOR points and describe the resulting behaviour
+precisely. Show the state is periodic, state the period, and explain why no
+stopping rule based on watching the run can distinguish this from slow
+convergence.
+
+<Hint>
+Track $(\vec{w}, b)$ after each full epoch rather than after each update, and
+look for a repeat.
+</Hint>
+
+<SolutionToggle>
+
+**The data.** XOR with labels in $\{-1, +1\}$:
+
+$$(0,0)\!:\!-1, \quad (0,1)\!:\!+1, \quad (1,0)\!:\!+1, \quad (1,1)\!:\!-1$$
+
+**The trace.** Starting from $\vec{w} = (0,0)$, $b = 0$ and cycling in that
+order:
+
+| Step | Point | $y$ | Margin | New $(\vec{w}, b)$ |
+|---|---|---|---|---|
+| 1 | $(0,0)$ | $-1$ | $0$ | $(0,0),\ -1$ |
+| 2 | $(0,1)$ | $+1$ | $-1$ | $(0,1),\ 0$ |
+| 3 | $(1,0)$ | $+1$ | $0$ | $(1,1),\ +1$ |
+| 4 | $(1,1)$ | $-1$ | $-3$ | $(0,0),\ 0$ |
+
+After one complete epoch the state is $(\vec{w}, b) = ((0,0), 0)$ — **exactly
+the initial state**. The next epoch reproduces the same four updates, and so on
+forever.
+
+**The period is 4 updates, or one epoch.** The state space visited is the
+four-element cycle above, and no other state is ever reached.
+
+**Training accuracy along the way.** At the best point in the cycle — state
+$((1,1), +1)$ — the predictions are 20 20 12 61 79 80 81 98 33 100 204 250 395 398 399 400 7010,0)\to+1, 20 20 12 61 79 80 81 98 33 100 204 250 395 398 399 400 7010,1)\to+1,
+20 20 12 61 79 80 81 98 33 100 204 250 395 398 399 400 7011,0)\to+1, 20 20 12 61 79 80 81 98 33 100 204 250 395 398 399 400 7011,1)\to+1: two of four, $50\%$. At the worst it is also
+two of four. **Accuracy never exceeds chance and never improves**, which is
+consistent with I.2.B04: no hyperplane does better than three of four here, and
+this cycle does not even reach that.
+
+**Why no stopping rule helps.** Consider what an observer can measure:
+
+*Update count.* Rises without bound here. But it also rises without bound —
+up to $(R/\gamma)^2$ — for a separable set with a tiny margin. At any finite
+moment the two look identical.
+
+*Accuracy.* Flat at $50\%$ here. But a separable set with a small margin can
+also sit at a plateau for a long time before the final updates resolve it.
+
+*State repetition.* This is detectable — the state returns to $((0,0),0)$ — and
+in principle one could hash the visited states. But the state space is
+unbounded in general, the cycle length can be exponential, and for
+non-separable data with real-valued inputs exact repetition may never occur even
+though the run never terminates.
+
+**The conclusion the chapter needs.** Separability is not a technical
+convenience in I.2.T1; it is the whole hypothesis. Without it there is no
+theorem, no bound, and no way to tell from inside the algorithm that anything is
+wrong. The algorithm's silence is the failure mode.
+
+**What was done about it historically.** Two answers, both later. The *pocket*
+algorithm keeps the best-so-far weights and returns those, converting
+non-termination into a heuristic. More importantly, replacing the perceptron
+loss with one that has a finite minimum on non-separable data — logistic loss,
+Chapter I.4 — makes the question disappear: gradient descent on a bounded-below
+convex objective always has somewhere to go.
+</SolutionToggle>
