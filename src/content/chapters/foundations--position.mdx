@@ -1,9 +1,9 @@
 ---
-id: "I.6"
+id: "II.5"
 book: foundations
-order: 6
+order: 5
 title: "Position and Order"
-summary: "Attention has no sense of order; this is the repair."
+summary: "Why attention loses order, and every repair that has been tried."
 claim: "Self-attention is permutation-equivariant, so order has to be supplied separately or it is not there at all."
 mathTier: M3
 topics:
@@ -14,8 +14,23 @@ topics:
   - "Relative position"
   - "Rotary position embeddings"
   - "Position extrapolation"
-prerequisites:
-  - "I.5"
+definitions: []
+beforeYouStart:
+  - "II.3"
+  - "I.14"
+conceptFigure: FigSinusoid
+problemStatement: "Attention computes weights from content alone, which means it cannot tell a sentence from a shuffled copy of it. Order is information the mechanism structurally discards, and putting it back is a design decision with consequences for extrapolation."
+formalResults: []
+assumptions: []
+owns:
+  - "positional-encoding"
+  - "rotary-encoding"
+borrows:
+  - "scaled-dot-product-attention"
+  - "permutation-equivariance"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "T"
   - "d"
@@ -25,9 +40,8 @@ notation:
   - "k"
 apparatus:
   - "0.LA.02"
-  - "0.LA.05"
   - "0.LA.03"
+  - "0.LA.05"
 keyEquations: []
 status: review
-
 ---

@@ -546,12 +546,116 @@ collections:
         hint: >-
           What the chapter will cover. Shown before any proposition exists, so
           a reader can see the plan for a chapter that is not written yet.
-      - label: Prerequisites
-        name: prerequisites
+
+      # ── BASICS — what the words mean ─────────────────────────────────
+      - label: Before you start
+        name: beforeYouStart
         widget: list
         required: false
-        field: { label: Chapter or proposition ID, name: ref, widget: string }
-        hint: "Chapter IDs like I.5, or proposition IDs like I.5.P04. Every one must resolve, or the build stops."
+        field: { label: ID, name: ref, widget: string }
+        hint: >-
+          Three to six prior results the chapter assumes — chapter IDs like I.6, proposition IDs like II.3.P01, or Apparatus entries like 0.MC.07. This block is what lets a reader who already knows the material enter in the middle and follow the links backwards.
+      - label: Definitions
+        name: definitions
+        widget: list
+        required: false
+        hint: >-
+          Stipulative and precise. "A computational graph is a directed acyclic graph whose nodes are operations" — not "computational graphs are a useful way to think about networks". The test is whether a reader can afterwards tell what does not count as one.
+        fields:
+          - { label: Number, name: n, widget: number, value_type: int, min: 1 }
+          - { label: Term, name: term, widget: string }
+          - { label: Statement, name: statement, widget: text }
+          - label: Introduces
+            name: introduces
+            widget: list
+            required: false
+            field: { label: Registry key, name: symbol, widget: string }
+            hint: "Symbols this definition brings in, as keys from notation.yaml."
+
+      # ── CONCEPT — what to picture ────────────────────────────────────
+      - label: The problem
+        name: problemStatement
+        widget: text
+        required: false
+        hint: >-
+          Why the mechanism is necessary, stated before the mechanism. A mechanism introduced before its problem is memorised, not understood.
+      - label: Concept figure
+        name: conceptFigure
+        widget: string
+        required: false
+        hint: >-
+          One drawing a reader could redraw from memory — a Type A or Type C figure from src/lib/figures.ts. Required at every tier before a chapter can be published.
+
+      # ── THEORY — why it works, and when it does not ──────────────────
+      - label: Formal results
+        name: formalResults
+        widget: list
+        required: false
+        hint: >-
+          A theorem, criterion, bound or impossibility, stated precisely. Every one carries what it does NOT promise, and that field is the difference between teaching theory and quoting it.
+        fields:
+          - { label: ID, name: id, widget: string, hint: "Chapter ID, dot, T and a number — e.g. I.6.T1." }
+          - { label: Name, name: name, widget: string }
+          - { label: Statement, name: statement, widget: text }
+          - label: What this does not promise
+            name: doesNotPromise
+            widget: text
+            hint: >-
+              Mandatory. Universal approximation does not promise a learnable width; backdoor adjustment does not promise the graph is right.
+      - label: Assumptions
+        name: assumptions
+        widget: list
+        required: false
+        hint: "Each paired with the problem that shows what its removal costs. An assumption nobody tests is a disclaimer."
+        fields:
+          - { label: Assumption, name: statement, widget: text }
+          - { label: Tested by, name: testedBy, widget: string, hint: "A problem or exercise ID, e.g. I.6.X09." }
+
+      # ── PLACEMENT — one mechanism, one home ──────────────────────────
+      - label: Owns
+        name: owns
+        widget: list
+        required: false
+        field: { label: Concept, name: concept, widget: string }
+        hint: >-
+          Concepts this chapter derives from first principles, as keys from src/content/concepts.yaml. Two chapters claiming the same concept fails the build — that is what stops one idea being taught twice in two books and drifting apart.
+      - label: Borrows
+        name: borrows
+        widget: list
+        required: false
+        field: { label: Concept, name: concept, widget: string }
+        hint: "Concepts this chapter uses but does not derive. Somewhere else owns them."
+
+      # ── PRACTICE — build it, break it, read the papers ───────────────
+      - label: Has a runnable implementation
+        name: implementation
+        widget: boolean
+        default: false
+        hint: "At most 25 lines, no framework magic, reproducing a worked problem's numbers."
+      - label: Failure modes
+        name: failureModes
+        widget: list
+        required: false
+        field: { label: Failure, name: mode, widget: text }
+        hint: >-
+          Concrete. Not "CNNs can struggle with rotation" but an input and a number.
+      - label: Sources
+        name: references
+        widget: list
+        required: false
+        hint: "Authors, year and venue on every one — a claim about a paper carries all three."
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Authors, name: authors, widget: string }
+          - { label: Year, name: year, widget: number, value_type: int }
+          - { label: Venue, name: venue, widget: string }
+          - label: Link
+            name: url
+            widget: string
+            required: false
+            pattern:
+              - "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$"
+              - "Paste the address only, not a sentence." 
       - label: Notation
         name: notation
         widget: list
@@ -744,6 +848,7 @@ collections:
           - { label: "0.OP — Optimisation", value: OP }
           - { label: "0.ST — Statistics", value: ST }
           - { label: "0.NU — Numerics", value: NU }
+          - { label: "0.GR — Graph Theory", value: GR }
       - label: Order
         name: order
         widget: number

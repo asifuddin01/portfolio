@@ -1,0 +1,39 @@
+---
+id: "I.10"
+book: neural-networks
+order: 10
+title: "Gated Recurrence: LSTM and GRU"
+summary: "Add a path along which information travels unchanged unless something explicitly erases it."
+claim: "A gate gives the gradient a road home that no weight matrix stands on, which slows the decay without abolishing it."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.9"
+  - "I.3"
+conceptFigure: FigGating
+problemStatement: "The vanishing gradient of I.9 is a property of repeated multiplication. The repair is not a better initialisation but a different architecture: an additive path whose derivative is a gate value rather than a Jacobian product."
+formalResults: []
+assumptions: []
+owns:
+  - "gating"
+  - "constant-error-carousel"
+borrows:
+  - "recurrence"
+  - "vanishing-exploding-gradient"
+  - "activation-function"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "T"
+  - "d"
+  - "W"
+  - "sigma"
+  - "nabla"
+apparatus:
+  - "0.MC.03"
+  - "0.NU.01"
+keyEquations: []
+status: review
+---

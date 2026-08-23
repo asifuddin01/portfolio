@@ -1,10 +1,10 @@
 ---
-id: "VI.8"
+id: "VII.10"
 book: bioinformatics
-order: 8
-title: "AI for Drug and Disease Research"
-summary: "Where the work is meant to land."
-claim: "A molecule's similarity to a known drug is a choice of representation, and the split decides whether the score means anything."
+order: 10
+title: "Molecular Graphs and Drug Discovery"
+summary: "A molecule is a graph, and the split decides whether the score means anything."
+claim: "A molecule is a graph over atoms, and how the data is split decides whether any reported score generalises."
 mathTier: M2
 topics:
   - "Molecular representation"
@@ -12,16 +12,38 @@ topics:
   - "Drug discovery"
   - "Disease modelling"
   - "Biomarker discovery"
-prerequisites:
-  - "VI.7"
+definitions: []
+beforeYouStart:
+  - "VII.9"
+  - "I.14"
+conceptFigure: FigFingerprint
+problemStatement: "Chemistry hands biology a graph with no coordinates and clear semantics. What makes screening hard is not the representation but the evaluation: a random split leaks scaffolds and reports a number that will not survive contact with a new series."
+formalResults: []
+assumptions: []
+owns:
+  - "molecular-graph"
+  - "molecular-fingerprint"
+  - "subgraph-matching"
+  - "scaffold-split"
+  - "molecular-generation"
+borrows:
+  - "message-passing"
+  - "graph-basics"
+  - "node-embedding"
+  - "graph-traversal"
+  - "split-design"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "d"
   - "E"
   - "hat"
 apparatus:
+  - "0.GR.01"
+  - "0.GR.03"
   - "0.LA.03"
   - "0.ST.01"
 keyEquations: []
 status: review
-
 ---

@@ -1,10 +1,10 @@
 ---
-id: "VI.4"
+id: "VII.4"
 book: bioinformatics
 order: 4
 title: "Single-Cell Biology"
-summary: "One cell, one observation."
-claim: "A single-cell pipeline is a sequence of decisions, each of which changes the geometry the clustering will later read."
+summary: "A pipeline of decisions, each changing the geometry the clustering will read."
+claim: "A single-cell pipeline is a sequence of decisions, each of which changes the geometry a later clustering will read as biology."
 mathTier: M3
 topics:
   - "scRNA-seq"
@@ -13,8 +13,27 @@ topics:
   - "Dimensionality reduction"
   - "Clustering"
   - "Cell types"
-prerequisites:
-  - "VI.2"
+definitions: []
+beforeYouStart:
+  - "VII.2"
+  - "0.LA.04"
+  - "0.OP.04"
+conceptFigure: FigLossLandscape
+problemStatement: "Between the count matrix and the figure lie a dozen choices — filtering, normalisation, feature selection, projection — none of which are reported as results, all of which change them."
+formalResults: []
+assumptions: []
+owns:
+  - "single-cell-pipeline"
+  - "dimensionality-reduction"
+  - "multiple-testing"
+borrows:
+  - "sequencing-counts"
+  - "eigendecomposition"
+  - "singular-value-decomposition"
+  - "lagrange-multipliers"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "X"
   - "d"
@@ -28,5 +47,4 @@ apparatus:
   - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

@@ -1,10 +1,10 @@
 ---
-id: "VII.6"
+id: "VIII.6"
 book: practice
 order: 6
 title: "Training Systems"
-summary: "The machine underneath."
-claim: "A training run is bounded by memory and bandwidth before it is bounded by ideas, and both bounds are computable in advance."
+summary: "Measurement and diagnosis: where the time actually goes."
+claim: "A training run is bounded by memory and bandwidth before it is bounded by ideas, and both bounds are measurable rather than guessed."
 mathTier: M3
 topics:
   - "GPU"
@@ -15,8 +15,26 @@ topics:
   - "Checkpointing"
   - "Profiling"
   - "Inference"
-prerequisites:
-  - "I.8"
+definitions: []
+beforeYouStart:
+  - "II.8"
+  - "VIII.5"
+conceptFigure: FigFlopsVsLatency
+problemStatement: "The budget was derived in II.8. What remains is the gap between that budget and what the hardware actually achieves, which is a measurement problem with a small number of standard causes."
+formalResults: []
+assumptions: []
+owns:
+  - "arithmetic-intensity"
+  - "model-flops-utilisation"
+  - "tensor-parallelism"
+borrows:
+  - "training-memory-budget"
+  - "training-flops"
+  - "mixed-precision"
+  - "activation-checkpointing"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "N"
   - "B"
@@ -30,5 +48,4 @@ apparatus:
   - "0.LA.01"
 keyEquations: []
 status: review
-
 ---

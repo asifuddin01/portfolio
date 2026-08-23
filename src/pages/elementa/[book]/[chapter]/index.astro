@@ -13,7 +13,16 @@ import VariantTag from '../../../../components/elementa/VariantTag.astro';
 import Difficulty from '../../../../components/elementa/Difficulty.astro';
 import Notation from '../../../../components/elementa/Notation.astro';
 import ApparatusRef from '../../../../components/elementa/ApparatusRef.astro';
-import { getElementaTree, getProblems, chapterMath } from '../../../../lib/collections';
+import StrandMeter from '../../../../components/elementa/StrandMeter.astro';
+import BeforeYouStart from '../../../../components/elementa/BeforeYouStart.astro';
+import TheProblem from '../../../../components/elementa/TheProblem.astro';
+import Definition from '../../../../components/elementa/Definition.astro';
+import FormalResult from '../../../../components/elementa/FormalResult.astro';
+import FigureFrame from '../../../../components/elementa/FigureFrame.astro';
+import { FIGURES, isFigureName } from '../../../../lib/figures';
+import {
+  getElementaTree, getProblems, chapterMath, chapterCoverage,
+} from '../../../../lib/collections';
 import { TIER_NOTE } from '../../../../lib/elementa-spec';
 import type { CollectionEntry } from 'astro:content';
 // KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
@@ -22,6 +31,10 @@ import '../../../../styles/math.css';
 
 export async function getStaticPaths() {
   const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
+  /** Every chapter ID to its address, so BEFORE YOU START can link. */
+  const hrefOf = Object.fromEntries(
+    tree.flatMap((b) => b.chapters.map((c) => [c.id, `/elementa/${b.book.id}/${c.slug}`]))
+  );
   return tree.flatMap((b) =>
     b.chapters.map((c, i) => ({
       params: { book: b.book.id, chapter: c.slug },
@@ -33,6 +46,7 @@ export async function getStaticPaths() {
         propositions: c.propositions,
         items: items.filter((p) => p.data.chapter === c.id),
         next: b.chapters[i + 1] ?? null,
+        hrefOf,
       },
     }))
   );
@@ -46,13 +60,19 @@ interface Props {
   propositions: CollectionEntry<'elementa'>[];
   items: CollectionEntry<'problems'>[];
   next: { chapter: CollectionEntry<'chapters'>; n: number; slug: string } | null;
+  hrefOf: Record<string, string>;
 }
-const { book, bookNumeral, chapter, chapterN, propositions, items, next } = Astro.props;
+const { book, bookNumeral, chapter, chapterN, propositions, items, next, hrefOf } = Astro.props;
 const d = chapter.data;
 const base = `/elementa/${book.id}`;
 const here = `${base}/${chapter.id.split('--')[1]}`;
 const math = chapterMath(d.mathTier, items);
+const strands = chapterCoverage(chapter, items);
 const published = d.status === 'published';
+
+const figName = d.conceptFigure && isFigureName(d.conceptFigure) ? d.conceptFigure : null;
+const conceptFig = figName ? FIGURES[figName] : null;
+const ConceptFigure = conceptFig?.component;
 ---
 <BaseLayout
   title={`Chapter ${chapterN} · ${d.title} — Elementa`}
@@ -74,12 +94,29 @@ const published = d.status === 'published';
     </header>
 
     <section class="ch-tierblock" data-reveal aria-labelledby="ch-tier-h">
-      <h2 class="ch-label" id="ch-tier-h">Mathematical density</h2>
+      <h2 class="ch-label" id="ch-tier-h">How this chapter is built</h2>
       <p class="ch-tierline"><MathTier value={d.mathTier} /></p>
       <p class="ch-tiernote codex-measure">{TIER_NOTE[d.mathTier]}</p>
       {d.tierRationale && <p class="ch-tiernote codex-measure">{d.tierRationale}</p>}
-      <Quota math={math} published={published} />
+      <StrandMeter strands={strands} />
+      <p class="ch-tiernote ch-dim codex-measure">
+        Five strands, not one. Mathematics is the spine; the other four are the
+        body. A chapter cannot pay its way out of teaching with problems, nor
+        out of problems with teaching.
+      </p>
     </section>
+
+    <BeforeYouStart items={d.beforeYouStart} hrefOf={hrefOf} />
+
+    {d.problemStatement && <TheProblem text={d.problemStatement} />}
+
+    {ConceptFigure && conceptFig && (
+      <div class="fig-draw" data-reveal>
+        <FigureFrame n={chapterN} numeral="arabic" caption={conceptFig.caption} id={figName ?? undefined}>
+          <ConceptFigure />
+        </FigureFrame>
+      </div>
+    )}
 
     {d.topics.length > 0 && (
       <section class="ch-topics" data-reveal aria-labelledby="ch-topics-h">
@@ -90,14 +127,15 @@ const published = d.status === 'published';
       </section>
     )}
 
-    {(d.prerequisites.length > 0 || d.apparatus.length > 0) && (
+    {d.apparatus.length > 0 && (
       <section class="ch-pre" data-reveal aria-labelledby="ch-pre-h">
-        <h2 class="ch-label" id="ch-pre-h">Assumed</h2>
+        <h2 class="ch-label" id="ch-pre-h">Apparatus</h2>
+        <p class="ch-tiernote ch-dim codex-measure">
+          The mathematics this chapter leans on, held in Book 0 so it can be
+          assumed here without being taught here. Not a gate — follow a link
+          when a step stops making sense.
+        </p>
         <p class="ch-preline">
-          {d.prerequisites.map((p, i) => (
-            <>{i > 0 && <span class="ch-sep"> · </span>}<code class="ch-code">{p}</code></>
-          ))}
-          {d.prerequisites.length > 0 && d.apparatus.length > 0 && <span class="ch-sep"> · </span>}
           {d.apparatus.map((a, i) => (
             <>{i > 0 && <span class="ch-sep"> · </span>}<ApparatusRef ref={a} /></>
           ))}
@@ -109,6 +147,41 @@ const published = d.status === 'published';
       <section class="ch-nota" data-reveal aria-labelledby="ch-nota-h">
         <h2 class="ch-label" id="ch-nota-h">Notation</h2>
         <Notation symbols={d.notation} />
+      </section>
+    )}
+
+    {d.definitions.length > 0 && (
+      <section class="ch-defs" data-reveal aria-labelledby="ch-def-h">
+        <h2 class="ch-label" id="ch-def-h">Definitions</h2>
+        {d.definitions.map((def) => (
+          <Definition n={def.n} term={def.term} introduces={def.introduces}>
+            <p>{def.statement}</p>
+          </Definition>
+        ))}
+      </section>
+    )}
+
+    {d.formalResults.length > 0 && (
+      <section class="ch-theory" data-reveal aria-labelledby="ch-th-h">
+        <h2 class="ch-label" id="ch-th-h">Formal results</h2>
+        {d.formalResults.map((r) => (
+          <FormalResult id={r.id} name={r.name} statement={r.statement} doesNotPromise={r.doesNotPromise} />
+        ))}
+      </section>
+    )}
+
+    {d.assumptions.length > 0 && (
+      <section class="ch-assume" data-reveal aria-labelledby="ch-as-h">
+        <h2 class="ch-label" id="ch-as-h">Assumptions</h2>
+        <p class="ch-tiernote ch-dim codex-measure">
+          Each is paired with the problem that shows what its removal costs.
+          An assumption nobody tests is a disclaimer.
+        </p>
+        <ul class="ch-aslist">
+          {d.assumptions.map((a) => (
+            <li><span class="ch-astext">{a.statement}</span> <code class="ch-code">{a.testedBy}</code></li>
+          ))}
+        </ul>
       </section>
     )}
 
@@ -156,6 +229,7 @@ const published = d.status === 'published';
     {math.rule.minProblems > 0 && (
       <section class="ch-math" data-reveal aria-labelledby="ch-math-h">
         <h2 class="ch-label" id="ch-math-h">Worked problems</h2>
+        <Quota math={math} published={published} />
         {math.problems.length === 0 ? (
           <p class="ch-empty">
             Not yet written. At {d.mathTier} this chapter owes {math.rule.minProblems} worked
@@ -178,6 +252,27 @@ const published = d.status === 'published';
             </ol>
             <p class="ch-more"><a class="link" href={`${here}/problems`}>The whole problem set, with the exercises →</a></p>
           </>
+        )}
+      </section>
+    )}
+
+    {(d.failureModes.length > 0 || d.references.length > 0) && (
+      <section class="ch-practice" data-reveal aria-labelledby="ch-pr-h">
+        <h2 class="ch-label" id="ch-pr-h">Practice</h2>
+        {d.failureModes.length > 0 && (
+          <ul class="ch-aslist">
+            {d.failureModes.map((f) => <li><span class="ch-astext">{f}</span></li>)}
+          </ul>
+        )}
+        {d.references.length > 0 && (
+          <ul class="ch-refs">
+            {d.references.map((r) => (
+              <li>
+                {r.url ? <a class="link" href={r.url} rel="noopener">{r.title}</a> : r.title}
+                <em>{r.authors}, {r.year} · {r.venue}</em>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     )}
@@ -229,7 +324,26 @@ const published = d.status === 'published';
   .ch-tierline { margin: 0 0 0.5rem; }
   .ch-tiernote { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.6; margin: 0 0 0.6rem; }
 
-  .ch-topics, .ch-pre, .ch-nota, .ch-eqs, .ch-math { margin-top: 2.2rem; }
+  .ch-topics, .ch-pre, .ch-nota, .ch-eqs, .ch-math,
+  .ch-defs, .ch-theory, .ch-assume, .ch-practice { margin-top: 2.2rem; }
+  .ch-dim { opacity: 0.85; }
+  .ch-aslist { list-style: none; margin: 0; padding: 0; max-width: 64rem; }
+  .ch-aslist li {
+    font-size: var(--t-base);
+    line-height: 1.65;
+    padding: 0.45rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 20%, transparent);
+  }
+  .ch-astext { max-width: var(--measure); }
+  .ch-refs { list-style: none; margin: 0.8rem 0 0; padding: 0; max-width: 64rem; }
+  .ch-refs li { font-size: var(--t-base); line-height: 1.55; padding: 0.35rem 0; }
+  .ch-refs em {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-style: normal;
+    color: var(--ink-soft);
+  }
   .ch-topic-list {
     list-style: none;
     margin: 0;

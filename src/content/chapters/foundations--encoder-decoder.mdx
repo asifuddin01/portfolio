@@ -1,0 +1,39 @@
+---
+id: "II.7"
+book: foundations
+order: 7
+title: "Encoder, Decoder, and Encoder–Decoder"
+summary: "Three architectures, one difference: who is allowed to see whom."
+claim: "Encoder, decoder and encoder–decoder differ only in what each stack may look at, and a mask is how that is enforced."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "II.6"
+  - "I.4"
+conceptFigure: FigCausalMask
+problemStatement: "The same block can be wired three ways, and the wiring decides whether the model classifies, generates, or translates. The whole difference is a matrix of zeros and minus infinities."
+formalResults: []
+assumptions: []
+owns:
+  - "causal-masking"
+  - "encoder-decoder"
+  - "teacher-forcing"
+borrows:
+  - "transformer-block"
+  - "scaled-dot-product-attention"
+  - "cross-entropy"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "T"
+  - "d"
+  - "softmax"
+  - "L"
+apparatus:
+  - "0.PR.01"
+  - "0.IT.02"
+keyEquations: []
+status: review
+---

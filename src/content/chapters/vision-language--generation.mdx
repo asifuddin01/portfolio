@@ -1,9 +1,9 @@
 ---
-id: "IV.4"
+id: "V.4"
 book: vision-language
 order: 4
 title: "Vision-Language Generation"
-summary: "Getting a language model to look."
+summary: "A vision-language model spends context on pixels."
 claim: "A vision-language model spends context on pixels, and the projector decides how much."
 mathTier: M2
 topics:
@@ -13,9 +13,23 @@ topics:
   - "Cross-attention"
   - "Visual tokens"
   - "Multimodal prompting"
-prerequisites:
+definitions: []
+beforeYouStart:
+  - "III.4"
   - "IV.2"
-  - "III.2"
+conceptFigure: FigFlopsVsLatency
+problemStatement: "Retrieval only ranks; generation must produce language conditioned on an image. Feeding an image into a language model means turning it into tokens, and every visual token is a text token that no longer fits."
+formalResults: []
+assumptions: []
+owns:
+  - "visual-token-projection"
+borrows:
+  - "patch-embedding"
+  - "autoregressive-decoding"
+  - "attention-cost"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "T"
   - "d"
@@ -25,5 +39,4 @@ apparatus:
   - "0.LA.01"
 keyEquations: []
 status: review
-
 ---

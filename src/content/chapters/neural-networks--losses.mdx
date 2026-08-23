@@ -1,0 +1,44 @@
+---
+id: "I.4"
+book: neural-networks
+order: 4
+title: "Loss Functions"
+summary: "A loss is the sentence 'here is what wrong means', written so a derivative exists."
+claim: "Every loss is a negative log-likelihood under some noise model, and choosing a loss is choosing that model."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.3"
+  - "0.IT.02"
+  - "0.PR.06"
+conceptFigure: FigLossLandscape
+problemStatement: "Training needs a scalar to descend. Which scalar is not a detail: it fixes the implied noise model, the Bayes-optimal predictor, and whether the gradient survives at the point where the model is most wrong."
+formalResults: []
+assumptions: []
+owns:
+  - "loss-function"
+  - "cross-entropy"
+  - "loss-as-negative-log-likelihood"
+borrows:
+  - "softmax-jacobian"
+  - "entropy"
+  - "activation-function"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "L_loss"
+  - "E"
+  - "softmax"
+  - "Hent"
+  - "sigma"
+apparatus:
+  - "0.IT.01"
+  - "0.IT.02"
+  - "0.PR.06"
+  - "0.MC.06"
+  - "0.NU.02"
+keyEquations: []
+status: review
+---

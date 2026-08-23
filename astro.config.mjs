@@ -118,7 +118,7 @@ export default defineConfig({
             );
           }
           logger.info(
-            `five guards pass · ${owed} outstanding obligation(s) across chapters still in review`
+            `seven guards pass · ${owed} outstanding obligation(s) across chapters still in review`
           );
         },
       },

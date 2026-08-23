@@ -1,10 +1,10 @@
 ---
-id: "III.8"
+id: "IV.8"
 book: large-language-model-llm
 order: 8
 title: "LLM Failure"
-summary: "The parts that do not work."
-claim: "A language model's failures are measurable: contamination, calibration and the compounding of per-step error."
+summary: "The failures are measurable: contamination, calibration, and compounding error."
+claim: "A language model's characteristic failures are measurable, and each has an arithmetic that predicts its size."
 mathTier: M2
 topics:
   - "Hallucination"
@@ -14,8 +14,24 @@ topics:
   - "Benchmark contamination"
   - "Distribution shift"
   - "Evaluation problems"
-prerequisites:
-  - "III.2"
+definitions: []
+beforeYouStart:
+  - "IV.2"
+  - "III.7"
+conceptFigure: FigTwoBenchmarks
+problemStatement: "Reported capability and actual capability diverge in specific, repeatable ways. Naming each mechanism and computing its magnitude is the difference between a caveat and a correction."
+formalResults: []
+assumptions: []
+owns:
+  - "benchmark-contamination"
+  - "model-calibration-failure"
+borrows:
+  - "perplexity"
+  - "calibration"
+  - "autoregressive-decoding"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "Hent"
   - "E"
@@ -26,5 +42,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

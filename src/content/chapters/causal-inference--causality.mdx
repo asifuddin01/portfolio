@@ -1,9 +1,9 @@
 ---
-id: "V.1"
+id: "VI.1"
 book: causal-inference
 order: 1
 title: "Correlation and Causation"
-summary: "Why prediction is not enough."
+summary: "The same joint distribution can come from different causal structures."
 claim: "The same joint distribution can be produced by different causal structures, so data alone cannot decide between them."
 mathTier: M2
 topics:
@@ -11,8 +11,22 @@ topics:
   - "Causation"
   - "Confounding"
   - "Prediction versus intervention"
-prerequisites:
-  - "I.1"
+definitions: []
+beforeYouStart:
+  - "0.PR.04"
+  - "0.PR.05"
+conceptFigure: FigDomainShift
+problemStatement: "Every model in Books I to V estimates an association. A decision requires knowing what would happen under an action, and no amount of predictive accuracy answers that question. The gap has to be named before it can be closed."
+formalResults: []
+assumptions: []
+owns:
+  - "correlation-versus-causation"
+borrows:
+  - "conditional-independence"
+  - "bayes-rule"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "RVX"
   - "E"
@@ -23,5 +37,4 @@ apparatus:
   - "0.PR.05"
 keyEquations: []
 status: review
-
 ---

@@ -1,0 +1,12 @@
+---
+id: "0.GR.02"
+part: GR
+order: 2
+title: "Representing a graph"
+statement: "An adjacency matrix A has A_ij = 1 when an edge joins i to j, and is n×n. An adjacency list stores, for each vertex, only its neighbours, and occupies O(n + m). An incidence matrix is n×m over vertices and edges."
+shapeCheck: "A is n×n and symmetric exactly when the graph is undirected. The degree matrix D is diagonal with D_ii = Σ_j A_ij."
+workedLine: "A path on three vertices has A = [[0,1,0],[1,0,1],[0,1,0]], degrees (1, 2, 1), and an adjacency list of total length 4."
+status: review
+---
+
+The choice is not cosmetic. A biological network with 10⁶ nodes and 10⁷ edges is 10¹² entries as a matrix and 10⁷ as a list, which is the difference between running and not.

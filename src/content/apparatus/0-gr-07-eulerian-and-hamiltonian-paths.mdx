@@ -1,0 +1,12 @@
+---
+id: "0.GR.07"
+part: GR
+order: 7
+title: "Eulerian and Hamiltonian paths"
+statement: "An Eulerian path uses every edge exactly once, and exists in a connected graph exactly when zero or two vertices have odd degree. A Hamiltonian path uses every vertex exactly once, and deciding whether one exists is NP-complete."
+shapeCheck: "Eulerian: a condition on degrees, checkable in O(n + m). Hamiltonian: no such condition is known."
+workedLine: "A triangle has all degrees 2, so an Eulerian circuit exists. Adding one pendant edge makes two vertices odd — a path, not a circuit."
+status: review
+---
+
+This pair is why genome assembly moved from overlap graphs to de Bruijn graphs. Assembly over an overlap graph is Hamiltonian and intractable; over a de Bruijn graph it is Eulerian and linear. Same biology, different graph.

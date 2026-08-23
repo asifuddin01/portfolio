@@ -1,19 +1,19 @@
 ---
-id: "I.5.B01"
+id: "II.3.B01"
 kind: problem
-chapter: "I.5"
+chapter: "II.3"
 scope: chapter
 variant: numeric
 difficulty: 2
 title: "Attention on three tokens, by hand"
 depends:
-  - "I.5.P01"
-  - "I.5.P02"
+  - "II.3.P01"
+  - "II.3.P02"
 reachesBack: []
 rounding: "All values rounded to 4 d.p. Intermediate quantities carry full precision; only what is printed is rounded."
 hasSolution: true
 verified: true
-snippet: "i-5-b01-attention-by-hand.py"
+snippet: "ii-3-b01-attention-by-hand.py"
 status: published
 ---
 
@@ -120,7 +120,7 @@ $\mat{A}$ is $3 \times 3$ and dimensionless; $\mat{O}$ is $3 \times 2$ and
 carries the units of $\mat{V}$.
 </Answer>
 
-<CheckNumeric snippet="i-5-b01-attention-by-hand.py" verified>
+<CheckNumeric snippet="ii-3-b01-attention-by-hand.py" verified>
 ```python
 S = [[sum(q[i] * k[i] for i in range(d_k)) for k in K] for q in Q]
 Z = [[s / sqrt(d_k) for s in row] for row in S]
@@ -128,7 +128,7 @@ A = [softmax(row) for row in Z]
 O = [[sum(a[j] * V[j][c] for j in range(3)) for c in range(2)] for a in A]
 ```
 
-The full twenty-line script is `scripts/snippets/i-5-b01-attention-by-hand.py`,
+The full twenty-line script is `scripts/snippets/ii-3-b01-attention-by-hand.py`,
 and its output is diffed against the digits above on every build.
 </CheckNumeric>
 

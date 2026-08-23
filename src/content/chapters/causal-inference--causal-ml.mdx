@@ -1,10 +1,10 @@
 ---
-id: "V.8"
+id: "VI.8"
 book: causal-inference
 order: 8
-title: "Causal ML"
-summary: "Where machine learning meets the do-operator."
-claim: "Machine learning estimates the nuisance functions; the estimator's structure is what makes the effect robust to getting them wrong."
+title: "Causal Machine Learning"
+summary: "Machine learning estimates the nuisance functions; structure makes the effect robust."
+claim: "Machine learning estimates the nuisance functions, and the estimator's structure is what makes the effect robust to getting them wrong."
 mathTier: M3
 topics:
   - "Heterogeneous treatment effects"
@@ -12,8 +12,26 @@ topics:
   - "Representation learning"
   - "Neural causal models"
   - "Causal discovery"
-prerequisites:
-  - "V.7"
+definitions: []
+beforeYouStart:
+  - "VI.7"
+  - "0.ST.05"
+conceptFigure: FigStripedHyena
+problemStatement: "Flexible models fit the outcome and the treatment better than any parametric form. Plugging them into an effect estimate introduces a bias that does not vanish with sample size, and the repair is a change of estimator rather than of model."
+formalResults: []
+assumptions: []
+owns:
+  - "double-robustness"
+  - "cate-estimation"
+  - "causal-discovery"
+borrows:
+  - "inverse-probability-weighting"
+  - "propensity-score"
+  - "gradient-descent"
+  - "bootstrap"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "Var"
@@ -25,5 +43,4 @@ apparatus:
   - "0.MC.03"
 keyEquations: []
 status: review
-
 ---

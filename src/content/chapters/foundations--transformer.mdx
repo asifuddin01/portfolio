@@ -1,9 +1,9 @@
 ---
-id: "I.7"
+id: "II.6"
 book: foundations
-order: 7
-title: "The Transformer"
-summary: "The block, assembled."
+order: 6
+title: "The Transformer Block"
+summary: "Two sublayers, each adding to a running representation rather than replacing it."
 claim: "A transformer block mixes across positions and then computes within them, and the residual stream is what every layer edits rather than replaces."
 mathTier: M3
 topics:
@@ -17,9 +17,28 @@ topics:
   - "Encoder-decoder models"
   - "Causal masking"
   - "Full forward pass"
-prerequisites:
-  - "I.5"
+definitions: []
+beforeYouStart:
+  - "II.4"
+  - "I.8"
   - "I.6"
+conceptFigure: FigTransformerBlock
+problemStatement: "Attention mixes but cannot transform: its output is trapped in the convex hull of its values. A block is the smallest unit that both mixes and computes, and the residual connection is what lets many of them stack."
+formalResults: []
+assumptions: []
+owns:
+  - "transformer-block"
+  - "residual-stream"
+  - "normalisation-placement"
+borrows:
+  - "scaled-dot-product-attention"
+  - "multi-head-attention"
+  - "layer-normalisation"
+  - "residual-jacobian"
+  - "affine-layer"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "d"
   - "T"
@@ -33,9 +52,7 @@ notation:
 apparatus:
   - "0.LA.02"
   - "0.MC.07"
-  - "0.PR.01"
   - "0.NU.02"
 keyEquations: []
 status: review
-
 ---

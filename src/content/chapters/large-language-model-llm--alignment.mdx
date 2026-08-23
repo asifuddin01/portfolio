@@ -1,10 +1,10 @@
 ---
-id: "III.5"
+id: "IV.5"
 book: large-language-model-llm
 order: 5
-title: "Instruction Following"
-summary: "From a text predictor to something that answers."
-claim: "A preference dataset defines an implicit reward, and the KL-regularised optimum of that reward has a closed form."
+title: "Instruction Following and Alignment"
+summary: "A preference dataset defines an implicit reward."
+claim: "The KL-regularised optimum of a learned reward has a closed form, and inverting it turns preference data directly into a loss."
 mathTier: M3
 topics:
   - "Instruction tuning"
@@ -13,19 +13,38 @@ topics:
   - "RLHF"
   - "DPO"
   - "Alignment"
-prerequisites:
-  - "III.3"
+definitions: []
+beforeYouStart:
+  - "IV.1"
+  - "0.IT.03"
+  - "I.7"
+conceptFigure: FigPresenceToken
+problemStatement: "A pretrained model completes text; it does not answer questions. Turning one into the other means optimising something no dataset directly labels, which is why preference comparisons and a divergence penalty replace a supervised target."
+formalResults: []
+assumptions: []
+owns:
+  - "preference-modelling"
+  - "rlhf-objective"
+  - "direct-preference-optimisation"
+borrows:
+  - "kl-divergence"
+  - "cross-entropy"
+  - "language-modelling"
+  - "gradient-descent"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "beta"
   - "sigma"
   - "softmax"
   - "nabla"
   - "E"
+  - "KL"
 apparatus:
   - "0.IT.03"
   - "0.PR.06"
   - "0.OP.04"
 keyEquations: []
 status: review
-
 ---

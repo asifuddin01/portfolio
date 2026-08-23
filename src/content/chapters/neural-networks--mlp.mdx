@@ -1,0 +1,43 @@
+---
+id: "I.5"
+book: neural-networks
+order: 5
+title: "The Multilayer Perceptron"
+summary: "Alternating affine maps and nonlinearities, each layer re-describing the data for the next."
+claim: "An MLP is a composition of affine maps and nonlinearities, and depth can buy exponentially in width."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.3"
+  - "I.2"
+  - "0.LA.01"
+conceptFigure: FigDepthFolds
+problemStatement: "The perceptron cannot solve XOR and one nonlinearity cannot be applied to nothing. Composing them is the smallest change that makes the failure go away, and the first architecture worth counting parameters for."
+formalResults: []
+assumptions: []
+owns:
+  - "affine-layer"
+  - "multilayer-perceptron"
+  - "depth-width-tradeoff"
+borrows:
+  - "activation-function"
+  - "perceptron"
+  - "tensor-shape"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "W"
+  - "b"
+  - "x"
+  - "d"
+  - "L"
+  - "N"
+apparatus:
+  - "0.LA.01"
+  - "0.MC.04"
+  - "0.OP.01"
+keyEquations: []
+status: review
+---

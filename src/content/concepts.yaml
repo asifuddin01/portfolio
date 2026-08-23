@@ -1,0 +1,274 @@
+# The controlled concept vocabulary (spec §6.3).
+#
+# Every chapter declares what it `owns` — derives, from first principles — and
+# what it `borrows` — uses, having been derived elsewhere. Two chapters
+# claiming the same concept in `owns` fails the build. That is invariant I-9,
+# and it is the rule that stops the same idea being taught twice in two Books
+# and drifting apart until the reader trusts neither treatment.
+#
+# Adding a concept here is a deliberate act. The friction is the point: it is
+# exactly what prevents an accidental second treatment.
+#
+# A concept carrying an `apparatus:` anchor is owned by Book 0 rather than by
+# any chapter. Chapters may borrow it freely; none may claim to own it.
+
+# ── Book 0 · Apparatus ──────────────────────────────────────────────────
+- id: chain-rule
+  apparatus: 0.MC.03
+- id: jacobian
+  apparatus: 0.MC.02
+- id: matrix-product-derivative
+  apparatus: 0.MC.07
+- id: softmax-jacobian
+  apparatus: 0.MC.06
+- id: log-sum-exp
+  apparatus: 0.NU.02
+- id: lagrange-multipliers
+  apparatus: 0.OP.04
+- id: eigendecomposition
+  apparatus: 0.LA.04
+- id: singular-value-decomposition
+  apparatus: 0.LA.04
+- id: bayes-rule
+  apparatus: 0.PR.04
+- id: conditional-independence
+  apparatus: 0.PR.05
+- id: entropy
+  apparatus: 0.IT.01
+- id: kl-divergence
+  apparatus: 0.IT.03
+- id: mutual-information
+  apparatus: 0.IT.04
+- id: jensens-inequality
+  apparatus: 0.IT.05
+- id: floating-point
+  apparatus: 0.NU.01
+- id: bootstrap
+  apparatus: 0.ST.05
+- id: graph-basics
+  apparatus: 0.GR.01
+- id: graph-representation
+  apparatus: 0.GR.02
+- id: graph-traversal
+  apparatus: 0.GR.05
+- id: shortest-path
+  apparatus: 0.GR.06
+- id: spanning-tree
+  apparatus: 0.GR.04
+- id: eulerian-path
+  apparatus: 0.GR.07
+- id: computational-complexity
+  apparatus: 0.GR.08
+- id: graph-centrality
+  apparatus: 0.GR.09
+
+# ── Book I · Neural Networks ────────────────────────────────────────────
+- id: model-as-function
+- id: tensor-shape
+- id: empirical-risk-minimisation
+- id: generalisation-gap
+- id: perceptron
+- id: linear-separability
+- id: perceptron-convergence
+- id: activation-function
+- id: saturation
+- id: universal-approximation
+- id: linear-collapse
+- id: loss-function
+- id: cross-entropy
+- id: loss-as-negative-log-likelihood
+- id: affine-layer
+- id: multilayer-perceptron
+- id: depth-width-tradeoff
+- id: computational-graph
+- id: backpropagation
+- id: reverse-mode-autodiff
+- id: gradient-accumulation
+- id: residual-jacobian
+- id: gradient-descent
+- id: momentum
+- id: adam
+- id: learning-rate-schedule
+- id: batch-gradient-noise
+- id: batch-normalisation
+- id: layer-normalisation
+- id: weight-decay
+- id: dropout
+- id: recurrence
+- id: backpropagation-through-time
+- id: vanishing-exploding-gradient
+- id: gating
+- id: constant-error-carousel
+- id: convolution
+- id: receptive-field
+- id: pooling
+- id: translation-equivariance
+- id: autoencoder
+- id: bottleneck-representation
+- id: variational-autoencoder
+- id: elbo
+- id: reparameterisation-trick
+- id: posterior-collapse
+- id: message-passing
+- id: graph-convolution
+- id: over-smoothing
+- id: node-embedding
+- id: permutation-equivariance
+
+# ── Book II · Foundations ───────────────────────────────────────────────
+- id: tokenisation
+- id: subword-vocabulary
+- id: embedding-table
+- id: contextual-representation
+- id: fixed-context-bottleneck
+- id: additive-attention
+- id: scaled-dot-product-attention
+- id: attention-convex-combination
+- id: attention-cost
+- id: multi-head-attention
+- id: head-partitioning
+- id: positional-encoding
+- id: rotary-encoding
+- id: transformer-block
+- id: residual-stream
+- id: normalisation-placement
+- id: causal-masking
+- id: encoder-decoder
+- id: teacher-forcing
+- id: mixed-precision
+- id: gradient-clipping
+- id: activation-checkpointing
+- id: training-memory-budget
+- id: training-flops
+
+# ── Book III · Vision ───────────────────────────────────────────────────
+- id: image-tensor
+- id: spatial-prior
+- id: input-normalisation
+- id: cnn-architecture-lineage
+- id: transfer-learning
+- id: feature-hierarchy
+- id: patch-embedding
+- id: vision-transformer
+- id: windowed-attention
+- id: contrastive-self-supervision
+- id: representation-collapse
+- id: augmentation-invariance
+- id: masked-image-modelling
+- id: task-head
+- id: object-detection
+- id: semantic-segmentation
+- id: overlap-metrics
+- id: medical-imaging-modality
+- id: operating-point
+- id: prevalence-and-precision
+- id: calibration
+- id: domain-shift
+
+# ── Book IV · Large Language Models ─────────────────────────────────────
+- id: language-modelling
+- id: perplexity
+- id: autoregressive-decoding
+- id: kv-cache
+- id: sampling-strategy
+- id: pretraining-corpus
+- id: deduplication
+- id: scaling-law
+- id: compute-optimal-allocation
+- id: preference-modelling
+- id: rlhf-objective
+- id: direct-preference-optimisation
+- id: in-context-learning
+- id: low-rank-adaptation
+- id: quantisation
+- id: benchmark-contamination
+- id: model-calibration-failure
+- id: retrieval-augmentation
+- id: approximate-nearest-neighbour
+
+# ── Book V · Vision-Language Models ─────────────────────────────────────
+- id: modality-joining
+- id: contrastive-vision-language
+- id: learned-temperature
+- id: zero-shot-classification
+- id: modality-gap
+- id: visual-token-projection
+- id: vlm-architecture-family
+- id: visual-grounding
+- id: hallucination-rate
+- id: caption-metric
+
+# ── Book VI · Causal Inference ──────────────────────────────────────────
+- id: correlation-versus-causation
+- id: causal-graph
+- id: d-separation
+- id: collider-bias
+- id: intervention
+- id: truncated-factorisation
+- id: backdoor-adjustment
+- id: frontdoor-adjustment
+- id: potential-outcomes
+- id: counterfactual
+- id: randomisation
+- id: statistical-power
+- id: propensity-score
+- id: inverse-probability-weighting
+- id: sensitivity-analysis
+- id: double-robustness
+- id: cate-estimation
+- id: causal-discovery
+- id: spurious-feature
+
+# ── Book VII · Bioinformatics ───────────────────────────────────────────
+- id: biological-information
+- id: sequencing-counts
+- id: overdispersion
+- id: gene-regulation
+- id: motif-enrichment
+- id: single-cell-pipeline
+- id: dimensionality-reduction
+- id: multiple-testing
+- id: count-likelihood
+- id: batch-effect
+- id: perturbation-screen
+- id: differential-expression
+- id: sequence-alignment
+- id: edit-distance
+- id: overlap-graph
+- id: de-bruijn-graph
+- id: genome-assembly
+- id: variation-graph
+- id: phylogenetic-tree
+- id: distance-based-phylogeny
+- id: maximum-parsimony
+- id: phylogenetic-network
+- id: protein-interaction-network
+- id: regulatory-network
+- id: metabolic-network
+- id: network-motif
+- id: disease-network
+- id: molecular-graph
+- id: molecular-fingerprint
+- id: subgraph-matching
+- id: scaffold-split
+- id: molecular-generation
+
+# ── Book VIII · Practice ────────────────────────────────────────────────
+- id: reading-a-paper
+- id: estimand
+- id: data-leakage
+- id: split-design
+- id: label-noise
+- id: seed-variance
+- id: ablation-design
+- id: confidence-interval
+- id: paired-comparison
+- id: multiple-comparison-correction
+- id: decision-curve
+- id: arithmetic-intensity
+- id: model-flops-utilisation
+- id: tensor-parallelism
+- id: debugging-by-bisection
+- id: reproducibility
+- id: research-writing
+- id: research-project

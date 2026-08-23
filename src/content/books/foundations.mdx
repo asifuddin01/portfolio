@@ -1,10 +1,11 @@
 ---
-id: I
-order: 1
+id: II
+order: 2
 title: Foundations
 covers: tokenisation, attention, the transformer block
 goal: "Build the conceptual and mathematical footing the rest of the corpus stands on. By the end you should understand how a network represents information and how a transformer processes a sequence."
-prerequisites: []
+prerequisites:
+  - neural-networks
 mathPrerequisites:
   - "0.LA.01"
   - "0.LA.02"
@@ -14,11 +15,12 @@ mathPrerequisites:
   - "0.IT.01"
   - "0.OP.01"
 practical:
-  implement: "Linear regression, then an MLP, then attention, then a full transformer block — in NumPy, no framework."
+  implement: "Tokeniser, then attention, then a full Transformer block, then a training loop that survives its own memory budget."
   verifiedAgainst:
-    - "I.2.B01"
-    - "I.5.B01"
-    - "I.7.B02"
+    - "II.1.B01"
+    - "II.3.B01"
+    - "II.6.B02"
+    - "II.8.B01"
   note: "Your implementation must reproduce the hand-computed numbers to four decimal places before you move on. A reader who skipped the derivations cannot pass their own unit test."
   laboratory:
     - task: "Tokenise the same paragraph with two different tokenisers and count the tokens. Then find a string the two segment differently and explain what the model can no longer distinguish under each."

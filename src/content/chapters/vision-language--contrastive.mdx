@@ -1,9 +1,9 @@
 ---
-id: "IV.2"
+id: "V.2"
 book: vision-language
 order: 2
 title: "Contrastive Vision-Language Learning"
-summary: "CLIP, and the shared embedding space."
+summary: "A batch becomes a classification problem in both directions at once."
 claim: "Contrastive pretraining aligns two encoders by making a batch into a classification problem in both directions at once."
 mathTier: M3
 topics:
@@ -12,9 +12,26 @@ topics:
   - "Text encoder"
   - "Shared embedding space"
   - "Contrastive objective"
-prerequisites:
-  - "IV.1"
-  - "II.5"
+definitions: []
+beforeYouStart:
+  - "III.5"
+  - "I.4"
+  - "0.IT.04"
+conceptFigure: FigGramAnchoring
+problemStatement: "Two encoders produce vectors in two unrelated spaces. Making those spaces one requires an objective that pulls matched pairs together and pushes everything else apart, and the batch is where the negatives come from."
+formalResults: []
+assumptions: []
+owns:
+  - "contrastive-vision-language"
+  - "learned-temperature"
+borrows:
+  - "contrastive-self-supervision"
+  - "cross-entropy"
+  - "mutual-information"
+  - "softmax-jacobian"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "tau"
   - "B"
@@ -28,5 +45,4 @@ apparatus:
   - "0.MC.06"
 keyEquations: []
 status: review
-
 ---

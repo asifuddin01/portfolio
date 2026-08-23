@@ -1,4 +1,4 @@
-"""Reproduction snippet for I.5.B01 — scaled dot-product attention, T = 3, d_k = 2.
+"""Reproduction snippet for II.3.B01 — scaled dot-product attention, T = 3, d_k = 2.
 
 Prints every intermediate the worked solution states, to four decimal places.
 Pure standard library: the point is that the arithmetic is checkable, not that

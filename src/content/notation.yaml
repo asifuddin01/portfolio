@@ -17,17 +17,17 @@
   symbol: "d_k"
   meaning: Key and query width inside one attention head.
   kind: scalar
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: d_v
   symbol: "d_v"
   meaning: Value width inside one attention head.
   kind: scalar
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: T
   symbol: "T"
   meaning: Sequence length in tokens.
   kind: scalar
-  introducedIn: "I.3"
+  introducedIn: "I.9"
 - id: B
   symbol: "B"
   meaning: Batch size.
@@ -37,17 +37,17 @@
   symbol: "h"
   meaning: Number of attention heads.
   kind: scalar
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: L
   symbol: "L"
   meaning: Number of layers.
   kind: scalar
-  introducedIn: "I.7"
+  introducedIn: "I.5"
 - id: V
   symbol: "|V|"
   meaning: Vocabulary size.
   kind: scalar
-  introducedIn: "I.3"
+  introducedIn: "II.1"
 - id: N
   symbol: "N"
   meaning: Parameter count.
@@ -57,32 +57,32 @@
   symbol: "D"
   meaning: Dataset size in tokens.
   kind: scalar
-  introducedIn: "III.3"
+  introducedIn: "IV.3"
 - id: C
   symbol: "C"
   meaning: Channels in vision; compute in FLOPs in the scaling chapters. Disambiguated in context, never in the same equation.
   kind: scalar
-  introducedIn: "II.1"
+  introducedIn: "I.11"
 - id: H
   symbol: "H"
   meaning: Spatial height in pixels.
   kind: scalar
-  introducedIn: "II.1"
+  introducedIn: "I.11"
 - id: W_spatial
   symbol: "W (spatial)"
   meaning: Spatial width in pixels. Distinguished from the weight matrix by being italic and scalar.
   kind: scalar
-  introducedIn: "II.1"
+  introducedIn: "I.11"
 - id: P
   symbol: "P"
   meaning: Patch size, in pixels along one side.
   kind: scalar
-  introducedIn: "II.4"
+  introducedIn: "III.4"
 - id: r
   symbol: "r"
   meaning: Rank of a low-rank update.
   kind: scalar
-  introducedIn: "III.7"
+  introducedIn: "IV.7"
 
 # ── Objects ────────────────────────────────────────────────────────────────
 - id: X
@@ -95,17 +95,17 @@
   symbol: "Q"
   meaning: Query matrix, T×d_k.
   kind: matrix
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: K
   symbol: "K"
   meaning: Key matrix, T×d_k.
   kind: matrix
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: V_mat
   symbol: "V"
   meaning: Value matrix, T×d_v. Bold, unlike the vocabulary size.
   kind: matrix
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: W
   symbol: "W"
   meaning: A weight matrix.
@@ -125,12 +125,12 @@
   symbol: "q"
   meaning: A single query vector.
   kind: vector
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: k
   symbol: "k"
   meaning: A single key vector.
   kind: vector
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: theta
   symbol: "θ"
   meaning: All parameters of a model, taken together.
@@ -140,13 +140,13 @@
   symbol: "J"
   meaning: A Jacobian matrix.
   kind: matrix
-  introducedIn: "I.2"
+  introducedIn: "I.6"
   apparatus: "0.MC.03"
 - id: I_mat
   symbol: "I"
   meaning: The identity matrix.
   kind: matrix
-  introducedIn: "I.7"
+  introducedIn: "I.6"
   apparatus: "0.LA.02"
 - id: Dset
   symbol: "𝒟"
@@ -157,34 +157,34 @@
   symbol: "𝒱"
   meaning: The vocabulary, as a set of tokens.
   kind: set
-  introducedIn: "I.3"
+  introducedIn: "II.1"
 
 # ── Training ───────────────────────────────────────────────────────────────
 - id: eta
   symbol: "η"
   meaning: Learning rate.
   kind: scalar
-  introducedIn: "I.2"
+  introducedIn: "I.7"
 - id: tau
   symbol: "τ"
   meaning: Temperature, in a softmax or a contrastive loss.
   kind: scalar
-  introducedIn: "I.5"
+  introducedIn: "II.3"
 - id: lambda
   symbol: "λ"
   meaning: A regularisation coefficient, or an eigenvalue where the context is linear algebra.
   kind: scalar
-  introducedIn: "I.2"
+  introducedIn: "I.8"
 - id: beta
   symbol: "β"
   meaning: A momentum coefficient in an optimiser; the KL weight in a preference objective.
   kind: scalar
-  introducedIn: "I.8"
+  introducedIn: "I.7"
 - id: sigma
   symbol: "σ"
   meaning: The logistic function, or a standard deviation. Never both in one derivation.
   kind: operator
-  introducedIn: "I.2"
+  introducedIn: "I.3"
 - id: L_loss
   symbol: "ℒ"
   meaning: The loss. Scalar, and the thing every gradient in the corpus is taken of. Written in script so it can never be read as the layer count L.
@@ -194,13 +194,13 @@
   symbol: "∇"
   meaning: Gradient operator. ∂L/∂W has the shape of W — numerator layout, fixed once (§5.6).
   kind: operator
-  introducedIn: "I.2"
+  introducedIn: "I.6"
   apparatus: "0.MC.01"
 - id: softmax
   symbol: "softmax"
   meaning: The normalised exponential, applied row-wise unless stated.
   kind: operator
-  introducedIn: "I.5"
+  introducedIn: "I.4"
 
 # ── Probability and information ────────────────────────────────────────────
 - id: E
@@ -213,7 +213,7 @@
   symbol: "Var"
   meaning: Variance.
   kind: operator
-  introducedIn: "I.2"
+  introducedIn: "I.7"
   apparatus: "0.PR.03"
 - id: Hent
   symbol: "ℋ"
@@ -225,23 +225,23 @@
   symbol: "KL"
   meaning: Kullback–Leibler divergence. Not symmetric, and the asymmetry is load-bearing.
   kind: operator
-  introducedIn: "VI.5"
+  introducedIn: "I.13"
   apparatus: "0.IT.03"
 - id: RVX
   symbol: "X (random)"
   meaning: A random variable. Upright uppercase, against the italic lowercase of its realisation.
   kind: random
-  introducedIn: "V.1"
+  introducedIn: "VI.1"
 - id: do
   symbol: "do(·)"
   meaning: The intervention operator. Deletes the mechanism for its argument.
   kind: operator
-  introducedIn: "V.3"
+  introducedIn: "VI.3"
 - id: indep
   symbol: "⫫"
   meaning: Statistical independence.
   kind: operator
-  introducedIn: "V.1"
+  introducedIn: "VI.1"
   apparatus: "0.PR.05"
 - id: hat
   symbol: "θ̂"

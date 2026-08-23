@@ -26,11 +26,23 @@ import { readCollection, list } from './read.mjs';
 
 const C = {
   books: 'src/content/books',
+  concepts: 'src/content/concepts.yaml',
   chapters: 'src/content/chapters',
   propositions: 'src/content/elementa',
   problems: 'src/content/problems',
   apparatus: 'src/content/apparatus',
 };
+
+/** §7.2 — the coverage quota, across the four non-mathematical strands. */
+const COVERAGE_RULES = {
+  M0: { definitions: 3, beforeYouStart: 1, formalResults: 0, assumptions: 0, failureModes: 1, references: 2, implementation: false },
+  M1: { definitions: 4, beforeYouStart: 2, formalResults: 1, assumptions: 0, failureModes: 1, references: 3, implementation: true },
+  M2: { definitions: 6, beforeYouStart: 3, formalResults: 1, assumptions: 1, failureModes: 1, references: 4, implementation: true },
+  M3: { definitions: 8, beforeYouStart: 3, formalResults: 2, assumptions: 2, failureModes: 2, references: 6, implementation: true },
+};
+
+/** Reading order of the eight books, for the backwards-dependency rule. */
+const BOOK_RANK = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8 };
 
 const TIER_RULES = {
   M0: { minProblems: 0, minVariants: 0, minExercises: 0 },
@@ -147,6 +159,126 @@ export async function checkMathQuota(data) {
   return { errors, warnings, name: 'math-quota' };
 }
 
+
+// ── §7.2 Coverage — the four strands that are not mathematics ──────────────
+/**
+ * A chapter can satisfy every problem quota and still leave a reader who does
+ * not know what the words mean, cannot picture the mechanism, and has no idea
+ * what the theorem does not promise. So each strand carries its own minimum,
+ * and neither side can buy its way out of the other: seven beautiful problems
+ * and four definitions still fails.
+ */
+export async function checkCoverage(data) {
+  const { chapters } = data ?? (await load());
+  const errors = [];
+  const warnings = [];
+
+  for (const ch of chapters) {
+    const { id, mathTier = 'M1', status } = ch.data;
+    const rule = COVERAGE_RULES[mathTier];
+    if (!rule) continue;
+    const into = status === 'published' ? errors : warnings;
+
+    const count = (k) => list(ch.data[k]).length;
+    const need = (got, want, what) => {
+      if (got < want) into.push(`${id} (${mathTier}): ${got} ${what}, needs ${want}.`);
+    };
+
+    need(count('definitions'), rule.definitions, 'numbered definitions');
+    need(count('beforeYouStart'), rule.beforeYouStart, 'BEFORE YOU START entries');
+    need(count('formalResults'), rule.formalResults, 'named formal results');
+    need(count('assumptions'), rule.assumptions, 'enumerated assumptions');
+    need(count('failureModes'), rule.failureModes, 'concrete failure modes');
+    need(count('references'), rule.references, 'sources with authors, year and venue');
+
+    if (rule.implementation && ch.data.implementation !== true)
+      into.push(`${id}: no runnable implementation (Practice strand, §7.1).`);
+
+    // The concept figure is required at every tier, M0 included: a chapter
+    // with nothing a reader could redraw has not been taught.
+    if (!ch.data.conceptFigure || ch.data.conceptFigure === 'null')
+      into.push(`${id}: no concept figure. Every chapter owes one drawing a reader could reproduce from memory.`);
+
+    if (!ch.data.problemStatement)
+      into.push(`${id}: no problem statement. A mechanism introduced before its problem is memorised, not understood.`);
+  }
+
+  return { errors, warnings, name: 'coverage' };
+}
+
+// ── §6.3 Placement — one mechanism, one home (invariant I-9) ───────────────
+/**
+ * Duplication is the failure mode that makes a work like this rot: two
+ * treatments drift, contradict, and the reader stops trusting either. The
+ * guard is possible because ownership is declared rather than inferred.
+ */
+export async function checkPlacement(data) {
+  const { chapters } = data ?? (await load());
+  const errors = [];
+  const warnings = [];
+
+  // The controlled vocabulary. A concept carrying an `apparatus:` anchor is
+  // owned by Book 0; no chapter may claim it.
+  const raw = await readFile(C.concepts, 'utf8');
+  const vocab = new Map();
+  let current = null;
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    const start = line.match(/^-\s+id:\s*(\S+)/);
+    if (start) { current = { id: start[1] }; vocab.set(current.id, current); continue; }
+    const kv = line.match(/^\s+([A-Za-z_][\w-]*):\s*(\S+)/);
+    if (kv && current) current[kv[1]] = kv[2];
+  }
+
+  const owner = new Map();
+  for (const ch of chapters) {
+    const id = ch.data.id;
+    const owns = list(ch.data.owns);
+    const borrows = list(ch.data.borrows);
+
+    if (owns.length === 0)
+      errors.push(`${id}: owns[] is empty — every chapter must own at least one concept (§6.3).`);
+
+    for (const c of owns) {
+      const entry = vocab.get(c);
+      if (!entry) {
+        errors.push(`${id}: owns "${c}", which is not in the concept vocabulary. Adding one is a deliberate act.`);
+        continue;
+      }
+      if (entry.apparatus) {
+        errors.push(`${id}: claims to own "${c}", but that concept lives in the Apparatus at ${entry.apparatus}. Borrow it instead.`);
+        continue;
+      }
+      if (owner.has(c))
+        errors.push(`Concept "${c}" is owned by both ${owner.get(c)} and ${id}. One mechanism, one home (I-9).`);
+      else owner.set(c, id);
+    }
+
+    for (const c of borrows) {
+      if (!vocab.has(c))
+        errors.push(`${id}: borrows "${c}", which is not in the concept vocabulary.`);
+      if (owns.includes(c))
+        errors.push(`${id}: lists "${c}" as both owned and borrowed. It is one or the other.`);
+    }
+  }
+
+  // A borrowed concept has to be owned somewhere, or the reader is sent nowhere.
+  for (const ch of chapters) {
+    for (const c of list(ch.data.borrows)) {
+      const entry = vocab.get(c);
+      if (!entry || entry.apparatus) continue;
+      if (!owner.has(c))
+        errors.push(`${ch.data.id}: borrows "${c}", which no chapter owns. Either a chapter derives it or it belongs in the Apparatus.`);
+    }
+  }
+
+  const unclaimed = [...vocab.values()].filter((v) => !v.apparatus && !owner.has(v.id));
+  if (unclaimed.length)
+    warnings.push(`${unclaimed.length} concept(s) in the vocabulary that no chapter yet owns.`);
+
+  return { errors, warnings, name: 'placement' };
+}
+
 // ── I-7 Graph integrity ────────────────────────────────────────────────────
 export async function checkGraph(data) {
   const d = data ?? (await load());
@@ -156,20 +288,48 @@ export async function checkGraph(data) {
 
   const bookIds = new Set(books.map((b) => b.id));
   const chapterIds = new Set(chapters.map((c) => c.data.id));
+
+  /** Reading order, so "points backwards" is a comparison and not a guess. */
+  const rank = new Map();
+  for (const c of chapters) {
+    const [numeral, n] = String(c.data.id).split('.');
+    rank.set(c.data.id, (BOOK_RANK[numeral] ?? 99) * 100 + Number(n));
+  }
   const apparatusIds = new Set(apparatus.map((a) => a.data.id));
   const propIds = propositionIds(d);
   const propIdSet = new Set(propIds.values());
   const propBySlug = new Map(propositions.map((p) => [p.id, p]));
 
+  /**
+   * §7.1 — BEFORE YOU START mixes kinds on purpose: the prior results a reader
+   * needs are sometimes a chapter, sometimes a single proposition, and often an
+   * Apparatus entry. All three are clickable IDs, so all three resolve here.
+   */
+  const resolves = (ref) =>
+    chapterIds.has(ref) || propIdSet.has(ref) || apparatusIds.has(ref);
+
   for (const c of chapters) {
     if (!bookIds.has(c.data.book))
       errors.push(`${rel(c.file)}: book "${c.data.book}" does not exist.`);
-    for (const p of list(c.data.prerequisites))
-      if (!chapterIds.has(p) && !propIdSet.has(p))
-        errors.push(`${c.data.id}: prerequisite "${p}" resolves to nothing.`);
+    for (const p of list(c.data.beforeYouStart))
+      if (!resolves(p))
+        errors.push(`${c.data.id}: BEFORE YOU START names "${p}", which resolves to nothing.`);
     for (const a of list(c.data.apparatus))
       if (!apparatusIds.has(a))
         errors.push(`${c.data.id}: apparatus reference "${a}" resolves to nothing.`);
+
+    /**
+     * I-7 in v3 — a dependency must point *backwards*. A chapter that leans on
+     * one the reader has not reached yet is the anti-pattern §24 calls the
+     * forward borrow, and it is the reason the books are ordered as they are.
+     */
+    const here = rank.get(c.data.id);
+    for (const ref of list(c.data.beforeYouStart)) {
+      if (!chapterIds.has(ref)) continue;
+      const there = rank.get(ref);
+      if (here != null && there != null && there >= here)
+        errors.push(`${c.data.id}: depends on ${ref}, which the reader reaches later. Dependencies point backwards (I-7).`);
+    }
   }
 
   for (const b of books) {
@@ -459,7 +619,12 @@ export async function verifySnippets(data) {
 export async function runAllGuards() {
   const data = await load();
   return Promise.all([
-    checkMathQuota(data), checkGraph(data), checkNotation(data),
-    lintProse(data), verifySnippets(data),
+    checkMathQuota(data),  // §5   mathematics
+    checkCoverage(data),   // §7   basics, concept, theory, practice
+    checkPlacement(data),  // §6   one mechanism, one home
+    checkGraph(data),      // I-7
+    checkNotation(data),   // I-5
+    lintProse(data),       // I-6
+    verifySnippets(data),  // I-4
   ]);
 }

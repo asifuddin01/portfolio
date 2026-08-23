@@ -1,0 +1,42 @@
+---
+/**
+ * §7.1 — a numbered, stipulative definition.
+ *
+ * "A computational graph is a directed acyclic graph whose nodes are
+ * operations and whose edges carry intermediate values." Not "computational
+ * graphs are a useful way to think about networks". The difference is whether
+ * a reader can tell, afterwards, what does and does not count as one.
+ */
+import Notation from './Notation.astro';
+
+interface Props { n: number; term: string; introduces?: string[] }
+const { n, term, introduces = [] } = Astro.props;
+---
+<div class="df" id={`def-${n}`}>
+  <p class="df-head">
+    <span class="df-n">Definition {n}</span>
+    <span class="df-term">{term}</span>
+  </p>
+  <div class="df-body"><slot /></div>
+  {introduces.length > 0 && <Notation symbols={introduces} label={`Notation introduced by definition ${n}`} />}
+</div>
+
+<style>
+  .df {
+    max-width: 64rem;
+    padding: 0.85rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent);
+    scroll-margin-top: 6rem;
+  }
+  .df-head { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; margin: 0 0 0.35rem; }
+  .df-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .df-term { font-family: var(--font-display); font-size: var(--t-md); }
+  .df-body { font-size: var(--t-base); line-height: 1.65; max-width: var(--measure); }
+  .df-body :global(p) { margin: 0; }
+</style>

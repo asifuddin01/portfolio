@@ -1,10 +1,10 @@
 ---
-id: "III.7"
+id: "IV.7"
 book: large-language-model-llm
 order: 7
 title: "Efficient Adaptation"
-summary: "Changing a model you cannot afford to retrain."
-claim: "Adaptation is a rank and a precision decision, and both are bounded by what the update actually needs to express."
+summary: "A rank and a precision decision, both bounded by what the update needs to express."
+claim: "Adaptation is a rank and a precision decision, and both are bounded by what the update actually has to express."
 mathTier: M3
 topics:
   - "Fine-tuning"
@@ -14,8 +14,26 @@ topics:
   - "Quantisation"
   - "Pruning"
   - "Distillation"
-prerequisites:
-  - "III.5"
+definitions: []
+beforeYouStart:
+  - "II.8"
+  - "I.7"
+  - "0.LA.04"
+conceptFigure: FigTotalVsActive
+problemStatement: "Full fine-tuning of a seven-billion-parameter model needs more memory than most people have. Two independent ideas — low rank and low precision — make it fit, and each has a cost that can be quantified rather than hoped about."
+formalResults: []
+assumptions: []
+owns:
+  - "low-rank-adaptation"
+  - "quantisation"
+borrows:
+  - "singular-value-decomposition"
+  - "adam"
+  - "floating-point"
+  - "training-memory-budget"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "r"
   - "d"
@@ -28,5 +46,4 @@ apparatus:
   - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

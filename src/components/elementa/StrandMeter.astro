@@ -1,0 +1,65 @@
+---
+/**
+ * The five strands, filled against the tier's quota (spec §15).
+ *
+ * A reader's orientation device, not a score. It says what kind of chapter
+ * this is — where its weight sits and what it still owes — rather than how
+ * well anyone is doing. No streaks, no percentages, no celebration.
+ */
+import type { StrandState } from '../../lib/collections';
+
+interface Props { strands: StrandState[]; compact?: boolean }
+const { strands, compact = false } = Astro.props;
+---
+<div class={`sm${compact ? ' sm-compact' : ''}`} role="group" aria-label="Coverage across the five strands">
+  {strands.map((s) => (
+    <div class={`sm-strand${s.met ? ' sm-met' : ''}`}>
+      <span class="sm-name">{s.key}</span>
+      <span class="sm-bar" aria-hidden="true">
+        <span
+          class="sm-fill"
+          style={`--fill:${s.need === 0 ? 100 : Math.min(100, Math.round((s.have / s.need) * 100))}%`}
+        ></span>
+      </span>
+      <span class="sm-count">
+        {s.need === 0 ? '—' : `${Math.min(s.have, s.need)}/${s.need}`}
+      </span>
+      {!compact && <span class="sm-asks">{s.asks}</span>}
+    </div>
+  ))}
+</div>
+
+<style>
+  .sm {
+    display: grid;
+    gap: 0.45rem 1rem;
+    max-width: 46rem;
+    margin: 0.6rem 0;
+  }
+  .sm-strand {
+    display: grid;
+    grid-template-columns: 6.5rem 6rem 3rem 1fr;
+    gap: 0.7rem;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .sm-compact .sm-strand { grid-template-columns: 6.5rem 6rem 3rem; }
+  .sm-name { letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-text); }
+  .sm-bar {
+    display: block;
+    height: 2px;
+    background: color-mix(in srgb, var(--brass) 25%, transparent);
+  }
+  .sm-fill { display: block; height: 100%; width: var(--fill); background: var(--brass); }
+  .sm-met .sm-fill { background: var(--verdigris); }
+  .sm-met .sm-count { color: var(--verdigris); }
+  .sm-count { text-align: right; }
+  .sm-asks { opacity: 0.75; }
+
+  @media (max-width: 640px) {
+    .sm-strand { grid-template-columns: 6.5rem 1fr 3rem; }
+    .sm-asks { display: none; }
+  }
+</style>

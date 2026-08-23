@@ -1,0 +1,50 @@
+---
+id: "I.9"
+book: neural-networks
+order: 9
+title: "Recurrent Neural Networks"
+summary: "One layer applied over and over, carrying a summary forward."
+claim: "A recurrent network compresses everything it has read into one fixed-width state, and the gradient through that compression is a long product."
+mathTier: M3
+topics:
+  - "Sequences"
+  - "RNNs"
+  - "LSTMs"
+  - "GRUs"
+  - "CNNs for sequences"
+  - "Long-range dependencies"
+  - "Why transformers emerged"
+definitions: []
+beforeYouStart:
+  - "I.6"
+  - "I.3"
+  - "0.LA.04"
+conceptFigure: FigRecurrentState
+problemStatement: "An MLP takes a fixed-size input. Sequences are not fixed-size, and padding them wastes the structure that makes them sequences. Sharing one layer across time is the first answer, and it introduces the failure that motivates everything after it."
+formalResults: []
+assumptions: []
+owns:
+  - "recurrence"
+  - "backpropagation-through-time"
+  - "vanishing-exploding-gradient"
+borrows:
+  - "backpropagation"
+  - "activation-function"
+  - "eigendecomposition"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "T"
+  - "d"
+  - "W"
+  - "J"
+  - "nabla"
+  - "lambda"
+apparatus:
+  - "0.LA.04"
+  - "0.MC.03"
+  - "0.NU.01"
+keyEquations: []
+status: review
+---

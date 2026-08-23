@@ -1,10 +1,11 @@
 ---
-id: II
-order: 2
+id: III
+order: 3
 title: Vision
 covers: ViT, DINOv2, self-supervised visual representation
 goal: "Explain how a machine represents and interprets visual information, from pixels to self-supervised representations."
 prerequisites:
+  - neural-networks
   - foundations
 mathPrerequisites:
   - "0.LA.01"
@@ -15,8 +16,8 @@ mathPrerequisites:
 practical:
   implement: "A CNN classifier, then a ViT, then a segmentation model."
   verifiedAgainst:
-    - "II.2.B01"
-    - "II.6.B01"
+    - "III.2.B01"
+    - "III.6.B01"
   note: "Train on a patient split, retrain on a site split, and report the gap as the result."
   laboratory:
     - task: "Take one image, shuffle its pixels with a fixed permutation, and train the same MLP on the original and the shuffled dataset. Then do it with a small CNN."

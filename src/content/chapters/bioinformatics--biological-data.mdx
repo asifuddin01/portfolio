@@ -1,9 +1,9 @@
 ---
-id: "VI.2"
+id: "VII.2"
 book: bioinformatics
 order: 2
 title: "Biological Data"
-summary: "What a measurement of life looks like."
+summary: "Counts are overdispersed and sparse, and a method that assumes otherwise fails silently."
 claim: "Biological counts are overdispersed and sparse, and a method that assumes otherwise fails in a direction it will not report."
 mathTier: M2
 topics:
@@ -13,8 +13,23 @@ topics:
   - "Imaging"
   - "Spatial transcriptomics"
   - "Perturbation data"
-prerequisites:
-  - "VI.1"
+definitions: []
+beforeYouStart:
+  - "VII.1"
+  - "0.PR.06"
+conceptFigure: FigCountLikelihood
+problemStatement: "Sequencing produces counts, not measurements. Their noise is not Gaussian, their zeros are not absences, and using a model that assumes either produces confident wrong answers rather than obvious errors."
+formalResults: []
+assumptions: []
+owns:
+  - "sequencing-counts"
+  - "overdispersion"
+borrows:
+  - "loss-as-negative-log-likelihood"
+  - "bayes-rule"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "Var"
@@ -26,5 +41,4 @@ apparatus:
   - "0.PR.06"
 keyEquations: []
 status: review
-
 ---

@@ -1,9 +1,9 @@
 ---
-id: "V.6"
+id: "VI.6"
 book: causal-inference
 order: 6
 title: "Experiments"
-summary: "Randomisation, and why it works."
+summary: "Randomisation buys identification; the price is stated in advance as a sample size."
 claim: "Randomisation buys identification, and the price is stated in advance as a sample size."
 mathTier: M3
 topics:
@@ -13,8 +13,24 @@ topics:
   - "Experimental design"
   - "Power"
   - "Bias"
-prerequisites:
-  - "V.5"
+definitions: []
+beforeYouStart:
+  - "VI.5"
+  - "0.ST.02"
+conceptFigure: FigBatchNoise
+problemStatement: "The cleanest way to identify an effect is to assign the treatment yourself. What that buys is exact; what it costs is a power calculation that has to be done before the experiment rather than after it."
+formalResults: []
+assumptions: []
+owns:
+  - "randomisation"
+  - "statistical-power"
+borrows:
+  - "intervention"
+  - "potential-outcomes"
+  - "confidence-interval"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "Var"
@@ -27,5 +43,4 @@ apparatus:
   - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

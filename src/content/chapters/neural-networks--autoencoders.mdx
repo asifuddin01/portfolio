@@ -1,0 +1,39 @@
+---
+id: "I.12"
+book: neural-networks
+order: 12
+title: "Autoencoders"
+summary: "Force the data through a narrow channel; whatever survives is what mattered."
+claim: "An autoencoder learns a representation by reconstruction alone, and under a linear map it recovers the PCA subspace."
+mathTier: M2
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.5"
+  - "I.4"
+  - "0.LA.04"
+conceptFigure: FigLinearProbe
+problemStatement: "Everything so far needed labels. Most data has none. Reconstruction is the first objective that manufactures its own target, and it is the smallest step to the latent-variable models that follow."
+formalResults: []
+assumptions: []
+owns:
+  - "autoencoder"
+  - "bottleneck-representation"
+borrows:
+  - "multilayer-perceptron"
+  - "loss-function"
+  - "singular-value-decomposition"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "X"
+  - "d"
+  - "theta"
+  - "L_loss"
+apparatus:
+  - "0.LA.04"
+  - "0.LA.05"
+keyEquations: []
+status: review
+---

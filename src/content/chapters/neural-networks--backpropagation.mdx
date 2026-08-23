@@ -1,0 +1,49 @@
+---
+id: "I.6"
+book: neural-networks
+order: 6
+title: "Backpropagation and Computational Graphs"
+summary: "The graph is the program, and the backward pass is a second traversal that reuses the first."
+claim: "Backpropagation is the chain rule applied to a computational graph, and reverse mode returns every partial derivative of a scalar output in one traversal."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.5"
+  - "0.MC.03"
+  - "0.MC.07"
+conceptFigure: FigComputationalGraph
+problemStatement: "An MLP has parameters and a loss but no way to connect them. Every gradient computed anywhere in Elementa is computed by the rules derived here, which is why this is the chapter the rest of the corpus borrows from most."
+formalResults: []
+assumptions: []
+owns:
+  - "computational-graph"
+  - "backpropagation"
+  - "reverse-mode-autodiff"
+  - "gradient-accumulation"
+  - "residual-jacobian"
+borrows:
+  - "chain-rule"
+  - "jacobian"
+  - "matrix-product-derivative"
+  - "multilayer-perceptron"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "nabla"
+  - "J"
+  - "W"
+  - "b"
+  - "L_loss"
+  - "I_mat"
+apparatus:
+  - "0.MC.01"
+  - "0.MC.02"
+  - "0.MC.03"
+  - "0.MC.04"
+  - "0.MC.07"
+  - "0.MC.08"
+keyEquations: []
+status: review
+---

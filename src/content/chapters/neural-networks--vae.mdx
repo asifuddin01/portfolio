@@ -1,0 +1,46 @@
+---
+id: "I.13"
+book: neural-networks
+order: 13
+title: "Variational Autoencoders"
+summary: "Learn a distribution over codes, not a code, so the space between codes means something."
+claim: "The ELBO bounds the log-evidence, and the gap is exactly the divergence between the approximate and the true posterior."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.12"
+  - "0.IT.03"
+  - "0.IT.05"
+conceptFigure: FigCountLikelihood
+problemStatement: "An autoencoder's latent space has holes: a point between two codes decodes to nothing meaningful. Putting a distribution on the code fixes that, and the price is an objective that cannot be optimised directly."
+formalResults: []
+assumptions: []
+owns:
+  - "variational-autoencoder"
+  - "elbo"
+  - "reparameterisation-trick"
+  - "posterior-collapse"
+borrows:
+  - "autoencoder"
+  - "kl-divergence"
+  - "jensens-inequality"
+  - "backpropagation"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "theta"
+  - "E"
+  - "KL"
+  - "nabla"
+  - "Var"
+  - "sigma"
+apparatus:
+  - "0.IT.03"
+  - "0.IT.05"
+  - "0.MC.03"
+  - "0.PR.06"
+keyEquations: []
+status: review
+---

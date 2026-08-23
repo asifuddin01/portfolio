@@ -1,33 +1,47 @@
 ---
-id: "VI.5"
+id: "VII.5"
 book: bioinformatics
 order: 5
 title: "Representation Learning for Biology"
-summary: "Embedding a cell."
-claim: "A latent-variable model gives a lower bound on the likelihood, and every design choice is visible as a term in that bound."
-mathTier: M3
+summary: "The likelihood is where biology enters a latent-variable model."
+claim: "The machinery of a latent-variable model is domain-neutral; what makes it biological is the likelihood and what the nuisance terms absorb."
+mathTier: M2
 topics:
   - "Embeddings"
   - "Autoencoders"
   - "Variational autoencoders"
   - "Transformers"
   - "Foundation models for biology"
-prerequisites:
-  - "VI.4"
-  - "I.2"
+definitions: []
+beforeYouStart:
+  - "I.13"
+  - "VII.2"
+conceptFigure: FigCountLikelihood
+problemStatement: "The ELBO is derived in Book I and does not need deriving again. What this chapter supplies is the part that is genuinely biological: a count likelihood, a library-size term, and a batch covariate that absorbs what should not be called signal."
+formalResults: []
+assumptions: []
+owns:
+  - "count-likelihood"
+  - "batch-effect"
+borrows:
+  - "variational-autoencoder"
+  - "elbo"
+  - "reparameterisation-trick"
+  - "overdispersion"
+  - "autoencoder"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "theta"
   - "E"
   - "KL"
-  - "nabla"
   - "Var"
   - "sigma"
 apparatus:
   - "0.IT.03"
-  - "0.IT.05"
-  - "0.MC.03"
   - "0.PR.06"
+  - "0.ST.01"
 keyEquations: []
 status: review
-
 ---

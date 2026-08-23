@@ -1,18 +1,33 @@
 ---
-id: "IV.3"
+id: "V.3"
 book: vision-language
 order: 3
-title: "Image-Text Alignment"
-summary: "What it means for a picture and a sentence to agree."
-claim: "A shared space makes classification a retrieval problem, but the two modalities do not occupy the same region of it."
+title: "Image–Text Alignment"
+summary: "A shared space makes classification a retrieval problem."
+claim: "A shared space turns classification into retrieval, but the two modalities do not occupy the same region of it."
 mathTier: M2
 topics:
   - "Paired data"
   - "Alignment"
   - "Semantic similarity"
   - "Zero-shot classification"
-prerequisites:
-  - "IV.2"
+definitions: []
+beforeYouStart:
+  - "V.2"
+  - "II.1"
+conceptFigure: FigRetrievalSpace
+problemStatement: "Once images and text share a space, a class is just a sentence and recognition is nearest-neighbour search. The geometry is less shared than it looks, and the gap is measurable."
+formalResults: []
+assumptions: []
+owns:
+  - "zero-shot-classification"
+  - "modality-gap"
+borrows:
+  - "contrastive-vision-language"
+  - "embedding-table"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "d"
   - "softmax"
@@ -23,5 +38,4 @@ apparatus:
   - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

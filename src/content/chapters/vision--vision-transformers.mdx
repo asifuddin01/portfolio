@@ -1,10 +1,10 @@
 ---
-id: "II.4"
+id: "III.4"
 book: vision
 order: 4
 title: "Vision Transformers"
-summary: "Patches as tokens."
-claim: "A patch is a token, and once an image is a sequence the attention cost of a picture is the attention cost of its resolution squared."
+summary: "A patch is a token, and that is the entire adaptation."
+claim: "Once an image is a sequence of patches, the attention cost of a picture is the cost of its resolution squared."
 mathTier: M3
 topics:
   - "image patches"
@@ -13,9 +13,27 @@ topics:
   - "ViT"
   - "hierarchical transformers"
   - "Swin Transformer"
-prerequisites:
-  - "II.2"
-  - "I.5"
+definitions: []
+beforeYouStart:
+  - "II.3"
+  - "II.5"
+  - "III.1"
+conceptFigure: FigImageToPatches
+problemStatement: "Attention has no notion of a grid, and an image has nothing else. Cutting the image into patches is the whole bridge — and it imports the quadratic cost of Book II along with the mechanism."
+formalResults: []
+assumptions: []
+owns:
+  - "patch-embedding"
+  - "vision-transformer"
+  - "windowed-attention"
+borrows:
+  - "scaled-dot-product-attention"
+  - "positional-encoding"
+  - "attention-cost"
+  - "image-tensor"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "P"
   - "H"
@@ -29,5 +47,4 @@ apparatus:
   - "0.LA.03"
 keyEquations: []
 status: review
-
 ---

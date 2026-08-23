@@ -1,0 +1,46 @@
+---
+id: "I.14"
+book: neural-networks
+order: 14
+title: "Graph Neural Networks"
+summary: "Each node repeatedly summarises its neighbours; after k rounds it knows its k-hop neighbourhood."
+claim: "Message passing is permutation-equivariant, and no amount of it can distinguish graphs that the 1-WL test cannot."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.11"
+  - "0.GR.01"
+  - "0.GR.02"
+conceptFigure: FigFcmaeGrn
+problemStatement: "Grids and sequences are graphs with a fixed, regular neighbourhood. Molecules, interaction networks and citation graphs are not. Generalising convolution to an arbitrary neighbourhood is the last piece of neural machinery Elementa needs."
+formalResults: []
+assumptions: []
+owns:
+  - "message-passing"
+  - "graph-convolution"
+  - "over-smoothing"
+  - "node-embedding"
+  - "permutation-equivariance"
+borrows:
+  - "convolution"
+  - "graph-basics"
+  - "graph-representation"
+  - "eigendecomposition"
+  - "backpropagation"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "W"
+  - "X"
+  - "lambda"
+  - "d"
+apparatus:
+  - "0.GR.01"
+  - "0.GR.02"
+  - "0.LA.02"
+  - "0.LA.04"
+keyEquations: []
+status: review
+---

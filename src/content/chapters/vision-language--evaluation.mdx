@@ -1,10 +1,10 @@
 ---
-id: "IV.7"
+id: "V.7"
 book: vision-language
 order: 7
 title: "VLM Evaluation"
-summary: "Measuring something that can describe its own mistakes."
-claim: "Caption and answer metrics reward surface agreement, and can be satisfied by a wrong answer."
+summary: "Metrics reward surface agreement, and can be satisfied by a wrong answer."
+claim: "Caption and answer metrics reward surface agreement, so a wrong answer can outscore a right one."
 mathTier: M2
 topics:
   - "VQA"
@@ -13,8 +13,23 @@ topics:
   - "Hallucination"
   - "Multimodal reasoning"
   - "Robustness"
-prerequisites:
-  - "IV.6"
+definitions: []
+beforeYouStart:
+  - "V.6"
+  - "IV.8"
+conceptFigure: FigTwoBenchmarks
+problemStatement: "Generation has no single correct output, so every metric is a proxy. Knowing which proxy rewards what — and constructing the case where it rewards the wrong thing — is the only defence against a leaderboard."
+formalResults: []
+assumptions: []
+owns:
+  - "caption-metric"
+borrows:
+  - "hallucination-rate"
+  - "perplexity"
+  - "confidence-interval"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "hat"
@@ -23,5 +38,4 @@ apparatus:
   - "0.ST.02"
 keyEquations: []
 status: review
-
 ---

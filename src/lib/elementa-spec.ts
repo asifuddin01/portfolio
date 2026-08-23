@@ -3,8 +3,42 @@
  * guards have to agree on. Kept in one module so a tier rule cannot be relaxed
  * in the guard while the schema still believes the old number.
  *
- * Reference: Elementa Master Authoring & Build Specification v2, §5 and §12.
+ * Reference: Elementa Complete Teaching Architecture v3.
  */
+
+/**
+ * §7 — the five strands.
+ *
+ * The mathematical spine guarantees mathematics is never skipped. It does not
+ * guarantee the chapter is *taught*: a chapter can satisfy every problem quota
+ * and still leave a reader who does not know what the words mean. So every
+ * chapter is checked on five strands, and the order below is the order of a
+ * chapter — a reader should be able to stop after any one of them and possess
+ * something whole.
+ */
+export const STRANDS = [
+  { key: 'basics',      latin: 'Fundamenta', asks: 'what the words mean' },
+  { key: 'concept',     latin: 'Intuitio',   asks: 'what to picture' },
+  { key: 'theory',      latin: 'Theoria',    asks: 'why it works, and when it does not' },
+  { key: 'mathematics', latin: 'Calculus',   asks: 'derive it, then compute it' },
+  { key: 'practice',    latin: 'Praxis',     asks: 'build it, break it, read the papers' },
+] as const;
+export type Strand = (typeof STRANDS)[number]['key'];
+
+/**
+ * §7.2 — the coverage quota, per tier.
+ *
+ * Two consequences, both deliberate. A chapter cannot buy its way out of
+ * teaching with mathematics: seven beautiful problems and four definitions
+ * still fails. And it cannot buy its way out of mathematics with teaching:
+ * ten definitions and three figures do not substitute for five problems.
+ */
+export const COVERAGE_RULES = {
+  M0: { definitions: 3, beforeYouStart: 1, formalResults: 0, assumptions: 0, failureModes: 1, references: 2, implementation: false },
+  M1: { definitions: 4, beforeYouStart: 2, formalResults: 1, assumptions: 0, failureModes: 1, references: 3, implementation: true },
+  M2: { definitions: 6, beforeYouStart: 3, formalResults: 1, assumptions: 1, failureModes: 1, references: 4, implementation: true },
+  M3: { definitions: 8, beforeYouStart: 3, formalResults: 2, assumptions: 2, failureModes: 2, references: 6, implementation: true },
+} as const;
 
 /** §5.1 — how much mathematical load a chapter carries. */
 export const MATH_TIERS = ['M0', 'M1', 'M2', 'M3'] as const;
@@ -104,6 +138,8 @@ export const APPARATUS_PARTS = [
     covers: 'estimators, bias and variance, confidence intervals, tests, the bootstrap' },
   { code: 'NU', slug: 'numerics', title: 'Numerics',
     covers: 'floating point, conditioning, stability, log-sum-exp, cancellation' },
+  { code: 'GR', slug: 'graph-theory', title: 'Graph Theory',
+    covers: 'vertices and edges, representations, walks and connectivity, trees, traversal, shortest paths, Eulerian paths, complexity, centrality' },
 ] as const;
 
 export const APPARATUS_CODES = APPARATUS_PARTS.map((p) => p.code);
@@ -136,8 +172,18 @@ export const SPELLING = [
   ['randomization', 'randomisation'], ['marginalization', 'marginalisation'],
 ] as const;
 
-/** Books are Roman; everything below them is Arabic (§3.1). */
-export const BOOK_NUMERALS = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const;
+/** Books are Roman; everything below them is Arabic (§3.3). */
+export const BOOK_NUMERALS = [
+  '0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII',
+] as const;
+
+/**
+ * The pattern every ID is built on. Written out longest-first rather than as a
+ * clever quantifier, because `VI{0,3}` also matches "VIIII" and the numeral
+ * set is nine items long — being explicit costs one line and rules out a whole
+ * class of silently-accepted ids.
+ */
+export const ROMAN_RE = '(?:0|VIII|VII|VI|V|IV|III|II|I)';
 
 /** `I.5.P04` from `I.5` and 4. Proposition IDs are derived, never typed. */
 export const propositionId = (chapterId: string, n: number): string =>

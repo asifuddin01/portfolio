@@ -1,27 +1,49 @@
 ---
-id: "VI.7"
+id: "VII.9"
 book: bioinformatics
-order: 7
+order: 9
 title: "Biological Networks"
-summary: "Biology as a graph."
-claim: "Message passing on a biological graph averages neighbours, and enough depth averages everything into the same vector."
+summary: "Four kinds of biological network, and what a topology claim can and cannot support."
+claim: "Protein, regulatory, metabolic and disease networks are four different graphs, and a centrality claim means something different in each."
 mathTier: M2
 topics:
   - "Graphs"
   - "Protein interaction networks"
   - "Gene regulatory networks"
   - "Graph neural networks"
-prerequisites:
-  - "VI.3"
+definitions: []
+beforeYouStart:
+  - "VII.3"
+  - "I.14"
+  - "0.GR.09"
+conceptFigure: FigFcmaeGrn
+problemStatement: "Biology produces graphs at every scale. Their edges mean different things — binding, regulation, catalysis, comorbidity — and a statistic computed without that distinction is a number about a drawing rather than about a cell."
+formalResults: []
+assumptions: []
+owns:
+  - "protein-interaction-network"
+  - "regulatory-network"
+  - "metabolic-network"
+  - "network-motif"
+  - "disease-network"
+borrows:
+  - "graph-basics"
+  - "graph-centrality"
+  - "message-passing"
+  - "gene-regulation"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "W"
   - "X"
   - "lambda"
   - "d"
 apparatus:
-  - "0.LA.04"
+  - "0.GR.01"
+  - "0.GR.02"
+  - "0.GR.09"
   - "0.LA.02"
 keyEquations: []
 status: review
-
 ---

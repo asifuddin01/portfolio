@@ -1,0 +1,41 @@
+---
+id: "II.4"
+book: foundations
+order: 4
+title: "Multi-Head Attention"
+summary: "One attention pattern per relation type; several relations are needed at once."
+claim: "Heads are slices of one budget, not copies of one mechanism, and partitioning preserves the total cost."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "II.3"
+  - "I.6"
+conceptFigure: FigMultiHead
+problemStatement: "A single attention distribution must commit to one notion of relevance per position. Syntax and coreference are different relations, and a model that can only express one of them at a time cannot represent both."
+formalResults: []
+assumptions: []
+owns:
+  - "multi-head-attention"
+  - "head-partitioning"
+borrows:
+  - "scaled-dot-product-attention"
+  - "affine-layer"
+  - "backpropagation"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "h"
+  - "d"
+  - "d_k"
+  - "Q"
+  - "K"
+  - "V_mat"
+  - "T"
+apparatus:
+  - "0.LA.01"
+  - "0.MC.07"
+keyEquations: []
+status: review
+---

@@ -1,9 +1,9 @@
 ---
-id: "I.3"
+id: "II.1"
 book: foundations
-order: 3
+order: 1
 title: "Tokenisation and Embeddings"
-summary: "How text becomes numbers, and what that choice costs."
+summary: "The model never sees text; it sees integers, and tokenisation decides which distinctions survive."
 claim: "Tokenisation fixes, before any learning happens, which distinctions the model is able to make."
 mathTier: M2
 topics:
@@ -16,8 +16,25 @@ topics:
   - "Embeddings"
   - "Embedding spaces"
   - "Contextual representations"
-prerequisites:
-  - "I.1"
+definitions: []
+beforeYouStart:
+  - "I.5"
+  - "0.IT.01"
+conceptFigure: FigTokenBoundary
+problemStatement: "Every mechanism from here on operates on vectors. Text is not vectors. The translation is lossy, it is decided before training, and no amount of capacity afterwards recovers what it discarded."
+formalResults: []
+assumptions: []
+owns:
+  - "tokenisation"
+  - "subword-vocabulary"
+  - "embedding-table"
+  - "contextual-representation"
+borrows:
+  - "affine-layer"
+  - "entropy"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "V"
   - "Vset"
@@ -29,5 +46,4 @@ apparatus:
   - "0.IT.01"
 keyEquations: []
 status: review
-
 ---

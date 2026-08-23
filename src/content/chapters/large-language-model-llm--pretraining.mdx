@@ -1,10 +1,10 @@
 ---
-id: "III.3"
+id: "IV.3"
 book: large-language-model-llm
 order: 3
 title: "Pretraining"
-summary: "What it takes to train one."
-claim: "A pretraining corpus is a set of decisions about duplication, mixture and budget, and each one is measurable before a single step is taken."
+summary: "A corpus is a set of decisions, each measurable before a step is taken."
+claim: "A pretraining corpus is a set of decisions about duplication, mixture and budget, and each one is measurable in advance."
 mathTier: M2
 topics:
   - "Corpus construction"
@@ -13,8 +13,24 @@ topics:
   - "Compute"
   - "Scaling"
   - "Distributed training"
-prerequisites:
-  - "III.1"
+definitions: []
+beforeYouStart:
+  - "IV.1"
+  - "II.8"
+conceptFigure: FigDataCrossover
+problemStatement: "The objective is settled and the architecture is settled. What remains is what the model reads, and that turns out to decide more of the result than either — while being the part most often described rather than measured."
+formalResults: []
+assumptions: []
+owns:
+  - "pretraining-corpus"
+  - "deduplication"
+borrows:
+  - "language-modelling"
+  - "training-flops"
+  - "tokenisation"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "D"
   - "N"
@@ -25,5 +41,4 @@ apparatus:
   - "0.ST.01"
 keyEquations: []
 status: review
-
 ---

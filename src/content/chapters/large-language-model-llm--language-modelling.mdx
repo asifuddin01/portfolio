@@ -1,9 +1,9 @@
 ---
-id: "III.1"
+id: "IV.1"
 book: large-language-model-llm
 order: 1
 title: "Language Modelling"
-summary: "Prediction as repeated conditional probability."
+summary: "Sequence prediction as repeated conditional probability estimation."
 claim: "Language modelling turns sequence prediction into repeated conditional probability estimation, and perplexity is the exponential of the cost of being wrong."
 mathTier: M3
 topics:
@@ -12,9 +12,26 @@ topics:
   - "Next-token prediction"
   - "Cross-entropy"
   - "Perplexity"
-prerequisites:
-  - "I.3"
-  - "I.7"
+definitions: []
+beforeYouStart:
+  - "II.7"
+  - "II.1"
+  - "0.IT.01"
+conceptFigure: FigContextClaim
+problemStatement: "A transformer is an architecture, not an objective. Next-token prediction is the objective that turns it into a language model, and its loss has a precise information-theoretic meaning that survives into every benchmark built on it."
+formalResults: []
+assumptions: []
+owns:
+  - "language-modelling"
+  - "perplexity"
+borrows:
+  - "causal-masking"
+  - "cross-entropy"
+  - "entropy"
+  - "tokenisation"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "T"
   - "V"
@@ -27,5 +44,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

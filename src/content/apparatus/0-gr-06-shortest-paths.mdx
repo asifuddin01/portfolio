@@ -1,0 +1,12 @@
+---
+id: "0.GR.06"
+part: GR
+order: 6
+title: "Shortest paths"
+statement: "Dijkstra's algorithm finds shortest paths from one source in O(m log n) when every weight is non-negative. Bellman–Ford allows negative weights, runs in O(nm), and detects negative cycles. Floyd–Warshall gives all pairs in O(n³)."
+shapeCheck: "One source gives a vector of n distances; all pairs give an n×n matrix."
+workedLine: "a→b = 1, b→c = 1, a→c = 5. Dijkstra returns 2 for a→c, by way of b."
+status: review
+---
+
+Sequence alignment is a shortest path through a grid whose edges are match, mismatch and gap. That is the whole content of the dynamic programme in VII.7, stated in this vocabulary.

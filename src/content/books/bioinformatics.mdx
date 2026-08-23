@@ -1,11 +1,11 @@
 ---
-id: VI
-order: 6
+id: VII
+order: 7
 title: Bioinformatics
 covers: single-cell data, gene regulatory networks, perturbation screens
 goal: "Show how machine learning meets biological data, and where a perturbation turns a correlation into a causal question."
 prerequisites:
-  - foundations
+  - neural-networks
   - causal-inference
 mathPrerequisites:
   - "0.PR.01"
@@ -13,9 +13,10 @@ mathPrerequisites:
   - "0.LA.04"
   - "0.IT.03"
 practical:
-  implement: "Single-cell preprocessing, then clustering, then representation learning."
+  implement: "Single-cell preprocessing, then clustering, then a de Bruijn assembler on a toy genome, then a GCN over a small interaction network."
   verifiedAgainst:
-    - "VI.4.B01"
-    - "VI.4.B03"
-  note: "Your PCA must return the eigenvalues you found by hand on four points in two dimensions."
+    - "VII.4.B01"
+    - "VII.7.B02"
+    - "VII.9.B02"
+  note: "The assembler must recover the sequence you traced by hand through the Eulerian path, base for base."
 ---

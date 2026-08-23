@@ -1,10 +1,10 @@
 ---
-id: "II.7"
+id: "III.7"
 book: vision
 order: 7
 title: "Medical and Scientific Vision"
-summary: "Where a wrong answer has consequences."
-claim: "In medicine the operating point and the prevalence decide whether a model is useful, and neither is visible in an internal AUROC."
+summary: "In medicine the operating point and the prevalence decide whether a model is useful."
+claim: "An internal AUROC hides the two things that decide clinical usefulness: where the threshold sits and how rare the disease is."
 mathTier: M3
 topics:
   - "medical imaging"
@@ -21,8 +21,29 @@ topics:
   - "F1"
   - "AUROC"
   - "calibration"
-prerequisites:
-  - "II.6"
+definitions: []
+beforeYouStart:
+  - "III.6"
+  - "0.PR.04"
+  - "0.ST.05"
+conceptFigure: FigOperatingPoint
+problemStatement: "A model that reports 0.95 AUROC on held-out data can be useless in the clinic it was built for. The reasons are arithmetic — prevalence, calibration, and a shift the internal split cannot see — and each is computable before deployment."
+formalResults: []
+assumptions: []
+owns:
+  - "medical-imaging-modality"
+  - "operating-point"
+  - "prevalence-and-precision"
+  - "calibration"
+  - "domain-shift"
+borrows:
+  - "overlap-metrics"
+  - "bayes-rule"
+  - "bootstrap"
+  - "task-head"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "Var"
@@ -35,5 +56,4 @@ apparatus:
   - "0.ST.05"
 keyEquations: []
 status: review
-
 ---

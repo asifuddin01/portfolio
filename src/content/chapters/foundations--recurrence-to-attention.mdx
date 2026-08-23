@@ -1,0 +1,39 @@
+---
+id: "II.2"
+book: foundations
+order: 2
+title: "From Recurrence to Attention"
+summary: "A fixed-size summary is a bottleneck; let the decoder look back at everything instead."
+claim: "Attention was the answer to a specific bottleneck, not a general improvement."
+mathTier: M2
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.10"
+  - "I.9"
+  - "0.IT.01"
+conceptFigure: FigSequenceLineage
+problemStatement: "Book I ended with a gated recurrence still failing on a long dependency. The failure is not a training problem but an architectural one: a fixed-width state cannot carry an unbounded source. Naming the bottleneck precisely is what makes the repair obvious."
+formalResults: []
+assumptions: []
+owns:
+  - "fixed-context-bottleneck"
+  - "additive-attention"
+borrows:
+  - "recurrence"
+  - "gating"
+  - "encoder-decoder"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "T"
+  - "d"
+  - "W"
+  - "softmax"
+apparatus:
+  - "0.IT.01"
+  - "0.LA.03"
+keyEquations: []
+status: review
+---

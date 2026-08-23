@@ -5,7 +5,9 @@ import Progress from '../../components/elementa/Progress.astro';
 import MathTier from '../../components/elementa/MathTier.astro';
 import { getEntry } from 'astro:content';
 import { getElementaTree, getProblems, getApparatus } from '../../lib/collections';
-import { MATH_TIERS, TIER_RULES, type MathTier as Tier } from '../../lib/elementa-spec';
+import {
+  MATH_TIERS, TIER_RULES, COVERAGE_RULES, type MathTier as Tier,
+} from '../../lib/elementa-spec';
 // KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
 // site has no equations and should not carry it.
 import '../../styles/math.css';
@@ -32,8 +34,14 @@ const rows = tree.map((b) => {
   const minProblems = b.chapters.reduce((n, c) => n + TIER_RULES[c.tier].minProblems, 0);
   const minExercises = b.chapters.reduce((n, c) => n + TIER_RULES[c.tier].minExercises, 0);
   const have = items.filter((p) => p.data.id.startsWith(`${b.numeral}.`));
+  // §7.2 — definitions are the largest single obligation in the corpus, and
+  // the one a mathematics-only table would hide entirely.
+  const minDefinitions = b.chapters.reduce((n, c) => n + COVERAGE_RULES[c.tier].definitions, 0);
+  const haveDefinitions = b.chapters.reduce(
+    (n, c) => n + c.chapter.data.definitions.length, 0
+  );
   return {
-    b, byTier, minProblems, minExercises,
+    b, byTier, minProblems, minExercises, minDefinitions, haveDefinitions,
     haveProblems: have.filter((p) => p.data.kind === 'problem').length,
     haveExercises: have.filter((p) => p.data.kind === 'exercise').length,
   };
@@ -44,8 +52,10 @@ const total = {
   ) as Record<Tier, number>,
   minProblems: rows.reduce((n, r) => n + r.minProblems, 0),
   minExercises: rows.reduce((n, r) => n + r.minExercises, 0),
+  minDefinitions: rows.reduce((n, r) => n + r.minDefinitions, 0),
   haveProblems: rows.reduce((n, r) => n + r.haveProblems, 0),
   haveExercises: rows.reduce((n, r) => n + r.haveExercises, 0),
+  haveDefinitions: rows.reduce((n, r) => n + r.haveDefinitions, 0),
 };
 ---
 <BaseLayout
@@ -106,10 +116,12 @@ const total = {
       <h2 class="el-label" id="el-tiers-h">The whole work at a glance</h2>
       <p class="el-note codex-measure">
         Every chapter declares how much mathematical load it carries, and the
-        declaration has consequences: a load-bearing chapter owes five worked
-        problems across four distinct variants and ten solved exercises before
-        it can be marked published. These minima are summed from what the
-        chapters actually declare, so the table cannot drift from the corpus.
+        declaration has consequences. A load-bearing chapter owes five worked
+        problems across four distinct variants, ten solved exercises, eight
+        numbered definitions, two named results each with the boundary of its
+        guarantee, and two concrete failures — before it can be marked
+        published. These minima are summed from what the chapters actually
+        declare, so the table cannot drift from the corpus.
       </p>
 
       <p class="el-legend">
@@ -122,6 +134,7 @@ const total = {
             <tr>
               <th scope="col">Book</th>
               {MATH_TIERS.map((t) => <th scope="col">{t}</th>)}
+              <th scope="col">Definitions</th>
               <th scope="col">Problems</th>
               <th scope="col">Exercises</th>
             </tr>
@@ -135,6 +148,7 @@ const total = {
                 {MATH_TIERS.map((t) => (
                   <td class={r.byTier[t] === 0 ? 'el-zero' : undefined}>{r.byTier[t] || '—'}</td>
                 ))}
+                <td>{r.haveDefinitions} / {r.minDefinitions}</td>
                 <td>{r.haveProblems} / {r.minProblems}</td>
                 <td>{r.haveExercises} / {r.minExercises}</td>
               </tr>
@@ -142,8 +156,9 @@ const total = {
           </tbody>
           <tfoot>
             <tr>
-              <th scope="row">All seven</th>
+              <th scope="row">All eight</th>
               {MATH_TIERS.map((t) => <td>{total.byTier[t]}</td>)}
+              <td>{total.haveDefinitions} / {total.minDefinitions}</td>
               <td>{total.haveProblems} / {total.minProblems}</td>
               <td>{total.haveExercises} / {total.minExercises}</td>
             </tr>

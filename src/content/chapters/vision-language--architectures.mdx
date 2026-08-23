@@ -1,9 +1,9 @@
 ---
-id: "IV.5"
+id: "V.5"
 book: vision-language
 order: 5
 title: "VLM Architectures"
-summary: "The families, by shape rather than by name."
+summary: "Where fusion happens decides what can be trained separately."
 claim: "The architectures differ in where fusion happens, and where it happens decides what can be trained separately."
 mathTier: M1
 topics:
@@ -12,13 +12,27 @@ topics:
   - "LLaVA-style systems"
   - "Flamingo-style systems"
   - "Modern multimodal LLMs"
-prerequisites:
-  - "IV.4"
+definitions: []
+beforeYouStart:
+  - "V.4"
+  - "II.7"
+conceptFigure: FigOpenVsApi
+problemStatement: "The same two encoders and one decoder can be wired several ways. The choice is not aesthetic: it fixes which components can be frozen, which must be trained jointly, and what a new modality would cost to add."
+formalResults: []
+assumptions: []
+owns:
+  - "vlm-architecture-family"
+borrows:
+  - "visual-token-projection"
+  - "encoder-decoder"
+  - "transformer-block"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "d"
   - "L"
 apparatus: []
 keyEquations: []
 status: review
-
 ---

@@ -1,0 +1,12 @@
+---
+id: "0.GR.08"
+part: GR
+order: 8
+title: "Complexity: P, NP, and why some problems are hard"
+statement: "P is the class of problems solvable in polynomial time; NP is the class whose solutions are verifiable in polynomial time. An NP-hard problem is at least as hard as every problem in NP, so no polynomial algorithm is known for any of them."
+shapeCheck: "Polynomial in the input size, which for a graph means in n and m rather than in the number of possible subgraphs."
+workedLine: "Checking whether a given vertex ordering is a Hamiltonian path takes O(n). Searching all orderings takes n!, which at n = 20 is 2.4 × 10¹⁸."
+status: review
+---
+
+Maximum parsimony, multiple sequence alignment, and Hamiltonian assembly are all NP-hard. Every practical tool for them is a heuristic, and knowing that is what stops a reader treating its output as an answer.

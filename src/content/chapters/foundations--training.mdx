@@ -1,10 +1,10 @@
 ---
-id: "I.8"
+id: "II.8"
 book: foundations
 order: 8
-title: "Training Deep Models"
-summary: "Turning an architecture into a model that has learned something."
-claim: "Training is an accounting problem: what the optimiser stores, what precision it stores it in, and what the schedule does to the step size."
+title: "Training at Scale"
+summary: "At scale the binding constraint stops being mathematics and becomes memory and bandwidth."
+claim: "Training a large model is an accounting problem before it is a modelling problem, and every term in the account is computable in advance."
 mathTier: M3
 topics:
   - "Dataset"
@@ -17,26 +17,44 @@ topics:
   - "Mixed precision"
   - "Checkpoints"
   - "Evaluation"
-prerequisites:
-  - "I.2"
+definitions: []
+beforeYouStart:
   - "I.7"
+  - "II.6"
+  - "0.NU.01"
+conceptFigure: FigClipping
+problemStatement: "The optimisers of I.7 assume the model fits in memory and the gradient is exact. At a billion parameters neither holds, and the fixes — precision, checkpointing, clipping, parallelism — each change the arithmetic in a way worth deriving rather than trusting."
+formalResults: []
+assumptions: []
+owns:
+  - "mixed-precision"
+  - "gradient-clipping"
+  - "activation-checkpointing"
+  - "training-memory-budget"
+  - "training-flops"
+borrows:
+  - "adam"
+  - "gradient-descent"
+  - "weight-decay"
+  - "floating-point"
+  - "transformer-block"
+implementation: false
+failureModes: []
+references: []
 notation:
-  - "eta"
-  - "beta"
-  - "B"
   - "N"
-  - "L_loss"
+  - "B"
+  - "T"
+  - "d"
+  - "L"
+  - "eta"
   - "nabla"
   - "Var"
-  - "theta"
-  - "lambda"
 apparatus:
-  - "0.OP.02"
-  - "0.OP.03"
-  - "0.PR.03"
   - "0.NU.01"
+  - "0.NU.02"
   - "0.ST.01"
+  - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

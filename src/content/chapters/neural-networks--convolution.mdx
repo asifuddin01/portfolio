@@ -1,0 +1,56 @@
+---
+id: "I.11"
+book: neural-networks
+order: 11
+title: "Convolutional Neural Networks"
+summary: "Weight sharing plus locality: one small detector slid everywhere."
+claim: "A convolution applies one small filter at every position, because a feature's meaning does not depend on where it sits."
+mathTier: M3
+topics:
+  - "kernels"
+  - "convolution"
+  - "padding"
+  - "stride"
+  - "pooling"
+  - "feature maps"
+  - "CNN architectures"
+  - "LeNet"
+  - "AlexNet"
+  - "VGG"
+  - "ResNet"
+  - "EfficientNet"
+definitions: []
+beforeYouStart:
+  - "I.6"
+  - "I.5"
+  - "0.LA.01"
+conceptFigure: FigKernelSlide
+problemStatement: "A fully connected layer over a 224x224 image has fifty million parameters per unit and learns each corner of the image separately. Locality and weight sharing remove both problems at once, and the derivation is identical for any signal with a grid."
+formalResults: []
+assumptions: []
+owns:
+  - "convolution"
+  - "receptive-field"
+  - "pooling"
+  - "translation-equivariance"
+borrows:
+  - "backpropagation"
+  - "affine-layer"
+  - "tensor-shape"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "H"
+  - "W_spatial"
+  - "C"
+  - "W"
+  - "nabla"
+  - "J"
+apparatus:
+  - "0.MC.03"
+  - "0.MC.07"
+  - "0.LA.03"
+keyEquations: []
+status: review
+---

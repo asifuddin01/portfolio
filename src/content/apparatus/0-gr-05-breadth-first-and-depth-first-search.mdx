@@ -1,0 +1,12 @@
+---
+id: "0.GR.05"
+part: GR
+order: 5
+title: "Breadth-first and depth-first search"
+statement: "Breadth-first search visits vertices in order of increasing edge distance from a source, using a queue. Depth-first search follows one branch to exhaustion before backtracking, using a stack. Both run in O(n + m) on an adjacency list."
+shapeCheck: "Each vertex is enqueued once and each edge examined at most twice, giving the O(n + m) bound."
+workedLine: "From a in the path a–b–c–d, BFS visits a, b, c, d at distances 0, 1, 2, 3. On an unweighted graph BFS order is shortest-path order."
+status: review
+---
+
+BFS gives shortest paths for free when every edge costs the same, which is why the weighted case in 0.GR.06 needs a different algorithm rather than a bigger queue.

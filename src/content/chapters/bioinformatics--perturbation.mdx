@@ -1,10 +1,10 @@
 ---
-id: "VI.6"
+id: "VII.6"
 book: bioinformatics
 order: 6
 title: "Perturbation"
-summary: "Changing something on purpose."
-claim: "A perturbation is an intervention, so a screen is an experiment in the sense Book V means, and it identifies edges observation cannot."
+summary: "A perturbation is an intervention in the sense Book VI means."
+claim: "A perturbation screen is an experiment in the exact sense of Book VI, and it identifies edges that observation leaves undecided."
 mathTier: M3
 topics:
   - "CRISPR"
@@ -12,9 +12,27 @@ topics:
   - "Interventions"
   - "Perturbation response"
   - "Causal interpretation"
-prerequisites:
-  - "VI.5"
-  - "V.4"
+definitions: []
+beforeYouStart:
+  - "VI.3"
+  - "VI.6"
+  - "VII.2"
+conceptFigure: FigPretextTask
+problemStatement: "This is where the two halves of the reader's training meet. A CRISPR knockout is a do-operator with a reagent, and the assumptions Book VI has to argue for are here satisfied by design."
+formalResults: []
+assumptions: []
+owns:
+  - "perturbation-screen"
+  - "differential-expression"
+borrows:
+  - "intervention"
+  - "randomisation"
+  - "statistical-power"
+  - "causal-discovery"
+  - "sequencing-counts"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "do"
   - "E"
@@ -28,5 +46,4 @@ apparatus:
   - "0.ST.04"
 keyEquations: []
 status: review
-
 ---

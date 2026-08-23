@@ -1,10 +1,10 @@
 ---
-id: "II.5"
+id: "III.5"
 book: vision
 order: 5
 title: "Self-Supervised Vision"
-summary: "Learning without labels."
-claim: "Self-supervision manufactures the label, and every such objective must answer why its representations do not collapse."
+summary: "Self-supervision manufactures the label from the input."
+claim: "Every self-supervised objective must answer why its representations do not collapse to a constant."
 mathTier: M3
 topics:
   - "contrastive learning"
@@ -14,8 +14,28 @@ topics:
   - "masked image modelling"
   - "DINO"
   - "DINOv2"
-prerequisites:
-  - "II.4"
+definitions: []
+beforeYouStart:
+  - "III.4"
+  - "I.12"
+  - "0.IT.04"
+conceptFigure: FigCollapse
+problemStatement: "Labelled images are scarce and expensive; unlabelled ones are not. An objective built from the image alone is the way out, but the trivial solution — map everything to one vector — has to be excluded by construction."
+formalResults: []
+assumptions: []
+owns:
+  - "contrastive-self-supervision"
+  - "representation-collapse"
+  - "augmentation-invariance"
+  - "masked-image-modelling"
+borrows:
+  - "mutual-information"
+  - "cross-entropy"
+  - "vision-transformer"
+  - "autoencoder"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "tau"
   - "B"
@@ -29,5 +49,4 @@ apparatus:
   - "0.LA.03"
 keyEquations: []
 status: review
-
 ---

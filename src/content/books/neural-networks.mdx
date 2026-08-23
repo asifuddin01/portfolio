@@ -1,0 +1,34 @@
+---
+id: I
+order: 1
+title: Neural networks
+covers: the perceptron, backpropagation, optimisation, convolution, recurrence, latent variables, graphs
+goal: "How a neural network computes and how it learns. Fourteen chapters, the largest book here, and the one every other book borrows from."
+prerequisites: []
+mathPrerequisites:
+  - "0.LA.01"
+  - "0.MC.01"
+  - "0.MC.03"
+  - "0.MC.07"
+  - "0.PR.02"
+  - "0.OP.02"
+practical:
+  implement: "Linear regression, then an MLP, then a reverse-mode autodiff engine, then a convolution — all in NumPy, no framework."
+  verifiedAgainst:
+    - "I.5.B01"
+    - "I.6.B02"
+    - "I.11.B01"
+  note: "Your implementation must reproduce the hand-computed numbers to four decimal places before you move on. A reader who skipped the derivations cannot pass their own unit test."
+closingFigure: null
+status: review
+---
+
+Book I ends with a gated recurrence still failing on a long dependency. That
+failure is not a training problem and no initialisation repairs it. Book II
+opens by asking what would have to be true to fix it.
+
+Everything here is deliberately domain-neutral. If a derivation would read
+identically whether the data were images, text or gene expression, it belongs
+in this book. Attention, position and the Transformer block do not: they are
+the foundation of everything from Book III onwards, and they are reached as a
+destination rather than tacked onto the end of an already long book.

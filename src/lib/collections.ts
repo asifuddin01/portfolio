@@ -1,7 +1,8 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
 import {
-  APPARATUS_PARTS, TIER_RULES, propositionId, type MathTier,
+  APPARATUS_PARTS, TIER_RULES, COVERAGE_RULES, STRANDS,
+  propositionId, type MathTier, type Strand,
 } from './elementa-spec';
 
 /**
@@ -231,6 +232,61 @@ export function chapterMath(
     problems, exercises, variants, tier, rule, owed,
     meetsQuota: owed.problems === 0 && owed.variants === 0 && owed.exercises === 0,
   };
+}
+
+export interface StrandState {
+  key: Strand;
+  latin: string;
+  asks: string;
+  have: number;
+  need: number;
+  met: boolean;
+}
+
+/**
+ * §7.2 — how far each of the five strands has been paid.
+ *
+ * The same arithmetic `check-coverage` runs, so a page can show the debt in
+ * the terms the guard will one day fail on. Mathematics is one strand of five:
+ * a chapter cannot buy its way out of teaching with problems, and it cannot
+ * buy its way out of problems with teaching.
+ */
+export function chapterCoverage(
+  chapter: CollectionEntry<'chapters'>,
+  items: CollectionEntry<'problems'>[]
+): StrandState[] {
+  const d = chapter.data;
+  const rule = COVERAGE_RULES[d.mathTier];
+  const mathRule = TIER_RULES[d.mathTier];
+  const maths = chapterMath(d.mathTier, items);
+
+  const pairs: Record<Strand, { have: number; need: number }> = {
+    basics: {
+      have: d.definitions.length + d.beforeYouStart.length,
+      need: rule.definitions + rule.beforeYouStart,
+    },
+    concept: {
+      have: (d.conceptFigure ? 1 : 0) + (d.problemStatement ? 1 : 0),
+      need: 2,
+    },
+    theory: {
+      have: d.formalResults.length + d.assumptions.length,
+      need: rule.formalResults + rule.assumptions,
+    },
+    mathematics: {
+      have: maths.problems.length + maths.exercises.length,
+      need: mathRule.minProblems + mathRule.minExercises,
+    },
+    practice: {
+      have: (d.implementation ? 1 : 0) + d.failureModes.length + d.references.length,
+      need: (rule.implementation ? 1 : 0) + rule.failureModes + rule.references,
+    },
+  };
+
+  return STRANDS.map((s) => {
+    const { have, need } = pairs[s.key];
+    return { ...s, have, need, met: have >= need };
+  });
 }
 
 /** Everything filed under one chapter ID, e.g. "I.5" or "I.BOOK". */

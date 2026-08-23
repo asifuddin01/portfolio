@@ -1,10 +1,10 @@
 ---
-id: "V.7"
+id: "VI.7"
 book: causal-inference
 order: 7
 title: "Observational Studies"
-summary: "Causal claims without an experiment."
-claim: "Without randomisation the assumptions have to be argued, and positivity is the one that fails quietly."
+summary: "Without randomisation the assumptions have to be argued."
+claim: "Without randomisation every assumption must be argued, and positivity is the one that fails quietly."
 mathTier: M3
 topics:
   - "Propensity scores"
@@ -12,8 +12,25 @@ topics:
   - "Inverse probability weighting"
   - "Regression adjustment"
   - "Sensitivity analysis"
-prerequisites:
-  - "V.6"
+definitions: []
+beforeYouStart:
+  - "VI.6"
+  - "VI.4"
+conceptFigure: FigLinearProbe
+problemStatement: "Most data is observed, not assigned. Recovering an effect then rests on three assumptions, only one of which is checkable, and the failure of the unchecked ones is invisible in every diagnostic the analysis produces."
+formalResults: []
+assumptions: []
+owns:
+  - "propensity-score"
+  - "inverse-probability-weighting"
+  - "sensitivity-analysis"
+borrows:
+  - "backdoor-adjustment"
+  - "potential-outcomes"
+  - "randomisation"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "Var"
@@ -26,5 +43,4 @@ apparatus:
   - "0.NU.03"
 keyEquations: []
 status: review
-
 ---

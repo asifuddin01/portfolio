@@ -1,18 +1,33 @@
 ---
-id: "V.4"
+id: "VI.4"
 book: causal-inference
 order: 4
 title: "Identification"
-summary: "When the data can answer the question at all."
-claim: "Identification is the question of whether an interventional quantity can be written in terms of observed ones, and the graph answers it."
+summary: "Whether an interventional quantity can be written in observed ones."
+claim: "Identification asks whether an interventional quantity can be written in terms of observed ones, and the graph answers it."
 mathTier: M3
 topics:
   - "Backdoor criterion"
   - "Adjustment"
   - "Front-door criterion"
   - "Conditional independence"
-prerequisites:
-  - "V.3"
+definitions: []
+beforeYouStart:
+  - "VI.3"
+conceptFigure: FigConvHandback
+problemStatement: "An experiment is often impossible. The question then is whether the effect is recoverable from observation at all — a question with a yes-or-no answer that depends on the graph and not on the sample size."
+formalResults: []
+assumptions: []
+owns:
+  - "backdoor-adjustment"
+  - "frontdoor-adjustment"
+borrows:
+  - "intervention"
+  - "truncated-factorisation"
+  - "collider-bias"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "do"
   - "RVX"
@@ -24,5 +39,4 @@ apparatus:
   - "0.ST.01"
 keyEquations: []
 status: review
-
 ---

@@ -1,9 +1,9 @@
 ---
-id: "II.3"
+id: "III.3"
 book: vision
 order: 3
 title: "Representation Learning"
-summary: "What a network learns before it learns your task."
+summary: "The hierarchy is learned, not designed."
 claim: "Transfer learning is a change of the optimisation's starting point, and that starting point is a prior."
 mathTier: M1
 topics:
@@ -12,8 +12,24 @@ topics:
   - "transfer learning"
   - "pretrained representations"
   - "self-supervised learning"
-prerequisites:
-  - "II.2"
+definitions: []
+beforeYouStart:
+  - "III.2"
+  - "I.7"
+conceptFigure: FigFeatureHierarchy
+problemStatement: "A trained backbone is worth more than its accuracy: its intermediate features transfer. Understanding what transfers, and how much of the network may move, is what makes a small dataset workable at all."
+formalResults: []
+assumptions: []
+owns:
+  - "transfer-learning"
+  - "feature-hierarchy"
+borrows:
+  - "gradient-descent"
+  - "cnn-architecture-lineage"
+  - "autoencoder"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "theta"
   - "d"
@@ -21,5 +37,4 @@ apparatus:
   - "0.OP.02"
 keyEquations: []
 status: review
-
 ---

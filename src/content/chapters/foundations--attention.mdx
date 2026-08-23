@@ -1,7 +1,7 @@
 ---
-id: "I.5"
+id: "II.3"
 book: foundations
-order: 5
+order: 3
 title: "Attention"
 summary: "Content-addressed aggregation, in full."
 claim: "Attention is a content-dependent weighted aggregation: each output row is a convex combination of value rows."
@@ -17,9 +17,27 @@ topics:
   - "Scaled dot-product attention"
   - "Self-attention"
   - "Cross-attention"
-prerequisites:
-  - "I.2"
-  - "I.4"
+definitions: []
+beforeYouStart:
+  - "II.2"
+  - "I.6"
+  - "0.MC.06"
+conceptFigure: FigAttentionWeights
+problemStatement: "The bottleneck of II.2 is removed by letting every position read every other position directly. The question this chapter answers is how a position decides what to read, using only content and never an index."
+formalResults: []
+assumptions: []
+owns:
+  - "scaled-dot-product-attention"
+  - "attention-convex-combination"
+  - "attention-cost"
+borrows:
+  - "softmax-jacobian"
+  - "affine-layer"
+  - "backpropagation"
+  - "log-sum-exp"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "Q"
   - "K"
@@ -27,7 +45,6 @@ notation:
   - "d_k"
   - "d_v"
   - "T"
-  - "h"
   - "q"
   - "k"
   - "tau"
@@ -41,5 +58,4 @@ apparatus:
   - "0.NU.02"
 keyEquations: []
 status: review
-
 ---

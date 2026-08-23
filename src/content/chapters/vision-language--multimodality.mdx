@@ -1,9 +1,9 @@
 ---
-id: "IV.1"
+id: "V.1"
 book: vision-language
 order: 1
-title: "Why Join Vision and Language?"
-summary: "Two representation spaces, and the case for one."
+title: "Why Join Vision and Language"
+summary: "Each modality supplies the supervision the other lacks."
 claim: "Vision and language are joined because the supervision each provides is exactly what the other lacks."
 mathTier: M0
 topics:
@@ -11,12 +11,24 @@ topics:
   - "Representation spaces"
   - "Multimodality"
   - "Grounding"
-prerequisites:
-  - "II.5"
-  - "III.1"
+definitions: []
+beforeYouStart:
+  - "III.5"
+  - "IV.1"
+conceptFigure: FigModalities
+problemStatement: "Images without captions have no semantics a model can name; text without images has no referent it can point at. Pairing them makes each a label for the other, at a scale neither could be annotated to reach."
+formalResults: []
+assumptions: []
+owns:
+  - "modality-joining"
+borrows:
+  - "contrastive-self-supervision"
+  - "language-modelling"
+implementation: false
+failureModes: []
+references: []
 notation: []
 apparatus: []
 keyEquations: []
 status: review
-
 ---

@@ -1,10 +1,10 @@
 ---
-id: "II.6"
+id: "III.6"
 book: vision
 order: 6
 title: "Vision Tasks"
-summary: "One image, many questions."
-claim: "Classification, detection and segmentation differ in what they ask of the same backbone, and each asks for its own metric."
+summary: "The task lives in the head and the loss, not in the backbone."
+claim: "Classification, detection and segmentation ask different things of the same backbone, and each asks for its own metric."
 mathTier: M2
 topics:
   - "classification"
@@ -12,8 +12,27 @@ topics:
   - "segmentation"
   - "depth"
   - "retrieval"
-prerequisites:
-  - "II.2"
+definitions: []
+beforeYouStart:
+  - "III.2"
+  - "III.4"
+  - "I.4"
+conceptFigure: FigOneImageManyTasks
+problemStatement: "One representation, many questions. What changes between tasks is small and specific — the head, the loss, and the metric — and confusing a metric for a capability is how vision results are most often oversold."
+formalResults: []
+assumptions: []
+owns:
+  - "task-head"
+  - "object-detection"
+  - "semantic-segmentation"
+  - "overlap-metrics"
+borrows:
+  - "cnn-architecture-lineage"
+  - "vision-transformer"
+  - "cross-entropy"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "H"
   - "W_spatial"
@@ -23,5 +42,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

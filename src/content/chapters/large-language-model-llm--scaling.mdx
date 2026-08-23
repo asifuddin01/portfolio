@@ -1,10 +1,10 @@
 ---
-id: "III.4"
+id: "IV.4"
 book: large-language-model-llm
 order: 4
 title: "Scaling"
-summary: "What more parameters, data and compute actually buy."
-claim: "Loss falls as a power law in parameters and data, and the compute budget decides how to split the two."
+summary: "Loss falls as a power law, and compute decides how to split it."
+claim: "Loss falls as a power law in parameters and data, and a fixed compute budget has one optimal split between them."
 mathTier: M3
 topics:
   - "Parameter count"
@@ -13,8 +13,25 @@ topics:
   - "Scaling laws"
   - "Compute and data trade-offs"
   - "Inference scaling"
-prerequisites:
-  - "III.3"
+definitions: []
+beforeYouStart:
+  - "II.8"
+  - "IV.3"
+  - "0.OP.04"
+conceptFigure: FigScalingFlat
+problemStatement: "Given more compute, should the model be larger or the corpus? The question has an answer with a derivation behind it, and the derivation needs the cost model of II.8 rather than a fresh one."
+formalResults: []
+assumptions: []
+owns:
+  - "scaling-law"
+  - "compute-optimal-allocation"
+borrows:
+  - "training-flops"
+  - "lagrange-multipliers"
+  - "pretraining-corpus"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "N"
   - "D"
@@ -26,5 +43,4 @@ apparatus:
   - "0.ST.01"
 keyEquations: []
 status: review
-
 ---

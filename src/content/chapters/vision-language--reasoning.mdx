@@ -1,10 +1,10 @@
 ---
-id: "IV.6"
+id: "V.6"
 book: vision-language
 order: 6
 title: "Visual Reasoning"
-summary: "Where looking becomes thinking."
-claim: "Visual reasoning fails where the token grid cannot resolve the question being asked of it."
+summary: "Reasoning fails where the token grid cannot resolve the question."
+claim: "Visual reasoning fails where the patch grid cannot resolve the question being asked of it."
 mathTier: M2
 topics:
   - "OCR"
@@ -14,8 +14,24 @@ topics:
   - "Chart understanding"
   - "Document understanding"
   - "Visual question answering"
-prerequisites:
-  - "IV.4"
+definitions: []
+beforeYouStart:
+  - "V.4"
+  - "III.6"
+conceptFigure: FigContextResolution
+problemStatement: "Counting, grounding and spatial relations are where these models visibly break. The cause is often not reasoning at all but resolution: the evidence was discarded at patchification, before any reasoning could occur."
+formalResults: []
+assumptions: []
+owns:
+  - "visual-grounding"
+  - "hallucination-rate"
+borrows:
+  - "patch-embedding"
+  - "visual-token-projection"
+  - "object-detection"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "P"
   - "H"
@@ -25,5 +41,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

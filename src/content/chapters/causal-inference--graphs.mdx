@@ -1,10 +1,10 @@
 ---
-id: "V.2"
+id: "VI.2"
 book: causal-inference
 order: 2
 title: "Causal Graphs"
-summary: "Drawing the assumptions you cannot test."
-claim: "A DAG encodes conditional independences, and d-separation reads them off the graph without touching the data."
+summary: "A DAG encodes conditional independences, read off without touching the data."
+claim: "A causal graph encodes conditional independences, and d-separation reads them off the graph alone."
 mathTier: M3
 topics:
   - "DAGs"
@@ -15,15 +15,34 @@ topics:
   - "Descendants"
   - "Colliders"
   - "Confounders"
-prerequisites:
-  - "V.1"
+definitions: []
+beforeYouStart:
+  - "VI.1"
+  - "0.GR.01"
+  - "0.PR.05"
+conceptFigure: FigPermutation
+problemStatement: "If assumptions must be made, they should be written where they can be inspected. A graph is that notation, and it comes with an algorithm for deciding which associations it predicts."
+formalResults: []
+assumptions: []
+owns:
+  - "causal-graph"
+  - "d-separation"
+  - "collider-bias"
+borrows:
+  - "conditional-independence"
+  - "graph-basics"
+  - "graph-traversal"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "RVX"
   - "indep"
 apparatus:
+  - "0.GR.01"
+  - "0.GR.03"
   - "0.PR.05"
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

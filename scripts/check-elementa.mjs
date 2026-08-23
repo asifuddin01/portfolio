@@ -38,4 +38,4 @@ if (errors) {
   console.error(`\n✗ ELEMENTA: ${errors} error(s). See §12 of the specification.`);
   process.exit(1);
 }
-console.log(`\n✓ Elementa: all five guards pass.`);
+console.log(`\n✓ Elementa: all seven guards pass.`);

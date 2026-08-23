@@ -1,10 +1,10 @@
 ---
-id: "VII.4"
+id: "VIII.4"
 book: practice
 order: 4
 title: "Experimental Design"
-summary: "Making a result mean something."
-claim: "An experiment is designed to make one comparison, and seed variance decides whether that comparison is visible."
+summary: "An experiment is designed to make one comparison."
+claim: "An experiment is designed to make one comparison, and seed variance decides whether that comparison is visible at all."
 mathTier: M2
 topics:
   - "Baseline"
@@ -14,8 +14,24 @@ topics:
   - "Reproducibility"
   - "Random seeds"
   - "Experiment tracking"
-prerequisites:
-  - "VII.3"
+definitions: []
+beforeYouStart:
+  - "VIII.3"
+  - "VI.6"
+conceptFigure: FigBatchNoise
+problemStatement: "Two numbers differ. Whether that difference is a result depends on run-to-run variation that a single run cannot show, and on an ablation design that can attribute it."
+formalResults: []
+assumptions: []
+owns:
+  - "seed-variance"
+  - "ablation-design"
+borrows:
+  - "split-design"
+  - "randomisation"
+  - "statistical-power"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "Var"
   - "hat"
@@ -26,5 +42,4 @@ apparatus:
   - "0.PR.03"
 keyEquations: []
 status: review
-
 ---

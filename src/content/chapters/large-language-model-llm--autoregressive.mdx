@@ -1,10 +1,10 @@
 ---
-id: "III.2"
+id: "IV.2"
 book: large-language-model-llm
 order: 2
 title: "Autoregressive Transformers"
-summary: "Decoder-only models, and what makes them generate."
-claim: "Generation is a different computation from training: prefill is compute-bound, decode is bandwidth-bound, and the cache is what separates them."
+summary: "Generation is a different computation from training."
+claim: "Prefill is compute-bound and decode is memory-bandwidth-bound, and the cache is what separates them."
 mathTier: M3
 topics:
   - "Causal masking"
@@ -12,9 +12,27 @@ topics:
   - "GPT-style models"
   - "Context windows"
   - "KV cache"
-prerequisites:
-  - "III.1"
-  - "I.7"
+definitions: []
+beforeYouStart:
+  - "IV.1"
+  - "II.4"
+  - "II.7"
+conceptFigure: FigKvCache
+problemStatement: "Training runs the whole sequence at once; generation runs one token at a time. The arithmetic of those two regimes differs by orders of magnitude in intensity, and almost every inference optimisation is a response to that gap."
+formalResults: []
+assumptions: []
+owns:
+  - "autoregressive-decoding"
+  - "kv-cache"
+  - "sampling-strategy"
+borrows:
+  - "causal-masking"
+  - "multi-head-attention"
+  - "attention-cost"
+  - "language-modelling"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "T"
   - "d"
@@ -28,5 +46,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---

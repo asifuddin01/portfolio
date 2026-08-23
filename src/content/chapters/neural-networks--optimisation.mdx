@@ -1,0 +1,47 @@
+---
+id: "I.7"
+book: neural-networks
+order: 7
+title: "Optimisation"
+summary: "Descent is a local decision made repeatedly; optimisers differ in how much of the past they remember."
+claim: "The gradient supplies a direction and never a distance, and every optimiser is a different answer to how far to go."
+mathTier: M3
+topics: []
+definitions: []
+beforeYouStart:
+  - "I.6"
+  - "0.OP.02"
+  - "0.OP.03"
+conceptFigure: FigDescentStep
+problemStatement: "A gradient is not a training procedure. Step size, curvature, noise from minibatching and the schedule over time each decide whether the same gradients converge, oscillate, or diverge."
+formalResults: []
+assumptions: []
+owns:
+  - "gradient-descent"
+  - "momentum"
+  - "adam"
+  - "learning-rate-schedule"
+  - "batch-gradient-noise"
+borrows:
+  - "backpropagation"
+  - "lagrange-multipliers"
+implementation: false
+failureModes: []
+references: []
+notation:
+  - "eta"
+  - "beta"
+  - "B"
+  - "theta"
+  - "nabla"
+  - "Var"
+  - "L_loss"
+apparatus:
+  - "0.OP.01"
+  - "0.OP.02"
+  - "0.OP.03"
+  - "0.PR.03"
+  - "0.ST.01"
+keyEquations: []
+status: review
+---

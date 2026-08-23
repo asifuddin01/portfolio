@@ -1,0 +1,56 @@
+---
+/**
+ * §7.1 — the three-to-six prior results the chapter assumes, as clickable IDs.
+ *
+ * A reader arriving with prior experience uses this to enter the corpus in the
+ * middle: follow the links backwards until the ground is familiar. That is a
+ * supported path, not an improvisation, which is why the block is on every
+ * chapter rather than only on the ones that felt like they needed it.
+ */
+import ApparatusRef from './ApparatusRef.astro';
+
+interface Props { items: string[]; hrefOf: Record<string, string> }
+const { items, hrefOf } = Astro.props;
+const isApparatus = (id: string) => id.startsWith('0.');
+---
+{items.length > 0 && (
+  <section class="bys" aria-labelledby="bys-h">
+    <h2 class="bys-label" id="bys-h">Before you start</h2>
+    <ul class="bys-list">
+      {items.map((id) => (
+        <li>
+          {isApparatus(id)
+            ? <ApparatusRef ref={id} />
+            : hrefOf[id]
+              ? <a class="link" href={hrefOf[id]}><code>{id}</code></a>
+              : <code>{id}</code>}
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .bys { margin-top: 2rem; }
+  .bys-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .bys-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    max-width: 64rem;
+  }
+  .bys-list code { color: var(--ink-soft); }
+</style>

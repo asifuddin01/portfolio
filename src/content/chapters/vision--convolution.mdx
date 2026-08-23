@@ -1,11 +1,11 @@
 ---
-id: "II.2"
+id: "III.2"
 book: vision
 order: 2
-title: "Convolutional Vision"
-summary: "The architecture that made vision work."
-claim: "A convolution is one filter applied everywhere, and the receptive field it builds grows by a recursion the architecture decides."
-mathTier: M3
+title: "Convolutional Architectures"
+summary: "The architecture lineage is one question asked five times."
+claim: "The CNN lineage is a sequence of answers to one question: how to go deeper without losing the gradient."
+mathTier: M2
 topics:
   - "kernels"
   - "convolution"
@@ -19,21 +19,35 @@ topics:
   - "VGG"
   - "ResNet"
   - "EfficientNet"
-prerequisites:
-  - "II.1"
-  - "I.2"
+definitions: []
+beforeYouStart:
+  - "I.11"
+  - "I.8"
+  - "I.6"
+conceptFigure: FigCnnLineage
+problemStatement: "The mechanics of convolution are settled in Book I. What remains is vision-specific: which arrangements of those mechanics worked, why each generation replaced the last, and what a modern backbone inherits from each."
+formalResults: []
+assumptions: []
+owns:
+  - "cnn-architecture-lineage"
+borrows:
+  - "convolution"
+  - "receptive-field"
+  - "pooling"
+  - "residual-jacobian"
+  - "batch-normalisation"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "H"
   - "W_spatial"
   - "C"
-  - "W"
-  - "nabla"
-  - "J"
+  - "L"
+  - "N"
 apparatus:
-  - "0.MC.03"
-  - "0.MC.07"
   - "0.LA.03"
+  - "0.MC.03"
 keyEquations: []
 status: review
-
 ---

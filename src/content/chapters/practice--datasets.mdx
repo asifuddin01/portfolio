@@ -1,10 +1,10 @@
 ---
-id: "VII.3"
+id: "VIII.3"
 book: practice
 order: 3
 title: "Dataset Practice"
-summary: "Most of the work."
-claim: "A split is a claim about independence, and leakage is that claim being false."
+summary: "A split is a claim about independence, and leakage is that claim being false."
+claim: "A split is a claim about independence between train and test, and leakage is that claim quietly being false."
 mathTier: M2
 topics:
   - "Dataset discovery"
@@ -15,8 +15,25 @@ topics:
   - "Leakage"
   - "Imbalance"
   - "Preprocessing"
-prerequisites:
-  - "VII.2"
+definitions: []
+beforeYouStart:
+  - "VIII.2"
+  - "III.7"
+conceptFigure: FigSplitLeak
+problemStatement: "The single most common cause of a result that does not replicate is a split that shared something it should not have. The inflation it produces is computable from the duplication rate alone."
+formalResults: []
+assumptions: []
+owns:
+  - "data-leakage"
+  - "split-design"
+  - "label-noise"
+borrows:
+  - "estimand"
+  - "confidence-interval"
+  - "domain-shift"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "E"
   - "hat"
@@ -27,5 +44,4 @@ apparatus:
   - "0.PR.04"
 keyEquations: []
 status: review
-
 ---

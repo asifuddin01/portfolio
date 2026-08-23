@@ -2,8 +2,13 @@ import { defineCollection, reference } from 'astro:content';
 import { z } from 'zod';
 import { glob, file } from 'astro/loaders';
 import {
-  MATH_TIERS, VARIANTS, APPARATUS_CODES, FIGURE_TYPES,
+  MATH_TIERS, VARIANTS, APPARATUS_CODES, FIGURE_TYPES, ROMAN_RE,
 } from './lib/elementa-spec';
+
+/** Book numerals I–VIII, plus 0 for the Apparatus (spec §3.3). */
+const BOOK_ID = new RegExp(`^${ROMAN_RE}$`);
+const CHAPTER_ID = new RegExp(`^${ROMAN_RE}\\.\\d+$`);
+const ITEM_ID = new RegExp(`^${ROMAN_RE}\\.(?:\\d+|BOOK)\\.[BX]\\d{2}$`);
 
 /**
  * Clearing an optional field in /admin writes an empty string rather than
@@ -94,7 +99,7 @@ const books = defineCollection({
      * and every chapter, equation and problem ID in the corpus is built on
      * this letter.
      */
-    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)$/),
+    id: z.string().regex(BOOK_ID),
     order: z.number(),
     title: z.string(),
     covers: z.string(),
@@ -179,7 +184,7 @@ const chapters = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/chapters' }),
   schema: z.object({
     /** Permanent identifier, "I.5" (spec §3.1). Cited from any other book. */
-    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)\.\d+$/),
+    id: z.string().regex(CHAPTER_ID),
     book: reference('books'),
     order: z.number(),
     title: z.string(),
@@ -196,8 +201,79 @@ const chapters = defineCollection({
     tierRationale: optionalText,
     /** What the chapter covers, shown before any proposition is written. */
     topics: z.array(z.string()).default([]),
-    /** Chapter or proposition IDs that come first (§12.2). */
-    prerequisites: z.array(z.string()).default([]),
+
+    // ── BASICS (§7.1) ──────────────────────────────────────────────────
+    /**
+     * Numbered, stipulative definitions. "A computational graph is a directed
+     * acyclic graph whose nodes are operations" — not "graphs are a useful way
+     * to think about networks".
+     */
+    definitions: z
+      .array(z.object({
+        n: z.number().int(),
+        term: z.string(),
+        statement: z.string(),
+        /** Symbols this definition introduces, checked against the registry. */
+        introduces: z.array(z.string()).default([]),
+      }))
+      .default([]),
+    /** The three-to-six prior results assumed, as clickable IDs. */
+    beforeYouStart: z.array(z.string()).default([]),
+
+    // ── CONCEPT (§7.1) ─────────────────────────────────────────────────
+    /** One figure a reader could redraw from memory. Type A or C. */
+    conceptFigure: z.string().nullable().default(null),
+    /**
+     * Why the mechanism is necessary, stated before the mechanism. A mechanism
+     * introduced before its problem is memorised, not understood.
+     */
+    problemStatement: optionalText,
+
+    // ── THEORY (§7.1) ──────────────────────────────────────────────────
+    /**
+     * Named formal results — a theorem, criterion, bound or impossibility.
+     * Each one carries what it does *not* promise, and that field is the
+     * difference between teaching theory and quoting it.
+     */
+    formalResults: z
+      .array(z.object({
+        id: z.string(),
+        name: z.string(),
+        statement: z.string(),
+        doesNotPromise: z.string(),
+      }))
+      .default([]),
+    /** Assumptions, each paired with the problem that shows its removal. */
+    assumptions: z
+      .array(z.object({ statement: z.string(), testedBy: z.string() }))
+      .default([]),
+
+    // ── PLACEMENT (§6.3) ───────────────────────────────────────────────
+    /**
+     * One mechanism, one home (invariant I-9). A chapter declares the concepts
+     * it derives and the concepts it merely uses. Two chapters claiming the
+     * same concept in `owns` fails the build — which is what stops the same
+     * idea being taught twice in two Books and drifting apart.
+     */
+    owns: z.array(z.string()).default([]),
+    borrows: z.array(z.string()).default([]),
+
+    // ── PRACTICE (§7.1) ────────────────────────────────────────────────
+    /** A runnable implementation, ≤ 25 lines, reproducing a problem's numbers. */
+    implementation: z.boolean().default(false),
+    /** Concrete failures — an input and a number, not "can struggle with". */
+    failureModes: z.array(z.string()).default([]),
+    /** Authors, year, venue. A claim about a paper carries all three (I-8). */
+    references: z
+      .array(z.object({
+        authors: z.string(),
+        year: z.number().int(),
+        venue: z.string(),
+        title: z.string(),
+        url: optionalUrl,
+      }))
+      .default([]),
+
     /** Symbols used here, checked against the notation registry (§5.6). */
     notation: z.array(z.string()).default([]),
     /** Book 0 anchors the chapter leans on, e.g. "0.MC.07" (§16). */
@@ -226,6 +302,38 @@ const chapters = defineCollection({
           `mathematics is not load-bearing, or promote it to M3.`,
       });
     }
+    /**
+     * §7.1 — scope is not fine print. A theorem whose limits are not stated
+     * has been quoted rather than taught, so the field is required whenever
+     * a formal result exists at all.
+     */
+    for (const r of data.formalResults) {
+      if (r.doesNotPromise.trim().length < 20) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `${data.id}/${r.id} ("${r.name}") has no WHAT THIS DOES NOT PROMISE ` +
+            `block. Every named result carries the boundary of its guarantee.`,
+        });
+      }
+      if (!r.id.startsWith(`${data.id}.`)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Formal result "${r.id}" is declared by chapter ${data.id} but numbered elsewhere.`,
+        });
+      }
+    }
+
+    // An assumption nobody tests is a disclaimer, not an assumption.
+    for (const a of data.assumptions) {
+      if (!a.testedBy.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${data.id}: assumption "${a.statement.slice(0, 48)}…" names no problem that shows what its removal costs.`,
+        });
+      }
+    }
+
     // Every equation ID must belong to the chapter that declares it.
     for (const eq of data.keyEquations) {
       if (!eq.id.startsWith(`${data.id}.`)) {
@@ -247,7 +355,7 @@ const problems = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/problems' }),
   schema: z.object({
     /** "I.5.B03" for a problem, "I.5.X07" for an exercise (§3.1). */
-    id: z.string().regex(/^(0|I{1,3}|IV|VI{0,2}|V)\.(\d+|BOOK)\.[BX]\d{2}$/),
+    id: z.string().regex(ITEM_ID),
     kind: z.enum(['problem', 'exercise']),
     /** "I.5", or "I.BOOK" for a book-level item. */
     chapter: z.string(),

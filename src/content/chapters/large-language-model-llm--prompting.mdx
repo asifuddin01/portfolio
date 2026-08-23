@@ -1,10 +1,10 @@
 ---
-id: "III.6"
+id: "IV.6"
 book: large-language-model-llm
 order: 6
 title: "Prompting and In-Context Learning"
-summary: "Learning without weight updates."
-claim: "In-context learning is task inference at run time, not learning: the parameters do not move."
+summary: "Task inference at run time, not learning: the parameters do not move."
+claim: "In-context learning is task inference at run time, and calling it learning obscures that nothing is updated."
 mathTier: M1
 topics:
   - "Zero-shot"
@@ -13,8 +13,23 @@ topics:
   - "Structured prompting"
   - "Tool use"
   - "Reasoning prompts"
-prerequisites:
-  - "III.2"
+definitions: []
+beforeYouStart:
+  - "IV.1"
+  - "0.PR.04"
+conceptFigure: FigContextResolution
+problemStatement: "A model that has never been trained on a task can perform it from three examples in its context. Whatever is happening, it is not gradient descent, and the distinction matters for what can and cannot be relied on."
+formalResults: []
+assumptions: []
+owns:
+  - "in-context-learning"
+borrows:
+  - "language-modelling"
+  - "scaled-dot-product-attention"
+  - "bayes-rule"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "T"
   - "E"
@@ -22,5 +37,4 @@ apparatus:
   - "0.PR.04"
 keyEquations: []
 status: review
-
 ---

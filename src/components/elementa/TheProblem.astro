@@ -1,0 +1,35 @@
+---
+/**
+ * §7.1, Concept — the problem the mechanism solves, stated before the
+ * mechanism. A mechanism introduced before its problem is memorised, not
+ * understood, so this block sits above everything the chapter goes on to
+ * build.
+ */
+interface Props { text: string }
+const { text } = Astro.props;
+---
+<section class="tp" aria-labelledby="tp-h">
+  <h2 class="tp-label" id="tp-h">The problem</h2>
+  <p class="tp-body">{text}</p>
+</section>
+
+<style>
+  .tp { margin: 2rem 0; max-width: 64rem; }
+  .tp-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .tp-body {
+    font-size: var(--body-size);
+    line-height: var(--body-leading);
+    margin: 0;
+    max-width: var(--measure);
+    border-left: 2px solid var(--fundus);
+    padding-left: 1rem;
+  }
+</style>

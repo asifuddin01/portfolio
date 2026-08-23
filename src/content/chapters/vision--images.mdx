@@ -1,10 +1,10 @@
 ---
-id: "II.1"
+id: "III.1"
 book: vision
 order: 1
 title: "Images as Data"
-summary: "What a picture is once it is a tensor."
-claim: "An image is a tensor whose axes carry meaning, and the spatial structure is information a model can either use or throw away."
+summary: "An image is a tensor whose axes are the picture."
+claim: "An image is a tensor whose axes carry meaning, and the spatial structure is information a model can use or throw away."
 mathTier: M2
 topics:
   - "pixels"
@@ -14,8 +14,24 @@ topics:
   - "normalisation"
   - "convolution"
   - "receptive fields"
-prerequisites:
+definitions: []
+beforeYouStart:
   - "I.1"
+  - "I.11"
+conceptFigure: FigImageTensor
+problemStatement: "Before any vision architecture, the reader needs to see why an image is not simply a long vector. The arrangement of the numbers is the content, and destroying it is a measurable loss."
+formalResults: []
+assumptions: []
+owns:
+  - "image-tensor"
+  - "spatial-prior"
+  - "input-normalisation"
+borrows:
+  - "tensor-shape"
+  - "convolution"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "H"
   - "W_spatial"
@@ -27,5 +43,4 @@ apparatus:
   - "0.PR.02"
 keyEquations: []
 status: review
-
 ---

@@ -1,10 +1,10 @@
 ---
-id: "III.9"
+id: "IV.9"
 book: large-language-model-llm
 order: 9
 title: "LLM Systems"
-summary: "A model is not yet a system."
-claim: "A model in a system is one component: retrieval, chunking and ranking decide what it is given to work with."
+summary: "A model in a system is one component."
+claim: "Retrieval, chunking and ranking decide what the model is given, and no amount of capacity recovers a document that was never retrieved."
 mathTier: M2
 topics:
   - "RAG"
@@ -14,8 +14,23 @@ topics:
   - "Tools"
   - "Memory"
   - "Inference systems"
-prerequisites:
-  - "III.2"
+definitions: []
+beforeYouStart:
+  - "IV.6"
+  - "II.1"
+conceptFigure: FigAffinityGap
+problemStatement: "Deployed models are rarely used alone. The components around them — an index, a chunking rule, a reranker — determine the input, and their failure modes are measurable independently of the model."
+formalResults: []
+assumptions: []
+owns:
+  - "retrieval-augmentation"
+  - "approximate-nearest-neighbour"
+borrows:
+  - "embedding-table"
+  - "in-context-learning"
+implementation: false
+failureModes: []
+references: []
 notation:
   - "d"
   - "T"
@@ -24,5 +39,4 @@ apparatus:
   - "0.PR.01"
 keyEquations: []
 status: review
-
 ---
