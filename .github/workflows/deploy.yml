@@ -47,82 +47,84 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Checked before the build rather than after, so a missing credential
-      # costs ten seconds instead of three minutes — and so the failure email
-      # says what to do instead of showing a raw wrangler stack trace.
-      - name: Check the deploy credential
+      # The credential is inspected before the build, so a missing one costs
+      # ten seconds instead of three minutes. The result is turned into three
+      # separately named steps rather than one message, so the *name of the
+      # failing step* states the cause — visible at a glance in the Actions
+      # list, and readable through the API without opening a log.
+      - name: Inspect the deploy credential
+        id: cred
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set +e
-          # The value is masked by GitHub; its length is not, and that is the
-          # one fact that separates "the secret never arrived" from "the secret
-          # arrived and Cloudflare refused it".
-          echo "token characters visible to this job: ${#CLOUDFLARE_API_TOKEN}"
-          echo "account id characters visible to this job: ${#CF_ACCOUNT_ID}"
+          # A length is not a value. GitHub masks the secret itself; this is the
+          # one fact that separates "never arrived" from "arrived and refused".
+          echo "token characters visible to this job:   ${#TOKEN}"
+          echo "account characters visible to this job: ${#ACCOUNT}"
 
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            {
-              echo "### Deploy blocked — no API token"
-              echo ""
-              echo "This job received an empty \`CLOUDFLARE_API_TOKEN\`, so the site"
-              echo "cannot be deployed. Everything else in this run passed."
-              echo ""
-              echo "If you have already added the secret, it is almost certainly in the"
-              echo "wrong one of GitHub's four secret stores. A workflow can only read"
-              echo "**Actions → Repository secrets**. Secrets added under *Dependabot*,"
-              echo "*Codespaces*, or an *Environment* are invisible here."
-              echo ""
-              echo "Check <https://github.com/asifuddin01/portfolio/settings/secrets/actions>"
-              echo "and confirm the name appears under **Repository secrets**, spelled"
-              echo "exactly \`CLOUDFLARE_API_TOKEN\` — no spaces, no CF_ prefix."
-              echo ""
-              echo "If it is missing: **New repository secret**, paste a token created"
-              echo "from the **Edit Cloudflare Workers** template at"
-              echo "<https://dash.cloudflare.com/profile/api-tokens>."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::No CLOUDFLARE_API_TOKEN secret. See the job summary for the two steps that fix it."
-            exit 1
+          if [ -z "$TOKEN" ]; then
+            echo "state=absent" >> "$GITHUB_OUTPUT"; exit 0
           fi
 
-          # An account id is only needed when the token can reach more than one
-          # account. Passing it as an empty string is worse than not passing it,
-          # so it is exported only when actually set.
-          if [ -n "$CF_ACCOUNT_ID" ]; then export CLOUDFLARE_ACCOUNT_ID="$CF_ACCOUNT_ID"; fi
+          export CLOUDFLARE_API_TOKEN="$TOKEN"
+          if [ -n "$ACCOUNT" ]; then export CLOUDFLARE_ACCOUNT_ID="$ACCOUNT"; fi
 
-          OUT=$(npx wrangler whoami 2>&1)
-          if [ $? -ne 0 ]; then
-            {
-              echo "### Deploy blocked — the token was rejected"
-              echo ""
-              echo "\`wrangler whoami\` failed, so the token is missing, expired, or"
-              echo "lacks the Workers permission. Its output:"
-              echo ""
-              echo '```'
-              echo "$OUT"
-              echo '```'
-              echo ""
-              echo "Recreate it from the **Edit Cloudflare Workers** template at"
-              echo "<https://dash.cloudflare.com/profile/api-tokens> and replace the"
-              echo "\`CLOUDFLARE_API_TOKEN\` secret."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::The Cloudflare token was rejected. See the job summary."
-            exit 1
+          OUT=$(npx wrangler whoami 2>&1); RC=$?
+          echo "$OUT"
+          if [ $RC -ne 0 ]; then
+            echo "state=rejected" >> "$GITHUB_OUTPUT"; exit 0
           fi
-
           if echo "$OUT" | grep -qi "more than one account\|multiple accounts"; then
-            {
-              echo "### Deploy blocked — the token reaches several accounts"
-              echo ""
-              echo "Add a second secret \`CLOUDFLARE_ACCOUNT_ID\` naming the account"
-              echo "that owns the \`portfolio\` Worker, then re-run."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::Set CLOUDFLARE_ACCOUNT_ID. See the job summary."
-            exit 1
+            echo "state=ambiguous" >> "$GITHUB_OUTPUT"; exit 0
           fi
+          echo "state=ok" >> "$GITHUB_OUTPUT"
 
-          echo "Token accepted."
+      - name: "Blocked - no token reached this job"
+        if: steps.cred.outputs.state == 'absent'
+        run: |
+          {
+            echo "### No token reached this job"
+            echo ""
+            echo "\`CLOUDFLARE_API_TOKEN\` arrived empty. Everything else passed."
+            echo ""
+            echo "GitHub keeps **four** secret stores and a workflow can read only"
+            echo "one of them. Open"
+            echo "<https://github.com/asifuddin01/portfolio/settings/secrets/actions>"
+            echo "and confirm the name is listed under **Repository secrets** —"
+            echo "not *Environment*, not *Dependabot*, not *Codespaces* — spelled"
+            echo "exactly \`CLOUDFLARE_API_TOKEN\`, with no trailing space."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: "Blocked - Cloudflare rejected the token"
+        if: steps.cred.outputs.state == 'rejected'
+        run: |
+          {
+            echo "### Cloudflare rejected the token"
+            echo ""
+            echo "The secret arrived, so the GitHub side is correct. \`wrangler whoami\`"
+            echo "refused it — see the previous step's output for Cloudflare's own words."
+            echo ""
+            echo "The usual cause is that the token **ID** was copied rather than the"
+            echo "token **value**. Cloudflare shows the value once, on the screen"
+            echo "immediately after creation. Create a fresh one from the"
+            echo "**Edit Cloudflare Workers** template at"
+            echo "<https://dash.cloudflare.com/profile/api-tokens> and replace the secret."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: "Blocked - the token reaches several accounts"
+        if: steps.cred.outputs.state == 'ambiguous'
+        run: |
+          {
+            echo "### The token reaches more than one account"
+            echo ""
+            echo "Add a second repository secret \`CLOUDFLARE_ACCOUNT_ID\` naming the"
+            echo "account that owns the \`portfolio\` Worker, then re-run."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
 
       - name: Verify
         run: npm run verify
