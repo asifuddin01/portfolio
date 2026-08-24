@@ -43,3 +43,22 @@
 
 /* The prose colour, so an equation is ink rather than pure black. */
 .katex, .katex-display { color: var(--ink); }
+
+/**
+ * Equation tags.
+ *
+ * KaTeX positions `\tag` absolutely against `.katex-html`, which needs a
+ * positioned ancestor. Giving `.katex-display` `overflow-x: auto` — which it
+ * must have, so a wide derivation scrolls rather than breaking the page —
+ * leaves the tag static, and it renders glued to the end of the formula as
+ * though it were part of it. Restore the intent explicitly.
+ */
+.katex-display { position: relative; }
+.katex-display > .katex > .katex-html { display: block; position: relative; }
+.katex-display > .katex > .katex-html > .tag {
+  position: absolute;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--brass-text);
+}

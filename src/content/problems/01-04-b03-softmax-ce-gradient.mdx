@@ -99,8 +99,11 @@ $\delta_{ij} = 1$ if $i=j$ and $0$ otherwise, the two cases are one formula:
 
 $$
 \frac{\partial p_i}{\partial z_j} = p_i\left(\delta_{ij} - p_j\right)
-\tag{0.MC.06}
 $$
+
+This is the softmax Jacobian of <ApparatusRef ref="0.MC.06" />, derived here
+rather than cited, because the two cancellations that follow depend on knowing
+where each factor came from.
 
 Check it reproduces both branches: at $i=j$, $p_i(1 - p_i)$ ✓; at $i \ne j$,
 $p_i(0 - p_j) = -p_ip_j$ ✓.

@@ -321,3 +321,28 @@ h1.pb-title, .ex-title-page {
   margin: 0;
 }
 .ex-title { font-family: var(--font-display); font-size: var(--t-md); }
+
+/**
+ * Headings inside a problem or exercise body.
+ *
+ * A long solution needs parts, and `.pb-body` is not `.prose`, so the site's
+ * heading styles never reached it — an `h2` rendered at body size with no
+ * margin, which is to say it did not render as a heading at all.
+ */
+.pb-body h2,
+.pb-body h3,
+.pb-body h4,
+.ex h2,
+.ex h3,
+.ex h4 {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin: 1.8rem 0 0.8rem;
+  padding-top: 0.9rem;
+  border-top: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
+}
+.pb-body > :first-child h2 { margin-top: 0; }
