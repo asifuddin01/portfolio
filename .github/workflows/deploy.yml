@@ -47,17 +47,87 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Checked before the build rather than after, so a missing credential
+      # costs ten seconds instead of three minutes — and so the failure email
+      # says what to do instead of showing a raw wrangler stack trace.
+      - name: Check the deploy credential
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            {
+              echo "### Deploy blocked — no API token"
+              echo ""
+              echo "The repository has no \`CLOUDFLARE_API_TOKEN\` secret, so the site"
+              echo "cannot be deployed. Everything else in this run passed."
+              echo ""
+              echo "To fix it, once:"
+              echo ""
+              echo "1. <https://dash.cloudflare.com/profile/api-tokens> → **Create Token**"
+              echo "   → use the **Edit Cloudflare Workers** template → Create → copy it."
+              echo "2. <https://github.com/asifuddin01/portfolio/settings/secrets/actions>"
+              echo "   → **New repository secret** → name \`CLOUDFLARE_API_TOKEN\`, paste the value."
+              echo "3. Actions → this workflow → **Re-run jobs**."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::No CLOUDFLARE_API_TOKEN secret. See the job summary for the two steps that fix it."
+            exit 1
+          fi
+
+          # An account id is only needed when the token can reach more than one
+          # account. Passing it as an empty string is worse than not passing it,
+          # so it is exported only when actually set.
+          if [ -n "$CF_ACCOUNT_ID" ]; then export CLOUDFLARE_ACCOUNT_ID="$CF_ACCOUNT_ID"; fi
+
+          OUT=$(npx wrangler whoami 2>&1)
+          if [ $? -ne 0 ]; then
+            {
+              echo "### Deploy blocked — the token was rejected"
+              echo ""
+              echo "\`wrangler whoami\` failed, so the token is missing, expired, or"
+              echo "lacks the Workers permission. Its output:"
+              echo ""
+              echo '```'
+              echo "$OUT"
+              echo '```'
+              echo ""
+              echo "Recreate it from the **Edit Cloudflare Workers** template at"
+              echo "<https://dash.cloudflare.com/profile/api-tokens> and replace the"
+              echo "\`CLOUDFLARE_API_TOKEN\` secret."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::The Cloudflare token was rejected. See the job summary."
+            exit 1
+          fi
+
+          if echo "$OUT" | grep -qi "more than one account\|multiple accounts"; then
+            {
+              echo "### Deploy blocked — the token reaches several accounts"
+              echo ""
+              echo "Add a second secret \`CLOUDFLARE_ACCOUNT_ID\` naming the account"
+              echo "that owns the \`portfolio\` Worker, then re-run."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Set CLOUDFLARE_ACCOUNT_ID. See the job summary."
+            exit 1
+          fi
+
+          echo "Token accepted."
+
       - name: Verify
         run: npm run verify
 
       - name: Deploy
-        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CF_ACCOUNT_ID" ]; then export CLOUDFLARE_ACCOUNT_ID="$CF_ACCOUNT_ID"; fi
+          npx wrangler deploy
 
       - name: Report
         run: |
-          echo "### Deployed" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "<https://asifuddin.com> now serves \`${GITHUB_SHA:0:7}\`." >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Deployed"
+            echo ""
+            echo "<https://asifuddin.com> now serves \`${GITHUB_SHA:0:7}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
