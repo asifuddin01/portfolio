@@ -1,0 +1,136 @@
+---
+id: "I.4.X10"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: limit
+difficulty: 3
+title: "What a per-example loss cannot encode"
+depends:
+  - "I.4.P01"
+  - "I.4.P04"
+rounding: "Exact where stated."
+hasSolution: true
+verified: false
+status: published
+---
+
+The chapter's open exercise. Every loss in this chapter has the form
+$\frac1n\sum_i \ell(\hat{y}_i, y_i)$ — a mean of a function of one prediction and
+one target. Determine what objectives that form structurally cannot express, and
+give a worked case for at least two of them.
+
+<Hint>
+Ask what happens to $\ell$ if you shuffle the examples, or if you change the
+prediction for one example while holding the rest fixed.
+</Hint>
+
+<SolutionToggle>
+
+**The structural constraint.** Two properties follow from the form alone, before
+any particular $\ell$ is chosen.
+
+*Permutation invariance.* The mean is unchanged by reordering, so no objective
+that depends on the order or grouping of examples can be expressed.
+
+*Separability.* $\partial L/\partial \hat{y}_i$ depends on example $i$ alone. No
+objective in which the right prediction for one example depends on the
+predictions made for others can be expressed.
+
+Everything below is a consequence of one of these two.
+
+### Case 1 — a ranking objective (separability fails)
+
+**The objective.** Rank documents so relevant ones come above irrelevant ones.
+What matters is the *relative order* of scores, not their values.
+
+**Why it cannot be written per example.** Take two documents with true relevance
+$1$ and $0$ and scores $\hat{y}_A = 0.6$, $\hat{y}_B = 0.4$. The ranking is
+correct. Now consider $0.9$ and $0.8$: also correct. And $0.3$, $0.2$: also
+correct. A per-example loss must assign each of these six predictions a value
+based on that prediction alone, yet the quantity of interest — is $A$ above
+$B$? — is identical in all three.
+
+Worse, it can be destroyed by changing only $B$: with $\hat{y}_A = 0.6$ fixed,
+$\hat{y}_B = 0.4$ is correct and $\hat{y}_B = 0.7$ is not. So the *correct value*
+for $B$ depends on $A$'s prediction, which separability forbids.
+
+**Worked numbers.** Under per-example squared loss with targets $(1, 0)$:
+
+$$
+(0.6, 0.4): \ \tfrac12\big[(0.4)^2 + (0.4)^2\big] = 0.1600
+$$
+$$
+(0.9, 0.8): \ \tfrac12\big[(0.1)^2 + (0.8)^2\big] = 0.3250
+$$
+
+The loss prefers the first, though both rank correctly and the second is more
+confident. And:
+
+$$
+(0.5, 0.5): \ \tfrac12\big[(0.5)^2 + (0.5)^2\big] = 0.2500
+$$
+
+which ranks *incorrectly* (a tie) yet scores better than $(0.9, 0.8)$, which
+ranks correctly. **The loss and the objective disagree in sign.**
+
+**What is done instead.** Pairwise losses of the form $\ell(\hat{y}_A - \hat{y}_B)$,
+which are per-*pair* rather than per-example — a different form, with $O(n^2)$
+terms and a gradient that couples examples.
+
+### Case 2 — a constraint across examples (permutation invariance fails)
+
+**The objective.** Predicted probabilities should be calibrated: among examples
+predicted at $0.7$, about $70\%$ should be positive.
+
+**Why it cannot be written per example.** Calibration is a statement about a
+*set* of predictions. For any single prediction there is no fact of the matter —
+$p = 0.7$ on one example with label $1$ is neither calibrated nor miscalibrated.
+The quantity requires binning, and binning requires seeing the other examples.
+
+**Worked numbers.** Ten examples, all predicted $p = 0.7$, of which $7$ are
+positive. Perfectly calibrated. Cross-entropy:
+
+$$
+\overline{L} = \frac{7(-\log 0.7) + 3(-\log 0.3)}{10} = \frac{7(0.3567) + 3(1.2040)}{10} = \frac{2.4969 + 3.6120}{10} = 0.6109
+$$
+
+Now a model predicting $p = 1.0$ for the seven positives and $p = 0.0$ for the
+three negatives — also perfectly calibrated, and with loss $0$. And one
+predicting $0.7$ for all ten when only $3$ are positive — badly miscalibrated —
+gives
+
+$$
+\frac{3(0.3567) + 7(1.2040)}{10} = 0.9498
+$$
+
+So the loss *does* respond to calibration here, but only through accuracy: it
+cannot distinguish "well calibrated and uncertain" from "poorly calibrated",
+because it never sees a group.
+
+### Case 3 — fairness across a subgroup (both fail)
+
+The objective "the error rate on group A must not exceed group B's by more than
+$\varepsilon$" is a constraint on two *aggregates*. A per-example loss can
+approximate it with group weights, as I.4.B05 does — but weights control expected
+contribution, not a realised gap, and the constraint can be violated while every
+weight is respected. This is the same gap between a surrogate and a target that
+I.4.X06 exhibited for accuracy.
+
+### The strongest true claim
+
+> A per-example mean is a **separable, permutation-invariant** objective. Any
+> quantity of interest that is genuinely a property of the *set* of predictions —
+> an ordering, a rate within a group, a distributional match, a constraint
+> between subgroups — is not in that class, and can only be approached by a
+> surrogate whose disagreement with the target has to be measured rather than
+> assumed.
+
+**Why the form is used anyway.** Separability is what makes the gradient
+computable in one pass and the loss decomposable over a minibatch. Give it up and
+the gradient of one example requires the others, minibatching becomes an
+approximation rather than an identity, and the whole training loop changes shape.
+That is a real cost, and it is why the answer is nearly always a surrogate plus a
+separately reported metric — which is exactly the discipline Chapter VIII.5 is
+about.
+</SolutionToggle>

@@ -1,0 +1,231 @@
+---
+id: "I.4.B05"
+kind: problem
+chapter: "I.4"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "Weights that equalise what each class contributes"
+depends:
+  - "I.4.P01"
+  - "I.4.P04"
+reachesBack: []
+rounding: "Weights to 4 d.p.; masses to 1 d.p."
+hasSolution: true
+verified: true
+snippet: "i-4-b05-class-weights.py"
+status: published
+---
+
+<Statement>
+A binary dataset holds $950$ negatives and $50$ positives. Derive the class
+weights that make the two classes contribute equal gradient mass, compute them,
+verify the loss scale is unchanged, and compare with the effective-number
+weighting of Cui et al. (2019).
+</Statement>
+
+<Given>
+$n_- = 950$, $n_+ = 50$, so $N = 1000$ and $K = 2$. The weighted empirical risk is
+
+$$
+\hat{R}(\theta) = \frac{1}{N}\sum_{i=1}^{N} w_{c(i)}\;\ell\big(f(x_i;\theta), y_i\big)
+$$
+
+where $c(i)$ is example $i$'s class. Assume each example's loss has comparable
+magnitude, so that a class's contribution is proportional to its count times its
+weight.
+</Given>
+
+<Find>
+Weights $w_-$ and $w_+$ equalising the two contributions; their ratio; a check
+that the mean weight is $1$; and the same quantities under effective-number
+weighting at $\beta = 0.999$.
+</Find>
+
+<Strategy>
+Write the condition "the two classes contribute equally" as one equation, add
+the normalisation "the average weight is one" as a second, and solve the pair.
+Two conditions, two unknowns — the weights are then determined, not chosen.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the unweighted imbalance.** Without weights, class $c$ contributes
+$n_c$ of the $N$ terms, so its share of the gradient is
+
+$$
+\frac{n_-}{N} = \frac{950}{1000} = 95\%, \qquad \frac{n_+}{N} = \frac{50}{1000} = 5\%
+$$
+
+The negatives outvote the positives nineteen to one. A model that predicts
+"negative" always achieves $95\%$ accuracy and a low loss, and the gradient
+pushing it away from that solution is one-nineteenth of the gradient holding it
+there.
+
+**Step 2 — the equalisation condition.** Class $c$'s weighted contribution is
+$n_c w_c$. Requiring the two to be equal:
+
+$$n_- w_- = n_+ w_+ \tag{i}$$
+
+**Step 3 — the normalisation condition.** Requiring the mean weight over the
+dataset to be $1$, so the weighted loss has the same scale as the unweighted one
+and the learning rate need not be retuned:
+
+$$\frac{1}{N}\sum_{i=1}^{N} w_{c(i)} = \frac{n_- w_- + n_+ w_+}{N} = 1 \tag{ii}$$
+
+**Step 4 — solve.** Substitute (i) into (ii). Writing $M$ for the common value
+$n_-w_- = n_+w_+$:
+
+$$\frac{M + M}{N} = 1 \quad\Longrightarrow\quad 2M = N \quad\Longrightarrow\quad M = \frac{N}{2}$$
+
+Then from $n_c w_c = M$ for each class,
+
+$$
+\boxed{\ w_c = \frac{N}{K\,n_c}\ }
+\tag{I.4.6}
+$$
+
+with $K = 2$ classes. Note the derivation generalises unchanged to $K$ classes:
+$K$ equal contributions summing to $N$ gives $M = N/K$.
+
+**Step 5 — evaluate.**
+
+$$
+w_- = \frac{1000}{2 \times 950} = \frac{1000}{1900} = 0.5263
+$$
+
+$$
+w_+ = \frac{1000}{2 \times 50} = \frac{1000}{100} = 10.0000
+$$
+
+$$
+\frac{w_+}{w_-} = \frac{10.0000}{0.5263} = 19.0000
+$$
+
+**The ratio equals the imbalance ratio**, $950/50 = 19$, which it must:
+dividing (i) by $n_+w_-$ gives $w_+/w_- = n_-/n_+$ directly.
+
+**Step 6 — check both conditions.**
+
+*Equal contributions.* $n_-w_- = 950 \times 0.5263 = 500.0$ and
+$n_+w_+ = 50 \times 10.0000 = 500.0$. Equal ✓
+
+*Unit mean weight.* $(500.0 + 500.0)/1000 = 1.0000$ ✓ — so a loss of $0.5$
+before weighting is a loss of about $0.5$ after, and the learning rate carries
+over.
+
+**Step 7 — effective-number weighting.** The inverse-frequency weight assumes
+each example contributes independent information. Cui et al. argue that examples
+of the same class overlap, so the $n$-th example of a class adds less than the
+first. Modelling the *effective* number of examples as a geometric sum,
+
+$$
+E_n = \frac{1 - \beta^{\,n}}{1 - \beta},
+\qquad\text{and weighting } w_c \propto \frac{1}{E_{n_c}} = \frac{1-\beta}{1-\beta^{\,n_c}}
+$$
+
+The parameter $\beta \in [0,1)$ says how fast the overlap sets in: $\beta = 0$
+gives $E_n = 1$ for all $n$ (every example redundant beyond the first, so uniform
+weights), and $\beta \to 1$ gives $E_n \to n$ (no overlap, recovering inverse
+frequency).
+
+At $\beta = 0.999$:
+
+$$
+\beta^{950} = 0.999^{950} = 0.3873
+\quad\Longrightarrow\quad
+\frac{1-\beta}{1-\beta^{950}} = \frac{0.001}{0.6127} = 1.630144\times10^{-3}
+$$
+
+$$
+\beta^{50} = 0.999^{50} = 0.9512
+\quad\Longrightarrow\quad
+\frac{1-\beta}{1-\beta^{50}} = \frac{0.001}{0.0488} = 2.049417\times10^{-2}
+$$
+
+Normalising so the two average to $1$ across classes:
+
+$$w_- = 0.1474, \qquad w_+ = 1.8526, \qquad \frac{w_+}{w_-} = 12.5720$$
+
+**Step 8 — compare.**
+
+| Scheme | $w_-$ | $w_+$ | ratio |
+|---|---|---|---|
+| none | $1.0000$ | $1.0000$ | $1.00$ |
+| inverse frequency | $0.5263$ | $10.0000$ | $19.00$ |
+| effective number, $\beta = 0.999$ | $0.1474$ | $1.8526$ | $12.57$ |
+
+Effective-number weighting is **less aggressive**: $12.57$ against $19$. Its
+argument is that the $950$ negatives are not $950$ independent facts, so
+down-weighting them to one-nineteenth over-corrects. Whether that is right is an
+empirical question about the data, and $\beta$ is the knob that encodes the
+answer.
+
+</Solution>
+
+<Answer>
+$$
+w_c = \frac{N}{K n_c}
+\quad\Longrightarrow\quad
+w_- = 0.5263,\qquad w_+ = 10.0000,\qquad \frac{w_+}{w_-} = 19
+$$
+
+Each class then contributes $500.0$ of weighted mass, and the mean weight is
+exactly $1.0000$, so the loss scale is preserved.
+
+Effective-number weighting at $\beta = 0.999$ gives $w_- = 0.1474$,
+$w_+ = 1.8526$, a ratio of $12.5720$ — a deliberately weaker correction.
+</Answer>
+
+<CheckNumeric snippet="i-4-b05-class-weights.py" verified>
+```python
+w_neg = N / (K * n_neg)
+w_pos = N / (K * n_pos)
+eff = lambda n: (1 - beta) / (1 - beta ** n)
+```
+Prints both schemes, the two weighted masses, the mean weight and both ratios.
+</CheckNumeric>
+
+<CheckSanity>
+**A balanced dataset gives unit weights.** With $n_- = n_+ = 500$,
+$w_c = 1000/(2 \times 500) = 1$ for both. A weighting scheme that changed
+anything on balanced data would be wrong, and this one does not.
+
+**The ratio is forced by the counts alone.** $w_+/w_- = n_-/n_+ = 19$ follows
+from (i) without reference to $N$ or $K$. So the *ratio* is a property of the
+imbalance and the *scale* is a property of the normalisation — two independent
+choices that are easy to confuse.
+
+**The two limits of $\beta$ behave.** At $\beta = 0$: $E_n = 1$ for every $n$, so
+both weights are equal and the ratio is $1$ — no correction. As $\beta \to 1$:
+$E_n \to n$ by L'Hôpital, so $w_c \propto 1/n_c$ and the ratio approaches $19$ —
+inverse frequency. The computed $12.57$ lies between $1$ and $19$ as it must.
+
+**Dimensional check.** $N/(Kn_c)$ is a count over a count, so weights are
+dimensionless and the weighted loss carries the loss's own units. A weighting
+scheme with units would be a rescaling in disguise.
+</CheckSanity>
+
+<Breaks>
+Step 2's premise is that a class's gradient contribution is proportional to its
+count. That holds when every example's loss has comparable magnitude — true at
+initialisation, and false soon after.
+
+Once the model has learned to classify the majority easily, those $950$ examples
+have small losses and, by (I.4.4), small gradients $p - y$. Their *actual*
+contribution collapses well below $95\%$, and the fixed weight $w_- = 0.5263$
+keeps suppressing them anyway. **Static weights correct a static imbalance in a
+dynamic quantity.**
+
+That observation is precisely the argument for focal loss (Lin et al., 2017),
+which multiplies each example's loss by $(1 - p_t)^{\gamma}$ — a factor computed
+from the *current* prediction rather than from the class count. It down-weights
+easy examples whichever class they belong to, and needs no counts at all.
+</Breaks>
+
+<Variation>
+A three-class problem has counts $(900, 90, 10)$. Compute the inverse-frequency
+weights and verify each class contributes $N/3$. Then find the $\beta$ at which
+effective-number weighting gives the rarest class exactly half the weight
+inverse frequency would give it.
+</Variation>

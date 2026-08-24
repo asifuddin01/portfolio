@@ -1,0 +1,87 @@
+---
+id: "I.4.X07"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "When the implied noise model is false"
+depends:
+  - "I.4.P02"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+The first assumption of this chapter is that the loss's implied noise model
+matches the data. Take count data, show all three Gaussian properties fail,
+quantify one of the failures, and name the loss that does not fail.
+
+<Hint>
+I.4.B02 identified three properties the Gaussian asserts. Check each against a
+Poisson count.
+</Hint>
+
+<SolutionToggle>
+
+**The data.** Read counts from an RNA-sequencing experiment: a gene's expression
+in one cell, a non-negative integer, typically between $0$ and a few thousand,
+with most genes at $0$ in most cells.
+
+**The three Gaussian assertions, checked in turn.**
+
+*Symmetry — false.* If the model predicts $\hat{y} = 3$, the residual can be
+$-3$ at most (the count cannot go below zero) but can be $+100$ or more. The
+error distribution is right-skewed by construction, and squared loss treats
+$-3$ and $+3$ as equally likely and equally costly.
+
+*Constant variance — false, and quantifiably so.* For a Poisson count,
+$\mathrm{Var}(Y) = \mathbb{E}[Y]$: the variance *equals* the mean. A gene
+expressed at $10$ has standard deviation $\sqrt{10} = 3.16$; one expressed at
+$1000$ has $\sqrt{1000} = 31.6$. Squared loss assumes one $\sigma^2$ for both.
+
+Quantify what that costs. Maximum likelihood weights each residual by
+$1/\sigma_i^2$; squared loss weights every residual equally. So relative to the
+correct weighting, squared loss over-weights the high-expression gene by
+
+$$
+\frac{\sigma^2_{\text{high}}}{\sigma^2_{\text{low}}} = \frac{1000}{10} = 100
+$$
+
+**A hundredfold.** The fit is dominated by a handful of highly expressed genes
+whose residuals are large only because their noise is large. In practice these
+are housekeeping genes, and the model spends its capacity on the least
+informative part of the data.
+
+*Unbounded support — false.* The Gaussian assigns positive density to
+$y = -5$, an impossible count, and a squared-loss model will happily predict
+negative values. Every such prediction is not merely inaccurate but
+meaningless.
+
+**A fourth failure specific to this data.** Counts are discrete and heavily
+zero-inflated: a typical single-cell matrix is over $90\%$ zeros. A continuous
+symmetric density is a poor description of a distribution with an atom at zero
+holding most of its mass.
+
+**The loss that does not fail.** The negative log-likelihood of a **negative
+binomial**:
+
+$$p(y \mid \mu, \phi) = \binom{y + \phi^{-1} - 1}{y}\left(\frac{\mu}{\mu + \phi^{-1}}\right)^{y}\left(\frac{\phi^{-1}}{\mu + \phi^{-1}}\right)^{\phi^{-1}}$$
+
+with mean $\mu$ and variance $\mu + \phi\mu^2$. It is discrete, supported on
+non-negative integers, right-skewed, and its variance grows with its mean — with
+$\phi$ tuning how much faster than Poisson. Chapter VII.2 derives it as a
+Poisson–Gamma mixture and Chapter VII.5 builds a model on it.
+
+**The route from here to there is I.4.B02 run forwards.** Write the density, take
+the negative logarithm, discard the terms free of $\theta$, and what remains is
+the loss. That is the general procedure, and squared error is only the instance
+of it where the density happens to be Gaussian.
+
+**The habit this exercise is for.** Before choosing a loss, write down the
+noise model it implies and ask whether you believe it. Two minutes of that
+catches most of the failures in this exercise — and the failure mode when it is
+skipped is not a crash but a model that trains, converges, and is quietly fitting
+the wrong thing.
+</SolutionToggle>

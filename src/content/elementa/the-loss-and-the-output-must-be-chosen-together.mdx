@@ -1,0 +1,105 @@
+---
+chapter: neural-networks--losses
+proposition: 3
+statement: The loss and the output nonlinearity must be chosen together, because only one pairing cancels.
+claim: "Cross-entropy contributes a factor that is the exact reciprocal of the softmax or sigmoid derivative, so the two cancel and the gradient is p − y. Squared loss contributes no such factor, so the saturating derivative survives and drives the gradient toward zero precisely where the model is most wrong."
+given:
+  - every-loss-is-a-likelihood
+  - saturation-is-where-the-gradient-dies
+figure: FigGradientCancellation
+figureType: F
+level: mechanics
+notation:
+  - "softmax"
+  - "sigma"
+  - "nabla"
+apparatus:
+  - "0.MC.06"
+  - "0.MC.03"
+  - "0.NU.02"
+sources:
+  - title: "Pattern Recognition and Machine Learning, chapter 4.3"
+    url: https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+Two chains, from a logit *z* to a gradient, differing only in the loss.
+
+**Cross-entropy.** Differentiating the binary loss with respect to *p* and
+putting the bracket over a common denominator gives
+
+```
+∂L/∂p = (p − y) / [p(1 − p)]
+```
+
+The chain rule multiplies by d*p*/d*z* = σ′(*z*) = *p*(1 − *p*):
+
+```
+dL/dz = (p − y)/[p(1−p)] · p(1−p) = p − y
+```
+
+**The saturating factor cancels exactly.** The logarithm in the loss produced
+the reciprocal of the very quantity the sigmoid contributes.
+
+**Squared loss.** Here ∂*L*/∂*p* = (*p* − *y*), with no denominator to cancel
+anything:
+
+```
+dL/dz = (p − y) · p(1−p)
+```
+
+and the factor *p*(1 − *p*) ≤ ¼ survives.
+
+The multi-class case is the same argument with more indices: the softmax
+Jacobian's *p*ᵢ meets cross-entropy's 1/*p*ᵢ, and what remains after using
+Σ*y*ₖ = 1 is **p** − **y**. Problem I.4.B03 carries out every step.
+
+## What the surviving factor costs
+
+The two gradients differ by σ′(*z*), and σ′ collapses as |*z*| grows. With
+*y* = 1:
+
+| *z* | squared loss | cross-entropy | ratio |
+|---|---|---|---|
+| −5 | −6.60 × 10⁻³ | −0.99331 | 150 |
+| −10 | −4.54 × 10⁻⁵ | −0.99996 | 22,029 |
+| −20 | −2.06 × 10⁻⁹ | −1.00000 | 4.85 × 10⁸ |
+
+As the model becomes *more* wrong, cross-entropy's gradient grows toward its
+maximum magnitude of 1 while squared loss's shrinks toward zero. At a logit of
+−20 the model is as wrong as it is possible to be, and squared loss reports two
+parts in a billion.
+
+This is the saturation of Chapter I.3 arriving at the loss rather than at a
+hidden layer, and cross-entropy is the only common loss that removes it.
+
+## The general rule, and its scope
+
+**Check what the loss and the output nonlinearity do together, not separately.**
+Squared loss is entirely well behaved for regression on an unbounded output —
+problem I.1.B03 uses it with no difficulty at all. It is squared loss *composed
+with a saturating output* that fails. The pairing is the object, not either half.
+
+The check is one line: differentiate the composition and see whether the output's
+derivative cancels. Cross-entropy pairs with softmax and sigmoid because a
+logarithm inverts an exponential. No other pairing in this book has that
+property, and each has to be checked rather than assumed.
+
+## Corollary
+
+Two practical consequences, both about arithmetic rather than about calculus.
+
+**Compute the pair fused, never in two steps.** The clean result **p** − **y**
+is perfectly behaved even when *p*_c underflows to zero — but the intermediate
+1/*p*ᵢ is not, and neither is log(0). Every framework provides a single
+`cross_entropy(logits, target)` for this reason, computing −*z*_c + log Σ exp(*z*ⱼ)
+directly. Problem I.4.B04 shows the naive route raising an exception at an
+entirely ordinary logit of 37 in double precision, and 17 in float32.
+
+**The bounded gradient is a feature worth naming.** Every entry of **p** − **y**
+lies in [−1, 1], so this gradient can never explode however extreme the logits.
+Compare with the exploding recurrent gradients of Chapter I.9, where no such
+bound exists and clipping has to be imposed by hand.

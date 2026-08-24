@@ -1,0 +1,61 @@
+---
+/** Book I, Ch. IV, Prop. 3 — the factor that cancels, and the factor that does not. */
+---
+<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="gc-t gc-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="gc-t">Cross-entropy cancels the output derivative; squared loss keeps it</title>
+  <desc id="gc-d">
+    Two chains from a logit to a gradient. Along the top, cross-entropy
+    contributes a factor that is the reciprocal of the sigmoid derivative, so the
+    two cancel and the gradient is simply p minus y. Along the bottom, squared
+    loss contributes no such factor, so the sigmoid derivative survives and
+    shrinks the gradient toward zero exactly where the model is most wrong.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">cross-entropy</text>
+  <text x="0" y="176" class="t-lab">squared loss</text>
+
+  {/* top chain */}
+  <rect x="16" y="46" width="150" height="46" class="bx" />
+  <text x="91" y="68" class="t-sm" text-anchor="middle">∂L/∂p</text>
+  <text x="91" y="86" class="t-key" text-anchor="middle">(p−y) / p(1−p)</text>
+
+  <text x="182" y="74" class="t-md" text-anchor="middle">×</text>
+
+  <rect x="198" y="46" width="130" height="46" class="bx" />
+  <text x="263" y="68" class="t-sm" text-anchor="middle">dp/dz</text>
+  <text x="263" y="86" class="t-key" text-anchor="middle">p(1−p)</text>
+
+  <text x="344" y="74" class="t-md" text-anchor="middle">=</text>
+
+  <rect x="360" y="46" width="120" height="46" class="bx-fill" />
+  <text x="420" y="76" class="t-md" text-anchor="middle">p − y</text>
+
+  <line x1="120" y1="98" x2="278" y2="98" class="wire" style="stroke: var(--verdigris)" />
+  <text x="199" y="116" class="t-key" text-anchor="middle" style="fill: var(--verdigris)">these cancel exactly</text>
+
+  <text x="500" y="60" class="t-key">bounded by 1</text>
+  <text x="500" y="80" class="t-key">largest when most wrong</text>
+
+  <line x1="14" y1="146" x2="706" y2="146" class="wire-soft" />
+
+  {/* bottom chain */}
+  <rect x="16" y="200" width="150" height="46" class="bx" />
+  <text x="91" y="222" class="t-sm" text-anchor="middle">∂L/∂p</text>
+  <text x="91" y="240" class="t-key" text-anchor="middle">p − y</text>
+
+  <text x="182" y="228" class="t-md" text-anchor="middle">×</text>
+
+  <rect x="198" y="200" width="130" height="46" class="bx" />
+  <text x="263" y="222" class="t-sm" text-anchor="middle">dp/dz</text>
+  <text x="263" y="240" class="t-key" text-anchor="middle">p(1−p)</text>
+
+  <text x="344" y="228" class="t-md" text-anchor="middle">=</text>
+
+  <rect x="360" y="200" width="150" height="46" class="bx-fill" />
+  <text x="435" y="230" class="t-md" text-anchor="middle">(p−y)·p(1−p)</text>
+
+  <text x="530" y="214" class="t-key" style="fill: var(--oxblood-text)">nothing cancels</text>
+  <text x="530" y="234" class="t-key" style="fill: var(--oxblood-text)">→ 0 as the model worsens</text>
+
+  <text x="0" y="288" class="t-xs">at z = −10 with y = 1: cross-entropy sends −0.99996, squared loss sends −0.0000454</text>
+</svg>

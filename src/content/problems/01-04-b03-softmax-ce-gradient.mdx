@@ -1,0 +1,307 @@
+---
+id: "I.4.B03"
+kind: problem
+chapter: "I.4"
+scope: chapter
+variant: gradient
+difficulty: 3
+title: "Why softmax and cross-entropy compose to p − y"
+depends:
+  - "I.4.P02"
+  - "I.4.P03"
+reachesBack: []
+rounding: "All values rounded to 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-4-b03-softmax-ce-gradient.py"
+status: published
+---
+
+<Statement>
+Derive $\partial L/\partial \vec{z} = \vec{p} - \vec{y}$ for softmax followed by
+cross-entropy. Do not quote the result: obtain the softmax Jacobian from the
+quotient rule, apply the chain rule through it in full, and show explicitly
+which terms cancel and why. Then instantiate the whole calculation on three
+logits.
+</Statement>
+
+<Given>
+Logits $\vec{z} \in \R^{K}$, predictions and target
+
+$$
+p_i = \frac{e^{z_i}}{\sum_{j=1}^{K} e^{z_j}}, \qquad
+L = -\sum_{k=1}^{K} y_k \log p_k, \qquad
+\vec{y}\ \text{one-hot at class } c
+$$
+
+For the numeric part, $\vec{z} = (2, 1, 0)$ and $c = 1$ (the first entry).
+</Given>
+
+<Find>
+$\partial p_i / \partial z_j$ for all $i, j$; then $\partial L/\partial z_j$;
+then both evaluated at the given logits.
+</Find>
+
+<Strategy>
+Differentiate softmax by the quotient rule, splitting into the $i = j$ and
+$i \neq j$ cases because the numerator depends on $z_j$ only in the first. Then
+push the loss gradient through the Jacobian and use $\sum_k y_k = 1$ — that one
+identity is what collapses a $K \times K$ matrix product to a subtraction.
+</Strategy>
+
+<Solution>
+
+### Part 1 — the softmax Jacobian
+
+**Step 1 — name the denominator.** Let
+
+$$S = \sum_{j=1}^{K} e^{z_j}, \qquad\text{so}\qquad p_i = \frac{e^{z_i}}{S}$$
+
+The key observation before any differentiation: **$S$ depends on every logit**.
+So $p_i$ depends on $z_j$ even when $i \neq j$ — through the denominator alone.
+That is the whole source of the off-diagonal terms.
+
+Differentiating $S$:
+
+$$\frac{\partial S}{\partial z_j} = \frac{\partial}{\partial z_j}\sum_{m} e^{z_m} = e^{z_j}$$
+
+since every term but the $j$-th is constant in $z_j$.
+
+**Step 2 — the diagonal case, $i = j$.** Apply the quotient rule
+$\left(\frac{u}{v}\right)' = \frac{u'v - uv'}{v^2}$ with $u = e^{z_i}$ and
+$v = S$. Here $u' = e^{z_i}$ and $v' = e^{z_i}$:
+
+$$
+\frac{\partial p_i}{\partial z_i}
+= \frac{e^{z_i}\,S - e^{z_i}\,e^{z_i}}{S^{2}}
+$$
+
+Split the fraction into two, so each piece becomes a $p$:
+
+$$
+= \frac{e^{z_i}S}{S^{2}} - \frac{e^{z_i}e^{z_i}}{S^{2}}
+= \frac{e^{z_i}}{S} - \frac{e^{z_i}}{S}\cdot\frac{e^{z_i}}{S}
+= p_i - p_i^{2} = p_i(1 - p_i)
+$$
+
+**Step 3 — the off-diagonal case, $i \neq j$.** Now $u = e^{z_i}$ does **not**
+depend on $z_j$, so $u' = 0$ and only the denominator contributes:
+
+$$
+\frac{\partial p_i}{\partial z_j}
+= \frac{0\cdot S - e^{z_i}e^{z_j}}{S^{2}}
+= -\frac{e^{z_i}}{S}\cdot\frac{e^{z_j}}{S}
+= -p_i p_j
+$$
+
+**Step 4 — combine.** Using the Kronecker delta
+$\delta_{ij} = 1$ if $i=j$ and $0$ otherwise, the two cases are one formula:
+
+$$
+\frac{\partial p_i}{\partial z_j} = p_i\left(\delta_{ij} - p_j\right)
+\tag{0.MC.06}
+$$
+
+Check it reproduces both branches: at $i=j$, $p_i(1 - p_i)$ ✓; at $i \ne j$,
+$p_i(0 - p_j) = -p_ip_j$ ✓.
+
+### Part 2 — the chain rule through it
+
+**Step 5 — differentiate the loss with respect to the probabilities.**
+
+$$\frac{\partial L}{\partial p_i} = \frac{\partial}{\partial p_i}\left(-\sum_k y_k \log p_k\right) = -\frac{y_i}{p_i}$$
+
+only the $k = i$ term surviving.
+
+**Step 6 — assemble.** The chain rule for a vector-to-vector map sums over the
+intermediate index (<ApparatusRef ref="0.MC.03" />):
+
+$$
+\frac{\partial L}{\partial z_j}
+= \sum_{i=1}^{K} \frac{\partial L}{\partial p_i}\,\frac{\partial p_i}{\partial z_j}
+= \sum_{i=1}^{K} \left(-\frac{y_i}{p_i}\right) p_i\left(\delta_{ij} - p_j\right)
+$$
+
+**Step 7 — the first cancellation.** The factor $p_i$ from the Jacobian meets
+the $1/p_i$ from the loss and they cancel exactly:
+
+$$
+= -\sum_{i=1}^{K} y_i\left(\delta_{ij} - p_j\right)
+$$
+
+This is the step that makes the whole thing work, and it is why softmax and
+cross-entropy are paired rather than chosen independently. Had the loss been
+anything but a logarithm, the $1/p_i$ would not have appeared and nothing would
+cancel — which is exactly what problem I.4.B06 shows happening with MSE.
+
+**Step 8 — expand the bracket and use $\sum_i y_i = 1$.**
+
+$$
+= -\sum_{i} y_i \delta_{ij} + \sum_{i} y_i p_j
+$$
+
+The first sum has exactly one non-zero term, at $i = j$, giving $y_j$. In the
+second, $p_j$ does not depend on $i$, so it factors out:
+
+$$
+= -y_j + p_j \underbrace{\sum_{i} y_i}_{=\,1} = p_j - y_j
+$$
+
+$$
+\boxed{\ \frac{\partial L}{\partial \vec{z}} = \vec{p} - \vec{y}\ }
+\tag{I.4.4}
+$$
+
+$\blacksquare$
+
+**Where each hypothesis was used.** Step 7 needed the loss to be logarithmic.
+Step 8 needed $\vec{y}$ to sum to one — note it did **not** need $\vec{y}$ to be
+one-hot, so the result holds for soft targets and therefore for label smoothing
+unchanged. That is worth recording, because it is often stated as requiring
+one-hot labels and does not.
+
+### Part 3 — the numbers
+
+**Step 9 — softmax at $\vec{z} = (2,1,0)$.** Subtract the maximum first, which
+changes nothing and prevents overflow (<ApparatusRef ref="0.NU.02" />):
+
+$$
+e^{2-2} = 1.000000, \qquad
+e^{1-2} = 0.367879, \qquad
+e^{0-2} = 0.135335
+$$
+
+$$S = 1.000000 + 0.367879 + 0.135335 = 1.503215$$
+
+$$
+p_1 = \frac{1.000000}{1.503215} = 0.6652, \quad
+p_2 = \frac{0.367879}{1.503215} = 0.2447, \quad
+p_3 = \frac{0.135335}{1.503215} = 0.0900
+$$
+
+Sum: $0.6652 + 0.2447 + 0.0900 = 0.9999 \approx 1$ ✓ (the last digit is
+rounding).
+
+**Step 10 — the loss.** $\vec{y} = (1,0,0)$, so
+
+$$L = -\log p_1 = -\log 0.6652 = 0.4076 \text{ nats}$$
+
+**Step 11 — the full Jacobian, entry by entry.** Using
+$p_i(\delta_{ij} - p_j)$:
+
+$$
+\frac{\partial p_1}{\partial z_1} = 0.6652(1 - 0.6652) = 0.6652 \times 0.3348 = 0.2227
+$$
+$$
+\frac{\partial p_1}{\partial z_2} = -0.6652 \times 0.2447 = -0.1628
+$$
+$$
+\frac{\partial p_2}{\partial z_2} = 0.2447(1 - 0.2447) = 0.2447 \times 0.7553 = 0.1848
+$$
+
+and so on, giving
+
+$$
+\mat{J} =
+\begin{bmatrix}
++0.2227 & -0.1628 & -0.0599\\
+-0.1628 & +0.1848 & -0.0220\\
+-0.0599 & -0.0220 & +0.0819
+\end{bmatrix}
+$$
+
+**Step 12 — the long route, to confirm the short one.**
+$\partial L/\partial \vec{p} = (-1/0.6652,\ 0,\ 0) = (-1.5032,\ 0,\ 0)$.
+Multiplying by the Jacobian, only the first row contributes:
+
+$$
+\frac{\partial L}{\partial z_1} = (-1.5032)(0.2227) = -0.3348
+$$
+$$
+\frac{\partial L}{\partial z_2} = (-1.5032)(-0.1628) = +0.2447
+$$
+$$
+\frac{\partial L}{\partial z_3} = (-1.5032)(-0.0599) = +0.0900
+$$
+
+**Step 13 — the short route.**
+
+$$
+\vec{p} - \vec{y} = (0.6652 - 1,\ 0.2447 - 0,\ 0.0900 - 0) = (-0.3348,\ +0.2447,\ +0.0900)
+$$
+
+Identical to Step 12, entry for entry.
+
+</Solution>
+
+<Answer>
+$$
+\frac{\partial p_i}{\partial z_j} = p_i(\delta_{ij} - p_j),
+\qquad
+\frac{\partial L}{\partial \vec{z}} = \vec{p} - \vec{y}
+$$
+
+At $\vec{z} = (2,1,0)$ with the true class first:
+$\vec{p} = (0.6652, 0.2447, 0.0900)$, $L = 0.4076$ nats, and
+
+$$\frac{\partial L}{\partial \vec{z}} = (-0.3348,\ +0.2447,\ +0.0900)$$
+
+a dimensionless vector of length $K$, summing to zero.
+</Answer>
+
+<CheckNumeric snippet="i-4-b03-softmax-ce-gradient.py" verified>
+```python
+J = [[p[i] * ((1.0 if i == j else 0.0) - p[j]) for j in range(3)] for i in range(3)]
+dL_dp = [-(y[k] / p[k]) for k in range(3)]
+dL_dz = [sum(dL_dp[i] * J[i][j] for i in range(3)) for j in range(3)]
+```
+The snippet computes the gradient **twice** — once through the full Jacobian and
+once as $\vec{p} - \vec{y}$ — and prints `agreement: True`. That is the point of
+running it: the two routes are independent, so agreement is evidence rather than
+restatement.
+</CheckNumeric>
+
+<CheckSanity>
+**The gradient sums to zero.** $-0.3348 + 0.2447 + 0.0900 = -0.0001 \approx 0$.
+This must hold: softmax is invariant to adding a constant $\lambda$ to every
+logit, so the directional derivative along $(1,1,\dots,1)$ is zero, which is
+exactly $\sum_j \partial L/\partial z_j = 0$. A gradient not summing to zero
+means an arithmetic slip.
+
+**The signs are right.** The true class has a negative gradient, so gradient
+descent *raises* its logit; every other class has a positive gradient, so their
+logits are lowered. That is the behaviour the loss should produce, read directly
+off the sign pattern.
+
+**The magnitudes are bounded.** Every entry of $\vec{p} - \vec{y}$ lies in
+$[-1, 1]$, since $p_j \in (0,1)$ and $y_j \in \{0,1\}$. **The gradient can never
+explode**, whatever the logits. Contrast with the MSE-through-sigmoid gradient of
+I.4.B06, which is bounded too — but by a number that shrinks to zero exactly when
+it is needed.
+
+**The Jacobian is symmetric with zero row sums.** $J_{12} = J_{21} = -0.1628$,
+and $0.2227 - 0.1628 - 0.0599 = 0.0000$. Both properties follow from the formula:
+$p_i(\delta_{ij} - p_j)$ is symmetric because $p_ip_j$ is, and rows sum to
+$p_i(1 - \sum_j p_j) = p_i(1-1) = 0$.
+</CheckSanity>
+
+<Breaks>
+The clean result needs softmax and cross-entropy to be **fused**. Computing
+$\vec{p}$ first, storing it, and then computing $-\log p_c$ gives the same number
+but a worse computation: when $p_c$ underflows to $0$ the logarithm is $-\infty$,
+and the $1/p_i$ in Step 5 is a division by zero even though the *final* answer
+$\vec{p}-\vec{y}$ is perfectly well behaved.
+
+This is why every framework has a single `cross_entropy(logits, target)` rather
+than a softmax followed by a log — the fused version computes
+$z_c - \log\sum_j e^{z_j}$ directly via log-sum-exp and never forms the
+intermediate that overflows. The mathematics is identical; the arithmetic is not,
+and I.4.B04 makes the same point for the binary case in detail.
+</Breaks>
+
+<Variation>
+Redo Steps 5–8 with a label-smoothed target
+$\vec{y}' = (1-\varepsilon)\vec{y} + \varepsilon/K$. Verify the derivation still
+goes through, state the resulting gradient, and find the logit gap at which it
+vanishes for $\varepsilon = 0.1$, $K = 3$.
+</Variation>

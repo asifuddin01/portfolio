@@ -1,0 +1,21 @@
+     r       r^2      |r|     huber
+   0.5    0.2500   0.5000    0.1250
+  -0.8    0.6400   0.8000    0.3200
+   0.2    0.0400   0.2000    0.0200
+  -0.3    0.0900   0.3000    0.0450
+   4.0   16.0000   4.0000    3.5000
+
+   sum   17.0200   5.8000    4.0100
+  mean    3.4040   1.1600    0.8020
+
+outlier share of the total
+  MSE      94.0%
+  MAE      69.0%
+  Huber    87.3%
+
+derivative sent back for the outlier (per-example, before the 1/n)
+  MSE      8.0000
+  MAE      1.0000
+  Huber    1.0000
+
+without the outlier: MSE 0.2550  MAE 0.4500  Huber 0.1275

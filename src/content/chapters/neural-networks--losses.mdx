@@ -4,41 +4,161 @@ book: neural-networks
 order: 4
 title: "Loss Functions"
 summary: "A loss is the sentence 'here is what wrong means', written so a derivative exists."
-claim: "Every loss is a negative log-likelihood under some noise model, and choosing a loss is choosing that model."
+claim: "Every loss is a negative log-likelihood under some noise model, and choosing a loss is choosing that model whether or not anyone says so."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "Loss and risk"
+  - "Mean squared error"
+  - "Mean absolute error"
+  - "Huber loss"
+  - "Binary cross-entropy"
+  - "Categorical cross-entropy"
+  - "Logits and log-sum-exp"
+  - "Class weighting"
+  - "Label smoothing"
+definitions:
+  - n: 1
+    term: "Loss function"
+    statement: "A loss ℓ : 𝒴 × 𝒴 → ℝ₊ assigns one non-negative number to a single prediction–target pair, smaller meaning better. It must be differentiable in its first argument almost everywhere, because that argument is what the optimiser moves. Nothing in the data selects it."
+    introduces:
+      - "L_loss"
+  - n: 2
+    term: "Reduction"
+    statement: "The reduction is the function turning per-example losses into the one scalar that is differentiated — almost always the arithmetic mean. The choice is invisible in the formula and decides how much each example contributes to the gradient."
+    introduces: []
+  - n: 3
+    term: "Mean squared error"
+    statement: "MSE = (1/n) Σ (ŷᵢ − yᵢ)². Its derivative with respect to a residual is proportional to that residual, so a residual twice as large pulls twice as hard and one ten times as large pulls ten times as hard."
+    introduces: []
+  - n: 4
+    term: "Mean absolute error"
+    statement: "MAE = (1/n) Σ |ŷᵢ − yᵢ|. Its derivative with respect to a residual is ±1 regardless of magnitude, so every example pulls equally hard whatever its error. It is not differentiable at zero."
+    introduces: []
+  - n: 5
+    term: "Huber loss"
+    statement: "Huber_δ(r) = ½r² for |r| ≤ δ and δ(|r| − ½δ) otherwise. It is quadratic near zero and linear beyond δ, so it is differentiable everywhere and its derivative is bounded by δ."
+    introduces: []
+  - n: 6
+    term: "Logit"
+    statement: "A logit is an unnormalised real-valued score, before any function maps it to a probability. Logits live on all of ℝ; probabilities live in (0,1). Every numerically sound loss in this chapter is computed from logits, never from probabilities."
+    introduces: []
+  - n: 7
+    term: "Softmax"
+    statement: "softmax(z)ᵢ = e^{zᵢ} / Σⱼ e^{zⱼ}, mapping a logit vector to the probability simplex. It is invariant to adding a constant to every logit, which is why it can be computed after subtracting the maximum without changing the answer."
+    introduces:
+      - "softmax"
+  - n: 8
+    term: "Cross-entropy"
+    statement: "For a target distribution p and a predicted q, H(p, q) = −Σ p(x) log q(x). With p one-hot it collapses to −log q(c) for the true class c, so all but one term of the sum vanish."
+    introduces:
+      - "Hent"
+  - n: 9
+    term: "Label smoothing"
+    statement: "Label smoothing replaces the one-hot target by (1 − ε)·onehot + ε/K applied uniformly. It caps the reward for confidence: the loss is then minimised at a finite logit gap rather than at an infinite one."
+    introduces: []
 beforeYouStart:
   - "I.3"
   - "0.IT.02"
   - "0.PR.06"
 conceptFigure: FigLossLandscape
-problemStatement: "Training needs a scalar to descend. Which scalar is not a detail: it fixes the implied noise model, the Bayes-optimal predictor, and whether the gradient survives at the point where the model is most wrong."
-formalResults: []
-assumptions: []
+problemStatement: "Training needs one scalar to descend. Which scalar is not a detail: it fixes the implied noise model, it fixes what the optimal prediction even is, and — as this chapter's counterexample shows — it decides whether any gradient at all reaches a model at the point where it is most confidently wrong."
+formalResults:
+  - id: "I.4.T1"
+    name: "Losses as negative log-likelihoods"
+    statement: "Minimising MSE is exactly maximising the likelihood of a Gaussian observation model with fixed variance; minimising cross-entropy is exactly maximising the likelihood of a categorical model. In both cases the loss is −log p(y | x, θ) up to an additive constant and a positive scale, neither of which changes the minimiser."
+    doesNotPromise: "It does not promise the implied noise model is true of your data. Choosing MSE asserts symmetric, constant-variance, unbounded Gaussian errors — an assertion that is false for counts, for bounded quantities, and for anything heavy-tailed. The correspondence is a fact about the algebra, not evidence about the world, and it is most dangerous when nobody realises an assertion was made."
+  - id: "I.4.T2"
+    name: "Bayes-optimal predictors"
+    statement: "Under squared loss the risk-minimising prediction at x is the conditional mean 𝔼[Y | X = x]; under absolute loss it is a conditional median; under cross-entropy it is the true conditional distribution p(· | x). Each is derived by differentiating the expected loss and setting it to zero."
+    doesNotPromise: "These describe the minimiser over all measurable functions, not over the hypothesis class the model actually searches. A network trained on squared loss approaches the conditional mean only insofar as the mean lies in its class and the optimiser finds it — two conditions I.1.T1 and I.3.T2 already warned are separate. They also assume the training distribution equals the deployment one."
+assumptions:
+  - statement: "The implied noise model of the chosen loss matches the data — Gaussian for MSE, categorical for cross-entropy."
+    testedBy: "I.4.X07"
+  - statement: "The reduction is a plain mean, so every example contributes equally to the gradient."
+    testedBy: "I.4.X08"
 owns:
   - "loss-function"
   - "cross-entropy"
   - "loss-as-negative-log-likelihood"
+  - "bayes-optimal-predictor"
+  - "robust-regression-loss"
+  - "logit-space-computation"
+  - "class-weighting"
 borrows:
   - "softmax-jacobian"
   - "entropy"
   - "activation-function"
-implementation: false
-failureModes: []
-references: []
+  - "saturation"
+  - "chain-rule"
+  - "floating-point"
+implementation: true
+failureModes:
+  - "Squared loss through a sigmoid stops sending gradient exactly where the model is most wrong. At logit z = −10 with target 1, MSE's gradient is 4.54e-5 while cross-entropy's is 0.99996 — a ratio of 22,029. At z = −20 the ratio is 4.85e+8. The model is as wrong as it can be and MSE reports almost nothing."
+  - "Naive binary cross-entropy raises an exception on ordinary logits. Computing p = sigmoid(z) then log(p) at z = −800 overflows exp(800) to infinity, giving p = 0 and log(0); at z = +800 with target 0, sigmoid rounds to exactly 1.0 and log(1 − 1) fails. The stable identity returns 800.000000 in both cases."
+references:
+  - title: "Robust Estimation of a Location Parameter"
+    authors: "Huber"
+    year: 1964
+    venue: "Annals of Mathematical Statistics 35(1)"
+    url: https://doi.org/10.1214/aoms/1177703732
+  - title: "Pattern Recognition and Machine Learning, chapter 1.5 and 4.3"
+    authors: "Bishop"
+    year: 2006
+    venue: "Springer"
+    url: https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/
+  - title: "Rethinking the Inception Architecture for Computer Vision"
+    authors: "Szegedy, Vanhoucke, Ioffe, Shlens and Wojna"
+    year: 2016
+    venue: "CVPR"
+    url: https://arxiv.org/abs/1512.00567
+  - title: "Focal Loss for Dense Object Detection"
+    authors: "Lin, Goyal, Girshick, He and Dollár"
+    year: 2017
+    venue: "ICCV"
+    url: https://arxiv.org/abs/1708.02002
+  - title: "Class-Balanced Loss Based on Effective Number of Samples"
+    authors: "Cui, Jia, Lin, Song and Belongie"
+    year: 2019
+    venue: "CVPR"
+    url: https://arxiv.org/abs/1901.05555
+  - title: "When Does Label Smoothing Help?"
+    authors: "Müller, Kornblith and Hinton"
+    year: 2019
+    venue: "NeurIPS"
+    url: https://arxiv.org/abs/1906.02629
 notation:
   - "L_loss"
   - "E"
   - "softmax"
   - "Hent"
   - "sigma"
+  - "nabla"
+  - "Var"
+  - "B"
 apparatus:
   - "0.IT.01"
   - "0.IT.02"
   - "0.PR.06"
   - "0.MC.06"
   - "0.NU.02"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.4.1"
+    formula: "ℓ_MSE(r) = ½r²,   dℓ/dr = r"
+    gloss: "The pull grows without bound with the error."
+  - id: "I.4.2"
+    formula: "ℓ_MAE(r) = |r|,   dℓ/dr = sign(r)"
+    gloss: "Every example pulls equally hard, however wrong it is."
+  - id: "I.4.3"
+    formula: "Huber_δ(r) = ½r² if |r| ≤ δ,  else δ(|r| − ½δ)"
+    gloss: "Quadratic where precision matters, linear where outliers live."
+  - id: "I.4.4"
+    formula: "∂L/∂z = p − y"
+    gloss: "Softmax and cross-entropy compose into the simplest gradient in the book."
+  - id: "I.4.5"
+    formula: "BCE(z, y) = max(z, 0) − z·y + log(1 + e^{−|z|})"
+    gloss: "The same number as the naive form, computed where the arithmetic survives."
+  - id: "I.4.6"
+    formula: "w_c = N / (K · n_c)"
+    gloss: "Weights that make every class contribute the same gradient mass."
+status: published
 ---

@@ -1,0 +1,39 @@
+---
+/** Book I, Ch. IV, Prop. 2 — choosing a loss is choosing a noise model. */
+const ROWS = [
+  { d: 'Gaussian, fixed σ²', l: 'squared error', w: 'symmetric · constant spread · unbounded' },
+  { d: 'Laplace', l: 'absolute error', w: 'symmetric · heavy tails' },
+  { d: 'Categorical', l: 'cross-entropy', w: 'one of K, exclusive' },
+  { d: 'Bernoulli', l: 'binary cross-entropy', w: 'yes or no' },
+  { d: 'Negative binomial', l: 'NB likelihood', w: 'counts · variance grows with mean' },
+];
+---
+<svg class="fig" viewBox="0 0 720 290" role="img" aria-labelledby="ll-t ll-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="ll-t">Every loss is the negative log-likelihood of some noise model</title>
+  <desc id="ll-d">
+    A table pairing each observation model with the loss it produces once its
+    negative log-likelihood is taken and the constants discarded. Choosing the
+    loss on the right asserts the model on the left, whether or not the
+    assertion was intended.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">choose a loss and you have chosen a noise model</text>
+
+  <text x="16" y="62" class="t-key">assumed distribution</text>
+  <text x="286" y="62" class="t-key">resulting loss</text>
+  <text x="452" y="62" class="t-key">what it asserts about the data</text>
+  <line x1="14" y1="72" x2="706" y2="72" class="wire" />
+
+  {ROWS.map((r, i) => (
+    <g>
+      <text x="16" y={98 + i * 34} class="t-sm">{r.d}</text>
+      <line x1="250" y1={93 + i * 34} x2="274" y2={93 + i * 34} class="wire-soft" />
+      <polygon points={`274,${88 + i * 34} 286,${93 + i * 34} 274,${98 + i * 34}`} class="head" />
+      <text x="292" y={98 + i * 34} class="t-sm">{r.l}</text>
+      <text x="452" y={98 + i * 34} class="t-xs">{r.w}</text>
+      <line x1="14" y1={110 + i * 34} x2="706" y2={110 + i * 34} class="grid" />
+    </g>
+  ))}
+
+  <text x="16" y="272" class="t-em">−log p(y | x, θ), constants discarded — that is the whole derivation</text>
+</svg>

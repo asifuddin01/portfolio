@@ -109,6 +109,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigLossShapes
+          - FigLossIsALikelihood
+          - FigGradientCancellation
           - FigSaturation
           - FigDeadUnit
           - FigSmoothVsKink
@@ -328,6 +331,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigLossShapes
+          - FigLossIsALikelihood
+          - FigGradientCancellation
           - FigSaturation
           - FigDeadUnit
           - FigSmoothVsKink
@@ -975,6 +981,9 @@ collections:
           - FigSignedDistance
           - FigPerceptronUpdate
           - FigXorSquare
+          - FigLossShapes
+          - FigLossIsALikelihood
+          - FigGradientCancellation
           - FigSaturation
           - FigDeadUnit
           - FigSmoothVsKink

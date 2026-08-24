@@ -1,0 +1,96 @@
+---
+chapter: neural-networks--losses
+proposition: 4
+statement: The reduction is part of the loss, and it silently sets the learning rate.
+claim: "Turning per-example losses into one scalar is a choice that never appears in the loss's formula. Summing rather than averaging multiplies every gradient by the batch size, and dividing by the wrong count under masking changes the effective learning rate from step to step."
+given:
+  - a-loss-is-a-choice-not-a-discovery
+figure: FigLossShapes
+figureType: C
+level: mechanics
+notation:
+  - "L_loss"
+  - "B"
+  - "nabla"
+apparatus:
+  - "0.OP.02"
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+Every loss in this chapter has been written per example. Training needs one
+number, so the per-example values are reduced — and the reduction is nowhere in
+the formula.
+
+The two candidates differ by a factor of *n*:
+
+```
+L_mean = (1/n) Σ ℓᵢ         L_sum = Σ ℓᵢ = n · L_mean
+```
+
+Differentiation is linear, so the factor passes straight through:
+
+```
+∇L_sum = n · ∇L_mean
+```
+
+and therefore
+
+```
+θ ← θ − η ∇L_sum  =  θ − (nη) ∇L_mean
+```
+
+**Summing rather than averaging is training at learning rate *nη*.** Not
+approximately: identically. At *n* = 32 with η = 10⁻³ the effective rate is
+3.2 × 10⁻²; at *n* = 256 it is 2.56 × 10⁻¹. Same code, same configuration file,
+an eightfold difference from the batch size alone.
+
+## The version that varies within a run
+
+The fixed factor is merely a trap. The dangerous case is a factor that changes
+from step to step.
+
+Consider token-level cross-entropy over padded sequences, where the
+implementation sums per-token losses and divides by the **batch size** rather
+than the **token count**:
+
+```
+L = (1/B) Σ_b Σ_t ℓ_bt
+```
+
+A batch of long sequences contributes more token losses over the same
+denominator, so its gradient is larger. With *B* = 4, a batch averaging 500
+tokens per sequence carries an effective per-token weight of 500; one averaging
+50 tokens carries 50. **A tenfold swing in effective learning rate, decided by
+which sequences happened to be sampled.**
+
+Length bucketing — grouping similar lengths for throughput — makes it systematic
+rather than random: short buckets train at one rate and long buckets at another,
+and the schedule nobody wrote interacts with the schedule they did.
+
+Problem I.4.B07 puts numbers on the simpler version: at 15% padding, reducing
+over all positions rather than valid ones understates loss and gradient by
+17.6%.
+
+## Corollary
+
+**The correct reduction is a ratio whose denominator tracks its numerator.**
+
+```
+L = ( Σ m_bt · ℓ_bt ) / ( Σ m_bt )
+```
+
+with *m* the mask. Then the effective per-token weight is 1 whatever the lengths
+or the padding.
+
+**The check is one line: log the denominator.** If it varies across steps by more
+than the padding fraction can explain, the reduction is wrong. Nothing else in
+the run will say so — the loss curve looks like a loss curve, training converges,
+and the model is simply trained at a rate that drifted.
+
+This is why the reduction belongs in a chapter about losses rather than in one
+about engineering. It is not part of the definition of cross-entropy, which is
+exactly why it is assumed rather than stated, and why writing the assumption
+down is the whole remedy.

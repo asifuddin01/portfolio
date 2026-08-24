@@ -77,6 +77,10 @@
 - id: loss-function
 - id: cross-entropy
 - id: loss-as-negative-log-likelihood
+- id: bayes-optimal-predictor
+- id: robust-regression-loss
+- id: logit-space-computation
+- id: class-weighting
 - id: affine-layer
 - id: multilayer-perceptron
 - id: depth-width-tradeoff

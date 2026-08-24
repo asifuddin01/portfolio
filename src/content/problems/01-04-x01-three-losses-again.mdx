@@ -1,0 +1,65 @@
+---
+id: "I.4.X01"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Three losses, two moderate outliers"
+depends:
+  - "I.4.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-4-x01-three-losses-again.py"
+status: published
+---
+
+Compute MSE, MAE and $\mathrm{Huber}_1$ on the residuals
+$(1.0,\ -1.5,\ 0.4,\ -2.5,\ 0.1)$. Say which branch of Huber each residual
+takes, and what share of each total the two residuals with $|r| > 1$ take
+together.
+
+<Hint>
+Decide the branches before computing anything, as in I.4.B01.
+</Hint>
+
+<SolutionToggle>
+
+**Branches first.** $|1.0| = 1.0 \le 1$ — quadratic, exactly at the join.
+$|{-1.5}| > 1$ and $|{-2.5}| > 1$ — linear. $|0.4|$ and $|0.1|$ — quadratic.
+
+| $r$ | $r^2$ | $|r|$ | $\mathrm{Huber}_1$ | branch |
+|---|---|---|---|---|
+| $1.0$ | $1.0000$ | $1.0000$ | $0.5000$ | quadratic |
+| $-1.5$ | $2.2500$ | $1.5000$ | $1.0000$ | linear |
+| $0.4$ | $0.1600$ | $0.4000$ | $0.0800$ | quadratic |
+| $-2.5$ | $6.2500$ | $2.5000$ | $2.0000$ | linear |
+| $0.1$ | $0.0100$ | $0.1000$ | $0.0050$ | quadratic |
+| **sum** | $9.6700$ | $5.5000$ | $3.5850$ | |
+| **mean** | $1.9340$ | $1.1000$ | $0.7170$ | |
+
+**Working the two linear-branch entries.**
+$\mathrm{Huber}_1(-1.5) = (1)(1.5 - 0.5) = 1.0000$ and
+$\mathrm{Huber}_1(-2.5) = (1)(2.5 - 0.5) = 2.0000$.
+
+**The shares.** The two large residuals contribute
+$2.25 + 6.25 = 8.50$ of $9.67$; $1.5 + 2.5 = 4.0$ of $5.5$; and
+$1.0 + 2.0 = 3.0$ of $3.585$:
+
+$$
+\text{MSE } 87.9\%, \qquad \text{MAE } 72.7\%, \qquad \text{Huber } 83.7\%
+$$
+
+**What is different from I.4.B01.** There, one extreme outlier at $r = 4$ took
+$94\%$ of MSE. Here two moderate ones at $1.5$ and $2.5$ take $87.9\%$. The
+concentration is milder because the outliers are milder — MSE's dominance grows
+with the *square* of how unusual the outlier is, so it is a problem of degree,
+not a switch that flips.
+
+**The residual at exactly $|r| = 1$ is worth noticing.** It sits on the join, and
+both branches give $0.5$: quadratic $\tfrac12(1)^2 = 0.5$, linear
+$(1)(1 - 0.5) = 0.5$. Continuity holds, as I.4.B01's sanity check argued it must.
+An implementation that used $<$ where it should use $\le$ would still give the
+right answer here — which is exactly why such a bug survives testing.
+</SolutionToggle>

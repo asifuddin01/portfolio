@@ -32,7 +32,7 @@
   symbol: "B"
   meaning: Batch size.
   kind: scalar
-  introducedIn: "I.7"
+  introducedIn: "I.4"
 - id: h
   symbol: "h"
   meaning: Number of attention heads.
@@ -213,7 +213,7 @@
   symbol: "Var"
   meaning: Variance.
   kind: operator
-  introducedIn: "I.7"
+  introducedIn: "I.1"
   apparatus: "0.PR.03"
 - id: Hent
   symbol: "ℋ"

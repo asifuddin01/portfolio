@@ -1,0 +1,12 @@
+       z  y     sigmoid(z)          naive       stable
+     2.0  1   8.807971e-01       0.126928     0.126928
+     0.0  1   5.000000e-01       0.693147     0.693147
+    -5.0  1   6.692851e-03       5.006715     5.006715
+   -50.0  1   1.928750e-22      50.000000    50.000000
+  -800.0  1       overflow  OverflowError   800.000000
+   800.0  0   1.000000e+00     ValueError   800.000000
+
+the identity, checked where both routes work
+  z=  2.0  naive 0.1269280110  stable 0.1269280110  |diff| 2.78e-17
+  z=  0.0  naive 0.6931471806  stable 0.6931471806  |diff| 0.00e+00
+  z= -5.0  naive 5.0067153485  stable 5.0067153485  |diff| 0.00e+00

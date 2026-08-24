@@ -1,0 +1,35 @@
+exponentials (shifted by the max, 0.NU.02)
+  z0 = +2.0   exp(z0 - 2) = 1.000000
+  z1 = +1.0   exp(z1 - 2) = 0.367879
+  z2 = +0.0   exp(z2 - 2) = 0.135335
+  sum S = 1.503215
+
+p = softmax(z)
+  p0 = 0.6652
+  p1 = 0.2447
+  p2 = 0.0900
+  sum   = 1.0000
+
+loss = -log p[0] = 0.4076
+
+softmax Jacobian  dp_i/dz_j
+  [+0.2227  -0.1628  -0.0599]
+  [-0.1628  +0.1848  -0.0220]
+  [-0.0599  -0.0220  +0.0819]
+
+dL/dp
+  -1.5032
+  -0.0000
+  -0.0000
+
+dL/dz  by the full chain rule
+  -0.3348
+  +0.2447
+  +0.0900
+dL/dz  as p - y
+  -0.3348
+  +0.2447
+  +0.0900
+
+agreement: True
+sum of dL/dz = -0.0000

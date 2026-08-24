@@ -1,0 +1,85 @@
+---
+chapter: neural-networks--losses
+proposition: 2
+statement: Every loss is the negative log-likelihood of some noise model, said or not.
+claim: "Minimising squared error is maximum likelihood under a fixed-variance Gaussian; minimising cross-entropy is maximum likelihood under a categorical. The correspondence is an identity, so choosing a loss asserts a distribution — and the assertion is most dangerous when nobody notices it was made."
+given:
+  - a-loss-is-a-choice-not-a-discovery
+figure: FigLossIsALikelihood
+figureType: A
+level: mechanics
+notation:
+  - "L_loss"
+  - "E"
+  - "Var"
+apparatus:
+  - "0.PR.06"
+  - "0.IT.02"
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+Write the likelihood of a dataset under a Gaussian observation model, take a
+logarithm to turn the product into a sum, and negate. Problem I.4.B02 does this
+in full; the result is
+
+```
+−log p(𝒟 | θ) = (n/2)·log(2πσ²) + (1/2σ²)·Σ rᵢ²
+```
+
+The first term contains no *θ*, so it shifts the objective without moving its
+minimum. The second's prefactor is a positive constant, so it rescales without
+moving the minimum either. Discard both and what remains is Σ *rᵢ*² — squared
+error.
+
+The categorical case is shorter because there is nothing to discard: the
+indicator exponent collapses the product to *q*_c, and the negative logarithm is
+cross-entropy exactly.
+
+## Reading it backwards
+
+The direction that matters is the uncomfortable one. If minimising squared error
+*is* maximum likelihood under a Gaussian, then **choosing squared error asserts
+a Gaussian**. Three properties come with that assertion:
+
+**Symmetry.** Over-prediction and under-prediction cost the same. False whenever
+they have different consequences.
+
+**Constant variance.** One σ² for every input. False whenever the noise scales
+with the signal — counts, prices, concentrations.
+
+**Unbounded support.** The observation may take any real value. False for
+anything bounded: a probability, a proportion, a non-negative count.
+
+None of these is stated when a codebase writes `mse_loss`. All three are
+asserted.
+
+## Why this is not pedantry
+
+Exercise I.4.X07 works the case in full for sequencing counts, where a Poisson
+variance equal to the mean means squared error over-weights a highly expressed
+gene by a factor of a hundred relative to correct maximum likelihood. The model
+trains, converges, and spends its capacity on the least informative part of the
+data. Nothing fails; the result is simply wrong in a way no loss curve reveals.
+
+The repair is not a trick. It is this proposition run forwards with the right
+density: write the distribution, take the negative logarithm, discard the terms
+free of *θ*. Chapter VII.2 does exactly that for the negative binomial, and the
+loss that comes out is not one anybody would have guessed.
+
+## Corollary
+
+Two habits follow.
+
+**Before choosing a loss, write down the noise model it implies and say whether
+you believe it.** Two minutes of this catches most of the failures, and the
+failure mode when it is skipped is silent.
+
+**A constant discarded under an assumption is not inert.** The term
+(*n*/2)·log(2πσ²) is dropped because σ² is fixed. Learn the variance — predict it
+as a second output — and that term becomes ½Σ log σᵢ², which depends on *θ* and
+cannot be dropped. Without it the model claims infinite variance everywhere and
+drives the loss to −∞. The constant was never inert; it was inert *given a
+hypothesis*, and the hypothesis was never written down.

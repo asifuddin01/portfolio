@@ -1,0 +1,123 @@
+---
+id: "I.4.X09"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "Focal loss, and the gradient it reshapes"
+depends:
+  - "I.4.P01"
+  - "I.4.P03"
+rounding: "5 d.p. for probabilities and losses; 6 d.p. for gradients."
+hasSolution: true
+verified: true
+snippet: "i-4-x09-focal-loss.py"
+status: published
+---
+
+Focal loss is $\mathrm{FL} = -(1-p_t)^{\gamma}\log p_t$, where $p_t$ is the
+probability assigned to the true class. Tabulate the modulating factor, derive
+$\mathrm{d}\,\mathrm{FL}/\mathrm{d}z$ for the binary case, evaluate at five
+logits with $\gamma = 2$, and say how it differs from the class weighting of
+I.4.B05.
+
+<Hint>
+Use the product rule on $-(1-p)^{\gamma}\log p$, then chain through
+$\mathrm{d}p/\mathrm{d}z = p(1-p)$.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the modulating factor.**
+
+| $p_t$ | $\gamma = 0$ | $\gamma = 1$ | $\gamma = 2$ | $\gamma = 5$ |
+|---|---|---|---|---|
+| $0.10$ | $1.00000$ | $0.90000$ | $0.81000$ | $0.59049$ |
+| $0.50$ | $1.00000$ | $0.50000$ | $0.25000$ | $0.03125$ |
+| $0.90$ | $1.00000$ | $0.10000$ | $0.01000$ | $0.00001$ |
+| $0.99$ | $1.00000$ | $0.01000$ | $0.00010$ | $0.00000$ |
+
+At $\gamma = 0$ the factor is $1$ everywhere and focal loss **is** cross-entropy.
+As $\gamma$ grows, well-classified examples ($p_t$ near $1$) are suppressed
+sharply while hard ones ($p_t$ near $0$) are barely touched: at $\gamma = 2$ the
+suppression is $100\times$ at $p_t = 0.9$ and only $1.23\times$ at $p_t = 0.1$.
+
+**Step 2 — derive the gradient.** Write $L = -(1-p)^{\gamma}\log p$ with $y=1$,
+so $p_t = p$. By the product rule on the two $p$-dependent factors:
+
+$$
+\frac{\partial L}{\partial p}
+= \underbrace{\gamma(1-p)^{\gamma-1}\log p}_{\text{from }(1-p)^\gamma}
+\;\underbrace{-\;\frac{(1-p)^{\gamma}}{p}}_{\text{from }\log p}
+$$
+
+taking care with the sign: $\frac{\mathrm{d}}{\mathrm{d}p}(1-p)^{\gamma} = -\gamma(1-p)^{\gamma-1}$,
+and the leading minus of $L$ flips it back.
+
+**Step 3 — chain through the sigmoid.** With $\mathrm{d}p/\mathrm{d}z = p(1-p)$:
+
+$$
+\frac{\mathrm{d}L}{\mathrm{d}z}
+= \left[\gamma(1-p)^{\gamma-1}\log p - \frac{(1-p)^{\gamma}}{p}\right] p(1-p)
+$$
+
+Distribute $p(1-p)$ into the bracket:
+
+$$
+= \gamma\,p\,(1-p)^{\gamma}\log p \;-\; (1-p)^{\gamma+1}
+$$
+
+and factor out $(1-p)^{\gamma}$:
+
+$$
+\boxed{\ \frac{\mathrm{d}L}{\mathrm{d}z} = (1-p)^{\gamma}\Big(\gamma\,p\log p + p - 1\Big)\ }
+$$
+
+**Check it reduces correctly.** At $\gamma = 0$: $(1)(0 + p - 1) = p - 1 = p - y$,
+which is I.4.4 ✓.
+
+**Step 4 — evaluate at $\gamma = 2$, $y = 1$.**
+
+| $z$ | $p$ | CE | FL | $\mathrm{dCE}/\mathrm{d}z$ | $\mathrm{dFL}/\mathrm{d}z$ |
+|---|---|---|---|---|---|
+| $-4.0$ | $0.01799$ | $4.01815$ | $3.874907$ | $-0.98201$ | $-1.086396$ |
+| $-2.0$ | $0.11920$ | $2.12693$ | $1.650078$ | $-0.88080$ | $-1.076714$ |
+| $0.0$ | $0.50000$ | $0.69315$ | $0.173287$ | $-0.50000$ | $-0.298287$ |
+| $2.0$ | $0.88080$ | $0.12693$ | $0.001804$ | $-0.11920$ | $-0.004871$ |
+| $4.0$ | $0.98201$ | $0.01815$ | $0.000006$ | $-0.01799$ | $-0.000017$ |
+
+**Step 5 — read the last column.** At $z = 4$ — an example the model already
+gets right — cross-entropy still sends $-0.01799$, while focal loss sends
+$-0.000017$: **a thousandfold smaller**. At $z = -4$ — an example it gets wrong —
+focal loss sends $-1.086$, *larger* in magnitude than cross-entropy's $-0.982$.
+
+So focal loss does not merely rescale; it **reorders**. Under cross-entropy the
+hard example's gradient is $55\times$ the easy one's; under focal loss it is
+$64{,}000\times$.
+
+**Step 6 — how this differs from class weighting.**
+
+| | class weighting (I.4.B05) | focal loss |
+|---|---|---|
+| computed from | the class counts | the current prediction |
+| fixed during training | yes | no |
+| distinguishes easy from hard | no | yes |
+| needs counts | yes | no |
+
+Class weighting asks *which class is this?* and applies a constant. Focal loss
+asks *how wrong is the model here, right now?* and applies a factor that changes
+every step.
+
+That difference is exactly the objection raised in I.4.B05's *Where this breaks*:
+static weights correct a static imbalance in a quantity that is not static. Once
+the model has learned the majority class, those examples' gradients have already
+collapsed by (I.4.4), and the fixed weight keeps suppressing them anyway. Focal
+loss suppresses them because they are easy, and stops suppressing anything that
+becomes hard again.
+
+**The cost.** $\gamma$ is a new hyperparameter with no principled setting — the
+original paper's $\gamma = 2$ was chosen by sweep — and the loss no longer has
+the log-likelihood interpretation of I.4.T1. It is a heuristic reshaping of a
+principled loss, and worth using with that clearly in view.
+</SolutionToggle>

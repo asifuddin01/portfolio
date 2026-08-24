@@ -1,0 +1,77 @@
+---
+chapter: neural-networks--losses
+proposition: 1
+statement: A loss is a choice about what wrong means, and its derivative is the part that matters.
+claim: "Nothing in the data selects a loss. What is chosen is a statement about the relative cost of errors, and the operative half of that statement is the derivative — because a loss's value is reported while its gradient is what moves the model."
+given:
+  - a-loss-is-where-the-objective-is-stated
+figure: FigLossShapes
+figureType: D
+level: mechanics
+notation:
+  - "L_loss"
+  - "nabla"
+apparatus:
+  - "0.MC.03"
+  - "0.OP.02"
+sources:
+  - title: "Robust Estimation of a Location Parameter"
+    url: https://doi.org/10.1214/aoms/1177703732
+status: published
+updated: 2026-08-23
+---
+
+## Demonstration
+
+Chapter I.1 established that the loss is the only place the objective is stated.
+This chapter starts from the consequence: since nothing in the data selects it,
+every loss is an assertion, and different assertions produce different models
+from identical data.
+
+Take three losses on the same residual *r* = *ŷ* − *y*:
+
+```
+ℓ_MSE(r)   = ½r²          dℓ/dr = r
+ℓ_MAE(r)   = |r|          dℓ/dr = sign(r)
+Huber_δ(r) = ½r²          dℓ/dr = r         for |r| ≤ δ
+             δ(|r| − ½δ)          δ·sign(r)  otherwise
+```
+
+Read the right-hand column rather than the left. **The derivative is what
+training uses**; the value is a diagnostic printed to a log.
+
+Under squared error the pull is proportional to the error, so a residual ten
+times larger pulls ten times harder. Under absolute error the pull is ±1
+whatever the error, so every example has one equal vote. Huber takes the first
+behaviour near zero and the second beyond δ.
+
+## Value and gradient can disagree
+
+This is the part worth carrying, because it is easy to check the wrong column.
+
+On the five residuals of problem I.4.B01 — one of them an outlier at 4.0 — the
+outlier takes 94% of MSE's total value and 87% of Huber's. Read only those two
+numbers and Huber looks barely more robust than MSE.
+
+Now read the derivatives at that residual: 8.0 for MSE, 1.0 for Huber. **Eight
+times the pull.** Huber's *value* resembles MSE's and its *gradient* is MAE's,
+which is exactly the design and is invisible in the loss curve.
+
+So a loss has two faces, and they answer different questions. What does this
+model cost? — read the value. What will the next step do? — read the derivative.
+
+## Corollary
+
+Two consequences run through the rest of the chapter.
+
+**Robustness is a property of the derivative, not of the formula.** A bounded
+derivative means no single example can dominate a step. That is what MAE and
+Huber have and MSE lacks, and it is why "Huber is robust" is only true once δ is
+set against the scale of the residuals you are willing to call signal — a
+hyperparameter MSE does not have.
+
+**A loss with a vanishing derivative is silent when it should be loudest.**
+Squared error composed with a saturating output has exactly this failure: at a
+logit of −10 against a target of 1 it reports a gradient of 4.5 × 10⁻⁵ while
+cross-entropy reports 0.99996. The model is as wrong as it can be and the loss
+barely speaks. Proposition 3 is that failure and its repair.

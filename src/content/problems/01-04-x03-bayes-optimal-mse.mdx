@@ -1,0 +1,94 @@
+---
+id: "I.4.X03"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Squared loss asks for the conditional mean"
+depends:
+  - "I.4.P02"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Prove that the constant $c$ minimising $\mathbb{E}[(Y - c)^2]$ is
+$c^\star = \mathbb{E}[Y]$, and that the minimum value is $\mathrm{Var}(Y)$. Then
+state the conditional version and say what it implies about what a
+squared-loss-trained network is estimating.
+
+<Hint>
+Add and subtract $\mathbb{E}[Y]$ inside the square, then expand and use
+linearity of expectation.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — decompose.** Write $\mu = \mathbb{E}[Y]$ and insert $\mu - \mu$:
+
+$$
+\mathbb{E}\big[(Y-c)^2\big] = \mathbb{E}\Big[\big((Y - \mu) + (\mu - c)\big)^2\Big]
+$$
+
+**Step 2 — expand the square.**
+
+$$
+= \mathbb{E}\Big[(Y-\mu)^2 + 2(Y-\mu)(\mu-c) + (\mu-c)^2\Big]
+$$
+
+**Step 3 — take expectations term by term**, using linearity
+(<ApparatusRef ref="0.PR.02" />) and noting $(\mu - c)$ is a constant:
+
+$$
+= \underbrace{\mathbb{E}\big[(Y-\mu)^2\big]}_{\mathrm{Var}(Y)}
++ 2(\mu-c)\underbrace{\mathbb{E}[Y-\mu]}_{=\,0}
++ (\mu-c)^2
+$$
+
+The middle term vanishes because $\mathbb{E}[Y - \mu] = \mathbb{E}[Y] - \mu = 0$
+by the definition of $\mu$. That cancellation is the whole proof.
+
+**Step 4 — read off the minimum.**
+
+$$\mathbb{E}\big[(Y-c)^2\big] = \mathrm{Var}(Y) + (\mu - c)^2$$
+
+The first term does not involve $c$; the second is a square, so non-negative,
+and is zero exactly when $c = \mu$. Hence
+
+$$c^\star = \mathbb{E}[Y], \qquad \min_c \mathbb{E}\big[(Y-c)^2\big] = \mathrm{Var}(Y)$$
+
+$\blacksquare$
+
+**Step 5 — the conditional version.** Applying the same argument at each $x$
+separately, with all expectations conditioned on $X = x$:
+
+$$f^\star(x) = \mathbb{E}[Y \mid X = x]$$
+
+**What this says about a trained network.** Three things, in order of how often
+they are missed.
+
+*The target of training is the conditional mean, not a sample.* Given a dataset
+with two identical inputs and different labels — say $y = 0$ and $y = 10$ — the
+squared-loss optimum predicts $5$, a value that appears nowhere in the data and
+may be impossible. On a bimodal conditional distribution, the mean can sit in a
+region of zero density.
+
+*The irreducible loss is the conditional variance.* $\mathrm{Var}(Y \mid X = x)$
+cannot be reduced by any model whatsoever. A training loss that has plateaued at
+a nonzero value may be at the optimum, and no architecture change will move it.
+Knowing that number — estimable from repeated measurements at the same input —
+tells you when to stop trying.
+
+*The optimum is over all functions, not over the hypothesis class.* The network
+approaches $\mathbb{E}[Y|X]$ only insofar as that function lies in its class and
+the optimiser finds it. I.4.T2's scope note says exactly this, and it is the same
+gap I.1.T1 identified between existence and reachability.
+
+**The connection to blurry generative outputs.** A model trained with squared
+loss to produce images predicts the pixel-wise conditional mean. Where several
+sharp outputs are equally plausible, their mean is a blur. This is not a failure
+of capacity or of data — it is the loss doing exactly what this proof says it
+does, and no amount of training fixes it. Changing the loss does.
+</SolutionToggle>

@@ -1,0 +1,228 @@
+---
+id: "I.4.B06"
+kind: problem
+chapter: "I.4"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Where squared loss stops sending a gradient"
+depends:
+  - "I.4.P03"
+reachesBack:
+  - "I.3"
+rounding: "Gradients in scientific notation to 6 s.f.; ratios to 1 d.p."
+hasSolution: true
+verified: true
+snippet: "i-4-b06-mse-vanishes.py"
+status: published
+---
+
+<Statement>
+Construct a classification case in which squared loss produces a vanishing
+gradient and cross-entropy does not. Derive both gradients with respect to the
+logit, evaluate them at five logits, and identify precisely which factor is
+responsible.
+</Statement>
+
+<Given>
+A binary classifier emitting a logit $z$, with $p = \sigma(z)$ and target
+$y = 1$. Two candidate losses:
+
+$$
+L_{\text{MSE}} = \tfrac12 (p - y)^{2},
+\qquad
+L_{\text{BCE}} = -\big[y\log p + (1-y)\log(1-p)\big]
+$$
+
+Recall $\sigma'(z) = \sigma(z)\big(1-\sigma(z)\big) = p(1-p)$ from I.3.B02.
+</Given>
+
+<Find>
+$\mathrm{d}L/\mathrm{d}z$ for each loss in closed form; both evaluated at
+$z \in \{-1, -3, -5, -10, -20\}$; and their ratio.
+</Find>
+
+<Strategy>
+Differentiate each loss with respect to $p$, then apply the chain rule through
+$\sigma$. The whole result turns on whether the $\sigma'(z)$ factor survives or
+cancels, so keep it visible rather than simplifying early.
+</Strategy>
+
+<Solution>
+
+**Step 1 — MSE's gradient.** Differentiating with respect to $p$ first:
+
+$$\frac{\partial L_{\text{MSE}}}{\partial p} = \frac{\partial}{\partial p}\,\tfrac12 (p-y)^2 = (p - y)$$
+
+Then the chain rule through the sigmoid (<ApparatusRef ref="0.MC.03" />):
+
+$$
+\frac{\mathrm{d}L_{\text{MSE}}}{\mathrm{d}z}
+= \frac{\partial L_{\text{MSE}}}{\partial p}\cdot\frac{\mathrm{d}p}{\mathrm{d}z}
+= (p - y)\,\underbrace{p(1-p)}_{\sigma'(z)}
+\tag{a}
+$$
+
+**The factor $\sigma'(z)$ is present, and it is the problem.** Chapter I.3
+established that $\sigma' \le 1/4$ always, and that it collapses toward zero as
+$|z|$ grows.
+
+**Step 2 — BCE's gradient.** Differentiating with respect to $p$:
+
+$$
+\frac{\partial L_{\text{BCE}}}{\partial p}
+= -\left[\frac{y}{p} - \frac{1-y}{1-p}\right]
+= \frac{p - y}{p(1-p)}
+$$
+
+To see the last equality, put the bracket over a common denominator:
+
+$$
+\frac{y}{p} - \frac{1-y}{1-p}
+= \frac{y(1-p) - p(1-y)}{p(1-p)}
+= \frac{y - yp - p + py}{p(1-p)}
+= \frac{y - p}{p(1-p)}
+$$
+
+and negating gives $(p-y)/[p(1-p)]$.
+
+Now the chain rule:
+
+$$
+\frac{\mathrm{d}L_{\text{BCE}}}{\mathrm{d}z}
+= \frac{p-y}{p(1-p)}\cdot p(1-p)
+= p - y
+\tag{b}
+$$
+
+**The $\sigma'$ factor cancelled exactly.** The logarithm in the loss produced a
+$1/[p(1-p)]$ that met the $p(1-p)$ from the sigmoid. This is the same
+cancellation as I.4.B03's Step 7, in the binary case.
+
+**Step 3 — compare the two closed forms.**
+
+$$
+\frac{\mathrm{d}L_{\text{MSE}}}{\mathrm{d}z} = (p-y)\,\sigma'(z),
+\qquad
+\frac{\mathrm{d}L_{\text{BCE}}}{\mathrm{d}z} = (p-y)
+$$
+
+They differ by exactly one factor, $\sigma'(z) \in (0, 1/4]$. So
+
+$$
+\left|\frac{\mathrm{d}L_{\text{BCE}}/\mathrm{d}z}{\mathrm{d}L_{\text{MSE}}/\mathrm{d}z}\right| = \frac{1}{\sigma'(z)} = \frac{1}{p(1-p)}
+$$
+
+**Step 4 — evaluate.** With $y = 1$:
+
+| $z$ | $p = \sigma(z)$ | MSE $\mathrm{d}L/\mathrm{d}z$ | BCE $\mathrm{d}L/\mathrm{d}z$ | ratio |
+|---|---|---|---|---|
+| $-1$ | $2.689414\mathrm{e}{-1}$ | $-1.437348\mathrm{e}{-1}$ | $-0.731059$ | $5.1$ |
+| $-3$ | $4.742587\mathrm{e}{-2}$ | $-4.303412\mathrm{e}{-2}$ | $-0.952574$ | $22.1$ |
+| $-5$ | $6.692851\mathrm{e}{-3}$ | $-6.603562\mathrm{e}{-3}$ | $-0.993307$ | $150.4$ |
+| $-10$ | $4.539787\mathrm{e}{-5}$ | $-4.539375\mathrm{e}{-5}$ | $-0.999955$ | $22{,}028.5$ |
+| $-20$ | $2.061154\mathrm{e}{-9}$ | $-2.061154\mathrm{e}{-9}$ | $-1.000000$ | $485{,}165{,}197.4$ |
+
+**Step 5 — read the two columns.** As $z$ becomes more negative the model becomes
+*more* wrong: $p \to 0$ while $y = 1$.
+
+Cross-entropy's gradient **grows** toward its maximum magnitude of $1$. At
+$z = -20$ it is $-1.000000$: the loss is shouting.
+
+MSE's gradient **shrinks** toward zero. At $z = -20$ it is $-2.06\times10^{-9}$.
+In float32, where the smallest normal value is about $1.18\times10^{-38}$, this
+is still representable — but multiplied through a few more layers of I.3's
+saturation factors it is not, and in fp16 it underflowed long before.
+
+**The model is as wrong as it is possible to be, and MSE reports almost
+nothing.** That is the counterexample.
+
+**Step 6 — which factor is responsible.** Not the squaring. Substituting
+$y = 1$ into (a):
+
+$$\frac{\mathrm{d}L_{\text{MSE}}}{\mathrm{d}z} = (p-1)\,p(1-p) = -p(1-p)^2$$
+
+As $p \to 0$ this behaves as $-p$, and $p = \sigma(z) \to 0$ exponentially in
+$z$. The culprit is the $\sigma'$ factor that (b) cancels and (a) keeps —
+exactly the saturation of Chapter I.3, reaching the loss instead of a hidden
+layer.
+
+**Step 7 — the other end, which is the honest caveat.** At a point the model
+already gets right:
+
+| $z$ | MSE $|\mathrm{d}L/\mathrm{d}z|$ | BCE $|\mathrm{d}L/\mathrm{d}z|$ |
+|---|---|---|
+| $+5$ | $4.449445\mathrm{e}{-5}$ | $6.692851\mathrm{e}{-3}$ |
+| $+10$ | $2.060873\mathrm{e}{-9}$ | $4.539787\mathrm{e}{-5}$ |
+
+Both shrink, and MSE shrinks faster. So MSE is not *uniformly* worse — it is
+quieter everywhere. The asymmetry that matters is that cross-entropy stays loud
+where the model is wrong and goes quiet where it is right, while MSE goes quiet
+in both directions.
+
+</Solution>
+
+<Answer>
+$$
+\frac{\mathrm{d}L_{\text{MSE}}}{\mathrm{d}z} = (p - y)\,p(1-p),
+\qquad
+\frac{\mathrm{d}L_{\text{BCE}}}{\mathrm{d}z} = p - y
+$$
+
+They differ by the factor $\sigma'(z) = p(1-p) \le 1/4$, which cross-entropy's
+logarithm cancels and squared loss does not.
+
+At $z = -10$, $y = 1$: MSE gives $-4.539\times10^{-5}$ against BCE's
+$-0.999955$, a ratio of $22{,}029$. At $z = -20$ the ratio is
+$4.85\times10^{8}$.
+</Answer>
+
+<CheckNumeric snippet="i-4-b06-mse-vanishes.py" verified>
+```python
+d_mse = (p - y) * p * (1 - p)        # chain rule through sigma'
+d_bce = p - y                        # sigma' cancels
+```
+Prints both columns at all five logits, their ratios, and the two
+already-correct points.
+</CheckNumeric>
+
+<CheckSanity>
+**BCE's gradient is bounded by 1.** Every entry satisfies
+$|p - y| \le 1$ since $p \in (0,1)$ and $y \in \{0,1\}$. The table's largest is
+$-1.000000$, approached but not exceeded ✓
+
+**The ratio equals $1/[p(1-p)]$ exactly.** At $z = -5$:
+$1/(6.692851\times10^{-3} \times 0.993307) = 150.4$, matching the table's ratio
+column — computed from the closed form rather than by dividing the two columns,
+so it is an independent check.
+
+**The two gradients agree where $\sigma'$ is largest.** At $z = 0$,
+$\sigma' = 1/4$, so the ratio would be $4$ — the smallest it can ever be. The
+table's smallest ratio, $5.1$ at $z = -1$, is consistent with approaching $4$ as
+$z \to 0$.
+
+**Signs are correct throughout.** With $y = 1$ and $p < 1$, both gradients are
+negative, so descent raises $z$ — which is what should happen when the model
+under-predicts the positive class.
+</CheckSanity>
+
+<Breaks>
+The vanishing is a property of **the pair**, not of squared loss alone. Remove
+the sigmoid — regress on an unbounded output with squared loss, as in I.1.B03 —
+and the gradient is $(\hat{y} - y)$ with no saturating factor anywhere. Squared
+loss is entirely well behaved for regression; it is squared loss *composed with a
+saturating output* that fails.
+
+The general lesson is worth stating in its own right: **check what the loss and
+the output nonlinearity do together, not separately.** Cross-entropy pairs with
+softmax and sigmoid because the logarithm inverts the exponential in them. Any
+other pairing has to be checked, and the check is one line — differentiate and
+see whether the output's derivative cancels.
+</Breaks>
+
+<Variation>
+Repeat the derivation for MSE composed with a *linear* output on a
+classification target in $\{0,1\}$. Show the gradient no longer vanishes, then
+say what new problem appears instead — and why it makes the arrangement
+unusable anyway.
+</Variation>

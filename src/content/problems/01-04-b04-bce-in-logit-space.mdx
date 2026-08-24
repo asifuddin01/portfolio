@@ -1,0 +1,221 @@
+---
+id: "I.4.B04"
+kind: problem
+chapter: "I.4"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "The same loss, computed where the arithmetic survives"
+depends:
+  - "I.4.P03"
+reachesBack: []
+rounding: "6 d.p. where precision is the subject; otherwise 4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-4-b04-bce-in-logit-space.py"
+status: published
+---
+
+<Statement>
+Evaluate binary cross-entropy at four logits by two routes: the naive one that
+forms a probability first, and the stable identity that never does. Derive the
+identity, show the naive route failing on two ordinary inputs, and state the
+logit at which each failure begins.
+</Statement>
+
+<Given>
+A logit $z \in \R$, a label $y \in \{0,1\}$, and $p = \sigma(z) = 1/(1+e^{-z})$.
+The naive computation is
+
+$$\mathrm{BCE}_{\text{naive}} = -\big[\,y\log p + (1-y)\log(1-p)\,\big]$$
+
+Test at $(z, y) \in \{(2,1),\ (0,1),\ (-5,1),\ (-50,1),\ (-800,1),\ (800,0)\}$.
+IEEE double precision: $e^{x}$ overflows for $x > 709.78$, and $\sigma(z)$ rounds
+to exactly $1.0$ once $e^{-z} < 2^{-53} \approx 1.11\times10^{-16}$.
+</Given>
+
+<Find>
+The stable identity; both routes' values at each test point; and the two
+thresholds at which the naive route breaks.
+</Find>
+
+<Strategy>
+Derive the identity by substituting $\sigma$ into the definition and simplifying
+until no probability appears — only $z$ and a logarithm of something safely near
+one. Then evaluate both routes and watch where they part.
+</Strategy>
+
+<Solution>
+
+### Part 1 — deriving the stable form
+
+**Step 1 — substitute for $y = 1$.** With $p = 1/(1+e^{-z})$:
+
+$$
+-\log p = -\log\frac{1}{1+e^{-z}} = \log\left(1 + e^{-z}\right)
+$$
+
+using $-\log(1/a) = \log a$.
+
+**Step 2 — substitute for $y = 0$.** First simplify $1 - p$:
+
+$$
+1 - p = 1 - \frac{1}{1+e^{-z}} = \frac{(1+e^{-z}) - 1}{1+e^{-z}} = \frac{e^{-z}}{1+e^{-z}}
+$$
+
+so
+
+$$
+-\log(1-p) = -\log e^{-z} + \log\left(1+e^{-z}\right) = z + \log\left(1+e^{-z}\right)
+$$
+
+**Step 3 — one formula for both.** Combining Steps 1 and 2:
+
+$$\mathrm{BCE}(z,y) = -zy + z(1-y)\cdot 0 + \dots$$
+
+More carefully — write the two cases and look for the pattern:
+
+$$
+\mathrm{BCE} =
+\begin{cases}
+\log(1+e^{-z}) & y = 1\\
+z + \log(1+e^{-z}) & y = 0
+\end{cases}
+\;=\; z(1-y) + \log\!\left(1+e^{-z}\right)
+$$
+
+**Step 4 — the remaining danger.** This is exact, but $e^{-z}$ still overflows
+for $z < -709.78$. Fix it by pulling out the larger of the two terms inside the
+logarithm. For $z < 0$ write $1 + e^{-z} = e^{-z}(1 + e^{z})$, so
+
+$$\log(1+e^{-z}) = -z + \log(1+e^{z})$$
+
+Substituting into Step 3's formula for $z < 0$ and combining with the $z \ge 0$
+case gives the symmetric form
+
+$$
+\boxed{\ \mathrm{BCE}(z,y) = \max(z,0) - zy + \log\!\left(1 + e^{-|z|}\right)\ }
+\tag{I.4.5}
+$$
+
+**Why this one is safe.** The exponential's argument is $-|z| \le 0$, so
+$e^{-|z|} \in (0, 1]$ and can never overflow. It can underflow to $0$, but then
+$\log(1+0) = 0$ exactly, which is the correct limit rather than an error. Every
+other term is elementary arithmetic on $z$ itself.
+
+### Part 2 — the two routes side by side
+
+| $z$ | $y$ | $\sigma(z)$ | naive | stable |
+|---|---|---|---|---|
+| $2.0$ | $1$ | $8.807971\mathrm{e}{-1}$ | $0.126928$ | $0.126928$ |
+| $0.0$ | $1$ | $5.000000\mathrm{e}{-1}$ | $0.693147$ | $0.693147$ |
+| $-5.0$ | $1$ | $6.692851\mathrm{e}{-3}$ | $5.006715$ | $5.006715$ |
+| $-50.0$ | $1$ | $1.928750\mathrm{e}{-22}$ | $50.000000$ | $50.000000$ |
+| $-800.0$ | $1$ | overflow | **OverflowError** | $800.000000$ |
+| $800.0$ | $0$ | $1.000000\mathrm{e}{+0}$ | **ValueError** | $800.000000$ |
+
+**Step 5 — verifying agreement where both work.** At the three safe points the
+two routes agree to ten decimal places, with $|{\text{diff}}| \le 2.78\times10^{-17}$
+— one unit in the last place of a double. So (I.4.5) is not an approximation; it
+is the same number computed differently.
+
+**Step 6 — the first failure, $z = -800$, $y = 1$.** The naive route needs
+$\sigma(-800) = 1/(1 + e^{800})$. But $e^{800}$ exceeds the largest double
+($1.798\times10^{308}$) and overflows, raising `OverflowError` before any
+logarithm is reached.
+
+The stable route computes
+
+$$
+\max(-800, 0) - (-800)(1) + \log\!\left(1 + e^{-800}\right) = 0 + 800 + \log(1) = 800.000000
+$$
+
+which is correct: a logit of $-800$ with target $1$ is wrong by $800$ nats.
+
+**Step 7 — the second failure, $z = 800$, $y = 0$.** Here
+$e^{-800}$ underflows to $0$, so $\sigma(800)$ evaluates to exactly $1.0$. The
+naive route then needs $\log(1 - 1.0) = \log(0) = -\infty$, and Python raises
+`ValueError`. In a framework that returns $-\infty$ silently instead, the loss
+becomes `inf`, every gradient becomes `nan`, and the entire model is destroyed
+in one step with no message.
+
+The stable route gives $\max(800,0) - (800)(0) + \log(1+e^{-800}) = 800 + 0 = 800.000000$.
+
+**Step 8 — the thresholds.**
+
+*Overflow.* $e^{-z}$ overflows when $-z > 709.78$, so the naive route fails for
+$z < -709.78$.
+
+*Rounding to one.* $\sigma(z)$ becomes exactly $1.0$ once $e^{-z}$ falls below
+the spacing of doubles near $1$, that is $e^{-z} < 2^{-53}$, giving
+$z > 53\ln 2 = 36.74$. **This is the more dangerous of the two**, because
+$z = 37$ is an entirely ordinary logit — it appears whenever a model becomes
+confident — and the failure is a silent $-\infty$ rather than a raised
+exception.
+
+In float32 the corresponding threshold is $z > 24\ln 2 = 16.6$, which is
+reached routinely within the first epoch of ordinary training.
+
+</Solution>
+
+<Answer>
+$$\mathrm{BCE}(z,y) = \max(z,0) - zy + \log\!\left(1+e^{-|z|}\right)$$
+
+Both routes agree to within $2.78\times10^{-17}$ where the naive one works, and
+it fails at $z = -800$ (overflow) and $z = 800$ (log of zero), where the stable
+form returns $800.000000$ in both cases.
+
+Thresholds in double precision: overflow below $z = -709.78$; silent saturation
+to $p = 1$ above $z = 36.74$. In float32 the second is $z = 16.6$.
+</Answer>
+
+<CheckNumeric snippet="i-4-b04-bce-in-logit-space.py" verified>
+```python
+def bce_stable(z, y):
+    return max(z, 0.0) - z * y + log(1.0 + exp(-abs(z)))
+```
+Prints the six-row table with both routes, the two exception names, and the
+ten-digit agreement check on the safe points.
+</CheckNumeric>
+
+<CheckSanity>
+**The identity gives the right answer at $z = 0$.** There $p = 0.5$ and the loss
+should be $-\log 0.5 = \log 2 = 0.693147$. The formula gives
+$\max(0,0) - 0 + \log(1+e^{0}) = \log 2$ ✓.
+
+**Large-$|z|$ behaviour is linear, as it must be.** For $z \to -\infty$ with
+$y=1$, $-\log\sigma(z) = \log(1+e^{-z}) \approx -z$. The table confirms it:
+$z = -50 \Rightarrow 50.000000$ and $z = -800 \Rightarrow 800.000000$, both equal
+to $|z|$ to six decimals. A loss growing linearly rather than exponentially in
+the logit is exactly why cross-entropy's gradient stays bounded.
+
+**The two failures are the two ends of the same problem.** Underflow of
+$e^{-|z|}$ is harmless — $\log(1+0) = 0$ is correct. Overflow of $e^{+|z|}$ is
+fatal. The identity's whole content is arranging that only the harmless one can
+occur.
+
+**Symmetry check.** $\mathrm{BCE}(z, 1) = \mathrm{BCE}(-z, 0)$: predicting logit
+$z$ for a positive should cost the same as predicting $-z$ for a negative. From
+the formula at $z = 2$: $\mathrm{BCE}(2,1) = 2 - 2 + \log(1+e^{-2}) = 0.126928$
+and $\mathrm{BCE}(-2,0) = 0 - 0 + \log(1+e^{-2}) = 0.126928$ ✓.
+</CheckSanity>
+
+<Breaks>
+The identity is exact in exact arithmetic and *nearly* exact in floating point —
+the $2.78\times10^{-17}$ discrepancy is real, not a display artefact. It comes
+from $\log(1+x)$ losing precision when $x$ is tiny: the addition $1 + x$ discards
+most of $x$'s bits before the logarithm sees it.
+
+The remedy is `log1p(x)`, which computes $\log(1+x)$ accurately for small $x$ by
+a series expansion rather than by forming the sum. Every serious implementation
+uses it. The point generalises: this problem removed one catastrophic failure and
+left a benign one, and knowing which is which is the actual skill
+(<ApparatusRef ref="0.NU.04" />).
+</Breaks>
+
+<Variation>
+Derive the analogous stable form for the multi-class case,
+$L = -z_c + \log\sum_j e^{z_j}$, and show that subtracting $\max_j z_j$ from
+every logit leaves it unchanged. Then evaluate at
+$\vec{z} = (1000, 999, 998)$ with $c = 1$, where the naive route overflows.
+</Variation>

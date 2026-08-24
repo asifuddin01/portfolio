@@ -1,0 +1,242 @@
+---
+id: "I.4.B02"
+kind: problem
+chapter: "I.4"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Every loss is a negative log-likelihood"
+depends:
+  - "I.4.P01"
+  - "I.4.P02"
+reachesBack: []
+rounding: "Symbolic; constants are tracked explicitly rather than absorbed silently."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Derive squared error as the negative log-likelihood of a Gaussian observation
+model with fixed variance, and cross-entropy as the negative log-likelihood of a
+categorical one. Track every constant that appears, and state exactly which ones
+may be discarded and why.
+</Statement>
+
+<Given>
+**Gaussian model.** Observations are generated as
+$y_i = f(x_i;\theta) + \varepsilon_i$ with
+$\varepsilon_i \sim \mathcal{N}(0, \sigma^2)$ independent, $\sigma^2$ fixed and
+not learned. The density is
+
+$$
+p(y \mid x, \theta) = \frac{1}{\sqrt{2\pi\sigma^{2}}}\exp\!\left(-\frac{(y - f(x;\theta))^{2}}{2\sigma^{2}}\right)
+$$
+
+**Categorical model.** A prediction is a distribution
+$\vec{q} = (q_1, \dots, q_K)$ on the simplex, the observation is a class
+$c \in \{1,\dots,K\}$, and
+
+$$p(c \mid x, \theta) = \prod_{k=1}^{K} q_k^{\,y_k}, \qquad y_k = \mathbb{1}[k = c]$$
+</Given>
+
+<Find>
+$-\log p(\mathcal{D} \mid \theta)$ for each model, reduced to a loss, with every
+discarded term named.
+</Find>
+
+<Strategy>
+Write the likelihood of the whole dataset, take a logarithm to turn the product
+into a sum, negate, then separate the terms containing $\theta$ from those that
+do not. Only the first group can affect the minimiser, and the second group is
+where the constants go.
+</Strategy>
+
+<Solution>
+
+### Part 1 — the Gaussian case
+
+**Step 1 — the dataset likelihood.** Independence turns a joint density into a
+product:
+
+$$
+p(\mathcal{D}\mid\theta) = \prod_{i=1}^{n} p(y_i \mid x_i, \theta)
+= \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi\sigma^{2}}}\exp\!\left(-\frac{r_i^{2}}{2\sigma^{2}}\right)
+$$
+
+writing $r_i = y_i - f(x_i;\theta)$ for the $i$-th residual.
+
+**Step 2 — take the logarithm.** A product becomes a sum, and
+$\log(ab) = \log a + \log b$ splits each factor:
+
+$$
+\log p(\mathcal{D}\mid\theta)
+= \sum_{i=1}^{n}\left[\underbrace{\log \frac{1}{\sqrt{2\pi\sigma^{2}}}}_{\text{no }\theta}
+\;+\; \log \exp\!\left(-\frac{r_i^{2}}{2\sigma^{2}}\right)\right]
+$$
+
+The exponential and the logarithm are inverses, so the second term simplifies
+outright:
+
+$$
+= \sum_{i=1}^{n}\left[-\tfrac12\log\!\left(2\pi\sigma^{2}\right) - \frac{r_i^{2}}{2\sigma^{2}}\right]
+$$
+
+**Step 3 — separate.** The first term does not depend on $i$, so summing it $n$
+times gives a single constant:
+
+$$
+\log p(\mathcal{D}\mid\theta)
+= -\frac{n}{2}\log\!\left(2\pi\sigma^{2}\right) \;-\; \frac{1}{2\sigma^{2}}\sum_{i=1}^{n} r_i^{2}
+$$
+
+**Step 4 — negate.**
+
+$$
+-\log p(\mathcal{D}\mid\theta)
+= \underbrace{\frac{n}{2}\log\!\left(2\pi\sigma^{2}\right)}_{A}
+\;+\; \underbrace{\frac{1}{2\sigma^{2}}}_{B}\sum_{i=1}^{n} r_i^{2}
+$$
+
+**Step 5 — account for $A$ and $B$ precisely.**
+
+*Term $A$ is additive and $\theta$-free.* Adding a constant to a function shifts
+its graph vertically and moves no stationary point:
+$\nabla_\theta (g(\theta) + A) = \nabla_\theta g(\theta)$. So $A$ may be dropped
+without changing the minimiser or any gradient.
+
+*Term $B$ is a positive multiplicative constant.* Since $\sigma^2 > 0$ we have
+$B > 0$, and $\arg\min_\theta\, Bg(\theta) = \arg\min_\theta g(\theta)$ for any
+$B > 0$. So $B$ may be dropped from the *objective*. It may **not** be dropped
+from the gradient if the learning rate is fixed, because
+$\nabla(Bg) = B\nabla g$ — dropping $B$ rescales every step by $1/B$, which is a
+change of effective learning rate and nothing more.
+
+**Step 6 — conclude.**
+
+$$
+\arg\min_{\theta} \left[-\log p(\mathcal{D}\mid\theta)\right]
+= \arg\min_{\theta} \sum_{i=1}^{n}\big(y_i - f(x_i;\theta)\big)^{2}
+$$
+
+$\blacksquare$ Minimising squared error **is** maximum likelihood under a
+fixed-variance Gaussian.
+
+### Part 2 — the categorical case
+
+**Step 7 — one example.** The indicator exponent means all but one factor is
+raised to the power zero:
+
+$$p(c\mid x,\theta) = \prod_{k=1}^{K} q_k^{\,y_k} = q_c$$
+
+**Step 8 — take the logarithm and negate.**
+
+$$
+-\log p(c\mid x,\theta)
+= -\log \prod_{k} q_k^{\,y_k}
+= -\sum_{k=1}^{K} y_k \log q_k
+$$
+
+using $\log(a^b) = b\log a$ on each factor. The right-hand side is exactly the
+cross-entropy $H(\vec{y}, \vec{q})$ of Definition 8.
+
+**Step 9 — the dataset.** By independence again,
+
+$$-\log p(\mathcal{D}\mid\theta) = \sum_{i=1}^{n} H(\vec{y}_i, \vec{q}_i)$$
+
+$\blacksquare$
+
+**Note the asymmetry with Part 1: there is no constant to discard.** The
+categorical density has no normalising factor outside the probabilities
+themselves, because $\sum_k q_k = 1$ is built into the parameterisation. Every
+term of the cross-entropy depends on $\theta$.
+
+### What the correspondence costs
+
+Reading Steps 1–6 backwards is the uncomfortable direction. If minimising MSE is
+maximum likelihood under a Gaussian, then **choosing MSE asserts a Gaussian**,
+whether or not anyone intended to assert anything. Three properties come with
+that assertion:
+
+*Symmetry.* $p(\varepsilon) = p(-\varepsilon)$, so over-prediction and
+under-prediction cost the same. False whenever the two have different
+consequences.
+
+*Constant variance.* One $\sigma^2$ for every $x$. False whenever the noise
+scales with the signal, which is the ordinary situation for counts, prices and
+concentrations.
+
+*Unbounded support.* $\varepsilon$ may take any real value, so $y$ may too. False
+for anything bounded — a probability, a proportion, a nonnegative count.
+
+Chapter VII.2 will meet count data where all three fail at once, and will need a
+negative binomial likelihood instead. The route there is exactly this derivation
+run forwards with a different density.
+
+</Solution>
+
+<Answer>
+$$
+-\log p_{\text{Gauss}}(\mathcal{D}\mid\theta)
+= \frac{n}{2}\log(2\pi\sigma^{2}) + \frac{1}{2\sigma^{2}}\sum_i r_i^{2}
+$$
+
+The first term is additive and $\theta$-free; the second's prefactor is a
+positive constant. Discarding both leaves $\sum_i r_i^2$, so **MSE is Gaussian
+maximum likelihood**.
+
+$$
+-\log p_{\text{cat}}(\mathcal{D}\mid\theta) = -\sum_i \sum_k y_{ik}\log q_{ik}
+$$
+
+which is cross-entropy exactly, with no constant to discard.
+</Answer>
+
+<CheckSanity>
+**The Gaussian result reproduces the known optimum.** For a constant model
+$f = \mu$, minimising $\sum(y_i - \mu)^2$ gives $\mu = \bar{y}$, the sample mean
+— which is the maximum-likelihood estimate of a Gaussian mean. Two routes, one
+answer.
+
+**Dropping $B$ is exactly a learning-rate change.** With $\sigma^2 = 1$,
+$B = \tfrac12$. Training on $\sum r_i^2$ at rate $\eta$ and on
+$\tfrac12\sum r_i^2$ at rate $2\eta$ produce identical parameter sequences. This
+is checkable in three lines of code, and it is why the factor of $\tfrac12$ in
+front of squared losses is a convention rather than a claim.
+
+**The categorical result reduces to the binary case.** At $K = 2$ with
+$q_2 = 1 - q_1$ and $\vec{y}$ one-hot, Step 8 becomes
+$-[y_1\log q_1 + (1-y_1)\log(1-q_1)]$, which is binary cross-entropy — the
+identity established in I.1.B04, recovered here as a special case rather than
+assumed.
+
+**The units are consistent.** A log-likelihood is dimensionless (a log of a
+probability), and so is cross-entropy. But $\sum r_i^2$ carries the square of
+$y$'s units — the mismatch is absorbed by $1/(2\sigma^2)$, whose units are the
+inverse square of $y$'s. Discarding $B$ therefore discards the dimensional
+bookkeeping too, which is a small reason MSE values are hard to interpret across
+problems.
+</CheckSanity>
+
+<Breaks>
+Step 5 discards $A = \tfrac{n}{2}\log(2\pi\sigma^2)$ because it is $\theta$-free.
+That holds **only while $\sigma^2$ is fixed.** Learn the variance — predict
+$\sigma^2(x)$ as a second output head, as heteroscedastic regression does — and
+$A$ becomes $\tfrac12\sum_i \log \sigma^2(x_i)$, which depends on $\theta$ and
+cannot be dropped.
+
+The resulting loss is
+$\sum_i\left[\frac{r_i^2}{2\sigma_i^2} + \tfrac12\log\sigma_i^2\right]$, and its
+behaviour is different in kind: the first term rewards predicting a large
+variance, the second punishes it, and the balance is what makes the model report
+calibrated uncertainty. Dropping $A$ there would let the model claim infinite
+variance everywhere and drive the loss to $-\infty$. The constant was never
+inert; it was inert *given an assumption*.
+</Breaks>
+
+<Variation>
+Derive the loss implied by a Laplace observation model,
+$p(\varepsilon) \propto \exp(-|\varepsilon| / b)$ with $b$ fixed. Identify which
+of this chapter's losses it is, and state what that tells you about when to
+prefer it.
+</Variation>

@@ -19,6 +19,10 @@ import FigDepthFolds from '../components/figures/FigDepthFolds.astro';
 import FigComputationalGraph from '../components/figures/FigComputationalGraph.astro';
 import FigDescentStep from '../components/figures/FigDescentStep.astro';
 import FigRegularisation from '../components/figures/FigRegularisation.astro';
+/* Book I, Chapter IV — Loss Functions */
+import FigLossShapes from '../components/figures/FigLossShapes.astro';
+import FigLossIsALikelihood from '../components/figures/FigLossIsALikelihood.astro';
+import FigGradientCancellation from '../components/figures/FigGradientCancellation.astro';
 /* Book I, Chapter III — Tokenisation and Embeddings */
 import FigTokenBoundary from '../components/figures/FigTokenBoundary.astro';
 import FigBPEMerge from '../components/figures/FigBPEMerge.astro';
@@ -184,6 +188,24 @@ export const FIGURES = {
     caption:
       'XOR puts each class on one diagonal of the square, and the diagonals cross. Any line separating one diagonal must pass between the other.',
     source: 'Book I, Ch. II, Prop. 4',
+  },
+  FigLossShapes: {
+    component: FigLossShapes,
+    caption:
+      'The left panel is the number you report; the right panel is what moves the model. Huber tracks the parabola in value and caps its pull at δ.',
+    source: 'Book I, Ch. IV, Prop. 1',
+  },
+  FigLossIsALikelihood: {
+    component: FigLossIsALikelihood,
+    caption:
+      'Choosing the loss on the right asserts the distribution on the left, whether or not the assertion was intended.',
+    source: 'Book I, Ch. IV, Prop. 2',
+  },
+  FigGradientCancellation: {
+    component: FigGradientCancellation,
+    caption:
+      'Cross-entropy contributes the reciprocal of the output derivative, so the two cancel. Squared loss contributes nothing, so the derivative survives and shrinks the gradient exactly where the model is most wrong.',
+    source: 'Book I, Ch. IV, Prop. 3',
   },
   FigSaturation: {
     component: FigSaturation,

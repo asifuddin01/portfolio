@@ -1,0 +1,60 @@
+---
+/** Book I, Ch. IV, Prop. 1 — three losses, and the derivatives that matter. */
+type Pt = [number, number];
+const DELTA = 1;
+const mse: Pt[] = [], mae: Pt[] = [], hub: Pt[] = [];
+const dmse: Pt[] = [], dmae: Pt[] = [], dhub: Pt[] = [];
+for (let i = 0; i <= 120; i++) {
+  const r = -3 + (6 * i) / 120;
+  const X = 60 + (i / 120) * 260;
+  const Xd = 400 + (i / 120) * 260;
+  const h = Math.abs(r) <= DELTA ? 0.5 * r * r : DELTA * (Math.abs(r) - 0.5 * DELTA);
+  mse.push([X, 170 - 0.5 * r * r * 32]);
+  mae.push([X, 170 - Math.abs(r) * 32]);
+  hub.push([X, 170 - h * 32]);
+  const dh = Math.abs(r) <= DELTA ? r : DELTA * Math.sign(r);
+  dmse.push([Xd, 118 - r * 26]);
+  dmae.push([Xd, 118 - Math.sign(r) * 26]);
+  dhub.push([Xd, 118 - dh * 26]);
+}
+const path = (p: Pt[]) =>
+  p.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+---
+<svg class="fig" viewBox="0 0 720 260" role="img" aria-labelledby="ls-t ls-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
+  <title id="ls-t">Squared, absolute and Huber losses, with the derivatives each sends back</title>
+  <desc id="ls-d">
+    On the left the three loss curves against the residual: the squared loss
+    rises as a parabola, the absolute loss as a V, and Huber follows the
+    parabola near zero and the V beyond delta. On the right their derivatives:
+    the squared loss's grows without bound, the absolute loss's is a step of
+    plus or minus one, and Huber's rises like the squared loss then flattens.
+  </desc>
+
+  <text x="0" y="20" class="t-lab">the losses</text>
+  <text x="400" y="20" class="t-lab">their derivatives — what training uses</text>
+
+  <line x1="60" y1="170" x2="326" y2="170" class="axis" />
+  <line x1="190" y1="36" x2="190" y2="182" class="axis" />
+  <path d={path(mse)} class="wire-soft" fill="none" />
+  <path d={path(mae)} class="dash" fill="none" />
+  <path d={path(hub)} class="wire" fill="none" />
+  <text x="66" y="52" class="t-key">½r² </text>
+  <text x="66" y="72" class="t-key">|r|</text>
+  <text x="66" y="92" class="t-key">Huber</text>
+  <line x1="158" y1="150" x2="158" y2="176" class="dash" />
+  <line x1="222" y1="150" x2="222" y2="176" class="dash" />
+  <text x="190" y="196" class="t-xs" text-anchor="middle">±δ</text>
+
+  <line x1="400" y1="118" x2="666" y2="118" class="axis" />
+  <line x1="530" y1="36" x2="530" y2="182" class="axis" />
+  <path d={path(dmse)} class="wire-soft" fill="none" />
+  <path d={path(dmae)} class="dash" fill="none" />
+  <path d={path(dhub)} class="wire" fill="none" />
+  <text x="672" y="52" class="t-xs">unbounded</text>
+  <text x="672" y="96" class="t-xs">±δ</text>
+  <line x1="400" y1="92" x2="666" y2="92" class="grid" />
+  <line x1="400" y1="144" x2="666" y2="144" class="grid" />
+
+  <text x="0" y="228" class="t-em">the left panel is what you report · the right panel is what moves the model</text>
+  <text x="0" y="248" class="t-xs">Huber's value tracks the parabola; its pull is capped at δ, like the V's</text>
+</svg>

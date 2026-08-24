@@ -1,0 +1,22 @@
+shapes
+  logits            (4, 512, 32000)           65,536,000 values
+  targets           (4, 512)                2,048 values
+  flattened logits  (2048, 32000)           65,536,000
+  flattened targets (2048,)
+  per-token loss    (2048,)                2,048
+  reduced loss      ()                     1
+
+memory for the logits alone
+  fp32     262.1 MB
+  bf16     131.1 MB
+
+if softmax probabilities are materialised as well
+  fp32     524.3 MB
+  bf16     262.1 MB
+
+masking at 15% padding
+  positions          2,048
+  valid              1,741
+  mean over all      divides by 2,048
+  mean over valid    divides by 1,741
+  ratio              1.1763  (17.6% understated)

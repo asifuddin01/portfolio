@@ -1,0 +1,14 @@
+counts      negative 950   positive 50   ratio 19:1
+unweighted  negative mass 95%   positive mass 5%
+
+inverse-frequency weights
+  w_neg = N/(K*n_neg) = 1000/(2*950) = 0.5263
+  w_pos = N/(K*n_pos) = 1000/(2*50) = 10.0000
+  ratio w_pos/w_neg   = 19.0000
+  weighted mass       negative 500.0   positive 500.0
+  mean weight         1.0000  (loss scale preserved)
+
+effective-number weights, beta = 0.999
+  E_neg = (1-b)/(1-b^950) = 1.630144e-03
+  E_pos = (1-b)/(1-b^50)  = 2.049417e-02
+  normalised: w_neg 0.1474   w_pos 1.8526   ratio 12.5720

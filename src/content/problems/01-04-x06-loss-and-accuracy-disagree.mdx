@@ -1,0 +1,104 @@
+---
+id: "I.4.X06"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A step that improves the loss and worsens the accuracy"
+depends:
+  - "I.4.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+Construct a two-example case in which cross-entropy strictly decreases while
+accuracy strictly decreases as well. Give both numbers before and after, and
+explain the mechanism in one sentence.
+
+<Hint>
+Accuracy counts only which side of $0.5$ each prediction is on. Cross-entropy
+also counts how far.
+</Hint>
+
+<SolutionToggle>
+
+**The construction.** Two examples, both with label $y = 1$.
+
+| | before | after |
+|---|---|---|
+| example A | $p = 0.51$ | $p = 0.49$ |
+| example B | $p = 0.10$ | $p = 0.60$ |
+
+**Accuracy.** With threshold $0.5$:
+
+*Before.* A is correct ($0.51 > 0.5$), B is wrong ($0.10 < 0.5$). Accuracy
+$= 1/2 = 50\%$.
+
+*After.* A is now wrong ($0.49 < 0.5$), B is now correct ($0.60 > 0.5$). Accuracy
+$= 1/2 = 50\%$.
+
+That is a tie, so push it further. Take **three** examples, all $y = 1$:
+
+| | before | after |
+|---|---|---|
+| A | $0.51$ | $0.49$ |
+| B | $0.51$ | $0.49$ |
+| C | $0.10$ | $0.98$ |
+
+*Accuracy before:* A ✓, B ✓, C ✗ — $2/3 = 66.7\%$.
+*Accuracy after:* A ✗, B ✗, C ✓ — $1/3 = 33.3\%$. **Halved.**
+
+**Cross-entropy.** With $y = 1$ the loss per example is $-\log p$.
+
+*Before:*
+$$
+-\log 0.51 = 0.6733, \quad -\log 0.51 = 0.6733, \quad -\log 0.10 = 2.3026
+$$
+$$
+\overline{L} = \frac{0.6733 + 0.6733 + 2.3026}{3} = \frac{3.6492}{3} = 1.2164
+$$
+
+*After:*
+$$
+-\log 0.49 = 0.7133, \quad -\log 0.49 = 0.7133, \quad -\log 0.98 = 0.0202
+$$
+$$
+\overline{L} = \frac{0.7133 + 0.7133 + 0.0202}{3} = \frac{1.4468}{3} = 0.4823
+$$
+
+**The loss fell from $1.2164$ to $0.4823$ — a $60\%$ improvement — while accuracy
+fell from $66.7\%$ to $33.3\%$.**
+
+**The mechanism in one sentence.** Accuracy is a step function of each
+prediction and cannot see the difference between $0.51$ and $0.98$, while
+cross-entropy is a smooth function of it and rewards the enormous gain on C far
+more than it punishes the two tiny losses on A and B.
+
+**Why this is not a pathology.** Gradient descent requires a differentiable
+objective, and accuracy has zero gradient almost everywhere — its derivative is
+zero wherever it is defined, and undefined at the threshold. It is unoptimisable
+by any first-order method. So the loss is not an approximation to accuracy that
+occasionally goes wrong; it is a **different objective**, chosen because it is
+differentiable, and the two agreeing most of the time is a convenience rather
+than a guarantee.
+
+**What follows in practice.** Three habits.
+
+*Report both.* A run whose loss improves while its validation accuracy stalls is
+not necessarily broken, and is not necessarily fine either. Only both numbers
+together say which.
+
+*Select on the metric you care about.* Early stopping on validation loss and
+early stopping on validation accuracy choose different checkpoints, and the gap
+widens with calibration effects. Choose deliberately.
+
+*Do not read a small loss improvement as a small accuracy improvement.* There is
+no monotone relationship between them, as this construction shows in three lines.
+
+Chapter VIII.5 makes this quantitative for model comparison; the same disconnect
+between a differentiable surrogate and the quantity of interest reappears there
+as the difference between AUROC and clinical utility.
+</SolutionToggle>

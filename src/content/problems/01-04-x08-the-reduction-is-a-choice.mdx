@@ -1,0 +1,97 @@
+---
+id: "I.4.X08"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "The reduction is a choice, and it moves the learning rate"
+depends:
+  - "I.4.P04"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+The second assumption of this chapter is that the reduction is a plain mean over
+examples. Show that summing instead of averaging changes the effective learning
+rate, quantify it for two batch sizes, and identify a case where the choice
+varies *within* a training run.
+
+<Hint>
+The gradient of a sum is $n$ times the gradient of a mean.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the two reductions.**
+
+$$
+L_{\text{mean}} = \frac{1}{n}\sum_{i=1}^{n}\ell_i,
+\qquad
+L_{\text{sum}} = \sum_{i=1}^{n}\ell_i = n\,L_{\text{mean}}
+$$
+
+**Step 2 — the gradients.** Differentiation is linear, so the factor passes
+straight through:
+
+$$\nabla_\theta L_{\text{sum}} = n\,\nabla_\theta L_{\text{mean}}$$
+
+**Step 3 — the update.** With learning rate $\eta$:
+
+$$
+\theta \leftarrow \theta - \eta\,\nabla L_{\text{sum}}
+= \theta - (n\eta)\,\nabla L_{\text{mean}}
+$$
+
+**Summing rather than averaging is exactly training at learning rate $n\eta$.**
+Not approximately, and not "roughly like a bigger step" — identically.
+
+**Step 4 — quantify.** At $n = 32$ and $\eta = 10^{-3}$, the effective rate under
+summation is $3.2\times10^{-2}$; at $n = 256$ it is $2.56\times10^{-1}$. The
+same code, the same $\eta$, and an eightfold difference in effective rate purely
+from the batch size. A configuration tuned at $n = 32$ diverges at $n = 256$,
+and the reduction is nowhere in the hyperparameter file.
+
+**Step 5 — the case that varies within a run.** This is the part worth
+remembering, because it is invisible.
+
+Consider token-level cross-entropy over variable-length sequences with padding,
+as in I.4.B07. Suppose the implementation sums the per-token losses and divides
+by the *batch size* rather than by the *token count*:
+
+$$L = \frac{1}{B}\sum_{b}\sum_{t}\ell_{bt}$$
+
+Then a batch of long sequences has more tokens contributing to the same
+denominator, so its gradient is larger. With $B = 4$:
+
+*A batch averaging $500$ tokens per sequence* contributes about $2{,}000$ token
+losses over a denominator of $4$ — an effective per-token weight of $500$.
+
+*A batch averaging $50$ tokens* contributes $200$ losses over the same
+denominator — an effective weight of $50$.
+
+**A tenfold swing in effective learning rate, batch to batch**, driven entirely
+by the sequence lengths that happened to be sampled. And length-bucketing —
+grouping similar lengths together for throughput — makes it systematic rather
+than random: early buckets of short sequences train at one rate and later buckets
+of long ones at another.
+
+**Step 6 — the correct reduction, and the check.** Divide by the number of
+*valid tokens*:
+
+$$L = \frac{\sum_{b,t} m_{bt}\,\ell_{bt}}{\sum_{b,t} m_{bt}}$$
+
+with $m$ the mask. Then the denominator tracks the numerator and the effective
+per-token weight is $1$ regardless of lengths or padding.
+
+The check is one line: **log the denominator**. If it varies across steps by more
+than the padding fraction should allow, the reduction is wrong. Nothing else in
+the run will tell you.
+
+**Why this belongs with the losses rather than with the engineering.** The
+reduction does not appear in the loss's formula and is not part of its
+definition — which is exactly why it is assumed rather than stated, and why the
+assumption is worth writing down as this chapter does.
+</SolutionToggle>

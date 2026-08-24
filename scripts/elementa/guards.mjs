@@ -573,6 +573,41 @@ export async function lintProse(data) {
     }
   }
 
+  /**
+   * A `^{...}` or `_{...}` outside a maths delimiter is LaTeX that escaped into
+   * prose. MDX reads the brace as a JSX expression, fails to parse it, and
+   * reports the error at a line that may be far from the cause — so name it
+   * here instead.
+   */
+  for (const f of files) {
+    // Only the body is MDX. Frontmatter is YAML and code fences are verbatim,
+    // so a brace is harmless in both — checking them was the difference
+    // between 3 real findings and 134.
+    const offset = f.text.length - f.body.length;
+    const lines = f.body.split('\n');
+    const before = f.text.slice(0, offset).split('\n').length - 1;
+    let inFence = false;
+    let inMath = false;
+    for (const [i, line] of lines.entries()) {
+      const t = line.trim();
+      if (t.startsWith('```')) { inFence = !inFence; continue; }
+      if (t === '$$') { inMath = !inMath; continue; }
+      if (inFence || inMath) continue;
+      // Strip display maths before inline, or `$$x$$` is read as two empty
+      // inline spans and its body is left exposed.
+      const outside = line
+        .replace(/\$\$[\s\S]*?\$\$/g, '')
+        .replace(/\$[^$]*\$/g, '')
+        .replace(/`[^`]*`/g, '');
+      if (/[\^_]\{/.test(outside)) {
+        errors.push(
+          `${rel(f.file)}:${before + i + 1}: a superscript or subscript brace sits ` +
+          `outside maths delimiters. MDX will read it as JSX. Wrap it in $…$ (§5.8).`
+        );
+      }
+    }
+  }
+
   // §5.7 — an equation numbered but never referenced should not be numbered.
   const cited = new Set();
   for (const f of files) for (const m of f.text.matchAll(/\(([IVX]+\.\d+\.\d+)\)/g)) cited.add(m[1]);

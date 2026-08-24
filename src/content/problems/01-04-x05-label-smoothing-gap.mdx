@@ -1,0 +1,114 @@
+---
+id: "I.4.X05"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "The finite logit gap label smoothing asks for"
+depends:
+  - "I.4.P02"
+  - "I.4.P04"
+rounding: "4 d.p."
+hasSolution: true
+verified: false
+status: published
+---
+
+With one-hot targets, cross-entropy is minimised only as the true-class logit
+goes to infinity. Show that label smoothing replaces that with a finite optimum,
+derive the optimal logit gap, and evaluate it for $\varepsilon = 0.1$, $K = 3$.
+
+<Hint>
+The gradient is still $\vec{p} - \vec{y}'$ by I.4.B03 — that derivation never
+needed $\vec{y}$ to be one-hot, only to sum to one.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — the smoothed target.** For true class $c$,
+
+$$
+y'_k = (1-\varepsilon)\,\mathbb{1}[k=c] + \frac{\varepsilon}{K}
+$$
+
+Check it sums to one: $(1-\varepsilon)(1) + K\cdot\varepsilon/K = 1 - \varepsilon + \varepsilon = 1$ ✓.
+That is the only property I.4.B03's Step 8 used, so the gradient result carries
+over unchanged:
+
+$$\frac{\partial L}{\partial \vec{z}} = \vec{p} - \vec{y}'$$
+
+**Step 2 — set the gradient to zero.** The stationary point is $\vec{p} = \vec{y}'$:
+
+$$
+p_c = 1 - \varepsilon + \frac{\varepsilon}{K},
+\qquad
+p_j = \frac{\varepsilon}{K} \ \ (j \neq c)
+$$
+
+**These are attainable probabilities**, both strictly inside $(0,1)$. Contrast
+with $\varepsilon = 0$, where the requirement is $p_c = 1$ and $p_j = 0$ — values
+softmax approaches but never reaches for finite logits.
+
+**Step 3 — convert to a logit gap.** From $p_i = e^{z_i}/S$, the ratio of two
+probabilities has the shared denominator cancel:
+
+$$\frac{p_c}{p_j} = \frac{e^{z_c}}{e^{z_j}} = e^{\,z_c - z_j}$$
+
+Taking logarithms,
+
+$$
+z_c - z_j = \log\frac{p_c}{p_j}
+= \log\!\left(\frac{1 - \varepsilon + \varepsilon/K}{\varepsilon/K}\right)
+$$
+
+**Step 4 — simplify.** Multiply numerator and denominator by $K$:
+
+$$
+\boxed{\ z_c - z_j = \log\!\left(\frac{K(1-\varepsilon) + \varepsilon}{\varepsilon}\right)\ }
+$$
+
+**Step 5 — evaluate at $\varepsilon = 0.1$, $K = 3$.**
+
+$$
+p_c = 1 - 0.1 + \frac{0.1}{3} = 0.9 + 0.0333 = 0.9333,
+\qquad
+p_j = \frac{0.1}{3} = 0.0333
+$$
+
+$$
+\frac{p_c}{p_j} = \frac{0.9333}{0.0333} = 28.0
+\quad\Longrightarrow\quad
+z_c - z_j = \log 28.0 = 3.3322
+$$
+
+Or from the closed form: $\big(3(0.9) + 0.1\big)/0.1 = 2.8/0.1 = 28$ ✓.
+
+**Step 6 — the limits.** As $\varepsilon \to 0^{+}$ the argument of the logarithm
+is $K/\varepsilon \to \infty$, so the gap diverges — recovering the unsmoothed
+case where no finite logit configuration is optimal. As $\varepsilon \to 1$ the
+argument tends to $1$ and the gap to $0$: the target becomes uniform and the
+model is asked to predict nothing at all.
+
+**What this buys, and what it costs.**
+
+*Bounded logits.* The optimum is at a gap of $3.33$ rather than at infinity, so
+there is no incentive to keep growing the weights. That is a regularisation
+effect, obtained without a penalty term.
+
+*Better calibration.* An unsmoothed model driven toward $p_c = 1$ is
+systematically overconfident. Smoothing caps the confidence at a chosen value,
+and $0.9333$ is a defensible one.
+
+*Worse for distillation.* Müller et al. (2019) show smoothing collapses the
+geometry of the penultimate layer: the logits of the wrong classes are pushed to
+be equally wrong, destroying the relative information a student model would
+learn from. A smoothed teacher is a worse teacher, and this is the standard
+reason not to smooth when distillation is planned.
+
+**A caution on reading the loss.** The minimum value is no longer zero. At the
+optimum the loss equals the entropy of $\vec{y}'$, which for $\varepsilon = 0.1$,
+$K = 3$ is $-0.9333\log 0.9333 - 2(0.0333)\log 0.0333 = 0.0644 + 0.2266 = 0.2910$
+nats. A smoothed run that plateaus at $0.29$ has converged; comparing it to an
+unsmoothed run's $0.05$ is comparing two different objectives.
+</SolutionToggle>

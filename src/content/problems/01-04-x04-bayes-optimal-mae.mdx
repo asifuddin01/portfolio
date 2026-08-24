@@ -1,0 +1,101 @@
+---
+id: "I.4.X04"
+kind: exercise
+chapter: "I.4"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Absolute loss asks for the median"
+depends:
+  - "I.4.P02"
+rounding: "Symbolic, with one numeric illustration."
+hasSolution: true
+verified: false
+status: published
+---
+
+Prove that the constant minimising $\mathbb{E}|Y - c|$ is a median of $Y$. Then
+contrast with I.4.X03 on a concrete skewed example, and state which loss to
+choose when the two answers differ.
+
+<Hint>
+Differentiate under the expectation. The derivative of $|y - c|$ with respect to
+$c$ is $-\mathrm{sign}(y - c)$, which takes only two values.
+</Hint>
+
+<SolutionToggle>
+
+**Step 1 — differentiate.** For $Y$ with a density, differentiating under the
+expectation:
+
+$$
+\frac{\mathrm{d}}{\mathrm{d}c}\,\mathbb{E}|Y - c|
+= \mathbb{E}\!\left[\frac{\partial}{\partial c}|Y-c|\right]
+= \mathbb{E}\big[-\operatorname{sign}(Y - c)\big]
+$$
+
+**Step 2 — write the sign as a difference of probabilities.** Since
+$\operatorname{sign}$ takes only $\pm 1$ (ignoring the measure-zero tie):
+
+$$
+\mathbb{E}\big[\operatorname{sign}(Y-c)\big]
+= (+1)\,P(Y > c) + (-1)\,P(Y < c)
+= P(Y > c) - P(Y < c)
+$$
+
+so
+
+$$\frac{\mathrm{d}}{\mathrm{d}c}\,\mathbb{E}|Y - c| = P(Y < c) - P(Y > c)$$
+
+**Step 3 — set to zero.**
+
+$$P(Y < c) = P(Y > c)$$
+
+which, with the two probabilities summing to $1$, gives
+$P(Y < c) = P(Y > c) = \tfrac12$. That is the definition of a median.
+$\blacksquare$
+
+**Step 4 — confirm it is a minimum.** The derivative $P(Y<c) - P(Y>c)$ is
+non-decreasing in $c$ (as $c$ rises, $P(Y<c)$ rises and $P(Y>c)$ falls), so it
+crosses zero from below: negative then positive. That is a minimum, and the
+objective is convex.
+
+**Step 5 — the contrast, made concrete.** Take $Y$ taking values
+$1, 2, 3, 4, 100$ with equal probability $1/5$.
+
+*Mean.* $(1 + 2 + 3 + 4 + 100)/5 = 110/5 = 22$.
+
+*Median.* The middle of five ordered values: $3$.
+
+Squared loss would have the model predict $22$; absolute loss, $3$. **Four of the
+five actual values are closer to $3$ than to $22$**, and $22$ is not near any of
+them.
+
+**Step 6 — why the difference is structural, not a quirk.** From Step 2, each
+observation contributes $\pm 1$ to the derivative of $\mathbb{E}|Y-c|$ —
+its *magnitude is irrelevant*, only which side it is on. Changing $100$ to
+$10^6$ leaves the median at $3$ and moves the mean to $200{,}002$. Under squared
+loss the derivative contribution is $(c - y)$, proportional to distance, so one
+distant point can outvote many near ones. This is the same fact as I.4.B01's
+derivative column, stated in expectation instead of on a sample.
+
+**Which to choose.** The question is not which is more robust; it is which
+summary you actually want reported.
+
+*If the quantity of interest is a total* — total revenue, total dose, total
+count — the mean is correct, because means add and medians do not. Predicting the
+median and summing gives the wrong total.
+
+*If the quantity of interest is a typical case* — a typical delivery time, a
+typical house price — the median is correct, and the mean is distorted by a tail
+you were never asking about.
+
+*If large errors are disproportionately costly*, squared loss encodes that
+directly, and choosing it is a statement about consequences rather than about
+robustness.
+
+**The honest summary.** "MAE is robust to outliers" is true and is the wrong
+framing. Both losses answer a well-posed question exactly; they answer *different
+well-posed questions*. Deciding between them means deciding which question you
+are asking, which is a modelling decision and not a numerical one.
+</SolutionToggle>
