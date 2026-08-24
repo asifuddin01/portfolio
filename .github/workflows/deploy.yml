@@ -56,20 +56,31 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set +e
+          # The value is masked by GitHub; its length is not, and that is the
+          # one fact that separates "the secret never arrived" from "the secret
+          # arrived and Cloudflare refused it".
+          echo "token characters visible to this job: ${#CLOUDFLARE_API_TOKEN}"
+          echo "account id characters visible to this job: ${#CF_ACCOUNT_ID}"
+
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             {
               echo "### Deploy blocked — no API token"
               echo ""
-              echo "The repository has no \`CLOUDFLARE_API_TOKEN\` secret, so the site"
+              echo "This job received an empty \`CLOUDFLARE_API_TOKEN\`, so the site"
               echo "cannot be deployed. Everything else in this run passed."
               echo ""
-              echo "To fix it, once:"
+              echo "If you have already added the secret, it is almost certainly in the"
+              echo "wrong one of GitHub's four secret stores. A workflow can only read"
+              echo "**Actions → Repository secrets**. Secrets added under *Dependabot*,"
+              echo "*Codespaces*, or an *Environment* are invisible here."
               echo ""
-              echo "1. <https://dash.cloudflare.com/profile/api-tokens> → **Create Token**"
-              echo "   → use the **Edit Cloudflare Workers** template → Create → copy it."
-              echo "2. <https://github.com/asifuddin01/portfolio/settings/secrets/actions>"
-              echo "   → **New repository secret** → name \`CLOUDFLARE_API_TOKEN\`, paste the value."
-              echo "3. Actions → this workflow → **Re-run jobs**."
+              echo "Check <https://github.com/asifuddin01/portfolio/settings/secrets/actions>"
+              echo "and confirm the name appears under **Repository secrets**, spelled"
+              echo "exactly \`CLOUDFLARE_API_TOKEN\` — no spaces, no CF_ prefix."
+              echo ""
+              echo "If it is missing: **New repository secret**, paste a token created"
+              echo "from the **Edit Cloudflare Workers** template at"
+              echo "<https://dash.cloudflare.com/profile/api-tokens>."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::No CLOUDFLARE_API_TOKEN secret. See the job summary for the two steps that fix it."
             exit 1
