@@ -2,9 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import ArtPlate from '../../components/art/ArtPlate.astro';
+import { getEntry } from 'astro:content';
 import { getTabulae } from '../../lib/collections';
 
 const tabulae = await getTabulae();
+const meta = await getEntry('site', 'tabulae');
 ---
 <BaseLayout
   title="Tabulae — Md. Asif Uddin"
@@ -13,15 +15,9 @@ const tabulae = await getTabulae();
 >
   <div class="codex tb">
     <header class="tb-head">
-      <p class="tb-kicker" data-reveal>The plates</p>
-      <h1 class="tb-h1" data-press>Tabulae</h1>
-      <p class="tb-lede codex-measure" data-reveal>
-        The images interleaved between the chapters. On vellum an engraving is
-        printed onto the page rather than pasted on top of it, so the white of
-        the original sheet becomes the paper. In the dark it is left as it is —
-        an engraving is black lines on white, and inverting one would show you a
-        different picture. Each has a note on where it came from.
-      </p>
+      {meta?.data.kicker && <p class="tb-kicker" data-reveal>{meta.data.kicker}</p>}
+      <h1 class="tb-h1" data-press>{meta?.data.title ?? 'Tabulae'}</h1>
+      {meta?.data.lede && <p class="tb-lede codex-measure" data-reveal>{meta.data.lede}</p>}
     </header>
 
     <LesionRule />

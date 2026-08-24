@@ -1646,6 +1646,24 @@ collections:
             hint: >-
               Avoid naming a number of books here — you can add more, and the text would go stale.
           - { label: On the home page, name: homeIntro, widget: text }
+      - name: tabulae
+        label: Tabulae introduction
+        file: src/content/site/tabulae.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: Kicker
+            name: kicker
+            widget: string
+            hint: "The small line above the title, e.g. The plates."
+          - label: Introduction
+            name: lede
+            widget: text
+            hint: >-
+              The paragraph under the title on the Tabulae page. Avoid naming a
+              number of plates — you add them from Tabulae and the text would go
+              stale.
       - name: frontispiece
         label: Frontispiece
         file: src/content/site/frontispiece.mdx
