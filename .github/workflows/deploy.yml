@@ -122,6 +122,10 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -n "$CF_ACCOUNT_ID" ]; then export CLOUDFLARE_ACCOUNT_ID="$CF_ACCOUNT_ID"; fi
+          # Verify built dist a moment ago, but assert it rather than assume it:
+          # wrangler uploads the directory as it finds it and cannot tell that
+          # it predates the content it is meant to serve.
+          npm run check:dist
           npx wrangler deploy
 
       - name: Report
