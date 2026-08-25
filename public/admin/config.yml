@@ -1304,7 +1304,24 @@ collections:
       - label: Note — description and historical background
         name: body
         widget: markdown
-        hint: "Where it came from, what is happening in it, why it is here."
+        # Refuses the save rather than the deploy. A pasted picture address is
+        # the one edit here that looks right in the editor and is broken by the
+        # time anybody visits, so it has to be caught before it is committed.
+        pattern:
+          - ^(?![\s\S]*!\[[^\]]*\]\(\s*<?https?:\/\/)[\s\S]*$
+          - >-
+            This note has a picture in it that lives on someone else's site.
+            Remove it, then click where the picture belongs and use the image
+            button to upload the file instead — pasted addresses stop working
+            within a day.
+        hint: >-
+          Where it came from, what is happening in it, why it is here. To put a
+          second picture inside the note, click where you want it and use the
+          image button — it uploads the file into the site and drops it at the
+          cursor, and that is where it appears on the page. Do not paste a
+          picture's web address: an address copied out of a chat or a search
+          result stops working within a day and the page publishes with a hole
+          in it, so the site refuses to build on one.
 
   # ------------------------------------------------------------------
   - name: axioms
