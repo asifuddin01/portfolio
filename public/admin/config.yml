@@ -1304,16 +1304,19 @@ collections:
       - label: Note — description and historical background
         name: body
         widget: markdown
-        # Refuses the save rather than the deploy. A pasted picture address is
-        # the one edit here that looks right in the editor and is broken by the
-        # time anybody visits, so it has to be caught before it is committed.
+        # Refuses the save rather than the deploy. Both of these look correct in
+        # the editor and are only wrong once published — a pasted address has
+        # expired by the time a reader arrives, and a picture with no
+        # description is one the accessibility audit will not publish. Catching
+        # them here means catching them while the file is still to hand.
         pattern:
-          - ^(?![\s\S]*!\[[^\]]*\]\(\s*<?https?:\/\/)[\s\S]*$
+          - ^(?![\s\S]*!\[[^\]]*\]\(\s*<?https?:\/\/)(?![\s\S]*!\[\s*\]\()[\s\S]*$
           - >-
-            This note has a picture in it that lives on someone else's site.
-            Remove it, then click where the picture belongs and use the image
-            button to upload the file instead — pasted addresses stop working
-            within a day.
+            A picture in this note is not ready yet. Either it points at
+            someone else's website — those addresses stop working within a day,
+            so upload the file instead — or it has no description. Click the
+            picture and fill in the description field: one plain sentence
+            saying what is in it.
         hint: >-
           Where it came from, what is happening in it, why it is here. To put a
           second picture inside the note, click where you want it and use the

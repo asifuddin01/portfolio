@@ -12,6 +12,11 @@
  *   2. A path that does not resolve. A file renamed or removed on disk leaves
  *      the reference behind. Astro fails the build for this one, several
  *      hundred lines away from anything readable.
+ *   3. No alt text. The editor's image button leaves the alt empty unless the
+ *      description field is filled in, and an empty alt reaches the page as an
+ *      <img> with no alt attribute at all, which the audit refuses. That
+ *      refusal arrives thirty seconds into a build and names a truncated URL,
+ *      so it is worth catching here where the sentence can say what to type.
  *
  * Running before the build turns both into one line naming the file, the line
  * number, and what to do instead.
@@ -103,7 +108,22 @@ for (const file of await walk(CONTENT)) {
         continue;
       }
 
-      if (alt !== null && (alt.trim() === '' || /^(image|img|picture|photo)$/i.test(alt.trim()))) {
+      // Matches scripts/audit.mjs, which fails the build on an <img> with no
+      // alt attribute. Erroring here rather than warning keeps the two from
+      // disagreeing about what is publishable.
+      if (alt !== null && alt.trim() === '') {
+        problems.push(
+          `${at}\n` +
+          `      has no alt text, so it reaches the page as a picture a screen reader\n` +
+          `      cannot announce, and the audit will not publish it.\n` +
+          `      Fix: in /admin, click the picture in the note and fill in the description\n` +
+          `      field — one plain sentence saying what is in it, the way you would\n` +
+          `      describe it to someone over the phone.`
+        );
+        continue;
+      }
+
+      if (alt !== null && /^(image|img|picture|photo)$/i.test(alt.trim())) {
         warnings.push(`${at}  alt text is "${alt}" — a screen reader reads that out and the listener learns nothing.`);
       }
     }
