@@ -1,0 +1,60 @@
+---
+part: 3
+title: 'Alignment'
+gloss: 'Turning a model that predicts text into one that answers you.'
+summary: 'RLHF and the four papers that spent the next two years taking it apart.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'RLHF'
+    title: 'Training Language Models to Follow Instructions with Human Feedback'
+    authors: 'Ouyang et al.'
+    year: '2022'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2203.02155
+    claim: 'A 1.3B model tuned on human preferences is preferred by human raters to a 175B base model.'
+    why: 'The paper that turned a language model into an assistant. That headline — a hundred times smaller and preferred anyway — is the strongest evidence in the literature that capability and usefulness are separate axes.'
+    readFor: 'Section 3: supervised fine-tuning, reward model, PPO. You meet all three again.'
+  - alias: 'DPO'
+    title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+    authors: 'Rafailov et al.'
+    year: '2023'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2305.18290
+    claim: 'The RLHF objective has a closed form, so preferences can be optimised directly with a classification loss — no reward model, no reinforcement learning.'
+    why: 'It removed the most fragile component of the pipeline. If you ever implement alignment yourself, this is what you will implement.'
+    readFor: 'Section 4. The derivation is short; do it on paper.'
+  - alias: 'Constitutional AI'
+    title: 'Constitutional AI: Harmlessness from AI Feedback'
+    authors: 'Bai et al.'
+    year: '2022'
+    venue: 'Anthropic'
+    url: https://arxiv.org/abs/2212.08073
+    claim: 'A model can critique and revise its own outputs against a written set of principles, replacing most human harmlessness labels with model feedback.'
+    why: 'The scaling argument for alignment: human labelling does not keep up with model capability. Also the clearest published account of what a principle is, operationally.'
+    readFor: 'Section 3, then the appendix with the constitution itself.'
+  - alias: 'RRHF'
+    title: 'RRHF: Rank Responses to Align Language Models with Human Feedback without tears'
+    authors: 'Yuan et al.'
+    year: '2023'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2304.05302
+    claim: 'Ranking sampled responses with a simple loss aligns as well as PPO, at the tuning burden of ordinary fine-tuning.'
+    why: 'Read it beside DPO. Two groups reaching the same conclusion by different routes — that the reinforcement learning was doing less work than assumed — is stronger evidence than either alone.'
+    readFor: ''
+  - alias: 'ORPO'
+    title: 'ORPO: Monolithic Preference Optimization without Reference Model'
+    authors: 'Hong, Lee & Thorne'
+    year: '2024'
+    venue: 'EMNLP'
+    url: https://arxiv.org/abs/2403.07691
+    claim: 'Preference alignment folds into supervised fine-tuning as an odds-ratio penalty, with no reference model and no second stage.'
+    why: 'The end of the compression: three stages became two, then one. A good place to stop and ask what the extra stages had been buying.'
+    readFor: ''
+---
+
+A base language model does not want to help you. It continues text. The distance between that and an assistant is this part.
+
+The first paper is the pipeline everyone copied. The four after it are a single sustained argument that the pipeline was more complicated than it needed to be: first the reinforcement learning came out, then the reward model, then the separate stage altogether. Read them in order and you are watching a method get compressed in real time.
+
+Worth holding onto while you read: nobody has shown that the compression is free. Ask, at each step, what was lost.

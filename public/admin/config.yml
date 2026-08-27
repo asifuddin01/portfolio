@@ -222,6 +222,133 @@ collections:
         hint: "Use the image button in the toolbar to upload and place pictures."
 
   # ------------------------------------------------------------------
+  - name: lectiones
+    label: Lectiones — the reading course
+    label_singular: Part
+    description: >-
+      Marginalia II. The papers somebody else should read, in order, three to five at a time. Marginalia I is your opinion of something after reading it; this is the list you would hand a student. Add a part, give it a number, and it appears on the Marginalia page, on the Papers page and in the course itself.
+    folder: src/content/lectiones
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "part-{{part}}"
+    summary: "{{part}} · {{title}}"
+    sortable_fields: [ part, updated, title ]
+    fields:
+      - label: Part number
+        name: part
+        widget: number
+        value_type: int
+        min: 1
+        hint: >-
+          Sets the address and the reading order. Use the next number up from the
+          last part. Two parts with the same number will collide, so check the
+          list before you pick one.
+      - label: Title
+        name: title
+        widget: string
+        hint: "What the part is about, e.g. 'Retrieval'. Short — it is a heading."
+      - label: Gloss
+        name: gloss
+        widget: text
+        hint: >-
+          One line under the title, saying what the part is for. Written to be
+          read on its own in a list of parts.
+      - label: Summary
+        name: summary
+        widget: text
+        hint: "One line for the index. Name the papers rather than describing them abstractly."
+      - label: Status
+        name: status
+        widget: select
+        default: draft
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+        hint: >-
+          Leave a part on draft while you write it. Drafts are visible while you
+          are working locally and never reach the live site.
+      - label: Date
+        name: updated
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - label: The reading
+        name: readings
+        widget: list
+        min: 1
+        max: 5
+        label_singular: Paper
+        summary: "{{fields.alias}} — {{fields.title}}"
+        hint: >-
+          Three to five papers. The cap is the design of the series, not a
+          technical limit: a part is meant to be a week of reading. A paper
+          should appear in exactly one part across the whole course — when a
+          later part needs it again, say so in the introduction and point back,
+          rather than listing it twice.
+        fields:
+          - label: Short name
+            name: alias
+            widget: string
+            hint: "What it is called in conversation — 'AlexNet', 'RoPE', 'DPO'."
+          - label: Full title
+            name: title
+            widget: string
+            hint: "Exactly as the paper gives it. Copy it from the abstract page, not from memory."
+          - label: Authors
+            name: authors
+            widget: string
+            hint: "First author and 'et al.', or all of them if there are three or fewer."
+          - label: Year
+            name: year
+            widget: string
+            hint: "The year it first appeared, not the year of the latest revision."
+          - label: Venue
+            name: venue
+            widget: string
+            required: false
+            hint: "Where it was published, e.g. NeurIPS, ICLR 2023, Nature. Leave blank for a preprint."
+          - label: Link
+            name: url
+            widget: string
+            required: false
+            pattern:
+              - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+              - Paste the address only, e.g. https://arxiv.org/abs/1706.03762 — not a sentence.
+            hint: >-
+              The abstract page rather than the PDF, so the reader gets the
+              versions and the citation with it.
+          - label: Claim
+            name: claim
+            widget: text
+            hint: >-
+              What the paper actually asserts, in one sentence, with the number
+              in it if there is one. Not what field it is in.
+          - label: Why it is here
+            name: why
+            widget: text
+            hint: >-
+              Why this paper rather than another on the same subject. Famous is
+              not a reason; say what the reader gets from it that they cannot
+              get elsewhere.
+          - label: What to read
+            name: readFor
+            widget: text
+            required: false
+            hint: >-
+              Optional. Which sections to read closely and which to skip. This is
+              the most useful field on the page and the easiest one to leave out.
+      - label: Introduction
+        name: body
+        widget: markdown
+        hint: >-
+          A few paragraphs before the list: what ties these papers together, what
+          order to read them in, and what to carry into the next part. Use the
+          image button in the toolbar to upload and place pictures.
+
+  # ------------------------------------------------------------------
   - name: books
     label: Elementa books
     label_singular: Book

@@ -1,0 +1,60 @@
+---
+part: 5
+title: 'Vision after the Transformer'
+gloss: 'What happened to computer vision once attention arrived.'
+summary: 'ViT and its expensive condition, the two papers that removed it, and self-supervision taking over.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'ViT'
+    title: 'An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale'
+    authors: 'Dosovitskiy et al.'
+    year: '2020'
+    venue: 'ICLR 2021'
+    url: https://arxiv.org/abs/2010.11929
+    claim: 'Cut an image into 16x16 patches, treat them as tokens, and a plain Transformer beats convolutional networks — given enough pre-training data.'
+    why: 'The condition in that sentence is the paper. Section 4.2 shows where ViT loses, and the honest version of the result is the one with the caveat attached.'
+    readFor: 'Sections 3.1 and 4.2. Figure 3 is the one to remember.'
+  - alias: 'Swin'
+    title: 'Swin Transformer: Hierarchical Vision Transformer using Shifted Windows'
+    authors: 'Liu et al.'
+    year: '2021'
+    venue: 'ICCV'
+    url: https://arxiv.org/abs/2103.14030
+    claim: 'Computing attention inside shifted local windows gives linear cost in image size and the feature hierarchy a plain ViT lacks.'
+    why: 'What you actually use for detection and segmentation. Also a clean example of putting a known inductive bias back after it has been removed on principle.'
+    readFor: 'Section 3.2, the shifted windowing.'
+  - alias: 'DeiT'
+    title: 'Training data-efficient image transformers and distillation through attention'
+    authors: 'Touvron et al.'
+    year: '2020'
+    venue: 'ICML 2021'
+    url: https://arxiv.org/abs/2012.12877
+    claim: 'With the right augmentation and a distillation token, a vision Transformer trains on ImageNet alone — no three-hundred-million-image pre-training.'
+    why: 'It answered ViT''s expensive condition within months. Read it as the reply it is.'
+    readFor: ''
+  - alias: 'MAE'
+    title: 'Masked Autoencoders Are Scalable Vision Learners'
+    authors: 'He et al.'
+    year: '2021'
+    venue: 'CVPR 2022'
+    url: https://arxiv.org/abs/2111.06377
+    claim: 'Mask 75% of the patches, reconstruct them, and you get a strong vision backbone with no labels at all.'
+    why: 'The asymmetric encoder-decoder is what makes it cheap, and the 75% is not a hyperparameter detail — the paper explains why images tolerate a far higher mask ratio than language does.'
+    readFor: 'Section 4 on the mask ratio.'
+  - alias: 'DINOv2'
+    title: 'DINOv2: Learning Robust Visual Features without Supervision'
+    authors: 'Oquab et al.'
+    year: '2023'
+    venue: 'TMLR'
+    url: https://arxiv.org/abs/2304.07193
+    claim: 'Self-supervised features from a curated 142-million-image set transfer without fine-tuning, beating weakly supervised features on most benchmarks.'
+    why: 'The current answer to which backbone to use. The data-curation pipeline is the part most readers skip and the part that did the work.'
+    readFor: 'Section 2, the curation.'
+---
+
+The first paper here makes a claim with a condition attached, and the condition is the interesting part: a plain Transformer beats convolution on images *given enough pre-training data*, and below roughly a hundred million images it loses.
+
+The next four papers are all, in one way or another, attacks on that condition. Swin puts a useful inductive bias back. DeiT shows the data requirement was an artefact of the training recipe. MAE and DINOv2 remove the labels instead of the data.
+
+Read Part I again if the convolution baselines are hazy. The comparison is the point.

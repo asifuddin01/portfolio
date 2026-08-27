@@ -1,0 +1,51 @@
+---
+part: 10
+title: 'Reasoning'
+gloss: 'Four papers in which nothing about the model changes and the answers get better.'
+summary: 'Chain of thought, self-consistency, tree search, and supervising the steps instead of the answer.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'CoT'
+    title: 'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models'
+    authors: 'Wei et al.'
+    year: '2022'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2201.11903
+    claim: 'Prompting with worked examples that show the intermediate steps unlocks arithmetic and symbolic reasoning the same model cannot do when asked for the answer alone.'
+    why: 'The finding is genuinely odd and worth sitting with, because nothing about the model changed. Note the emergence result: the effect appears only above roughly a hundred billion parameters.'
+    readFor: 'Sections 3 and 5.'
+  - alias: 'Self-Consistency'
+    title: 'Self-Consistency Improves Chain of Thought Reasoning in Language Models'
+    authors: 'Wang et al.'
+    year: '2022'
+    venue: 'ICLR 2023'
+    url: https://arxiv.org/abs/2203.11171
+    claim: 'Sample several chains of thought and take the majority answer; accuracy rises substantially over greedy decoding.'
+    why: 'Two pages of idea for large gains, and the beginning of treating inference compute as a dial you can turn.'
+    readFor: ''
+  - alias: 'ToT'
+    title: 'Tree of Thoughts: Deliberate Problem Solving with Large Language Models'
+    authors: 'Yao et al.'
+    year: '2023'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2305.10601
+    claim: 'Letting the model propose, evaluate and backtrack over a tree of partial solutions turns generation into search.'
+    why: 'Where prompting stops being prompting. The Game of 24 result — four per cent to seventy-four — is the number to carry away.'
+    readFor: 'Section 3.'
+  - alias: 'Process supervision'
+    title: 'Let''s Verify Step by Step'
+    authors: 'Lightman et al.'
+    year: '2023'
+    venue: 'ICLR 2024'
+    url: https://arxiv.org/abs/2305.20050
+    claim: 'Supervising each reasoning step beats supervising only the final answer, by a wide margin, on competition mathematics.'
+    why: 'The clearest statement of process versus outcome supervision, and the reason a modern reasoning model has a verifier attached to it.'
+    readFor: 'Sections 3 and 4.'
+---
+
+Sit with how strange the first result is. The weights are frozen. The question is the same. Changing the shape of the prompt so that it shows intermediate steps moves arithmetic accuracy by tens of points.
+
+The three papers after it are the field working out what that implies. If thinking out loud helps, sample several and vote. If voting helps, search the tree properly. If search needs a signal, supervise the steps rather than the answer.
+
+By the fourth paper the model is no longer being prompted; it is a subroutine inside an algorithm. That is the transition this part is really about, and it leads directly into Part XII.

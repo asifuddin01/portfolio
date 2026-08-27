@@ -347,6 +347,17 @@ export async function getMarginalia(): Promise<CollectionEntry<'marginalia'>[]> 
   return all.filter(visible).sort((a, b) => b.data.entry - a.data.entry);
 }
 
+/**
+ * The reading course, in part order. Marginalia II.
+ *
+ * Ascending, unlike the ledger in Marginalia I: a commonplace book is read
+ * newest-first, a course is read from the beginning.
+ */
+export async function getLectiones(): Promise<CollectionEntry<'lectiones'>[]> {
+  const all = await getCollection('lectiones');
+  return all.filter(visible).sort((a, b) => a.data.part - b.data.part);
+}
+
 /** The interleaved artwork, in plate order. */
 export async function getTabulae(): Promise<CollectionEntry<'art'>[]> {
   const all = await getCollection('art');

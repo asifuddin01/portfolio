@@ -2,10 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import KindMark from '../../components/marginalia/KindMark.astro';
-import { getMarginalia } from '../../lib/collections';
+import { getMarginalia, getLectiones } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
 const entries = await getMarginalia();
+const parts = await getLectiones();
+const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
 const kinds = ['all', 'book', 'paper', 'model', 'essay', 'note'] as const;
 const counts = Object.fromEntries(
   kinds.map((k) => [k, k === 'all' ? entries.length : entries.filter((e) => e.data.kind === k).length])
@@ -25,9 +27,20 @@ const counts = Object.fromEntries(
         model actually does when you use it, and the occasional argument that did
         not fit anywhere else. Kept in one ledger, numbered as they are written.
       </p>
+      <p class="mg-lede codex-measure" data-reveal>
+        Two parts. The first is the ledger — my opinion of something after
+        reading it. The second is a reading course: what somebody else should
+        read, in what order, and what to take from each one.
+      </p>
     </header>
 
     <LesionRule />
+
+    <h2 class="mg-part" id="recensiones">
+      <span class="mg-part-n" aria-hidden="true">I</span>
+      <span class="mg-part-name">Recensiones</span>
+      <span class="mg-part-gloss">What I thought of it</span>
+    </h2>
 
     <div class="mg-filter" role="group" aria-label="Filter by kind">
       {kinds.map((k) => (
@@ -65,6 +78,41 @@ const counts = Object.fromEntries(
       </ol>
     )}
     <p class="mg-none" hidden>Nothing of that kind yet.</p>
+
+    <LesionRule />
+
+    <h2 class="mg-part" id="lectiones">
+      <span class="mg-part-n" aria-hidden="true">II</span>
+      <span class="mg-part-name">Lectiones</span>
+      <span class="mg-part-gloss">What to read, in order</span>
+    </h2>
+
+    <p class="mg-lede codex-measure">
+      A reading course in machine learning, published in parts of three to five
+      papers. Every paper appears exactly once, so finishing a part means
+      something. {parts.length} parts so far, {lectPapers} papers.
+    </p>
+
+    {parts.length > 0 && (
+      <ol class="mg-parts" data-reveal-stagger>
+        {parts.map((p) => (
+          <li class="mg-pitem">
+            <a class="mg-plink" href={`/marginalia/lectiones/${p.data.part}`}>
+              <span class="mg-pnum" aria-hidden="true">{toRoman(p.data.part)}</span>
+              <span class="mg-pmain">
+                <span class="mg-ptitle">{p.data.title}</span>
+                <span class="mg-pgloss">{p.data.gloss}</span>
+              </span>
+              <span class="mg-pn">{p.data.readings.length}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )}
+
+    <p class="mg-all">
+      <a class="link" href="/marginalia/lectiones">The whole course, with what each part is for</a>
+    </p>
   </div>
 </BaseLayout>
 
@@ -131,9 +179,69 @@ const counts = Object.fromEntries(
   .mg-date { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); white-space: nowrap; }
   .mg-empty, .mg-none { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
 
+  /* The two halves of the section, numbered rather than merely spaced apart. */
+  .mg-part {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+  }
+  .mg-part-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+    min-width: 4rem;
+  }
+  .mg-part-name { font-family: var(--font-display); font-size: var(--t-lg); color: var(--fundus); }
+  .mg-part-gloss {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .mg-parts {
+    list-style: none;
+    margin: 1.4rem 0 1.2rem;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .mg-pitem { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .mg-plink {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 0.85rem 0;
+    color: var(--ink);
+  }
+  .mg-pnum {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+  }
+  .mg-pmain { display: block; }
+  .mg-ptitle { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .mg-plink:hover .mg-ptitle { color: var(--fundus); }
+  .mg-pgloss { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.55; }
+  .mg-pn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .mg-all { font-family: var(--font-mono); font-size: var(--t-xs); margin-bottom: 2rem; }
+
   @media (max-width: 700px) {
-    .mg-link { grid-template-columns: 1fr; gap: 0.3rem; }
+    .mg-link, .mg-plink { grid-template-columns: 1fr; gap: 0.3rem; }
     .mg-date { grid-row: 1; }
+    .mg-pn { grid-row: 1; }
+    .mg-part-n { min-width: 0; }
   }
 </style>
 

@@ -1,0 +1,51 @@
+---
+part: 4
+title: 'Generating before the language model'
+gloss: 'Four ways to learn a distribution you can sample from.'
+summary: 'VAE, GAN, diffusion, and the compression that put image generation on a laptop.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'VAE'
+    title: 'Auto-Encoding Variational Bayes'
+    authors: 'Kingma & Welling'
+    year: '2013'
+    venue: 'ICLR 2014'
+    url: https://arxiv.org/abs/1312.6114
+    claim: 'The reparameterisation trick makes the variational bound differentiable, so an approximate posterior can be trained by ordinary gradient descent.'
+    why: 'The first of the modern generative models. If the evidence lower bound is not yet solid for you, this is where to fix that, and fixing it here saves you three times later.'
+    readFor: 'Sections 2.2 and 2.3. Derive the reparameterisation yourself.'
+  - alias: 'GAN'
+    title: 'Generative Adversarial Networks'
+    authors: 'Goodfellow et al.'
+    year: '2014'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/1406.2661
+    claim: 'Training a generator against a discriminator in a minimax game recovers the data distribution at the global optimum.'
+    why: 'The idea is one page and the proof is two. Read it even though diffusion has largely displaced it — the adversarial framing reappears everywhere afterwards.'
+    readFor: 'Section 3 and Section 4.1. Proposition 2 is the paper.'
+  - alias: 'Diffusion'
+    title: 'Denoising Diffusion Probabilistic Models'
+    authors: 'Ho, Jain & Abbeel'
+    year: '2020'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2006.11239
+    claim: 'A model trained to reverse a fixed noising process, under a simplified loss, matches GAN sample quality.'
+    why: 'The paper that made diffusion practical. The distance between its variational objective and the three-line training loop is the thing to understand.'
+    readFor: 'Algorithms 1 and 2 first, then go back for the derivation.'
+  - alias: 'Stable Diffusion'
+    title: 'High-Resolution Image Synthesis with Latent Diffusion Models'
+    authors: 'Rombach et al.'
+    year: '2021'
+    venue: 'CVPR 2022'
+    url: https://arxiv.org/abs/2112.10752
+    claim: 'Running diffusion in a compressed latent space rather than pixel space cuts the cost by an order of magnitude without losing fidelity.'
+    why: 'The engineering paper that put image generation on consumer hardware. The move — do the expensive thing in a smaller space — is worth carrying to problems that have nothing to do with images.'
+    readFor: ''
+---
+
+This part pays back more mathematics per page than any other. Three of the four papers contain a derivation worth doing yourself rather than reading.
+
+The order is chronological and also pedagogical. The variational autoencoder gives you the objective, the GAN gives you an alternative that avoids it, diffusion gives you the objective back in a form that actually trains, and latent diffusion makes it affordable.
+
+If your interest is language, this part is still not optional: the sampling and guidance machinery here reappears in every multimodal system in Part VI.

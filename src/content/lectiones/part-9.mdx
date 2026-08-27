@@ -1,0 +1,60 @@
+---
+part: 9
+title: 'Sparsity and scale'
+gloss: 'Why a model can have 671 billion parameters and use 37 billion of them.'
+summary: 'Mixture of experts from the 2017 gating network to the most detailed frontier training report anyone has published.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'Sparse MoE'
+    title: 'Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer'
+    authors: 'Shazeer et al.'
+    year: '2017'
+    venue: 'ICLR'
+    url: https://arxiv.org/abs/1701.06538
+    claim: 'A gating network that routes each example to a few of thousands of experts gives a thousand times more parameters at almost constant computation.'
+    why: 'Where conditional computation became practical. The load-balancing loss in Section 4 is the part everyone rediscovers the hard way.'
+    readFor: 'Sections 2 to 4.'
+  - alias: 'Switch'
+    title: 'Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity'
+    authors: 'Fedus, Zoph & Shazeer'
+    year: '2021'
+    venue: 'JMLR'
+    url: https://arxiv.org/abs/2101.03961
+    claim: 'Routing each token to exactly one expert is simpler, more stable and faster than the two that had been assumed necessary.'
+    why: 'The simplification that made mixture of experts trainable at scale, and the most honest published treatment of training instability on this list.'
+    readFor: 'Sections 2 and 5.'
+  - alias: 'Mixtral'
+    title: 'Mixtral of Experts'
+    authors: 'Jiang et al.'
+    year: '2024'
+    venue: 'Mistral AI'
+    url: https://arxiv.org/abs/2401.04088
+    claim: 'Eight experts with two active per token: 47 billion parameters in total, 13 billion used per token, matching or beating a dense 70-billion model.'
+    why: 'The first open mixture of experts anyone could run, and where the distinction between total and active parameters became something you have to say out loud.'
+    readFor: ''
+  - alias: 'DeepSeekMoE'
+    title: 'DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models'
+    authors: 'Dai et al.'
+    year: '2024'
+    venue: 'ACL'
+    url: https://arxiv.org/abs/2401.06066
+    claim: 'Splitting experts finer and reserving a few as always-on shared experts produces the specialisation that coarse routing never achieved.'
+    why: 'An argument about what an expert is for, supported by ablation rather than assertion. Read it as the counter-position to Switch.'
+    readFor: 'Section 3.'
+  - alias: 'DeepSeek-V3'
+    title: 'DeepSeek-V3 Technical Report'
+    authors: 'DeepSeek-AI'
+    year: '2024'
+    venue: 'Technical report'
+    url: https://arxiv.org/abs/2412.19437
+    claim: '671 billion parameters with 37 billion active, trained in under 2.8 million H800-hours, with auxiliary-loss-free load balancing and multi-token prediction.'
+    why: 'The most detailed public account of training a frontier model that exists. Read it as an engineering document; the cost table is the argument and the infrastructure section is where the work is.'
+    readFor: 'Sections 3 and 4.'
+---
+
+Every parameter count you read in a press release is now ambiguous, and this part is how it became ambiguous.
+
+The first two papers establish conditional computation and then simplify it until it trains reliably. The last three are the open models — the point at which a technique stops being a research direction and becomes something you download.
+
+Read the load-balancing losses closely. Routing collapses without them, everyone reinvents them, and each of these papers handles the problem slightly differently. DeepSeek-V3 removes the auxiliary loss altogether, which is the sort of claim worth checking carefully.

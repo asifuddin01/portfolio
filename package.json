@@ -17,14 +17,15 @@
     "og": "node scripts/make-og.mjs",
     "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check",
     "deploy": "npm run verify && npm run check:dist && wrangler deploy",
-    "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs",
-    "predev": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs",
+    "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs",
+    "predev": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs",
     "dev:plain": "astro dev",
     "check:cms": "node scripts/check-cms.mjs",
     "cv": "node scripts/build-cv.mjs",
     "tidy:plates": "node scripts/tidy-plates.mjs",
     "check:elementa": "node scripts/check-elementa.mjs",
-    "check:dist": "node scripts/check-dist-fresh.mjs"
+    "check:dist": "node scripts/check-dist-fresh.mjs",
+    "check:lectiones": "node scripts/check-lectiones.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",

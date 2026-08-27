@@ -1,0 +1,60 @@
+---
+part: 11
+title: 'Retrieval'
+gloss: 'Giving a model access to things it was not trained on.'
+summary: 'The original RAG paper, the one that came before it, a survey to navigate by, and two papers on what retrieval does when it fails.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'RAG'
+    title: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks'
+    authors: 'Lewis et al.'
+    year: '2020'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2005.11401
+    claim: 'Coupling a parametric model to a non-parametric index, trained end to end, beats either alone on knowledge-intensive tasks.'
+    why: 'The paper the acronym comes from, and stricter than current usage. Worth reading precisely to see the difference between what was proposed and what shipped.'
+    readFor: 'Sections 2 and 4.'
+  - alias: 'REALM'
+    title: 'REALM: Retrieval-Augmented Language Model Pre-Training'
+    authors: 'Guu, Lee, Tung, Pasupat & Chang'
+    year: '2020'
+    venue: 'ICML'
+    url: https://arxiv.org/abs/2002.08909
+    claim: 'A retriever can be pre-trained together with the language model, using masked-token prediction itself as the training signal.'
+    why: 'Published months before RAG and arguably the deeper idea. The asynchronous index refresh is the practical problem nobody warns you about until you hit it.'
+    readFor: 'Section 3.3.'
+  - alias: 'RAG survey'
+    title: 'Retrieval-Augmented Generation for Large Language Models: A Survey'
+    authors: 'Gao et al.'
+    year: '2023'
+    venue: 'arXiv'
+    url: https://arxiv.org/abs/2312.10997
+    claim: 'A map of the field: naive, advanced and modular retrieval-augmented generation, with retrieval, generation and augmentation separated as axes.'
+    why: 'The only survey on this list. Read the taxonomy, then follow the one branch your problem sits on and ignore the rest.'
+    readFor: 'Section 3, then use the reference list.'
+  - alias: 'GraphRAG'
+    title: 'From Local to Global: A Graph RAG Approach to Query-Focused Summarization'
+    authors: 'Edge et al.'
+    year: '2024'
+    venue: 'Microsoft Research'
+    url: https://arxiv.org/abs/2404.16130
+    claim: 'Building an entity graph over a corpus and summarising its communities answers global questions that chunk retrieval cannot answer at all.'
+    why: 'It names the failure honestly: what are the themes in this corpus is not a retrieval question. The fix is expensive, so read Section 2 and decide whether your problem is that shape before you build it.'
+    readFor: 'Section 2.'
+  - alias: 'CRAG'
+    title: 'Corrective Retrieval Augmented Generation'
+    authors: 'Yan, Xu, Cai, Han & Yu'
+    year: '2024'
+    venue: 'arXiv'
+    url: https://arxiv.org/abs/2401.15884
+    claim: 'A lightweight evaluator grades the retrieved documents and triggers a correction — decompose, discard, or search the web — when they are wrong.'
+    why: 'The first move toward retrieval that knows when it has failed. Everything before it assumes the index returned something useful, which it frequently did not.'
+    readFor: ''
+---
+
+The acronym has drifted. In the paper that coined it, the retriever is trained jointly with the generator; in most systems now called RAG, an off-the-shelf embedding model is bolted to a prompt. Read the first two papers to see what was given up in that trade, and then decide for yourself whether you want it back.
+
+The survey is the one survey in this series. Use it as an index rather than reading it through.
+
+The last two papers are the interesting ones, because both start from an admission. GraphRAG says plainly that some questions are not retrieval questions at all. CRAG says that retrieval can return confident rubbish and nothing downstream will notice.

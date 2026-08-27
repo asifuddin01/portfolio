@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import { getLectiones } from '../../../lib/collections';
+import { toRoman, AUTHOR } from '../../../consts';
+
+const parts = await getLectiones();
+const papers = parts.reduce((n, p) => n + p.data.readings.length, 0);
+---
+<BaseLayout
+  title={`Lectiones — ${AUTHOR}`}
+  description="A reading course in machine learning: the papers worth reading, in the order they make sense, three to five at a time."
+  folio="L"
+>
+  <div class="codex lc">
+    <header class="lc-head">
+      <p class="lc-kicker" data-reveal>Marginalia II</p>
+      <h1 class="lc-h1" data-press>Lectiones</h1>
+      <p class="lc-lede codex-measure" data-reveal>
+        The other half of a commonplace book. Marginalia I is what I thought of
+        something after reading it; this is what somebody else should read, in
+        what order, and what to take from each one.
+      </p>
+      <p class="lc-lede codex-measure" data-reveal>
+        Published in parts of three to five papers, because a list of sixty is a
+        thing people bookmark and never open. Every paper appears exactly once.
+        The famous ones are load-bearing in several places at once and it is
+        tempting to repeat them, but a list that repeats itself reads as padding
+        and you lose track of what you have already done. Later parts point back
+        instead.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <p class="lc-count">{parts.length} parts · {papers} papers</p>
+
+    {parts.length === 0 ? (
+      <p class="lc-empty">Nothing set yet.</p>
+    ) : (
+      <ol class="lc-list" data-reveal-stagger>
+        {parts.map((p) => (
+          <li class="lc-item">
+            <a class="lc-link" href={`/marginalia/lectiones/${p.data.part}`}>
+              <span class="lc-num" aria-hidden="true">{toRoman(p.data.part)}</span>
+              <span class="lc-main">
+                <span class="lc-title">{p.data.title}</span>
+                <span class="lc-gloss">{p.data.gloss}</span>
+                <span class="lc-aliases">
+                  {p.data.readings.map((r, i) => (
+                    <>
+                      {i > 0 && <span class="lc-dot" aria-hidden="true"> · </span>}
+                      <span class="lc-alias">{r.alias}</span>
+                    </>
+                  ))}
+                </span>
+              </span>
+              <span class="lc-n">{p.data.readings.length} papers</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )}
+
+    <LesionRule />
+
+    <p class="lc-back">
+      <a class="link" href="/marginalia">Back to Marginalia I — the reviews</a>
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .lc { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .lc-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .lc-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .lc-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .lc-lede + .lc-lede { margin-top: 0.9em; }
+
+  .lc-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 1.4rem;
+  }
+
+  .lc-list {
+    list-style: none;
+    margin: 0 0 2.4rem;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .lc-item { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .lc-link {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 1.15rem 0;
+    color: var(--ink);
+  }
+  .lc-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+  }
+  .lc-main { display: block; }
+  .lc-title { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .lc-link:hover .lc-title { color: var(--fundus); }
+  .lc-gloss { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.25rem; line-height: 1.55; }
+  .lc-aliases {
+    display: block;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    line-height: 1.9;
+  }
+  .lc-dot { color: color-mix(in srgb, var(--brass-text) 55%, transparent); }
+  .lc-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .lc-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .lc-back { font-family: var(--font-mono); font-size: var(--t-xs); }
+
+  @media (max-width: 700px) {
+    .lc-link { grid-template-columns: 1fr; gap: 0.3rem; }
+    .lc-n { grid-row: 1; }
+  }
+</style>

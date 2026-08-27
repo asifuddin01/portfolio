@@ -541,6 +541,59 @@ const marginalia = defineCollection({
 });
 
 /**
+ * Lectiones — the reading course. Marginalia II.
+ *
+ * Marginalia I is what I thought of something after reading it. This is the
+ * other half: what somebody else should read, in what order, and what to take
+ * from each one. It is published in parts, three to five papers each, because
+ * a reading list of sixty papers is a thing people bookmark and never open.
+ *
+ * A paper appears in exactly one part. The temptation is to repeat the
+ * important ones — Attention Is All You Need belongs to the Transformer, to
+ * efficient inference and to modern architecture all at once — but a list that
+ * repeats itself reads as padding, and the reader cannot tell whether they
+ * have already done the work. Later parts point back instead.
+ */
+const lectiones = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/lectiones' }),
+  schema: z.object({
+    /** Part number. Sets the URL, the numeral, and the reading order. */
+    part: z.number().int().min(1),
+    title: z.string(),
+    /** One line under the title, saying what the part is for. */
+    gloss: z.string(),
+    /** One line in the index. */
+    summary: z.string(),
+    status: z.enum(['draft', 'published']).default('draft'),
+    updated: z.date(),
+    /**
+     * Capped at five deliberately. The cap is the whole design of the series:
+     * a part is meant to be a week of reading, not a syllabus.
+     */
+    readings: z
+      .array(
+        z.object({
+          /** What it is called in conversation — "AlexNet", "RoPE". */
+          alias: z.string(),
+          title: z.string(),
+          authors: z.string(),
+          year: z.string(),
+          venue: z.string().optional(),
+          url: optionalUrl,
+          /** What the paper actually claims, in one sentence. */
+          claim: z.string(),
+          /** Why it is on the list rather than merely famous. */
+          why: z.string(),
+          /** What to read closely and what to skim. Optional. */
+          readFor: z.string().default(''),
+        })
+      )
+      .min(1)
+      .max(5),
+  }),
+});
+
+/**
  * Editable page prose. These exist as content rather than as JSX so they can
  * be changed from /admin without touching the codebase.
  */
@@ -716,7 +769,7 @@ const axioms = defineCollection({
 });
 
 export const collections = {
-  works, elementa, marginalia, site, art, books, instrumentarium, instrumenta,
-  papers, education, projects, images, axioms, chapters,
+  works, elementa, marginalia, lectiones, site, art, books, instrumentarium,
+  instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

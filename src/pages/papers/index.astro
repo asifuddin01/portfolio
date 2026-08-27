@@ -1,10 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
-import { getPapers } from '../../lib/collections';
-import { AUTHOR } from '../../consts';
+import { getPapers, getLectiones } from '../../lib/collections';
+import { AUTHOR, toRoman } from '../../consts';
 
 const papers = await getPapers();
+const parts = await getLectiones();
+const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
 
 const LABEL: Record<string, string> = {
   published: 'Published',
@@ -26,9 +28,20 @@ const LABEL: Record<string, string> = {
         Papers and manuscripts, with a link wherever there is one to give. What a
         piece of work argues lives on its plate; this page is only the citation.
       </p>
+      <p class="pp-lede codex-measure" data-reveal>
+        Two parts, as with Marginalia. The first is mine. The second is everyone
+        else's — the papers I would hand somebody who wanted to learn this
+        properly, in the order they make sense.
+      </p>
     </header>
 
     <LesionRule />
+
+    <h2 class="pp-part" id="mine">
+      <span class="pp-part-n" aria-hidden="true">I</span>
+      <span class="pp-part-name">The record</span>
+      <span class="pp-part-gloss">Mine</span>
+    </h2>
 
     {papers.length === 0 ? (
       <p class="pp-empty">Nothing published yet.</p>
@@ -67,6 +80,41 @@ const LABEL: Record<string, string> = {
         ))}
       </ol>
     )}
+
+    <LesionRule />
+
+    <h2 class="pp-part" id="lectiones">
+      <span class="pp-part-n" aria-hidden="true">II</span>
+      <span class="pp-part-name">Lectiones</span>
+      <span class="pp-part-gloss">Everyone else's, in order</span>
+    </h2>
+
+    <p class="pp-lede codex-measure">
+      A reading course, published in parts of three to five papers. Every paper
+      appears exactly once, so finishing a part means something. {parts.length} parts
+      so far, {lectPapers} papers, each with what it claims and why it is on the list.
+    </p>
+
+    {parts.length > 0 && (
+      <ol class="pp-parts" data-reveal-stagger>
+        {parts.map((p) => (
+          <li class="pp-pitem">
+            <a class="pp-plink" href={`/marginalia/lectiones/${p.data.part}`}>
+              <span class="pp-pnum" aria-hidden="true">{toRoman(p.data.part)}</span>
+              <span class="pp-pmain">
+                <span class="pp-ptitle">{p.data.title}</span>
+                <span class="pp-pgloss">{p.data.gloss}</span>
+              </span>
+              <span class="pp-pn">{p.data.readings.length}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )}
+
+    <p class="pp-all">
+      <a class="link" href="/marginalia/lectiones">The whole course</a>
+    </p>
   </div>
 </BaseLayout>
 
@@ -123,4 +171,65 @@ const LABEL: Record<string, string> = {
   .pp-refs { margin: 0.6rem 0 0; font-family: var(--font-mono); font-size: var(--t-xs); }
   .pp-sep { color: var(--brass-text); }
   .pp-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  /* Numbered halves, matching Marginalia. Two pages carry the same division
+     and it should look like the same division. */
+  .pp-part {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+  }
+  .pp-part-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+    min-width: 4rem;
+  }
+  .pp-part-name { font-family: var(--font-display); font-size: var(--t-lg); color: var(--fundus); }
+  .pp-part-gloss {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .pp-parts {
+    list-style: none;
+    margin: 1.4rem 0 1.2rem;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .pp-pitem { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .pp-plink {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1.2rem;
+    align-items: baseline;
+    padding: 0.85rem 0;
+    color: var(--ink);
+  }
+  .pp-pnum {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    color: var(--brass-text);
+  }
+  .pp-pmain { display: block; }
+  .pp-ptitle { display: block; font-family: var(--font-display); font-size: var(--t-md); line-height: 1.35; }
+  .pp-plink:hover .pp-ptitle { color: var(--fundus); }
+  .pp-pgloss { display: block; font-size: var(--t-base); color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.55; }
+  .pp-pn { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); white-space: nowrap; }
+  .pp-all { font-family: var(--font-mono); font-size: var(--t-xs); margin-bottom: 2rem; }
+  .pp-lede + .pp-lede { margin-top: 0.9em; }
+
+  @media (max-width: 700px) {
+    .pp-plink { grid-template-columns: 1fr; gap: 0.3rem; }
+    .pp-pn { grid-row: 1; }
+    .pp-part-n { min-width: 0; }
+  }
 </style>

@@ -1,0 +1,42 @@
+---
+part: 8
+title: 'Fine-tuning without the compute'
+gloss: 'Three papers, five years, and the reason you can tune a large model on one GPU.'
+summary: 'Adapters, LoRA and QLoRA — parameter-efficient tuning from the idea to the thing everyone runs.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'Adapters'
+    title: 'Parameter-Efficient Transfer Learning for NLP'
+    authors: 'Houlsby et al.'
+    year: '2019'
+    venue: 'ICML'
+    url: https://arxiv.org/abs/1902.00751
+    claim: 'Small bottleneck layers inserted into a frozen model reach full fine-tuning quality while training about 3% of the parameters.'
+    why: 'Parameter-efficient tuning starts here. Reading it first stops you attributing the idea to LoRA.'
+    readFor: 'Section 2 and Figure 2.'
+  - alias: 'LoRA'
+    title: 'LoRA: Low-Rank Adaptation of Large Language Models'
+    authors: 'Hu et al.'
+    year: '2021'
+    venue: 'ICLR 2022'
+    url: https://arxiv.org/abs/2106.09685
+    claim: 'The weight update during fine-tuning has low intrinsic rank, so it can be written as the product of two thin matrices — and merged back into the weights at inference for no added latency.'
+    why: 'The most used method on this list. The zero-latency merge is why it beat adapters, and the rank ablation is the surprise: four is usually enough.'
+    readFor: 'Section 4, then Section 7.2 on which rank suffices.'
+  - alias: 'QLoRA'
+    title: 'QLoRA: Efficient Finetuning of Quantized LLMs'
+    authors: 'Dettmers, Pagnoni, Holtzman & Zettlemoyer'
+    year: '2023'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2305.14314
+    claim: 'Four-bit NormalFloat quantisation, double quantisation and paged optimisers put 65-billion-parameter fine-tuning on a single 48GB GPU with no measured loss of quality.'
+    why: 'Three separate engineering ideas, each useful on its own. Section 3 is the one to read: what NF4 is, and why it beats plain four-bit integers on weights that are approximately normal.'
+    readFor: 'Section 3.'
+---
+
+A short part, because the story is short and unusually clean.
+
+The first paper proposes training a small number of inserted parameters instead of all of them, two years before anyone urgently needed it. The second finds a better shape for those parameters, one that can be folded back into the weights so inference costs nothing extra. The third quantises everything around it so the whole procedure fits on hardware you can rent by the hour.
+
+Read them in order. LoRA reads as an invention on its own and as a refinement next to adapters, and the second reading is the accurate one.

@@ -1,0 +1,60 @@
+---
+part: 12
+title: 'Agents'
+gloss: 'Where the model stops answering and starts doing.'
+summary: 'The reasoning-and-acting loop, tools, self-taught tool use, simulated societies, and the point where research becomes engineering.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'ReAct'
+    title: 'ReAct: Synergizing Reasoning and Acting in Language Models'
+    authors: 'Yao et al.'
+    year: '2022'
+    venue: 'ICLR 2023'
+    url: https://arxiv.org/abs/2210.03629
+    claim: 'Interleaving reasoning traces with actions in an environment beats either reasoning or acting alone, and cuts hallucination on knowledge tasks.'
+    why: 'Thought, action, observation, repeat: the loop nearly every agent framework implements. The prompts in the appendix are the actual contribution.'
+    readFor: 'Section 2 and the appendix prompts.'
+  - alias: 'MRKL'
+    title: 'MRKL Systems: A Modular, Neuro-Symbolic Architecture that Combines Large Language Models, External Knowledge Sources and Discrete Reasoning'
+    authors: 'Karpas et al.'
+    year: '2022'
+    venue: 'AI21 Labs'
+    url: https://arxiv.org/abs/2205.00445
+    claim: 'A router in front of a set of discrete modules — a calculator, a database, a solver — fixes what a language model is structurally bad at.'
+    why: 'A position paper rather than a result, and it described tool use before tool use existed. Short, and the argument about arithmetic is still correct.'
+    readFor: 'Section 2.'
+  - alias: 'Toolformer'
+    title: 'Toolformer: Language Models Can Teach Themselves to Use Tools'
+    authors: 'Schick et al.'
+    year: '2023'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2302.04761
+    claim: 'A model can learn when to call an API in a self-supervised way, by keeping only the calls that reduce its own loss on the text that follows.'
+    why: 'The filtering criterion is the elegant part: no human labels a single tool call, the loss does it.'
+    readFor: 'Section 2.'
+  - alias: 'Generative Agents'
+    title: 'Generative Agents: Interactive Simulacra of Human Behavior'
+    authors: 'Park et al.'
+    year: '2023'
+    venue: 'UIST'
+    url: https://arxiv.org/abs/2304.03442
+    claim: 'Agents with memory, reflection and planning produce believable individual behaviour and emergent social behaviour over days of simulated time.'
+    why: 'The memory architecture — scored by recency, importance and relevance — is the reusable piece, and it is roughly what long-running agents still do.'
+    readFor: 'Section 4, the memory stream.'
+  - alias: 'AutoGen'
+    title: 'AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation'
+    authors: 'Wu et al.'
+    year: '2023'
+    venue: 'COLM 2024'
+    url: https://arxiv.org/abs/2308.08155
+    claim: 'Framing applications as conversations between configurable agents — model, tool or human — covers a wide range of tasks with a single abstraction.'
+    why: 'Read it for the abstraction, not the interface. The interface has changed several times since; the framing has not.'
+    readFor: ''
+---
+
+Read Part X first. An agent is the reasoning work from that part with the model allowed to act between steps, and the papers make far more sense in that order.
+
+The first paper is the loop that every framework you have used implements, usually without attribution. The middle two are about tools: one argues from first principles that a language model should not be doing arithmetic, the other shows a model teaching itself when to call an API with no human labelling the calls.
+
+The last two are where the series ends, and they end it deliberately. Generative Agents is the memory architecture long-running systems still use. AutoGen is engineering rather than science, which is the honest place to stop: past here you are reading documentation, and documentation goes stale faster than a reading list can track.

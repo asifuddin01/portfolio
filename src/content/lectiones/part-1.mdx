@@ -1,0 +1,51 @@
+---
+part: 1
+title: 'Foundations'
+gloss: 'What a deep network is, and the four papers that settled it.'
+summary: 'Representation learning, AlexNet, VGG, ResNet — the results that made everything after them possible.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'Deep Learning'
+    title: 'Deep Learning'
+    authors: 'LeCun, Bengio & Hinton'
+    year: '2015'
+    venue: 'Nature 521, 436–444'
+    url: https://www.nature.com/articles/nature14539
+    claim: 'Representation learning — features discovered by the machine rather than designed by hand — is what separates deep networks from everything that came before.'
+    why: 'Written by three of the people who built the field, at the moment it stopped being contested. Twelve pages, no mathematics you cannot follow in your head, and it names every idea the next fifty papers assume you already hold.'
+    readFor: 'All of it; it is short. The account of backpropagation is the clearest in the literature.'
+  - alias: 'AlexNet'
+    title: 'ImageNet Classification with Deep Convolutional Neural Networks'
+    authors: 'Krizhevsky, Sutskever & Hinton'
+    year: '2012'
+    venue: 'NeurIPS'
+    url: https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html
+    claim: 'A convolutional network trained on two GPUs cut ImageNet top-5 error from 26% to 15%.'
+    why: 'The result that started the decade. Nothing in it is new mathematics — ReLU, dropout and augmentation were all known. What was new is the demonstration that the binding constraint had been compute, not ideas.'
+    readFor: 'Sections 3 and 4. Skip the GPU-splitting arithmetic; that constraint is gone.'
+  - alias: 'VGG'
+    title: 'Very Deep Convolutional Networks for Large-Scale Image Recognition'
+    authors: 'Simonyan & Zisserman'
+    year: '2014'
+    venue: 'ICLR 2015'
+    url: https://arxiv.org/abs/1409.1556
+    claim: 'Stacking small 3x3 convolutions to depth 16 or 19 beats fewer, larger filters at the same computational cost.'
+    why: 'The paper that isolated depth as the variable. It is also the cleanest ablation table in vision — one thing changes per row — and worth reading as a model of how to argue with experiments rather than adjectives.'
+    readFor: 'Tables 1 and 2. The rest is procedure.'
+  - alias: 'ResNet'
+    title: 'Deep Residual Learning for Image Recognition'
+    authors: 'He, Zhang, Ren & Sun'
+    year: '2015'
+    venue: 'CVPR 2016'
+    url: https://arxiv.org/abs/1512.03385
+    claim: 'Learning a residual F(x)+x instead of the mapping itself lets a network go to 152 layers and keep improving.'
+    why: 'The skip connection is in everything you read afterwards, transformers included. Read it for the observation that opens it: deeper plain networks were worse on training error, which rules out overfitting and points squarely at optimisation.'
+    readFor: 'Section 3.1 and Figure 1. That figure is the whole argument.'
+---
+
+Every part after this one assumes you can read a network architecture without stopping to ask what a layer is. These four papers are where that vocabulary comes from, and three of them are short.
+
+Read them in order. They are a single argument delivered over three years: features can be learned rather than designed; scale is the binding constraint; depth is the variable; and depth needs a fix before it works. Each paper is the answer to the problem the previous one exposed.
+
+There is no attention here and no language. That is deliberate. The Transformer arrives in Part II and it is easier to see what it changed if you have first seen what it replaced.

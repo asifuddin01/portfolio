@@ -1,0 +1,60 @@
+---
+part: 7
+title: 'Position, memory and the cost of attention'
+gloss: 'Attention is quadratic and the cache does not fit. Five papers about that.'
+summary: 'RoPE, FlashAttention, MQA, GQA and Ring Attention — where the mathematics stops changing and the hardware starts.'
+status: published
+updated: 2026-08-28
+readings:
+  - alias: 'RoPE'
+    title: 'RoFormer: Enhanced Transformer with Rotary Position Embedding'
+    authors: 'Su et al.'
+    year: '2021'
+    venue: 'Neurocomputing'
+    url: https://arxiv.org/abs/2104.09864
+    claim: 'Rotating query and key vectors by an angle proportional to position makes attention depend on relative position, with no learned position embeddings at all.'
+    why: 'In nearly every open model you will run. The rotation is also what explains why extending context by rescaling frequencies works — you cannot reason about that trick without this paper.'
+    readFor: 'Section 3.2. Do the two-dimensional case first; the general case is that, repeated.'
+  - alias: 'FlashAttention'
+    title: 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness'
+    authors: 'Dao, Fu, Ermon, Rudra & Re'
+    year: '2022'
+    venue: 'NeurIPS'
+    url: https://arxiv.org/abs/2205.14135
+    claim: 'Tiling the attention computation so it stays in on-chip SRAM makes it two to four times faster and linear in memory, returning exactly the same result.'
+    why: 'The paper that made reading the hardware a respectable research method. Nothing about the mathematics changes; the entire gain is in avoiding round trips to high-bandwidth memory.'
+    readFor: 'Section 3.1 and the memory-hierarchy figure.'
+  - alias: 'MQA'
+    title: 'Fast Transformer Decoding: One Write-Head is All You Need'
+    authors: 'Shazeer'
+    year: '2019'
+    venue: 'arXiv'
+    url: https://arxiv.org/abs/1911.02150
+    claim: 'Sharing a single key-value head across all query heads collapses the decoding cache and makes generation an order of magnitude faster.'
+    why: 'Nine pages, one author, and the reason your inference server fits in memory. Read it to understand what the key-value cache actually is before anyone optimises it further.'
+    readFor: 'All of it.'
+  - alias: 'GQA'
+    title: 'GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints'
+    authors: 'Ainslie et al.'
+    year: '2023'
+    venue: 'EMNLP'
+    url: https://arxiv.org/abs/2305.13245
+    claim: 'Grouping query heads over a small number of key-value heads recovers most of multi-query speed without its quality loss, and existing checkpoints can be converted rather than retrained.'
+    why: 'The compromise that shipped. Llama, Mistral and most of what came after use it, and the conversion recipe is why adoption was immediate.'
+    readFor: ''
+  - alias: 'Ring Attention'
+    title: 'Ring Attention with Blockwise Transformers for Near-Infinite Context'
+    authors: 'Liu, Zaharia & Abbeel'
+    year: '2023'
+    venue: 'ICLR 2024'
+    url: https://arxiv.org/abs/2310.01889
+    claim: 'Distributing blocks across devices arranged in a ring, and overlapping communication with computation, makes context length scale with the number of devices.'
+    why: 'Read it directly after FlashAttention. It is the same tiling argument, moved from one GPU''s memory hierarchy to a cluster''s.'
+    readFor: ''
+---
+
+Nothing in this part changes what attention computes. Every one of these papers returns the same numbers a naive implementation would, or very nearly, and the contribution is entirely in where those numbers live and how often they move.
+
+That is a genuinely different kind of research and it is worth reading a run of it together. The constraint being optimised is not FLOPs — it is memory bandwidth, cache size, and the number of bytes you must keep per token per layer for the whole of a conversation.
+
+RoPE is the exception: it changes how position enters the model, and it is here because everything about long context depends on it.
