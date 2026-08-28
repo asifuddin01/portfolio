@@ -1,0 +1,79 @@
+---
+chapter: neural-networks--mlp
+proposition: 2
+statement: Depth multiplies what width adds.
+claim: "A hidden layer of n ReLU units cuts input space with n hyperplanes, and the pieces grow polynomially in n. A second layer cuts the space the first has already folded, and the pieces multiply. Width and depth are not two ways of buying the same thing."
+given:
+  - a-linear-layer-is-an-affine-map
+  - non-linearity-is-what-makes-depth-worth-having
+figure: FigDepthFolds
+level: mechanics
+notation:
+  - "d"
+  - "L"
+status: published
+updated: 2026-08-28
+sources:
+  - title: "On the Number of Linear Regions of Deep Neural Networks"
+    url: https://arxiv.org/abs/1402.1869
+  - title: "Benefits of Depth in Neural Networks"
+    url: https://proceedings.mlr.press/v49/telgarsky16.html
+---
+
+## Demonstration
+
+Fix a ReLU network and an input. Each hidden unit is either on or off, and the
+list of those switches is the *activation pattern*. Hold the pattern fixed and
+the network is a single affine map, because every ReLU in it has become either
+the identity or zero. Vary the input until one unit crosses its threshold and
+the pattern changes, and with it the affine map. A ReLU network is therefore a
+piecewise affine function, and the pieces are what we can count.
+
+**One hidden layer.** A unit switches exactly on the hyperplane where its
+pre-activation is zero. Width *n* draws *n* hyperplanes in an input space of
+dimension *d*, and how many pieces they cut it into is a question about
+arrangements of hyperplanes, answered in 1975:
+
+```
+regions <= C(n,0) + C(n,1) + ... + C(n,d)
+```
+
+For *d* = 2 the sum is 1 + n + n(n−1)/2. Ten units buy 56 regions; a hundred
+buy 5051. The growth is polynomial, of degree *d*. Each new unit contributes at
+most one hyperplane's worth of new pieces, and the word to keep is **adds**.
+
+**Two hidden layers.** The second layer also draws hyperplanes — but in the
+space the first has already folded. A single hyperplane in the second layer's
+coordinates is pulled back through the first layer into a piecewise hyperplane
+in the input, with a separate piece inside every region the first layer created.
+One unit in layer two therefore cuts every existing region rather than cutting
+the space once. The counts compose:
+
+```
+regions >= floor(n/d)^(d(L-1)) * ( C(n,0) + ... + C(n,d) )
+```
+
+Read where the letters sit. Width *n* is in the base. Depth *L* is in the
+exponent. That placement is the whole content of the proposition.
+
+**The same budget, spent twice.** Thirty units in the plane as one layer of
+thirty: at most 466 regions. The same thirty units as three layers of ten: at
+least 35 000. A factor of 75, for a rearrangement that changes no parameter
+count worth mentioning.
+
+## Corollary
+
+Two things follow, and the second is the one usually dropped.
+
+**A region count is an upper bound on complexity, not a measure of quality.**
+The function attaining the deep bound is a sawtooth that oscillates 2^L times.
+Nothing in any application looks like that. What the count establishes is the
+*shape of the trade*: pieces bought with width cost polynomially and pieces
+bought with depth cost exponentially less, so a function that genuinely needs
+many pieces should be bought deep.
+
+**Expressivity is not reachability.** Every statement here concerns the set of
+functions a network *can* compute. None of them says gradient descent finds the
+deep representation, and none says the deep network trains at all — which is
+why Chapters I.7 and I.8 exist, and why residual connections had to be invented
+before anyone could use the depth this proposition promises.

@@ -1,0 +1,78 @@
+---
+id: "I.5.X09"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Ten thousand parameters, spent two ways"
+depends:
+  - "I.5.P02"
+rounding: "Exact integer counts."
+hasSolution: true
+verified: true
+snippet: "i-5-x09-budget.py"
+status: published
+---
+
+Input dimension 2, one output, a budget of $10\,000$ parameters. Find the widest
+single hidden layer that fits, and the widest three hidden layers of equal width
+that fit. Compare the linear regions each can reach, and then state carefully
+what the comparison does and does not license.
+
+<Hint>
+Write the parameter count as a function of $w$ in each case — one is linear in
+$w$, the other quadratic — and solve. Then apply (I.5.4) and (I.5.5).
+</Hint>
+
+<SolutionToggle>
+
+**One hidden layer.** Parameters
+$2w + w + w + 1 = 4w + 1 \le 10\,000$ gives $w \le 2499.75$, so
+$w = 2499$ and $N = 9997$.
+
+**Three hidden layers of width $w$.**
+
+$$2w + w + 2\left(w^2 + w\right) + w + 1 = 2w^2 + 6w + 1 \le 10\,000$$
+
+$$w \le \frac{-6 + \sqrt{36 + 4 \cdot 2 \cdot 9999}}{4} = \frac{-6 + \sqrt{80\,028}}{4} \approx 69.22$$
+
+so $w = 69$ and $N = 9937$. The quadratic term is what costs the width: the
+same money buys $2499$ units in one layer or $207$ units in three.
+
+**Regions.** By (I.5.4), the shallow network reaches at most
+
+$$1 + 2499 + \frac{2499 \cdot 2498}{2} = 3\,123\,751$$
+
+By (I.5.5) with $\lfloor 69/2 \rfloor = 34$, the deep one reaches at least
+
+$$34^{4} \cdot \left(1 + 69 + \frac{69 \cdot 68}{2}\right) = 1\,336\,336 \cdot 2416 = 3\,228\,587\,776$$
+
+**A factor of $1034$**, with a tenth of the units and the same budget. And the
+comparison is conservative in both directions: an upper bound for the shallow
+network against a lower bound for the deep one.
+
+**What this licenses.** For a target that genuinely needs many linear pieces,
+depth is the cheaper way to buy them, and the gap is large enough that no
+constant factor closes it.
+
+**What it does not license.** Four things, and the last is the one that decides
+practice.
+
+*Regions are not accuracy.* Neither network is being fitted to anything here.
+The comparison is of what the architectures can express.
+
+*The deep bound is a construction.* A trained network of that shape realises far
+fewer regions, and its regions concentrate near the data.
+
+*The shallow bound is attainable but not free.* Reaching $3.1$ million regions
+requires $2499$ hyperplanes in general position, which random initialisation
+provides and training may spoil (I.5.X05).
+
+*Trainability was not in the comparison at all.* A three-layer network of width
+$69$ is easy to train; the same argument at depth 50 would give a far larger
+region count and a network that does not train without residual connections and
+normalisation. The budget calculation says where the expressivity is; it does
+not say where the optimum of the whole design problem is.
+
+</SolutionToggle>

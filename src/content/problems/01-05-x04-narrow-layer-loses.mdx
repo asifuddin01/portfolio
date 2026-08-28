@@ -1,0 +1,74 @@
+---
+id: "I.5.X04"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A narrow layer discards a subspace, permanently"
+depends:
+  - "I.5.P03"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+An MLP has $d_0 = 10$ and $d_1 = 3$. Exhibit two distinct inputs that every
+network of this shape maps to the same output, whatever the later widths, the
+later depth, or the training. Then say why this is not an optimisation failure
+and what the general statement is.
+
+<Hint>
+The first layer is a map $\R^{10} \to \R^{3}$. What is the dimension of its null
+space, and what does the rest of the network ever see?
+</Hint>
+
+<SolutionToggle>
+
+**The construction.** $\mat{W}^{(1)} \in \R^{10 \times 3}$ has rank at most 3,
+so by rank–nullity (<ApparatusRef ref="0.LA.04" />) its null space
+$\{\vec{v} : \vec{v}\mat{W}^{(1)} = \vec{0}\}$ has dimension at least $7$.
+
+Pick any non-zero $\vec{v}$ in it and any $\vec{x}$. Then
+
+$$
+(\vec{x} + \vec{v})\mat{W}^{(1)} + \vec{b}^{(1)}
+= \vec{x}\mat{W}^{(1)} + \vec{v}\mat{W}^{(1)} + \vec{b}^{(1)}
+= \vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}
+$$
+
+The two inputs produce **identical pre-activations** — the same three numbers,
+bit for bit. Everything after the first layer is a function of those three
+numbers, so $f(\vec{x}) = f(\vec{x} + \vec{v})$ for every subsequent
+architecture and every setting of its parameters.
+
+**A concrete pair.** Let the first three rows of $\mat{W}^{(1)}$ be the standard
+basis of $\R^3$ and the remaining seven be zero. Then
+$\vec{v} = (0,0,0,1,0,0,0,0,0,0)$ is in the null space, and
+
+$$\vec{x} = (1,1,1,0,0,0,0,0,0,0), \qquad \vec{x} + \vec{v} = (1,1,1,1,0,0,0,0,0,0)$$
+
+are indistinguishable to the network. Coordinate 4 does not exist as far as the
+model is concerned.
+
+**Why this is not an optimisation failure.** No gradient signal can separate the
+two, because the loss is a function of the output and the outputs are equal. The
+gradient with respect to every parameter is identical for both. There is nothing
+for training to fix: a learning rate, a schedule, a longer run and a better
+initialisation all leave it exactly where it was. The failure is in the
+*architecture*, and it is a theorem about matrix rank rather than an empirical
+difficulty.
+
+**The general statement.** A layer narrower than its input has already lost a
+subspace, and no depth after it recovers what was discarded. I.5.T4 is the sharp
+form: for input dimension $d$, ReLU networks whose hidden widths are all at most
+$d$ express a very limited class *even in the infinite-depth limit*, and width
+$d + 1$ is exactly the threshold at which universal approximation returns.
+
+**Where the same fact is useful.** A deliberate bottleneck is how an
+autoencoder works (I.12): the discarding is the point, and the design question
+becomes which subspace is discarded rather than whether one is. The difference
+between a bottleneck and a bug is entirely whether it was chosen.
+
+</SolutionToggle>

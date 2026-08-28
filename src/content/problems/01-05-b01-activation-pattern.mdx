@@ -1,0 +1,180 @@
+---
+id: "I.5.B01"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Three inputs, two regions, one network"
+depends:
+  - "I.5.P01"
+  - "I.5.P03"
+reachesBack: []
+rounding: "Every value here is exact; all are printed to 4 d.p. so they line up with the reproduction snippet."
+hasSolution: true
+verified: true
+snippet: "i-5-b01-activation-pattern.py"
+status: published
+---
+
+<Statement>
+Push three inputs through the same two-layer network. Report the
+pre-activations, the activations and the output for each, and then answer the
+question the numbers are really for: which of the three inputs are processed by
+the *same* affine map, and how you can tell without computing the output at all.
+</Statement>
+
+<Given>
+Two inputs, three hidden ReLU units, one output. Row-major throughout
+(<ApparatusRef ref="0.LA.01" />), so a layer is applied on the right.
+
+$$
+\mat{W}^{(1)} = \begin{bmatrix} 1 & -1 & 0.5 \\ 0.5 & 1 & -1 \end{bmatrix},
+\qquad
+\vec{b}^{(1)} = \begin{bmatrix} -0.5 & 0.25 & 0 \end{bmatrix}
+$$
+
+$$
+\mat{W}^{(2)} = \begin{bmatrix} 2 \\ -1 \\ 1.5 \end{bmatrix},
+\qquad
+b^{(2)} = 0.75
+$$
+
+The three inputs:
+
+$$
+\vec{x}_a = \begin{bmatrix} 1 & 2 \end{bmatrix}, \qquad
+\vec{x}_b = \begin{bmatrix} 1.2 & 2.5 \end{bmatrix}, \qquad
+\vec{x}_c = \begin{bmatrix} -1 & 0 \end{bmatrix}
+$$
+</Given>
+
+<Find>
+For each input: $\vec{z}^{(1)}$, $\vec{a}^{(1)}$, the activation pattern, and
+$\hat{y}$. Then the effective affine map $\hat{y} = \vec{x}\vec{w} + c$ that the
+network applies on each pattern.
+</Find>
+
+<Strategy>
+Compute the pre-activations first and read the pattern off their signs, before
+touching the second layer. The pattern is what decides everything that follows,
+so getting it in hand early turns the rest into arithmetic.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the pre-activations for $\vec{x}_a$.** This is the first half of one
+step of (I.5.1): each entry of $\vec{z}^{(1)}$ pairs $\vec{x}$ with one
+*column* of $\mat{W}^{(1)}$.
+
+$$
+z_1 = (1)(1) + (2)(0.5) - 0.5 = 1.5, \qquad
+z_2 = (1)(-1) + (2)(1) + 0.25 = 1.25
+$$
+
+$$
+z_3 = (1)(0.5) + (2)(-1) + 0 = -1.5
+$$
+
+So $\vec{z}^{(1)} = \begin{bmatrix} 1.5 & 1.25 & -1.5 \end{bmatrix}$ and the
+**activation pattern is $110$** — units one and two on, unit three off.
+
+**Step 2 — activation and output.**
+$\vec{a}^{(1)} = \begin{bmatrix} 1.5 & 1.25 & 0 \end{bmatrix}$, and
+
+$$\hat{y} = (1.5)(2) + (1.25)(-1) + (0)(1.5) + 0.75 = 3 - 1.25 + 0.75 = 2.5$$
+
+**Step 3 — the second input.** $\vec{z}^{(1)} = \begin{bmatrix} 1.95 & 1.55 & -1.9 \end{bmatrix}$,
+pattern **$110$ again**, and $\hat{y} = 3.9 - 1.55 + 0.75 = 3.1$.
+
+**Step 4 — the third input.**
+$\vec{z}^{(1)} = \begin{bmatrix} -1.5 & 1.25 & -0.5 \end{bmatrix}$, pattern
+**$010$**, $\vec{a}^{(1)} = \begin{bmatrix} 0 & 1.25 & 0 \end{bmatrix}$, and
+$\hat{y} = -1.25 + 0.75 = -0.5$.
+
+**Step 5 — the map each pattern selects.** Write the pattern as a diagonal
+matrix $\mat{D}$ of ones and zeros. Then ReLU has been replaced by a fixed
+linear map, and the whole network collapses on that region into
+equation (I.5.3):
+
+$$
+\hat{y} = \vec{x}\left(\mat{W}^{(1)}\mat{D}\,\mat{W}^{(2)}\right)
+        + \left(\vec{b}^{(1)}\mat{D}\,\mat{W}^{(2)} + b^{(2)}\right)
+$$
+
+For $\mat{D} = \mathrm{diag}(1,1,0)$:
+
+$$
+w_1 = (1)(2) + (-1)(-1) = 3, \qquad
+w_2 = (0.5)(2) + (1)(-1) = 0
+$$
+
+$$
+c = (-0.5)(2) + (0.25)(-1) + 0.75 = -0.5
+$$
+
+so on that region $\hat{y} = 3x_1 + 0\,x_2 - 0.5$. For
+$\mat{D} = \mathrm{diag}(0,1,0)$: $w_1 = 1$, $w_2 = -1$, $c = 0.5$, giving
+$\hat{y} = x_1 - x_2 + 0.5$.
+
+**Step 6 — the answer to the question actually asked.** $\vec{x}_a$ and
+$\vec{x}_b$ share the pattern $110$, so they share one affine map;
+$\vec{x}_c$ does not. You can tell from the signs of $\vec{z}^{(1)}$ alone,
+which is three inner products — the second layer never enters the decision.
+
+</Solution>
+
+<Answer>
+
+| input | $\vec{z}^{(1)}$ | pattern | $\hat{y}$ | map on that region |
+|---|---|---|---|---|
+| $\vec{x}_a$ | $(1.5,\ 1.25,\ -1.5)$ | $110$ | $2.5$ | $3x_1 + 0x_2 - 0.5$ |
+| $\vec{x}_b$ | $(1.95,\ 1.55,\ -1.9)$ | $110$ | $3.1$ | $3x_1 + 0x_2 - 0.5$ |
+| $\vec{x}_c$ | $(-1.5,\ 1.25,\ -0.5)$ | $010$ | $-0.5$ | $x_1 - x_2 + 0.5$ |
+
+The first two inputs lie in one linear region and the third in another.
+</Answer>
+
+<CheckNumeric snippet="i-5-b01-activation-pattern.py" verified>
+```python
+def forward(x):
+    z = [sum(x[i] * W1[i][j] for i in range(2)) + b1[j] for j in range(3)]
+    a = [max(0.0, t) for t in z]
+    return z, a, sum(a[j] * W2[j] for j in range(3)) + b2
+```
+Prints the three patterns $110$, $110$, $010$, the outputs
+$2.5000$, $3.1000$, $-0.5000$, and each region's affine map — which it then
+evaluates directly, as a second route to the same output.
+</CheckNumeric>
+
+<CheckSanity>
+**The effective map reproduces the output.** On the region $110$,
+$3(1) + 0(2) - 0.5 = 2.5$ and $3(1.2) + 0(2.5) - 0.5 = 3.1$. Two different
+inputs, one formula, the right answers. That is the content of a linear region
+stated as an arithmetic check.
+
+**The dead unit cannot matter.** Unit three is off for $\vec{x}_a$, so the
+third entry of $\mat{W}^{(2)}$ — the value $1.5$ — cannot influence $\hat{y}$.
+Change it to $150$ and recompute: still $2.5$.
+
+**The second coordinate genuinely drops out.** On region $110$ the coefficient
+of $x_2$ is exactly zero, so moving $\vec{x}_a$ to $(1, 5)$ should not change
+the output as long as the pattern holds. Check the pattern first:
+$\vec{z}^{(1)} = (3, 4.25, -4.5)$, still $110$, and
+$\hat{y} = 6 - 4.25 + 0.75 = 2.5$. It does not change.
+</CheckSanity>
+
+<Breaks>
+The whole calculation assumes the pattern is read at the given input. It is not
+a property of the network — it is a property of the network *and* the input
+together. A common mistake is to speak of "the dead units" of a model as though
+the set were fixed; unit three is off here and on for $\vec{x} = (2, 0)$, where
+$z_3 = 1$. Only a unit off for *every* input in the dataset is dead in the sense
+of I.3, and that is a much stronger and much rarer claim.
+</Breaks>
+
+<Variation>
+Find an input for which all three units are on, then one for which all three are
+off — or show that the second is impossible. I.5.X01 does exactly this by
+exhaustion, so try it by hand first.
+</Variation>

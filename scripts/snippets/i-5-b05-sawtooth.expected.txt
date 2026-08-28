@@ -1,0 +1,12 @@
+  k   pieces   deep units (2 per layer)   shallow units needed (pieces-1)
+  1        2                          2                               1
+  2        4                          4                               3
+  3        8                          6                               7
+  4       16                          8                              15
+  6       64                         12                              63
+  8      256                         16                             255
+ 10     1024                         20                           1,023
+
+deep    k=10: 20 hidden units, 70 parameters
+shallow k=10: 1,023 hidden units, 3,070 parameters
+check tooth(0.25) = 0.5000, tooth(0.5) = 1.0000, tooth(0.75) = 0.5000

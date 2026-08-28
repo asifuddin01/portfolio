@@ -1,0 +1,8 @@
+pattern       110
+W1 D W2       +3.0000  +0.0000
+central diff  +3.0000  +0.0000
+
+gradient reaching each column of W1 (finite difference on W1[0][j]):
+  unit 1 (on ): +2.0000
+  unit 2 (on ): -1.0000
+  unit 3 (off): +0.0000

@@ -1,0 +1,71 @@
+---
+id: "I.5.X05"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "The bound is reached only in general position"
+depends:
+  - "I.5.P02"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+The chapter assumes a layer's hyperplanes are in general position. Test the
+assumption: for three ReLU units in the plane, count the regions when the three
+lines are in general position, when all three are parallel, and when all three
+meet at a point. Then give weights realising the parallel case and say what a
+network in that state has lost.
+
+<Hint>
+Draw them. Then check each count against
+$\binom{3}{0} + \binom{3}{1} + \binom{3}{2}$.
+</Hint>
+
+<SolutionToggle>
+
+**General position: 7.** Three lines, no two parallel, no three concurrent. Each
+new line crosses all the previous ones, so line 1 adds 1 region to the plane's
+1, line 2 adds 2, line 3 adds 3: $1 + 1 + 2 + 3 = 7$. This is the bound (I.5.4)
+at $n = 3$, $d = 2$, and it is attained.
+
+**Three parallel lines: 4.** Parallel lines cut the plane into strips, and $n$
+of them give $n + 1$ strips. Three give **4**, against a bound of 7. The
+arrangement has lost $43\%$ of the regions its width could have bought.
+
+**Three concurrent lines: 6.** Lines through a common point divide the plane
+into $2n$ sectors. Three give **6** — one short of the bound, because the three
+pairwise intersections have collapsed into one.
+
+**Weights realising the parallel case.** Any $\mat{W}^{(1)}$ whose columns are
+proportional:
+
+$$
+\mat{W}^{(1)} = \begin{bmatrix} 1 & 2 & 3 \\ 1 & 2 & 3 \end{bmatrix},
+\qquad
+\vec{b}^{(1)} = \begin{bmatrix} 0 & -1 & -2 \end{bmatrix}
+$$
+
+Every unit's boundary is a line of slope $-1$; only the offsets differ. Note
+that $\operatorname{rank}(\mat{W}^{(1)}) = 1$, which is the algebraic statement
+of the same collapse.
+
+**What the network has lost.** Three units, four regions — the expressive power
+of two units in general position, at the parameter cost of three. Worse, the
+pre-activations are now three scaled copies of a single number
+$x_1 + x_2$, so the layer has reduced a two-dimensional input to one dimension
+and the second coordinate is no longer separable from the first. The failure of
+I.5.X04 has arrived through degeneracy rather than through narrowness.
+
+**Why this matters and why it usually does not.** Random initialisation puts the
+columns in general position with probability one, so a fresh network starts at
+the bound. Training can move it away — weight decay pulls columns toward each
+other and dead units remove hyperplanes outright — so the effective region count
+of a trained network is an empirical quantity, below the bound and sometimes far
+below. The bound describes what the architecture permits, and I.5.T1's caution
+about attainability is exactly this exercise.
+
+</SolutionToggle>

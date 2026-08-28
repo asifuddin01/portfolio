@@ -1,0 +1,77 @@
+---
+id: "I.5.X07"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "An MLP cannot tell an image from the same pixels shuffled"
+depends:
+  - "I.5.P03"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Fix a permutation $\pi$ of the input coordinates, applied to every example in a
+dataset. Prove that the MLP function class is unchanged: for every network $f$
+there is a network $f_\pi$ of identical shape with
+$f_\pi(\pi(\vec{x})) = f(\vec{x})$ for all $\vec{x}$. Then say what that implies
+about the first assumption of this chapter, and design the experiment that
+measures it.
+
+<Hint>
+A permutation of coordinates is a matrix. Ask what happens to $\mat{W}^{(1)}$
+alone — no other layer needs to change.
+</Hint>
+
+<SolutionToggle>
+
+**The proof.** Let $\mat{P}_\pi$ be the permutation matrix with
+$\pi(\vec{x}) = \vec{x}\mat{P}_\pi$. Given $f$ with first weight matrix
+$\mat{W}^{(1)}$, define $f_\pi$ by replacing it with
+$\mat{P}_\pi^{\mathsf T}\mat{W}^{(1)}$ and leaving every other parameter alone.
+Then
+
+$$
+\pi(\vec{x})\left(\mat{P}_\pi^{\mathsf T}\mat{W}^{(1)}\right) + \vec{b}^{(1)}
+= \vec{x}\mat{P}_\pi\mat{P}_\pi^{\mathsf T}\mat{W}^{(1)} + \vec{b}^{(1)}
+= \vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}
+$$
+
+The first pre-activation is identical, so every later layer sees identical
+input and $f_\pi(\pi(\vec{x})) = f(\vec{x})$. The map $f \mapsto f_\pi$ is a
+bijection of the class onto itself, so the two classes are the same class,
+relabelled. $\blacksquare$
+
+**What it implies.** The architecture has no notion of which input coordinates
+are near each other. Shuffle every image in a dataset with one fixed
+permutation and the MLP's best achievable loss is unchanged, its optimal
+parameters are a rearrangement of the originals, and its learning curve is the
+same up to the randomness of initialisation. Spatial structure is information
+the MLP is constructed not to use.
+
+**The experiment.** Fix one permutation $\pi$ of the $784$ pixel positions.
+Train the same MLP twice: on the original images, and on $\pi$-shuffled images.
+Then train a small CNN on both. Report four curves.
+
+The prediction the proof licenses is sharp: the MLP's two curves coincide within
+seed noise, and the CNN's do not — the CNN's shuffled run should be markedly
+worse. The gap between the CNN's two curves *is* the locality prior, measured in
+the units of the task rather than argued for.
+
+**Why this is the right way to state an assumption.** The chapter could have
+said the MLP "ignores spatial structure", which is vague enough to be
+unfalsifiable. Stated as invariance under a fixed permutation, it becomes a
+theorem with a two-line proof and an experiment that would refute it if it were
+false. Book III returns to this as the laboratory task for Chapter III.1, and
+the same measurement is what motivates convolution in I.11.
+
+**One thing the proof does not say.** It concerns a *fixed* permutation applied
+to every example. Permuting each example differently destroys the dataset for
+every architecture, MLP included, because the labels no longer correspond to a
+consistent function of the input. The invariance is over the choice of
+coordinate ordering, not over shuffling as an operation.
+
+</SolutionToggle>

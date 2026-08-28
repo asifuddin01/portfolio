@@ -1,0 +1,145 @@
+---
+id: "I.5.B02"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Every region is one matrix, and its rank is the count of live units"
+depends:
+  - "I.5.P01"
+reachesBack: []
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Derive, in general, the affine map a two-layer ReLU network applies inside a
+single linear region. Then read two facts off the derivation: that the network
+is piecewise affine, and that the rank of the map on a region is bounded by the
+number of units switched on in it.
+</Statement>
+
+<Given>
+A network $\hat{\vec{y}} = \varphi(\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)})\mat{W}^{(2)} + \vec{b}^{(2)}$
+with $\varphi = \mathrm{ReLU}$, $\mat{W}^{(1)} \in \R^{d_0 \times d_1}$ and
+$\mat{W}^{(2)} \in \R^{d_1 \times d_2}$.
+
+Fix an input $\vec{x}_\star$ and let
+$\mat{D} = \mathrm{diag}\!\left(\mathbf{1}[z^{(1)}_j > 0]\right)$ be the
+diagonal matrix of its activation pattern, with $k = \mathrm{tr}(\mat{D})$
+units on.
+</Given>
+
+<Find>
+The effective $\mat{W}_\star$ and $\vec{b}_\star$ with
+$\hat{\vec{y}} = \vec{x}\mat{W}_\star + \vec{b}_\star$ for every $\vec{x}$ in
+the region containing $\vec{x}_\star$, and a bound on
+$\operatorname{rank}(\mat{W}_\star)$.
+</Find>
+
+<Strategy>
+The one step that matters is replacing $\mathrm{ReLU}$ by $\mat{D}$. That
+substitution is exact — not an approximation — precisely on the set where the
+pattern does not change, and everything after it is matrix algebra.
+</Strategy>
+
+<Solution>
+
+**Step 1 — ReLU becomes a matrix.** On the region, every unit's sign is fixed.
+For a unit that is on, $\mathrm{ReLU}(z) = z$; for one that is off,
+$\mathrm{ReLU}(z) = 0$. Applying ReLU is therefore the same as multiplying on
+the right by $\mat{D}$:
+
+$$\varphi(\vec{z}) = \vec{z}\mat{D} \quad \text{for every } \vec{z} \text{ in the region}$$
+
+This is an identity on that set, not a linearisation.
+
+**Step 2 — substitute and expand.**
+
+$$
+\hat{\vec{y}}
+= \left(\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}\right)\mat{D}\,\mat{W}^{(2)} + \vec{b}^{(2)}
+= \vec{x}\underbrace{\mat{W}^{(1)}\mat{D}\,\mat{W}^{(2)}}_{\mat{W}_\star}
++ \underbrace{\vec{b}^{(1)}\mat{D}\,\mat{W}^{(2)} + \vec{b}^{(2)}}_{\vec{b}_\star}
+$$
+
+which is equation (I.5.3). The network is affine on the region, with a
+$\mat{W}_\star$ and $\vec{b}_\star$ that depend on $\mat{D}$ and on nothing
+else.
+
+**Step 3 — piecewise affine.** The regions are indexed by the finitely many
+patterns $\mat{D}$ that occur. Each contributes one affine map, and the maps
+agree on shared boundaries because a unit crossing zero contributes zero on both
+sides. So the network is a continuous piecewise affine function — a statement
+about the whole model, obtained without any assumption about the weights.
+
+**Step 4 — the rank bound.** Rank cannot exceed that of any factor, and
+$\operatorname{rank}(\mat{D}) = k$:
+
+$$
+\operatorname{rank}(\mat{W}_\star)
+\le \min\!\left(\operatorname{rank}\mat{W}^{(1)},\ k,\ \operatorname{rank}\mat{W}^{(2)}\right)
+\le \min(d_0,\ k,\ d_2)
+$$
+
+using <ApparatusRef ref="0.LA.04" />. So on a region where only $k$ units are
+live, the network's output lies in a subspace of dimension at most $k$, whatever
+the widths are elsewhere.
+
+**Step 5 — what that means.** Width $d_1$ does not act on a single input. On any
+one input only the live units count, and the network behaves like a much smaller
+model. Width buys *variety across regions*, not capacity within one.
+
+</Solution>
+
+<Answer>
+$$
+\mat{W}_\star = \mat{W}^{(1)}\mat{D}\,\mat{W}^{(2)}, \qquad
+\vec{b}_\star = \vec{b}^{(1)}\mat{D}\,\mat{W}^{(2)} + \vec{b}^{(2)}
+$$
+
+exactly, on the whole region; and
+$\operatorname{rank}(\mat{W}_\star) \le \min(d_0, k, d_2)$ where $k$ is the
+number of units switched on. The network is continuous and piecewise affine,
+with one such map per realised activation pattern.
+</Answer>
+
+<CheckSanity>
+**It reproduces I.5.B01.** There $d_0 = 2$, $d_1 = 3$, $d_2 = 1$,
+$\mat{D} = \mathrm{diag}(1,1,0)$ and $k = 2$. The formula gives
+$\vec{w}_\star = (3, 0)$ and $b_\star = -0.5$, which is what the direct forward
+pass returned.
+
+**The rank bound is not vacuous there.** $\min(2, 2, 1) = 1$, and
+$\vec{w}_\star = (3,0)$ has rank 1. The bound is tight in that case.
+
+**Every ReLU disappears.** If any survived, the expression would not be affine,
+and the substitution in Step 1 would have been wrong. Counting them is a real
+check: three units in, three columns of $\mat{D}$, none left over.
+</CheckSanity>
+
+<Breaks>
+Two assumptions are load-bearing, and both fail for activations other than
+ReLU.
+
+$\varphi$ must be **piecewise linear** for $\mat{D}$ to exist at all. With GELU
+or tanh there is no diagonal matrix of ones and zeros that reproduces the
+activation on any open set, so the network has no linear regions, is not
+piecewise affine, and none of the region-counting in I.5.B07 applies to it. What
+survives is a local statement — the Jacobian at a point — which is a different
+and weaker object.
+
+$\varphi$ must be **elementwise** for $\mat{D}$ to be diagonal. Softmax is not,
+so the same substitution would produce a dense matrix and the rank argument
+would say nothing. That is I.3.X08 seen from the other side.
+</Breaks>
+
+<Variation>
+Extend the derivation to $L$ layers: show that on a region the network is
+$\vec{x}\,\mat{W}^{(1)}\mat{D}^{(1)}\mat{W}^{(2)}\mat{D}^{(2)}\cdots\mat{W}^{(L)}$
+plus a bias, and state the rank bound in terms of the smallest live count
+across layers. Then say which single layer decides it.
+</Variation>

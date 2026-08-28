@@ -1,0 +1,168 @@
+---
+id: "I.5.B07"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "How many pieces a budget buys, and where you put them"
+depends:
+  - "I.5.P02"
+reachesBack: []
+rounding: "Exact integer counts."
+hasSolution: true
+verified: true
+snippet: "i-5-b07-region-counts.py"
+status: published
+---
+
+<Statement>
+Take a fixed number of ReLU units in the plane and count the linear regions two
+arrangements of them can reach. Establish the growth rate in each case, evaluate
+both at the same budget, and state the limit that the comparison is really
+about.
+</Statement>
+
+<Given>
+Input dimension $d = 2$. The two bounds of the chapter:
+
+$$
+R_1(n, d) \;\le\; \sum_{i=0}^{d}\binom{n}{i}
+\tag{I.5.4}
+$$
+
+for one hidden layer of $n$ units, and
+
+$$
+R_L(n, d) \;\ge\; \left\lfloor \tfrac{n}{d} \right\rfloor^{\,d(L-1)} \sum_{j=0}^{d}\binom{n}{j}
+\tag{I.5.5}
+$$
+
+for $L$ hidden layers of $n$ units each, valid when $n \ge d$.
+</Given>
+
+<Find>
+The closed form of (I.5.4) at $d = 2$ and its growth rate in $n$; the region
+counts for thirty units as $1 \times 30$ and as $3 \times 10$; the same for
+sixty units at three depths; and the asymptotic statement the table is
+evidence for.
+</Find>
+
+<Strategy>
+Evaluate before generalising. The closed form at $d = 2$ is three terms, the
+numbers are small enough to check by hand, and the growth rate is then visible
+rather than asserted.
+</Strategy>
+
+<Solution>
+
+**Step 1 — one hidden layer in the plane.**
+
+$$\sum_{i=0}^{2}\binom{n}{i} = 1 + n + \frac{n(n-1)}{2}$$
+
+so $R_1 = \Theta(n^2)$. Two units give 4 regions, three give 7, ten give 56, one
+hundred give 5051. Doubling the width roughly quadruples the pieces: growth is
+polynomial of degree $d$, and in the plane that degree is two.
+
+**Step 2 — the same thirty units, two ways.** One layer of thirty:
+
+$$1 + 30 + \frac{30 \cdot 29}{2} = 1 + 30 + 435 = 466$$
+
+Three layers of ten, using (I.5.5) with $\lfloor 10/2 \rfloor = 5$:
+
+$$5^{\,2 \cdot 2} \cdot \left(1 + 10 + 45\right) = 625 \cdot 56 = 35\,000$$
+
+A factor of $75.1$, at the same unit count and very nearly the same parameter
+count.
+
+**Step 3 — sixty units, three ways.**
+
+| arrangement | regions |
+|---|---|
+| $1$ layer $\times\ 60$ | at most $1\,831$ |
+| $2$ layers $\times\ 30$ | at least $104\,850$ |
+| $6$ layers $\times\ 10$ | at least $546\,875\,000$ |
+
+The last is not a larger network. It is the same sixty units, stacked.
+
+**Step 4 — the limit the table is about.** Read the two bounds as functions of
+the budget. Hold depth fixed and grow width: $R_1 = \Theta(n^d)$, polynomial.
+Hold width fixed and grow depth: the exponent $d(L-1)$ carries $L$, so
+$R_L = \Omega\!\left(c^{\,L}\right)$ with $c = \lfloor n/d\rfloor^{d}$,
+exponential.
+
+$$\lim_{L \to \infty} \frac{R_L(n, d)}{R_1(nL, d)} = \infty$$
+
+for any fixed $n > d$: spending a growing budget on depth outruns spending it on
+width, eventually and then permanently. That is the precise sense of "depth
+multiplies what width adds", and it is a statement about a limit rather than
+about any particular architecture.
+
+</Solution>
+
+<Answer>
+At $d = 2$, one hidden layer of $n$ units reaches at most $1 + n + n(n-1)/2$
+regions, which is $\Theta(n^2)$.
+
+Thirty units: $466$ as one layer, at least $35\,000$ as three layers of ten — a
+factor of $75.1$. Sixty units: $1\,831$, $104\,850$, $546\,875\,000$ at depths
+$1$, $2$ and $6$.
+
+Width buys regions polynomially and depth buys them exponentially, so the ratio
+diverges as the budget grows.
+</Answer>
+
+<CheckNumeric snippet="i-5-b07-region-counts.py" verified>
+```python
+def shallow(n, d):                       # Zaslavsky 1975, one hidden layer
+    return sum(comb(n, i) for i in range(d + 1))
+
+def deep(n, d, L):                       # Montufar et al. 2014, L hidden layers
+    return (n // d) ** (d * (L - 1)) * shallow(n, d)
+```
+Prints the shallow table for $n = 1 \ldots 100$, the thirty-unit comparison with
+its ratio, and the three sixty-unit arrangements.
+</CheckNumeric>
+
+<CheckSanity>
+**Small cases are checkable by drawing.** One line cuts the plane into 2; two
+crossing lines into 4; three lines in general position into 7. The formula gives
+$2, 4, 7$. A fourth line meets the other three in three points and so adds four
+regions, giving 11 — which is what $1 + 4 + 6$ says.
+
+**The deep bound reduces to the shallow one at $L = 1$.** The exponent
+$d(L-1)$ becomes zero, the factor becomes 1, and (I.5.5) collapses to (I.5.4).
+A bound that did not do this would be inconsistent.
+
+**The bounds point in the directions they should.** (I.5.4) is an upper bound
+and (I.5.5) a lower one, so the comparison in Step 2 is between the *best* the
+shallow network could do and the *worst* the deep construction achieves. The
+factor of 75 is therefore a conservative statement of the gap, which is the only
+direction in which such a comparison is worth anything.
+</CheckSanity>
+
+<Breaks>
+Region counts measure how finely a network can chop its input space, and that is
+not what anyone wants from a model. Three limits, in increasing order of how
+often they are forgotten.
+
+**The counts are extremal.** A trained network realises far fewer regions than
+its architecture allows, and the ones it realises cluster near the data rather
+than spreading evenly.
+
+**Pieces are not accuracy.** A target needing few pieces can still be
+approximated badly, and a network with many regions may spend nearly all of them
+where no data lies.
+
+**The bound assumes $n \ge d$.** A layer narrower than the input is not governed
+by region counting at all but by rank: it has already discarded a subspace, and
+no depth after it recovers what was lost. That failure is I.5.X04, and its
+general form is the minimal-width theorem I.5.T4.
+</Breaks>
+
+<Variation>
+Fix a budget of 120 units in the plane and tabulate (I.5.5) at
+$L = 1, 2, 4, 12, 20, 30, 60$ with $n = 120/L$. The maximum is not at the
+largest $L$. Find where it is, and explain what the $\lfloor n/d \rfloor$ term
+does to the bound once the layers get narrow.
+</Variation>

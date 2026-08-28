@@ -1,0 +1,75 @@
+---
+chapter: neural-networks--mlp
+proposition: 4
+statement: Permuting hidden units changes nothing, and that costs more than it sounds.
+claim: "A hidden layer of width n has at least n! parameter settings computing the identical function. Weights are therefore not comparable between runs, and averaging two trained networks is meaningless until the permutation is undone."
+given:
+  - a-hidden-layer-is-a-learned-coordinate-system
+figure: FigParameterSpace
+level: mechanics
+notation:
+  - "W"
+  - "b"
+  - "theta"
+status: published
+updated: 2026-08-28
+sources:
+  - title: "Git Re-Basin: Merging Models modulo Permutation Symmetries"
+    url: https://arxiv.org/abs/2209.04836
+---
+
+## Demonstration
+
+Let *P* be a permutation matrix of size *n*, the width of a hidden layer. *P*
+is orthogonal, so *P* times *P* transposed is the identity. Substitute:
+
+```
+relu(x W1 + b1) W2            original
+relu(x W1 P + b1 P) P' W2     permuted, P' = P transposed
+```
+
+Because ReLU acts on each coordinate separately, it commutes with a
+permutation: applying ReLU then reordering gives the same vector as reordering
+then applying ReLU. So the permuted network computes
+
+```
+relu(x W1 + b1) P P' W2  =  relu(x W1 + b1) W2
+```
+
+which is the original, exactly. Not approximately, and not on a subset of
+inputs — on every input, to every digit.
+
+**How many such settings there are.** Any of the *n*! permutations works, and
+they give distinct parameter vectors whenever the units are distinct. A width
+of 8 already gives 40 320. A width of 512 gives more than 10^1166, which is not
+a number with a physical comparison attached to it. And permutations are only
+one family of symmetries: ReLU is positively homogeneous, so scaling *W1* by
+any *c* > 0 while scaling *W2* by 1/*c* is another, and there are more.
+
+**What that forbids.** Two networks trained from different random seeds land in
+different orderings with probability essentially one. Their unit *j* have no
+relationship. Consequently:
+
+- the average of their weights is a network neither of them trained, and it is
+  usually worse than both;
+- a per-unit correlation between the two is a measurement of the seed;
+- a distance in parameter space between two checkpoints from different runs
+  measures the permutation, not the difference in behaviour.
+
+## Corollary
+
+**The loss surface is not one basin.** Whatever a minimum looks like, at least
+*n*! copies of it exist, related by relabelling. Arguments about "the" minimum,
+or pictures of a single valley, are pictures of a quotient — the surface with
+the symmetry divided out — and they should say so.
+
+**Merging models is a matching problem before it is an averaging problem.** Git
+Re-Basin makes this the method: find the permutation aligning one network's
+units to the other's, apply it, and only then interpolate. When the alignment
+is right the interpolated network can match the endpoints, and when it is
+skipped the same interpolation collapses. The symmetry did not go away; it was
+accounted for.
+
+**A model is its function.** Everything in this proposition follows from taking
+that sentence literally. The parameters are one of many descriptions, and the
+architecture guarantees the description is not unique.

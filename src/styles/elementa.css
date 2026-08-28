@@ -290,7 +290,11 @@
 }
 .nota-sym { color: var(--ink); }
 .nota-mean { color: var(--ink-soft); }
-.app-ref { font-family: var(--font-mono); font-size: 0.9em; white-space: nowrap; }
+/* The identifier never separates from its title, but a long title has to be
+   allowed to wrap — "Rank, eigenvalues and the singular value
+   decomposition · 0.LA.04" is wider than a phone. */
+.app-ref { font-family: var(--font-mono); font-size: 0.9em; }
+.app-ref-id { white-space: nowrap; }
 
 /* ── Quota readout ───────────────────────────────────────────────────── */
 .quota {

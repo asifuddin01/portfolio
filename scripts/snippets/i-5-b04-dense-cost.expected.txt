@@ -1,0 +1,9 @@
+wide  1 hidden x 4096: 620,663,784 params, 2.483 GB fp32, 1.241 GFLOP/example
+    first matrix alone: 616,566,784  (99.3% of the model)
+deep  6 hidden x 1024: 160,414,696 params, 0.642 GB fp32, 0.321 GFLOP/example
+    first matrix alone: 154,141,696  (96.1% of the model)
+3x3 conv, 3 -> 64 channels:      1,792 params
+dense layer, 3072 -> 64:         196,672 params  (109.8x)
+one hidden layer of width  512:      262,656 params in its matrix
+one hidden layer of width 1024:    1,049,600 params in its matrix
+one hidden layer of width 2048:    4,196,352 params in its matrix

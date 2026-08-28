@@ -1,0 +1,82 @@
+---
+id: "I.5.X08"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "A dense layer is memory-bound until the batch is large"
+depends:
+  - "I.5.P01"
+rounding: "3 d.p."
+hasSolution: true
+verified: true
+snippet: "i-5-x08-arithmetic-intensity.py"
+status: published
+---
+
+For a single dense layer of shape $1024 \times 1024$ in fp32, derive the
+arithmetic intensity — FLOPs performed per byte of memory moved — as a function
+of the batch size $B$. Tabulate it for $B$ from 1 to 1024, and say what the
+numbers imply about running an MLP one example at a time.
+
+<Hint>
+Count the traffic honestly: the weights are read once per batch, the inputs and
+outputs scale with $B$. Then take the limit in $B$.
+</Hint>
+
+<SolutionToggle>
+
+**The two counts.** A batch of $B$ rows through
+$\mat{W} \in \R^{d \times d}$ performs $B d^2$ multiply–adds, or $2Bd^2$ FLOPs.
+The bytes moved, at 4 bytes each, are the weights once plus the input and output
+rows:
+
+$$
+\text{bytes} = 4\left(d^2 + Bd + Bd\right),
+\qquad
+\text{intensity}(B) = \frac{2Bd^2}{4\left(d^2 + 2Bd\right)}
+$$
+
+**The table**, at $d = 1024$:
+
+| $B$ | FLOP/byte | weights as a share of traffic |
+|---|---|---|
+| 1 | $0.499$ | $99.8\%$ |
+| 2 | $0.996$ | |
+| 8 | $3.938$ | |
+| 32 | $15.059$ | $94.1\%$ |
+| 128 | $51.200$ | |
+| 256 | $85.333$ | $66.7\%$ |
+| 1024 | $170.667$ | |
+
+**The limit.** Divide through by $B$:
+
+$$\lim_{B \to \infty} \text{intensity}(B) = \frac{2d^2}{8d} = \frac{d}{4} = 256$$
+
+so the intensity rises towards $d/4$ and never passes it. Small $B$ is the
+regime where the denominator is dominated by $d^2$, and the intensity is
+approximately $B/2$.
+
+**What it implies.** At $B = 1$ the layer performs one multiply–add per weight
+and does half a FLOP per byte moved. Accelerators reach their peak arithmetic
+rate only above roughly $100$ FLOP/byte, so a batch of one leaves the machine
+idle by more than two orders of magnitude: **the time is spent reading weights,
+not multiplying**. The layer is memory-bound, and making the matrix bigger does
+not help, since the weights grow as fast as the arithmetic.
+
+**Three consequences.**
+
+*Batching is not only a statistical decision.* I.4 discusses the batch as a
+variance choice; this is the other axis, and at $B = 1$ the hardware cost is
+paid whatever the statistics say.
+
+*FLOPs are a poor proxy for time.* Two models with the same FLOP count differ
+by a factor of hundreds if one runs at $B = 1$ and the other at $B = 256$.
+I.5.B04's caution has its arithmetic here.
+
+*Single-example inference is the hard case.* Serving one request at a time is
+exactly the memory-bound regime, which is why inference systems batch requests
+across users, and why the same problem returns for the KV cache in Book IV.
+
+</SolutionToggle>

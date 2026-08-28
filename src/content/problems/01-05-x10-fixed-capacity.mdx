@@ -1,0 +1,74 @@
+---
+id: "I.5.X10"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: limit
+difficulty: 3
+title: "Capacity is chosen before the data, and both limits say so"
+depends:
+  - "I.5.P02"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+The third assumption of this chapter is that width is fixed before training and
+is the same for every example. Examine what it costs by taking two limits: depth
+to infinity at width $\le d_0$, and width to infinity at depth 2. Say what each
+limit gives and what neither gives, and then state precisely what an MLP cannot
+do that a conditional architecture can.
+
+<Hint>
+The first limit is I.5.T4; the second is I.3.T2. Ask in each case what is being
+held fixed and what the theorem is silent about.
+</Hint>
+
+<SolutionToggle>
+
+**Limit one: depth to infinity, width at most $d_0$.** Nothing arrives. Hanin
+and Sellke show the minimal width for uniform approximation of continuous
+functions on a compact subset of $\R^{d_0}$ is exactly $d_0 + 1$; at width
+$d_0$ the class stays limited *however deep the network is*. Depth does not
+substitute for width below the threshold, and I.5.X04 is the elementary reason —
+a narrow first layer has already discarded a subspace.
+
+Above the threshold the situation reverses completely: width $d_0 + 1$ suffices,
+with depth doing all the work. So width is not a smooth resource. It has a
+hard floor, and above the floor it trades against depth.
+
+**Limit two: width to infinity, depth 2.** Universality arrives, and nothing
+else. One hidden layer with a non-polynomial activation approximates any
+continuous function on a compact set (I.3.T2), with no bound on the number of
+units, no claim that gradient descent finds them, and no statement about
+behaviour off the compact set.
+
+**What neither limit gives.** Both are statements about a network whose shape
+was chosen in advance. In each, the capacity is a number written down before any
+data arrived, and the theorem describes what that number permits. Neither says
+anything about whether the capacity is well spent, and neither can, because
+spending is a property of training.
+
+**What an MLP cannot do.** On any single input, the live units are at most
+$d_1$, and by I.5.B02 the map applied has rank at most the number of live units.
+So the arithmetic performed on an easy input and on a hard one costs the same
+and has the same ceiling. The network can vary *which* units fire — that is the
+activation pattern, and it is the only per-input adaptivity an MLP has — but
+never *how many are available*. There is no mechanism by which a harder example
+recruits more capacity.
+
+**The architectures that break the assumption.** A mixture of experts routes
+each input to a subset of a much larger parameter pool, so total capacity and
+per-input cost come apart: the model is large and the computation per token is
+not. Early-exit networks stop at a shallower layer for easy inputs. Both are
+answers to precisely the assumption examined here, and both pay for it — with a
+routing decision that must itself be learned, and a load-balancing problem that
+does not exist for a dense layer.
+
+**The honest summary.** Fixed capacity is what makes an MLP simple enough to
+analyse: every count in this chapter, from (I.5.2) to (I.5.5), assumes it. It is
+also the first assumption real systems abandon once the parameter count matters
+more than the analysis does.
+
+</SolutionToggle>

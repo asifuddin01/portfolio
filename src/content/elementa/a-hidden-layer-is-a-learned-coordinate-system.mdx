@@ -1,0 +1,73 @@
+---
+chapter: neural-networks--mlp
+proposition: 3
+statement: A hidden layer is a learned coordinate system, not a summary.
+claim: "The hidden vector is not a compressed description of the input. It is whatever set of coordinates makes the next layer's job easy, and it has meaning only relative to the layer that consumes it."
+given:
+  - a-linear-layer-is-an-affine-map
+  - learning-changes-parameters-not-rules
+figure: FigNeuron
+level: intuition
+notation:
+  - "W"
+  - "b"
+  - "x"
+status: published
+updated: 2026-08-28
+sources:
+  - title: "Multilayer Feedforward Networks are Universal Approximators"
+    url: https://doi.org/10.1016/0893-6080(89)90020-8
+  - title: "On the Expressive Power of Deep Neural Networks"
+    url: https://proceedings.mlr.press/v70/raghu17a.html
+---
+
+## Demonstration
+
+A hidden layer produces a vector. It is tempting to read that vector as a
+description of the input — a compressed one, a set of detected properties, a
+summary. Nothing in the definition supports that reading, and one calculation
+removes it.
+
+Take a network with one hidden layer. Its output is
+
+```
+yhat = relu(x W1 + b1) W2 + b2
+```
+
+Now insert any permutation *P* of the hidden units: replace *W1* by *W1 P*,
+*b1* by *b1 P*, and *W2* by *P* transposed times *W2*. Every hidden coordinate
+has moved. The output has not changed by a single digit — the permutation
+cancels between the two layers. So the numbering of the hidden coordinates
+carries no information at all, and neither does any other property of the
+hidden vector that the second layer's weights can absorb.
+
+**What the layer is optimising.** The hidden vector is not chosen to describe
+*x*. It is chosen to make the composite loss small, which is a statement about
+what the *next* layer needs, not about what the input contains. If the head is
+a single linear map, the hidden layer's task is to place the classes where a
+hyperplane can separate them — which is exactly the failure the perceptron of
+I.2 could not repair on its own, now repaired one layer earlier.
+
+**Which is why the reading matters.** Two networks trained on the same data to
+the same accuracy can have hidden representations with no correspondence
+between them: different units, different scales, different directions. Any
+claim about "the feature this unit detects" is a claim about one training run,
+and it does not transfer.
+
+## Corollary
+
+Three consequences, all of them practical.
+
+**Interpretation must be earned per model.** A unit's meaning is not given by
+the architecture. Establishing one requires an experiment — an intervention, an
+ablation, a probe — and the result belongs to that checkpoint.
+
+**Comparisons run through behaviour, not weights.** Two models agree if they
+agree on inputs. Comparing them coordinate by coordinate compares an arbitrary
+labelling of hidden units, which is Proposition 4.
+
+**The last layer is the one that fixes the geometry.** Whatever a hidden layer
+learns is shaped by what consumes it. Change the head — a different loss, a
+different number of classes — and the representation the same architecture
+learns changes with it. This is the mechanism behind transfer, and it is why
+Book III can freeze a backbone and replace only the head.

@@ -1,0 +1,63 @@
+---
+id: "I.5.X01"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Seven of the eight patterns"
+depends:
+  - "I.5.P03"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-5-x01-realised-patterns.py"
+status: published
+---
+
+Three hidden units admit eight activation patterns on paper. Using the network
+of I.5.B01, determine how many of the eight actually occur for some input in the
+plane, name the one that does not, and prove by hand that it cannot.
+
+<Hint>
+Each unit is on where one linear inequality holds. "All three off" is three
+inequalities at once — add two of them together and see what they force.
+</Hint>
+
+<SolutionToggle>
+
+**Seven of eight occur.** A scan of the plane at a spacing of $0.005$ finds
+witnesses for $001$, $010$, $011$, $100$, $101$, $110$ and $111$, and never
+finds $000$.
+
+**Why seven is the number to expect.** Three units draw three lines. In general
+position, three lines cut the plane into
+$\binom{3}{0} + \binom{3}{1} + \binom{3}{2} = 1 + 3 + 3 = 7$ regions
+(I.5.4). One region per pattern, so exactly one of the eight sign vectors is
+unrealised. The count is not an accident of these particular weights; it is the
+arrangement bound, met exactly.
+
+**Which one, and why.** Suppose all three units were off at some $\vec{x}$:
+
+$$z_1 = x_1 + 0.5x_2 - 0.5 \le 0, \quad z_2 = -x_1 + x_2 + 0.25 \le 0, \quad z_3 = 0.5x_1 - x_2 \le 0$$
+
+Add the second and third:
+
+$$z_2 + z_3 = -0.5x_1 + 0.25 \le 0 \quad\Longrightarrow\quad x_1 \ge 0.5$$
+
+From the third alone, $x_2 \ge 0.5x_1 \ge 0.25$. Substituting both into the
+first:
+
+$$z_1 = x_1 + 0.5x_2 - 0.5 \ \ge\ 0.5 + 0.5(0.25) - 0.5 = 0.125 > 0$$
+
+which contradicts $z_1 \le 0$. **The pattern $000$ is impossible.**
+
+**What the impossibility means.** There is no input this network maps to zero
+through its hidden layer, so the constant $b^{(2)} = 0.75$ is never the whole
+output. More generally, the set of realisable patterns is a property of the
+weights, and it is smaller than $2^{n}$ for every network with $n > d$: at
+$n = 10$ units in the plane, $56$ of $1024$ patterns occur, or $5.5\%$. Counting
+units and exponentiating badly overstates what a layer can do — which is the
+content of I.5.T1 stated as a fraction.
+
+</SolutionToggle>

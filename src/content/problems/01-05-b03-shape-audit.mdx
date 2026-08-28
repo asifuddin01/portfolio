@@ -1,0 +1,140 @@
+---
+id: "I.5.B03"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "A shape and parameter audit of a four-layer MLP"
+depends:
+  - "I.5.P01"
+reachesBack: []
+rounding: "Exact integer counts; memory in decimal megabytes."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Audit a classifier layer by layer: the shape of every matrix, the shape of every
+intermediate, the parameter count of each layer and of the whole model, and the
+memory that model occupies in fp32. Then answer the question the audit exists to
+answer — where is the money.
+</Statement>
+
+<Given>
+An MLP with widths
+
+$$(d_0, d_1, d_2, d_3, d_4) = (784,\ 512,\ 256,\ 128,\ 10)$$
+
+Four affine layers, ReLU after the first three, no activation on the head. One
+example at a time, so the input is a row $\vec{x} \in \R^{1 \times 784}$.
+</Given>
+
+<Find>
+A table of $\mat{W}^{(\ell)}$ and $\vec{b}^{(\ell)}$ shapes, the shape of each
+$\vec{a}^{(\ell)}$, per-layer and total parameter counts, the fp32 size, and the
+share of the total held by the first layer.
+</Find>
+
+<Strategy>
+Count with equation (I.5.2), one layer at a time. The two habits worth building
+are writing the bias into the count rather than waving it away, and checking
+that each layer's output shape is the next layer's input shape before adding
+anything up.
+</Strategy>
+
+<Solution>
+
+**Step 1 — shapes.** A layer holds $\mat{W}^{(\ell)} \in \R^{d_{\ell-1} \times d_\ell}$
+and $\vec{b}^{(\ell)} \in \R^{1 \times d_\ell}$, and the row passing through is
+$(1 \times d_{\ell-1})(d_{\ell-1} \times d_\ell) \to (1 \times d_\ell)$.
+
+| $\ell$ | $\mat{W}^{(\ell)}$ | $\vec{b}^{(\ell)}$ | $\vec{a}^{(\ell)}$ |
+|---|---|---|---|
+| 1 | $784 \times 512$ | $1 \times 512$ | $1 \times 512$ |
+| 2 | $512 \times 256$ | $1 \times 256$ | $1 \times 256$ |
+| 3 | $256 \times 128$ | $1 \times 128$ | $1 \times 128$ |
+| 4 | $128 \times 10$ | $1 \times 10$ | $1 \times 10$ |
+
+Every inner dimension meets. The batch dimension is untouched throughout, which
+is what makes the same weights work for one example or ten thousand.
+
+**Step 2 — parameters, layer by layer.** $d_{\ell-1}d_\ell + d_\ell$:
+
+$$784 \cdot 512 + 512 = 401\,408 + 512 = 401\,920$$
+
+$$512 \cdot 256 + 256 = 131\,072 + 256 = 131\,328$$
+
+$$256 \cdot 128 + 128 = 32\,768 + 128 = 32\,896$$
+
+$$128 \cdot 10 + 10 = 1\,280 + 10 = 1\,290$$
+
+**Step 3 — the total.**
+
+$$N = 401\,920 + 131\,328 + 32\,896 + 1\,290 = 567\,434$$
+
+**Step 4 — memory.** At 4 bytes per fp32 parameter,
+$567\,434 \times 4 = 2\,269\,736$ bytes: $2.27$ MB, or $2.165$ MiB. Training
+with Adam multiplies that by roughly four, since the optimiser carries two
+moment estimates alongside the gradient — a point Chapter I.7 makes properly.
+
+**Step 5 — where the money is.**
+
+$$\frac{401\,920}{567\,434} = 70.83\%$$
+
+The first layer holds seven parameters in ten. It is not the widest layer and it
+is not doing the classification; it is simply the one facing the input, and the
+input is 784 numbers wide. This is the general shape of the bill: an MLP pays
+for its interface with the data.
+
+</Solution>
+
+<Answer>
+
+| $\ell$ | shape | parameters |
+|---|---|---|
+| 1 | $784 \times 512$ | $401\,920$ |
+| 2 | $512 \times 256$ | $131\,328$ |
+| 3 | $256 \times 128$ | $32\,896$ |
+| 4 | $128 \times 10$ | $1\,290$ |
+| | **total** | $\mathbf{567\,434}$ |
+
+$2\,269\,736$ bytes in fp32, which is $2.27$ MB. The first layer holds
+$70.83\%$ of the model.
+</Answer>
+
+<CheckSanity>
+**The chain of shapes closes.** $784 \to 512 \to 256 \to 128 \to 10$, with each
+layer's output width equal to the next layer's input width, and the final width
+equal to the number of classes. A single mismatch anywhere would make the model
+unrunnable, so this check is free and catches most typing errors.
+
+**The biases are a rounding error, and are still counted.** $512 + 256 + 128 + 10 = 906$
+of $567\,434$, or $0.16\%$. They are cheap, which is a reason to keep them
+rather than a reason to omit them from the count — and I.5.X03 shows what
+dropping them costs.
+
+**The layer sizes fall as the widths multiply out.** $401\,920 : 131\,328 : 32\,896 : 1\,290$
+is close to $4 : 1.3 : 0.33 : 0.013$, matching the products
+$784 \cdot 512$, $512 \cdot 256$, $256 \cdot 128$, $128 \cdot 10$. Parameters
+track the product of adjacent widths, exactly as (I.5.2) says.
+</CheckSanity>
+
+<Breaks>
+The count is a count of *parameters*, and parameters are only one of three
+things that occupy memory. Activations scale with the batch: at batch 1024 the
+intermediates alone are
+$1024 \times (512 + 256 + 128 + 10) \times 4 = 3\,710\,976$ bytes, more than the
+model. Optimiser state scales with the parameters. Gradients match the
+parameters again. Quoting a parameter count as though it were a memory
+requirement is the most common way to underestimate what a model needs by an
+order of magnitude — and the ratio is worst exactly where it matters, which is
+during training rather than inference.
+</Breaks>
+
+<Variation>
+Re-audit with widths $(784, 2048, 10)$ — a wider model with one hidden layer
+instead of three. Compare the totals before computing them, then check the
+prediction. Which is larger, and by how much?
+</Variation>

@@ -1,0 +1,62 @@
+---
+id: "I.5.X03"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: symbolic
+difficulty: 1
+title: "What the bias buys, in one sentence and one counterexample"
+depends:
+  - "I.5.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Show that a bias-free MLP with any depth, any widths and ReLU activations maps
+the origin to the origin, whatever its weights. Then say what that costs, and
+whether the standard repair — appending a constant $1$ to the input — recovers
+everything a full set of biases would.
+
+<Hint>
+Evaluate the network at $\vec{x} = \vec{0}$ layer by layer. ReLU has one
+property here that sigmoid does not.
+</Hint>
+
+<SolutionToggle>
+
+**The origin is pinned.** With $\vec{b}^{(\ell)} = \vec{0}$ everywhere,
+$\vec{0}\mat{W}^{(1)} = \vec{0}$, and $\mathrm{ReLU}(\vec{0}) = \vec{0}$. The
+same at the next layer, and the next. By induction $f(\vec{0}) = \vec{0}$ for
+every choice of weights and every depth.
+
+**What that costs.** The network cannot represent any function with
+$f(\vec{0}) \ne \vec{0}$ — which includes most regression targets and every
+classifier whose decision boundary does not pass through the origin. The
+restriction is on the *function class*, so no amount of training removes it. It
+is the same failure the perceptron's bias fixes in I.2, arriving once per layer
+instead of once.
+
+**The absorption trick, and its limit.** Append a constant $1$ to the input and
+add a row to $\mat{W}^{(1)}$: that row is the first layer's bias, exactly. So
+the first layer loses nothing. The later layers are a different matter. Their
+input is $\mathrm{ReLU}(\cdot)$, which has no constant coordinate to
+multiply — unless a hidden unit is arranged to be always on, which costs a unit
+and constrains its weights. Absorption is exact at the input and approximate
+after it, and the difference is why frameworks keep a separate bias per layer
+rather than one augmented column.
+
+**What it costs to keep them.** In the model of I.5.B03,
+$512 + 256 + 128 + 10 = 906$ parameters of $567\,434$: $0.16\%$. The biases are
+the cheapest expressivity in the model, which is the whole argument for having
+them.
+
+**Where the argument reverses.** Biases are dropped in real architectures — the
+projections inside a transformer block often omit them — but never for the
+reason above. There the layer is followed by a normalisation that has its own
+learned shift, so the bias would be redundant rather than unaffordable. Dropping
+a parameter because something else supplies it is a different decision from
+dropping it to save memory, and only the first one is sound.
+
+</SolutionToggle>

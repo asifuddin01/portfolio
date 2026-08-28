@@ -1,0 +1,4 @@
+budget 10,000 parameters, input dimension 2, one output
+  1 hidden layer  x 2499:  9,997 params, at most        3,123,751 regions
+  3 hidden layers x   69:  9,937 params, at least   3,228,587,776 regions
+  ratio: 1,034x more regions for the same money

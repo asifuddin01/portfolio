@@ -1,0 +1,160 @@
+---
+id: "I.5.B05"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "Twenty units deep against a thousand wide"
+depends:
+  - "I.5.P02"
+reachesBack: []
+rounding: "Exact integer counts."
+hasSolution: true
+verified: true
+snippet: "i-5-b05-sawtooth.py"
+status: published
+---
+
+<Statement>
+Exhibit a function that a deep ReLU network computes with twenty hidden units
+and that no single hidden layer computes with fewer than a thousand and
+twenty-three. Build it explicitly, count its pieces, prove the shallow lower
+bound, and then say precisely what the example does and does not establish.
+</Statement>
+
+<Given>
+The triangle map on $[0, 1]$:
+
+$$
+t(x) = \begin{cases} 2x & x \le \tfrac12 \\ 2 - 2x & x > \tfrac12\end{cases}
+$$
+
+and its $k$-fold composition $t_k = t \circ t \circ \cdots \circ t$.
+</Given>
+
+<Find>
+A ReLU expression for $t$; the number of linear pieces of $t_k$; the hidden
+units and parameters a depth-$2k$ network needs for $t_k$; and the minimum
+hidden units a network with a *single* hidden layer needs to represent it, at
+$k = 10$.
+</Find>
+
+<Strategy>
+Three separate jobs. Write $t$ with rectifiers, which is a small algebra
+exercise. Count the pieces of $t_k$, which is an induction. Bound the shallow
+network, which is the only step that needs an argument rather than a
+construction.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the triangle, in two ReLU units.**
+
+$$t(x) = 2\,\mathrm{ReLU}(x) - 4\,\mathrm{ReLU}\!\left(x - \tfrac12\right)$$
+
+Check both branches. For $0 \le x \le \tfrac12$ the second term vanishes and the
+expression is $2x$. For $x > \tfrac12$ it is $2x - 4(x - \tfrac12) = 2 - 2x$.
+Two hidden units, four weights and two biases in, one row of two weights out.
+
+**Step 2 — the pieces multiply.** $t$ maps each of $[0,\tfrac12]$ and
+$[\tfrac12,1]$ onto the whole of $[0,1]$, once each. So every linear piece of
+$t_{k-1}$ is traversed twice by $t_k$ — once on the rising half and once on the
+falling half — and
+
+$$P(t_k) = 2\,P(t_{k-1}), \qquad P(t_1) = 2 \quad\Longrightarrow\quad P(t_k) = 2^k$$
+
+At $k = 10$ that is $1024$ pieces, and $1023$ breakpoints.
+
+**Step 3 — the deep cost.** Stacking $k$ copies gives $2k$ hidden units. At
+$k = 10$: **20 hidden units**, and $10 \times 7 = 70$ parameters counting every
+weight and bias of each block.
+
+**Step 4 — the shallow lower bound.** This is the part that has to be proved
+rather than constructed. Let $g$ be any network on $\R$ with a single hidden
+layer of $n$ ReLU units:
+
+$$g(x) = \sum_{j=1}^{n} v_j\,\mathrm{ReLU}(w_j x + c_j) + v_0$$
+
+Each term is affine except at the single point $x = -c_j/w_j$ where its slope
+changes, so $g'$ is piecewise constant and can change value at no more than $n$
+points. A function with $p$ linear pieces has $p - 1$ points where its slope
+changes. Hence
+
+$$p - 1 \le n, \qquad \text{so} \qquad n \ge P(t_k) - 1 = 2^k - 1$$
+
+At $k = 10$: **$n \ge 1023$ hidden units**, and $1023 \cdot 1 + 1023 + 1023 \cdot 1 + 1 = 3070$
+parameters.
+
+**Step 5 — the comparison.** $20$ units against $1023$; $70$ parameters against
+$3070$. The gap is $2^k$ against $2k$, so it widens without limit: at $k = 20$
+the shallow network needs more than a million units to represent what twenty
+layers of two units represent exactly.
+
+</Solution>
+
+<Answer>
+$t(x) = 2\,\mathrm{ReLU}(x) - 4\,\mathrm{ReLU}(x - \tfrac12)$, and $t_k$ has
+exactly $2^k$ linear pieces.
+
+At $k = 10$: the deep network uses $20$ hidden units and $70$ parameters. Any
+network with one hidden layer needs at least $1023$ units — a factor of $51$ —
+and the factor grows as $2^k / 2k$.
+</Answer>
+
+<CheckNumeric snippet="i-5-b05-sawtooth.py" verified>
+```python
+def tooth(x):          # one triangle, written with exactly two ReLU units
+    return 2.0 * relu(x) - 4.0 * relu(x - 0.5)
+```
+Counts slope changes of $t_k$ on a grid sixteen times finer than the pieces, and
+prints $2, 4, 8, 16, 64, 256, 1024$ for $k = 1,2,3,4,6,8,10$ — the induction of
+Step 2, confirmed by exhaustion rather than assumed.
+</CheckNumeric>
+
+<CheckSanity>
+**The ReLU form agrees with the definition at three points.**
+$t(0.25) = 0.5$, $t(0.5) = 1$, $t(0.75) = 0.5$, and the snippet prints all
+three. If the $-4$ were a $-2$, the third would come out as $1$ instead.
+
+**The counted pieces match the predicted $2^k$ at every $k$ tested**, including
+$k = 10$, where the count is over $16\,384$ sample intervals. A miscount of even
+one piece would break the doubling.
+
+**The lower bound is tight, not merely valid.** A shallow network with exactly
+$1023$ well-placed units *can* represent $t_{10}$: put one breakpoint at each of
+the $1023$ interior kinks and solve for the coefficients. So $1023$ is the
+answer, not a weak bound that a cleverer construction would beat.
+</CheckSanity>
+
+<Breaks>
+Everything above is about *representation*, and it is worth being blunt about
+how far that is from a recommendation.
+
+**It is one function.** The sawtooth was chosen because it is the extreme case.
+Nothing here says the functions in any application oscillate like this, and for
+smooth targets the depth advantage can vanish entirely.
+
+**It says nothing about training.** The deep network representing $t_{10}$ has
+$70$ specific parameters. Gradient descent from a random start does not find
+them: the loss surface of a composition of ten triangle maps is close to
+pathological, and this is the standard demonstration that expressivity and
+trainability are unrelated properties.
+
+**It is one-directional.** "Some functions are exponentially cheaper deep" is
+not "deeper is better". The converse fails: many functions are equally cheap at
+either depth, and depth brings vanishing gradients (I.9), conditioning problems
+(I.7) and a need for normalisation (I.8) that width does not.
+
+The honest summary is that the theorem removes an argument rather than
+supplying one. Nobody can any longer say a wide shallow network is *as good* as
+a deep one because both are universal approximators. I.3.T2 and this problem are
+about different quantities, and the second is the one that decides cost.
+</Breaks>
+
+<Variation>
+Modify $t$ to a three-piece map with two peaks and count the pieces of its
+$k$-fold composition. Then generalise: for a map with $m$ pieces, how many
+hidden units does the shallow network need at depth $k$, and what does that do
+to the ratio in the answer?
+</Variation>

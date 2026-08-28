@@ -6,16 +6,98 @@ title: "The Multilayer Perceptron"
 summary: "Alternating affine maps and nonlinearities, each layer re-describing the data for the next."
 claim: "An MLP is a composition of affine maps and nonlinearities, and depth can buy exponentially in width."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "The affine layer"
+  - "Composition, depth and width"
+  - "Hidden representations"
+  - "Parameter and shape accounting"
+  - "Activation patterns and linear regions"
+  - "Counting regions: width adds, depth multiplies"
+  - "The depth–width trade-off"
+  - "Minimal width and the rank bottleneck"
+  - "Permutation symmetry of hidden units"
+definitions:
+  - n: 1
+    term: "Affine layer"
+    statement: "A layer with parameters W ∈ ℝ^{d_in×d_out} and b ∈ ℝ^{1×d_out} sends a row x ∈ ℝ^{1×d_in} to xW + b. It is affine and not linear because of b: without the bias the origin is pinned, since 0·W = 0 for every W, and no layer could place a boundary anywhere except through zero."
+    introduces:
+      - "W"
+      - "b"
+  - n: 2
+    term: "Multilayer perceptron"
+    statement: "The composition a⁽ˡ⁾ = φ(a⁽ˡ⁻¹⁾W⁽ˡ⁾ + b⁽ˡ⁾) for ℓ = 1 … L−1, with a⁽⁰⁾ = x, closed by an affine head a⁽ᴸ⁻¹⁾W⁽ᴸ⁾ + b⁽ᴸ⁾. Every matrix is dense: each coordinate entering a layer reaches every coordinate leaving it. The head carries no φ, which is why the output is unbounded until a loss or a link function bounds it."
+    introduces: []
+  - n: 3
+    term: "Depth"
+    statement: "The number L of affine layers; the network then has L−1 hidden layers. Affine layers are the right thing to count because they are the matrices a linear network would collapse into one — the count of nonlinearities is L−1, and it is that gap between the two counts that makes depth mean anything."
+    introduces:
+      - "L"
+  - n: 4
+    term: "Width"
+    statement: "The width of layer ℓ is d_ℓ, the number of columns of W⁽ˡ⁾, equivalently its number of units. The tuple (d₀, d₁, …, d_L) fixes every shape and every parameter count in the network, and nothing else does: an MLP is completely specified by its widths and its φ."
+    introduces:
+      - "d"
+  - n: 5
+    term: "Hidden representation"
+    statement: "The vector a⁽ˡ⁾ for 0 < ℓ < L. It is not a summary of the input and it is not designed: it is whatever coordinate system reduces the loss, and it has meaning only relative to the layers that consume it. Two networks with the same behaviour need have no relation between their hidden representations at all."
+    introduces: []
+  - n: 6
+    term: "Parameter count"
+    statement: "N = Σ_{ℓ=1..L} (d_{ℓ−1}·d_ℓ + d_ℓ), the number of entries in θ. Quadratic in the widths and linear in the depth: doubling one width quadruples one matrix, while adding one layer of the same width adds a single matrix to the sum."
+    introduces:
+      - "N"
+      - "theta"
+  - n: 7
+    term: "Activation pattern"
+    statement: "For a ReLU network, the binary vector at each layer recording which units have strictly positive pre-activation at a given input. It is a property of the input, not of the parameters alone, and it is what selects the arithmetic the network will perform on that input."
+    introduces: []
+  - n: 8
+    term: "Linear region"
+    statement: "A maximal connected set of inputs sharing one activation pattern at every layer. On it the network is exactly affine — not approximately — so an MLP with piecewise-linear φ is a piecewise affine function whose pieces are its regions."
+    introduces: []
+  - n: 9
+    term: "Depth–width trade-off"
+    statement: "The question of how a fixed parameter budget should be spent: on more units per layer or on more layers. It is not a matter of taste; the two directions buy regions at different rates, one polynomially and one exponentially, and the rates are what the theorems in this chapter compare."
+    introduces: []
+  - n: 10
+    term: "Permutation symmetry"
+    statement: "For any permutation matrix P of size d_ℓ, replacing (W⁽ˡ⁾, b⁽ˡ⁾, W⁽ˡ⁺¹⁾) with (W⁽ˡ⁾P, b⁽ˡ⁾P, PᵀW⁽ˡ⁺¹⁾) leaves the network's function unchanged on every input. The map from parameters to functions is therefore many-to-one, before any question of optimisation arises."
+    introduces: []
 beforeYouStart:
-  - "I.3"
   - "I.2"
+  - "I.3"
   - "0.LA.01"
+  - "0.LA.04"
 conceptFigure: FigDepthFolds
-problemStatement: "The perceptron cannot solve XOR and one nonlinearity cannot be applied to nothing. Composing them is the smallest change that makes the failure go away, and the first architecture worth counting parameters for."
-formalResults: []
-assumptions: []
+problemStatement: "The reader leaves I.2 with a perceptron that cannot compute XOR and I.3 with a nonlinearity applied to nothing in particular. Neither is usable alone, and the smallest repair that removes both failures at once is to compose them. That composition is the first architecture worth accounting for — the first with a shape to audit, a parameter count to pay, and a real design decision inside it: given a budget, how much of it should go to width and how much to depth."
+formalResults:
+  - id: "I.5.T1"
+    name: "Region count of one hidden layer (Zaslavsky 1975)"
+    statement: "A single hidden layer of n ReLU units on input dimension d cuts the input space along n hyperplanes, so the network is affine on at most Σ_{i=0..d} C(n, i) regions. For fixed d that is Θ(n^d): width buys regions polynomially. In the plane, ten units buy 56 regions and a hundred units buy 5051."
+    doesNotPromise: "It is an upper bound, reached only when the hyperplanes are in general position — three parallel units in the plane give four regions, not seven. It counts pieces and not accuracy: a target needing few pieces can still be approximated badly, and a network with many regions may spend nearly all of them where no data lies. It says nothing about which of those piecewise affine functions gradient descent reaches, and nothing about generalisation."
+  - id: "I.5.T2"
+    name: "Regions multiply with depth (Montúfar, Pascanu, Cho and Bengio 2014)"
+    statement: "A ReLU network with L hidden layers of width n on input dimension d, with n ≥ d, realises at least (⌊n/d⌋)^{d(L−1)} · Σ_{j=0..d} C(n, j) linear regions. Depth sits in the exponent and width in the base, which is the whole asymmetry: thirty units in the plane arranged as three layers of ten reach 35 000 regions, against 466 for one layer of thirty."
+    doesNotPromise: "It is a lower bound on what a network of that shape *can* realise, exhibited by a construction — not a statement about a trained network, which typically uses far fewer. Region count is not usefulness: the function attaining the bound is a sawtooth nobody wants to fit. And the bound assumes n ≥ d; a layer narrower than the input is governed by rank instead, where no amount of depth recovers what the first matrix discarded."
+  - id: "I.5.T3"
+    name: "Depth separation (Telgarsky 2016)"
+    statement: "For every positive integer k there is a network with Θ(k³) layers, Θ(1) nodes per layer and Θ(1) distinct parameters whose function no network of O(k) layers approximates unless it has Ω(2^k) nodes. Some functions are exponentially cheaper deep than shallow, and the gap is a theorem rather than an observation."
+    doesNotPromise: "It is an existence result about one family of highly oscillatory functions, and gives no reason to expect the functions in any application to resemble them. It is one-directional: some functions are cheaper deep, which is not the claim that deeper is better. It says nothing about optimisation — the deep network realising the sawtooth is not one gradient descent finds from a random start — and nothing about the conditioning and initialisation problems that arrive with depth and that Chapters I.7 and I.8 exist to answer."
+  - id: "I.5.T4"
+    name: "Minimal width (Hanin and Sellke 2017; Lu, Pu, Wang, Hu and Wang 2017)"
+    statement: "For input dimension d, the minimal width at which ReLU networks of arbitrary depth can approximate every continuous function on a compact set is exactly d + 1. Hidden layers all bounded by d express a very limited class however deep the network is, so the failure of a narrow network is a statement about the architecture and not about training."
+    doesNotPromise: "It gives a threshold, not a recommendation: width d + 1 is enough in the limit of unbounded depth, and says nothing about how deep, how well conditioned, or how trainable that network is. It concerns uniform approximation on a compact set, so it makes no claim off that set. Lu et al. prove the companion statement for L¹ approximation at width d + 4, and the two constants differ because the two notions of approximation differ — quoting one bound for the other misstates both."
+  - id: "I.5.T5"
+    name: "Permutation symmetry of a hidden layer"
+    statement: "For any layer ℓ and any permutation matrix P ∈ {0,1}^{d_ℓ×d_ℓ}, the substitution (W⁽ˡ⁾P, b⁽ˡ⁾P, PᵀW⁽ˡ⁺¹⁾) leaves the network's output identical at every input. A hidden layer of width n therefore admits at least n! parameter vectors realising the same function; at n = 512 that is more than 10¹¹⁶⁶."
+    doesNotPromise: "It does not enumerate all the symmetries — ReLU is positively homogeneous, so scaling W⁽ˡ⁾ by c > 0 and W⁽ˡ⁺¹⁾ by 1/c is another, and there are more. It does not say the loss surface has n! minima that training visits; it constrains what a comparison between two networks' weights can mean, not what optimisation does. And it does not make weight averaging useless — only meaningless until the permutation is undone, which is the problem Git Re-Basin sets out to solve."
+assumptions:
+  - statement: "Every unit reads every coordinate of the previous layer. The MLP assumes no structure in the input, so permuting the input coordinates with a fixed permutation leaves the function class unchanged — the architecture cannot tell a photograph from the same pixels shuffled."
+    testedBy: "I.5.X07"
+  - statement: "The hyperplanes a layer draws are in general position, which is what makes the region bound attainable rather than merely an upper limit."
+    testedBy: "I.5.X05"
+  - statement: "Width is fixed before the data is seen and is the same for every example, so capacity is a design decision rather than something the network adapts per input."
+    testedBy: "I.5.X10"
 owns:
   - "affine-layer"
   - "multilayer-perceptron"
@@ -24,9 +106,63 @@ borrows:
   - "activation-function"
   - "perceptron"
   - "tensor-shape"
-implementation: false
-failureModes: []
-references: []
+  - "linear-collapse"
+  - "universal-approximation"
+implementation: true
+failureModes:
+  - "The dense assumption costs a square, and the bill lands on the first matrix. An MLP taking a 224×224×3 image as 150 528 numbers into one hidden layer of 4096 units and then 1000 classes holds 620 663 784 parameters — 2.48 GB in fp32 — of which 616 566 784 sit in the input-facing matrix alone. A 3×3 convolution producing 64 channels from the same image holds 1792. Nothing about the task changed; only the assumption that every input touches every unit."
+  - "A hidden layer narrower than the input destroys information that no later layer recovers. With d₀ = 10 and d₁ = 3, W⁽¹⁾ has rank at most 3, so its null space has dimension at least 7: there are non-zero directions v with vW⁽¹⁾ = 0, and x and x + v produce byte-identical pre-activations. Every subsequent layer sees one vector, so no depth, no width later on, and no amount of training separates them. This is a rank fact, not an optimisation difficulty — and I.5.T4 is its general form."
+  - "Averaging the weights of two independently trained MLPs usually produces a network worse than either. Two solutions that compute nearly the same function can differ by any of the at least 512! ≈ 10¹¹⁶⁶ permutations of a width-512 hidden layer, so unit j of one network has no relation to unit j of the other, and their mean is a network neither trained. Weight-space comparison across runs — averaging, interpolation, per-unit correlation — is meaningless until the permutation is aligned."
+references:
+  - title: "Multilayer Feedforward Networks are Universal Approximators"
+    authors: "Hornik, Stinchcombe and White"
+    year: 1989
+    venue: "Neural Networks 2(5)"
+    url: https://doi.org/10.1016/0893-6080(89)90020-8
+  - title: "Facing Up to Arrangements: Face-Count Formulas for Partitions of Space by Hyperplanes"
+    authors: "Zaslavsky"
+    year: 1975
+    venue: "Memoirs of the American Mathematical Society 1(154)"
+  - title: "On the Number of Linear Regions of Deep Neural Networks"
+    authors: "Montúfar, Pascanu, Cho and Bengio"
+    year: 2014
+    venue: "NeurIPS"
+    url: https://arxiv.org/abs/1402.1869
+  - title: "Benefits of Depth in Neural Networks"
+    authors: "Telgarsky"
+    year: 2016
+    venue: "COLT"
+    url: https://proceedings.mlr.press/v49/telgarsky16.html
+  - title: "The Power of Depth for Feedforward Neural Networks"
+    authors: "Eldan and Shamir"
+    year: 2016
+    venue: "COLT"
+    url: https://proceedings.mlr.press/v49/eldan16.html
+  - title: "The Expressive Power of Neural Networks: A View from the Width"
+    authors: "Lu, Pu, Wang, Hu and Wang"
+    year: 2017
+    venue: "NeurIPS"
+    url: https://arxiv.org/abs/1709.02540
+  - title: "Approximating Continuous Functions by ReLU Nets of Minimal Width"
+    authors: "Hanin and Sellke"
+    year: 2017
+    venue: "arXiv:1710.11278"
+    url: https://arxiv.org/abs/1710.11278
+  - title: "On the Expressive Power of Deep Neural Networks"
+    authors: "Raghu, Poole, Kleinberg, Ganguli and Sohl-Dickstein"
+    year: 2017
+    venue: "ICML"
+    url: https://proceedings.mlr.press/v70/raghu17a.html
+  - title: "Git Re-Basin: Merging Models modulo Permutation Symmetries"
+    authors: "Ainsworth, Hayase and Srinivasa"
+    year: 2023
+    venue: "ICLR"
+    url: https://arxiv.org/abs/2209.04836
+  - title: "MLP-Mixer: An all-MLP Architecture for Vision"
+    authors: "Tolstikhin, Houlsby, Kolesnikov, Beyer, Zhai, Unterthiner, Yung, Steiner, Keysers, Uszkoreit, Lucic and Dosovitskiy"
+    year: 2021
+    venue: "NeurIPS"
+    url: https://arxiv.org/abs/2105.01601
 notation:
   - "W"
   - "b"
@@ -34,10 +170,30 @@ notation:
   - "d"
   - "L"
   - "N"
+  - "theta"
 apparatus:
   - "0.LA.01"
+  - "0.LA.04"
   - "0.MC.04"
   - "0.OP.01"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.5.1"
+    formula: "a⁽ˡ⁾ = φ(a⁽ˡ⁻¹⁾W⁽ˡ⁾ + b⁽ˡ⁾),   a⁽⁰⁾ = x,   ŷ = a⁽ᴸ⁻¹⁾W⁽ᴸ⁾ + b⁽ᴸ⁾"
+    gloss: "The entire architecture in one line: re-describe, bend, repeat, then read off."
+  - id: "I.5.2"
+    formula: "N = Σ_{ℓ=1..L} (d_{ℓ−1}·d_ℓ + d_ℓ)"
+    gloss: "Parameters are quadratic in width and only linear in depth."
+  - id: "I.5.3"
+    formula: "ŷ = x(W⁽¹⁾D W⁽²⁾) + (b⁽¹⁾D W⁽²⁾ + b⁽²⁾),   D = diag(1[z⁽¹⁾ > 0])"
+    gloss: "Inside one region the network is a single affine map, and D names which one."
+  - id: "I.5.4"
+    formula: "R₁(n, d) ≤ Σ_{i=0..d} C(n, i)"
+    gloss: "One hidden layer buys regions polynomially in its width."
+  - id: "I.5.5"
+    formula: "R_L(n, d) ≥ (⌊n/d⌋)^{d(L−1)} · Σ_{j=0..d} C(n, j)"
+    gloss: "Depth sits in the exponent, which is where the separation comes from."
+  - id: "I.5.6"
+    formula: "f(W⁽ˡ⁾, b⁽ˡ⁾, W⁽ˡ⁺¹⁾) = f(W⁽ˡ⁾P, b⁽ˡ⁾P, PᵀW⁽ˡ⁺¹⁾)"
+    gloss: "n! parameter vectors, one function: weights are not a coordinate system."
+status: published
 ---

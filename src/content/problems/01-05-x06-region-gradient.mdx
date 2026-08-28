@@ -1,0 +1,77 @@
+---
+id: "I.5.X06"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "Inside a region the gradient is one matrix product"
+depends:
+  - "I.5.P01"
+rounding: "4 d.p."
+hasSolution: true
+verified: true
+snippet: "i-5-x06-region-gradient.py"
+status: published
+---
+
+For the network of I.5.B01 at $\vec{x} = (1, 2)$, compute
+$\partial \hat{y} / \partial \vec{x}$ in closed form from (I.5.3), confirm it
+against a central difference, and then compute the gradient reaching each column
+of $\mat{W}^{(1)}$. Explain the third column's value.
+
+<Hint>
+On a region the network is $\vec{x}\mat{W}_\star + b_\star$, so the gradient in
+$\vec{x}$ is $\mat{W}_\star$ itself
+(<ApparatusRef ref="0.MC.04" />). For the weight gradients, differentiate the
+same expression with $\mat{D}$ held fixed.
+</Hint>
+
+<SolutionToggle>
+
+**Closed form.** The pattern at $(1,2)$ is $110$, so
+$\mat{D} = \mathrm{diag}(1,1,0)$ and
+
+$$
+\frac{\partial \hat{y}}{\partial \vec{x}}
+= \mat{W}_\star = \mat{W}^{(1)}\mat{D}\,\mat{W}^{(2)}
+= \begin{bmatrix} 3.0000 & 0.0000 \end{bmatrix}
+$$
+
+**Central difference.** With $h = 10^{-6}$, the snippet returns
+$(+3.0000,\ +0.0000)$. The two agree, which is the point of computing both.
+
+**Gradients into $\mat{W}^{(1)}$.** Differentiating
+$\hat{y} = \sum_j \mathrm{ReLU}(z_j)W^{(2)}_j + b^{(2)}$ with respect to
+$W^{(1)}_{ij}$, at fixed pattern:
+
+$$\frac{\partial \hat{y}}{\partial W^{(1)}_{ij}} = x_i\,D_{jj}\,W^{(2)}_j$$
+
+At $i = 1$: unit 1 gives $(1)(1)(2) = +2.0000$, unit 2 gives $(1)(1)(-1) = -1.0000$,
+unit 3 gives $(1)(0)(1.5) = +0.0000$. The snippet's finite differences return
+the same three numbers.
+
+**Why the third is zero.** $D_{33} = 0$: unit 3 is off at this input, so
+$\hat{y}$ does not depend on its incoming weights *at this input*, and the
+derivative is exactly zero rather than small. Perturbing $W^{(1)}_{13}$ by
+$10^{-6}$ changes nothing, because the ReLU absorbs it.
+
+**Two consequences worth separating.**
+
+*Locally, this is how backpropagation will look.* Chapter I.6 derives it
+properly, and the shape of the answer — a product of the layer matrices with a
+diagonal mask between them — is already visible here.
+
+*This is not a dead unit.* Unit 3 receives no gradient from this example. It
+receives plenty from $(2, 0)$, where $z_3 = 1$. A unit is dead only when the
+pattern is zero for every example in the dataset (I.3), and a single zero
+gradient is evidence of nothing.
+
+**Where the closed form stops being exact.** $\mat{W}_\star$ is the gradient
+*inside* the region. On the boundary, where some $z_j = 0$, ReLU has no
+derivative and frameworks pick a subgradient by convention — the same kink
+discussed in I.2.X09. The set where this matters has measure zero, but a
+finite-difference check that straddles a boundary will disagree with the closed
+form, and that disagreement is real rather than numerical.
+
+</SolutionToggle>

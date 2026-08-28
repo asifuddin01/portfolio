@@ -1,0 +1,55 @@
+---
+id: "I.5.X02"
+kind: exercise
+chapter: "I.5"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "The same budget, two shapes"
+depends:
+  - "I.5.P01"
+rounding: "Exact integer counts."
+hasSolution: true
+verified: false
+status: published
+---
+
+Audit two classifiers on the same task: widths $(784, 512, 256, 128, 10)$ from
+I.5.B03, and widths $(784, 2048, 10)$. Give the parameter count of each, say
+which is larger and by how much, and then answer the question that matters —
+which layer would you shrink first, in each.
+
+<Hint>
+Use (I.5.2) and keep the layers separate. Predict the answer before computing;
+the deep model has three times the layers.
+</Hint>
+
+<SolutionToggle>
+
+**The deep model.** From I.5.B03: $401\,920 + 131\,328 + 32\,896 + 1\,290 = 567\,434$.
+
+**The wide model.**
+
+$$784 \cdot 2048 + 2048 = 1\,605\,632 + 2048 = 1\,607\,680$$
+
+$$2048 \cdot 10 + 10 = 20\,490$$
+
+$$N = 1\,628\,170$$
+
+**The wide model is $2.87$ times larger** with a third of the layers. The
+prediction most people make is the opposite one, and the reason it fails is that
+depth appears in (I.5.2) as a *sum* while width appears as a *product*. Three
+extra layers add three terms; one width of $2048$ instead of $512$ multiplies
+the largest term by four.
+
+**Which layer to shrink.** In both, the first. It holds $70.83\%$ of the deep
+model and $98.7\%$ of the wide one, and in neither case is that because the
+layer is doing more work — it is because it faces $784$ inputs.
+
+**The lesson generalises.** For any MLP on wide input, the parameter count is
+approximately $d_0 d_1$, and every other decision is noise against it. This is
+why an image model does not begin with a dense layer, why a language model's
+embedding table is discussed separately from its blocks, and why quoting depth
+as a proxy for size is unreliable.
+
+</SolutionToggle>

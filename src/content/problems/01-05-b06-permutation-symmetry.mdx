@@ -1,0 +1,171 @@
+---
+id: "I.5.B06"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Relabelling the hidden units, and what that forbids"
+depends:
+  - "I.5.P04"
+reachesBack: []
+rounding: "Symbolic, with one order-of-magnitude count."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Prove that permuting a hidden layer leaves a network's function unchanged.
+Count how many such relabellings a layer of width 512 admits. Then state, as
+consequences rather than opinions, three things that may not be done with the
+weights of two independently trained networks.
+</Statement>
+
+<Given>
+$f(\vec{x}) = \varphi(\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)})\mat{W}^{(2)} + \vec{b}^{(2)}$
+with $\varphi$ applied elementwise, and $\mat{P} \in \{0,1\}^{n \times n}$ a
+permutation matrix, where $n = d_1$ is the hidden width. Recall
+$\mat{P}\mat{P}^{\mathsf T} = \mat{I}$.
+</Given>
+
+<Find>
+A proof that the substitution
+$(\mat{W}^{(1)}\mat{P},\ \vec{b}^{(1)}\mat{P},\ \mat{P}^{\mathsf T}\mat{W}^{(2)})$
+leaves $f$ unchanged at every input; the number of such substitutions at
+$n = 512$; and three consequences.
+</Find>
+
+<Strategy>
+The proof turns on one property of $\varphi$ and one of $\mat{P}$. Identify both
+before writing anything: the argument is three lines once they are named, and
+unavailable without them.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the property of $\varphi$.** $\varphi$ is elementwise, so applying it
+and then reordering the coordinates gives the same vector as reordering and then
+applying it. In matrix form, for any permutation $\mat{P}$ and any row $\vec{z}$:
+
+$$\varphi(\vec{z})\mat{P} = \varphi(\vec{z}\mat{P})$$
+
+This is exactly the statement that $\varphi$ does not mix coordinates, and it is
+the only property of the activation the proof uses. It holds for ReLU, sigmoid,
+tanh and GELU alike; it fails for softmax.
+
+**Step 2 — the property of $\mat{P}$.** A permutation matrix is orthogonal:
+$\mat{P}\mat{P}^{\mathsf T} = \mat{I}$. Reordering and then undoing the reorder
+is the identity.
+
+**Step 3 — the substitution.** Write $\tilde f$ for the network with the
+substituted weights:
+
+$$
+\tilde f(\vec{x})
+= \varphi\!\left(\vec{x}\mat{W}^{(1)}\mat{P} + \vec{b}^{(1)}\mat{P}\right)
+  \mat{P}^{\mathsf T}\mat{W}^{(2)} + \vec{b}^{(2)}
+$$
+
+Factor $\mat{P}$ out of the argument, since
+$\vec{x}\mat{W}^{(1)}\mat{P} + \vec{b}^{(1)}\mat{P} = (\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)})\mat{P}$:
+
+$$
+\tilde f(\vec{x})
+= \varphi\!\left((\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)})\mat{P}\right)
+  \mat{P}^{\mathsf T}\mat{W}^{(2)} + \vec{b}^{(2)}
+$$
+
+Apply Step 1 to pull $\mat{P}$ out of $\varphi$, then Step 2 to cancel it:
+
+$$
+= \varphi\!\left(\vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}\right)\mat{P}\mat{P}^{\mathsf T}\mat{W}^{(2)} + \vec{b}^{(2)}
+= f(\vec{x}) \qquad \blacksquare \ \text{(I.5.6)}
+$$
+
+At every input, to every digit. Not an approximation and not a symmetry of the
+loss only — a symmetry of the function.
+
+**Step 4 — how many.** There are $n!$ permutation matrices of size $n$, and they
+give distinct parameter vectors whenever the hidden units are distinct. At
+$n = 512$:
+
+$$\log_{10}(512!) \approx 1166.5, \qquad 512! \approx 10^{1166}$$
+
+For scale, the observable universe holds on the order of $10^{80}$ atoms. The
+number is not large in a way that admits a comparison; it is large in the way
+that makes exhaustive search a category error.
+
+And permutations are not the only symmetry. ReLU is positively homogeneous, so
+scaling the $j$-th column of $\mat{W}^{(1)}$ and the $j$-th entry of
+$\vec{b}^{(1)}$ by any $c > 0$ while scaling the $j$-th row of $\mat{W}^{(2)}$
+by $1/c$ is another one, and that family is continuous.
+
+**Step 5 — three consequences.**
+
+*Averaging two trained networks' weights is not averaging two models.* Unit $j$
+of one has no relation to unit $j$ of the other, so the mean is a network
+neither of them trained, and it typically performs worse than both.
+
+*A per-unit correlation between two runs measures the seed.* Any such statistic
+is computed over an arbitrary labelling. It can be repaired — match the units
+first — but not ignored.
+
+*A distance in parameter space between checkpoints from different runs is
+uninterpretable.* It is dominated by the permutation, not by any difference in
+behaviour. Two networks computing the identical function can sit arbitrarily far
+apart in weight space.
+
+</Solution>
+
+<Answer>
+The substitution leaves $f$ unchanged because $\varphi$ commutes with
+permutations and $\mat{P}\mat{P}^{\mathsf T} = \mat{I}$; the two facts are the
+whole proof. A hidden layer of width $n$ therefore admits at least $n!$
+parameter vectors realising each function, which at $n = 512$ exceeds
+$10^{1166}$.
+
+Consequently, across independently trained networks: weight averaging,
+per-unit correlation and parameter-space distance are all meaningless until the
+units are matched.
+</Answer>
+
+<CheckSanity>
+**Check it at $n = 2$ by hand.** Swap the two hidden units: exchange the columns
+of $\mat{W}^{(1)}$ and the entries of $\vec{b}^{(1)}$, and exchange the rows of
+$\mat{W}^{(2)}$. The output is a sum of two terms, and a sum does not care in
+which order it is written. The general proof is that observation with the
+bookkeeping done.
+
+**The proof uses one property of $\varphi$, and it is worth naming exactly.**
+Step 1 needs $\varphi(\vec{z})\mat{P} = \varphi(\vec{z}\mat{P})$ —
+equivariance to permutation. Being elementwise is sufficient for that but not
+necessary: softmax mixes coordinates and is still permutation-equivariant, so
+the argument covers it. What would break the proof is an activation that treats
+its coordinates asymmetrically, such as one applying a different function to
+each. That is why the property to check is equivariance, not elementwiseness.
+
+**The count is sane.** $\log_{10}(2!) = 0.30$, $\log_{10}(8!) = 4.6$,
+$\log_{10}(512!) = 1166.5$ by Stirling. The growth is faster than exponential,
+which is why width makes the redundancy worse rather than better.
+</CheckSanity>
+
+<Breaks>
+The symmetry constrains what comparisons *mean*; it does not say the comparisons
+cannot be made. Git Re-Basin is the constructive version: find the permutation
+aligning one network to the other, apply it, and only then interpolate. When the
+alignment is right, the interpolated network can match its endpoints; when it is
+skipped, the same interpolation collapses. The symmetry did not go away, it was
+paid for.
+
+Nor does the result say anything about a *single* run. Comparing a checkpoint
+with its own earlier state is fine, because no relabelling occurred between
+them. The failure is specific to comparing across independent initialisations,
+which is exactly the comparison people most want to make.
+</Breaks>
+
+<Variation>
+Count the symmetries of a two-hidden-layer network of widths $(n_1, n_2)$.
+Then decide whether the positive-rescaling family survives if the activation is
+GELU instead of ReLU, and say which property of ReLU that family depended on.
+</Variation>

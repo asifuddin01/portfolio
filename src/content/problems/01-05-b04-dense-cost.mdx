@@ -1,0 +1,155 @@
+---
+id: "I.5.B04"
+kind: problem
+chapter: "I.5"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "Width costs a square, depth costs a line"
+depends:
+  - "I.5.P01"
+reachesBack: []
+rounding: "Exact integer counts; derived quantities to 3 d.p."
+hasSolution: true
+verified: true
+snippet: "i-5-b04-dense-cost.py"
+status: published
+---
+
+<Statement>
+Put an image into an MLP and read the bill. Count the parameters and the forward
+FLOPs of a wide shallow network and a narrower deep one on the same input, say
+where the cost sits in each, and compare both against the parameter count of a
+convolution doing a comparable job.
+</Statement>
+
+<Given>
+The input is a $224 \times 224 \times 3$ image flattened to $d_0 = 150\,528$
+numbers, and the output is $1000$ classes.
+
+**Wide:** one hidden layer of $4096$ units, widths $(150\,528,\ 4096,\ 1000)$.
+
+**Deep:** six hidden layers of $1024$ units, widths
+$(150\,528,\ 1024,\ 1024,\ 1024,\ 1024,\ 1024,\ 1024,\ 1000)$.
+
+Count a multiply–add as two FLOPs, and one fp32 parameter as four bytes.
+</Given>
+
+<Find>
+For each network: total parameters, fp32 size, forward FLOPs per example, and
+the share of the parameters held by the input-facing matrix. Then the parameter
+count of a $3 \times 3$ convolution taking 3 channels to 64, against the dense
+layer that maps $3072$ inputs to $64$ outputs.
+</Find>
+
+<Strategy>
+Use (I.5.2) and keep the layers separate rather than summing early. The whole
+lesson lives in the *ratio between layers*, and a total hides it.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the wide network.**
+
+$$150\,528 \cdot 4096 + 4096 = 616\,562\,688 + 4096 = 616\,566\,784$$
+
+$$4096 \cdot 1000 + 1000 = 4\,096\,000 + 1000 = 4\,097\,000$$
+
+$$N_{\text{wide}} = 620\,663\,784 \quad\Rightarrow\quad 2.483 \text{ GB in fp32}$$
+
+FLOPs: $2(150\,528 \cdot 4096 + 4096 \cdot 1000) = 1\,241\,317\,376$, or
+$1.241$ GFLOP for a single image.
+
+The first matrix is $616\,566\,784 / 620\,663\,784 = 99.3\%$ of the model.
+
+**Step 2 — the deep network.** The first layer is
+$150\,528 \cdot 1024 + 1024 = 154\,141\,696$. The five inner layers are
+$5(1024 \cdot 1024 + 1024) = 5\,248\,000$. The head is
+$1024 \cdot 1000 + 1000 = 1\,025\,000$.
+
+$$N_{\text{deep}} = 160\,414\,696 \quad\Rightarrow\quad 0.642 \text{ GB}, \quad 0.321 \text{ GFLOP}$$
+
+and the first matrix is $96.1\%$ of it.
+
+**Step 3 — read the two numbers against each other.** The deep network has six
+times the hidden layers and a quarter of the parameters. Nothing subtle happened:
+the wide network's hidden width is four times larger, and it multiplies against
+$d_0$, so one matrix grew fourfold. Adding five entire layers of width 1024 cost
+$5\,248\,000$ parameters — $3.3\%$ of that model, and less than one percent of
+the wide one.
+
+This is (I.5.2) with the letters read carefully. Width enters as a product of
+two adjacent widths, so doubling one width doubles one matrix and doubling both
+quadruples it. Depth enters as a sum over $\ell$, so adding a layer adds one
+term.
+
+**Step 4 — what the density is buying.** A $3 \times 3$ convolution from 3
+channels to 64 holds $3 \cdot 3 \cdot 3 \cdot 64 + 64 = 1792$ parameters and
+applies the same filter at every position. A dense layer taking a $32\times32\times3$
+image ($3072$ numbers) to 64 outputs holds $3072 \cdot 64 + 64 = 196\,672$ —
+**$109.8$ times more**, on a smaller image, to produce one vector rather than a
+feature map at every location.
+
+The MLP is not paying for capacity. It is paying for the assumption that every
+input coordinate might interact with every unit, which for an image is false and
+known to be false. Chapter I.11 is the repair.
+
+</Solution>
+
+<Answer>
+
+| | parameters | fp32 | FLOP/example | first matrix |
+|---|---|---|---|---|
+| wide, $1 \times 4096$ | $620\,663\,784$ | $2.483$ GB | $1.241$ G | $99.3\%$ |
+| deep, $6 \times 1024$ | $160\,414\,696$ | $0.642$ GB | $0.321$ G | $96.1\%$ |
+
+A $3\times3$ convolution to 64 channels: $1792$ parameters, against $196\,672$
+for the dense layer of the same output width — a factor of $109.8$.
+
+In both networks the input-facing matrix is essentially the whole model.
+</Answer>
+
+<CheckNumeric snippet="i-5-b04-dense-cost.py" verified>
+```python
+def mlp(widths):
+    return sum(widths[i] * widths[i + 1] + widths[i + 1]
+               for i in range(len(widths) - 1))
+```
+Prints both totals, both GB figures, both first-matrix shares, the convolution
+comparison, and the square law for widths $512$, $1024$, $2048$.
+</CheckNumeric>
+
+<CheckSanity>
+**The square law is visible in one column.** A hidden layer of width $512$ holds
+$262\,656$ parameters in its own matrix; $1024$ holds $1\,049\,600$; $2048$
+holds $4\,196\,352$. Each doubling of the width very nearly quadruples the
+count, and the small excess is the bias.
+
+**The FLOP count is twice the parameter count, minus the biases.** For the wide
+network, $2 \times 620\,658\,688 = 1\,241\,317\,376$. That is not a coincidence:
+a dense layer performs one multiply–add per weight per example, so forward FLOPs
+and parameters are locked together for MLPs. They come apart for convolutions,
+where one weight is used at every position.
+
+**The deep network is cheaper in FLOPs by the same ratio as in parameters.**
+$1.241 / 0.321 = 3.87$ against $620.7 / 160.4 = 3.87$. It must be, by the
+previous check.
+</CheckSanity>
+
+<Breaks>
+FLOPs are not time. The wide network's single matrix is one large, efficient
+multiply; the deep one's seven matrices are seven smaller launches with a
+dependency between each, so the deep network can be *slower* despite doing a
+quarter of the arithmetic. Which one wins depends on the batch size, on memory
+bandwidth, and on whether the layers are large enough to saturate the hardware —
+which is I.5.X08. Ranking two architectures by FLOPs alone is a well-behaved
+mistake: it is wrong in a direction you can predict, but it is still wrong.
+</Breaks>
+
+<Variation>
+Keep the total parameter count of the wide network fixed at roughly $6.2 \times 10^8$
+but spend it on a deep network of constant width. How wide can the layers be at
+depth 10, and what fraction of the budget does the first layer still take? The
+answer says something about why the first layer of an image model is never dense
+in practice.
+</Variation>

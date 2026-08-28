@@ -13,5 +13,5 @@ const entry = all.find((e) => e.data.id === ref);
 const href = part ? `/elementa/apparatus/${part.slug}#${ref.replace(/\./g, '-').toLowerCase()}` : null;
 ---
 {href
-  ? <a class="link app-ref" href={href}>{label ?? entry?.data.title ?? ref} <span aria-hidden="true">·</span> {ref}</a>
+  ? <a class="link app-ref" href={href}>{label ?? entry?.data.title ?? ref}<span class="app-ref-id"> <span aria-hidden="true">·</span> {ref}</span></a>
   : <span class="app-ref">{ref}</span>}

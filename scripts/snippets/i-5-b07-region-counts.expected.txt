@@ -1,0 +1,18 @@
+one hidden layer, input dimension d = 2
+  n =   1: at most       2 regions
+  n =   2: at most       4 regions
+  n =   3: at most       7 regions
+  n =   4: at most      11 regions
+  n =   5: at most      16 regions
+  n =  10: at most      56 regions
+  n =  30: at most     466 regions
+  n = 100: at most   5,051 regions
+
+thirty units in the plane, spent two ways
+  1 layer  x 30: at most         466
+  3 layers x 10: at least     35,000   (75.1x)
+
+sixty units in the plane, spent three ways
+  1 layer(s) x 60:           1,831
+  2 layer(s) x 30:         104,850
+  6 layer(s) x 10:     546,875,000
