@@ -84,6 +84,7 @@ const PIPELINE = [
   { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
   { step: 'Reach out', detail: 'arXiv, PubMed and OpenAlex when the question asks what is current' },
   { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
+  { step: 'Add', detail: 'your own PDFs, indexed for your session and nobody else’s' },
 ];
 
 /* The rules that decide whether an answer is shown at all. Each is enforced in
@@ -164,7 +165,8 @@ const FINDINGS = [
       <p class="rl-lede">
         A research assistant that reads papers and shows its working. Ask it
         something — or hand it your own PDF — and every claim comes back bound
-        to the passage it came from.
+        to the passage it came from. When nothing supports an answer it says
+        so, which is the harder half.
       </p>
       <p class="rl-sub" id="rl-stats">
         {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
