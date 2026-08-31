@@ -75,7 +75,7 @@ const PIPELINE = [
   { step: 'Chunk', detail: 'passages that never cross a section, and can cite themselves' },
   { step: 'Retrieve', detail: 'BM25 and dense, fused by rank rather than by score' },
   { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
-  { step: 'Reach out', detail: 'arXiv and PubMed when the question asks what is current' },
+  { step: 'Reach out', detail: 'arXiv, PubMed and OpenAlex when the question asks what is current' },
   { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
 ];
 
@@ -100,8 +100,12 @@ const GUARANTEES = [
     why: 'Passages per paper are capped. Otherwise a synthesis and a paraphrase of one document look identical, because both arrive with citations.',
   },
   {
+    rule: 'Your papers stay yours',
+    why: 'A paper you add is indexed for your session alone — held in memory, never written to disk, never merged into the shared corpus. The demo is one process serving everyone, so a global index would put a stranger\u2019s manuscript in someone else\u2019s answers, with a citation.',
+  },
+  {
     rule: 'Live evidence is labelled',
-    why: 'An abstract fetched from arXiv or PubMed supports what a paper claims, not what it measured. It is marked, dated, and never given a page number.',
+    why: 'An abstract fetched from arXiv, PubMed or OpenAlex supports what a paper claims, not what it measured. It is marked, dated, and never given a page number.',
   },
 ];
 
@@ -142,7 +146,8 @@ const FINDINGS = [
       <h1 class="rl-title">ResearchLens</h1>
       <p class="rl-lede">
         A research assistant that reads papers and shows its working. Ask it
-        something; every claim comes back bound to the passage it came from.
+        something — or hand it your own PDF — and every claim comes back bound
+        to the passage it came from.
       </p>
       <p class="rl-sub" id="rl-stats">
         {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
@@ -178,7 +183,7 @@ const FINDINGS = [
         <p class="rl-hint">
           Retrieval is identical either way — switching model changes the
           writing, not the evidence. Questions about what is{' '}
-          <em>current</em>{' '}also search arXiv and PubMed.
+          <em>current</em>{' '}also search arXiv, PubMed and OpenAlex.
         </p>
       </form>
 
@@ -255,11 +260,42 @@ docker compose up</code></pre>
         success — asked for current trends in large language models, an earlier
         version answered from <em>Attention Is All You Need</em> (2017) and
         BERT (2018), with real citations and no sign its evidence was eight
-        years old. So when the corpus holds fewer than four papers on a
-        question, arXiv and PubMed are searched for recent work. Those results
-        are marked as abstracts, dated, and never shown with a page number,
-        because an abstract supports what a paper claims and not what it
-        measured.
+        years old.
+      </p>
+      <p class="rl-note codex-measure">
+        The first fix was to detect thin coverage from the retrieval scores,
+        and it does not work. A question the corpus cannot answer at all —
+        gaps in automated renal CT reporting — scored a cosine of 0.829, above
+        questions it answers well; a good encoder returns high similarity for
+        topically adjacent text whether or not the answer is present, which is
+        the property that makes it a good retriever and a useless coverage
+        detector. The reliable signal was the question's own wording.
+        <em> What is current</em> is a question about a field, not about these
+        papers, and is worth two seconds of live search whatever the corpus
+        happens to hold.
+      </p>
+      <p class="rl-note codex-measure">
+        arXiv is preprints, mostly machine learning and physics; PubMed is the
+        life sciences. Between them they miss the engineering and
+        computer-science <em>journal</em> literature almost entirely, so
+        OpenAlex is searched too — which is also why there is no IEEE Xplore
+        here. Xplore's own API needs an institutional key and so cannot be a
+        default, but its records are in OpenAlex, and the coverage arrives
+        without the key. What does not arrive is full text: live results are
+        marked as abstracts, dated, and never shown with a page number, because
+        an abstract supports what a paper claims and not what it measured.
+      </p>
+      <p class="rl-note codex-measure">
+        A paper you attach goes through the same parser, chunker and encoder as
+        the hundred and one — into an index belonging to your browser session
+        and nothing else. It is never written to disk and never joins the
+        shared corpus; that is a correctness requirement rather than a
+        courtesy, because the demo is a single process serving every visitor
+        and a global index would quote a stranger's manuscript back at someone
+        who never uploaded it, indistinguishable from a paper that belongs
+        there. Your passages then get guaranteed room in the evidence: someone
+        who hands over a paper is asking about <em>that paper</em>, and the
+        cross-encoder ranks a corpus passage above it more often than not.
       </p>
       <p class="rl-note codex-measure">
         The two retrievers fail differently. A dense encoder maps
