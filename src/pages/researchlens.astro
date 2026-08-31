@@ -219,6 +219,7 @@ const FINDINGS = [
             Parsed and indexed for your session only — never written to disk,
             never added to the public corpus, dropped after an hour idle.
           </p>
+          <ul class="rl-mine" id="rl-mine" hidden></ul>
         </div>
 
         <p class="rl-hint" id="rl-hint">
@@ -530,6 +531,7 @@ docker compose up</code></pre>
       if (found) {
         backend = { api: found.api, viaSpace: false };
         describe(found.health, false);
+        void refreshMine(backend);
         return backend;
       }
       const url = SPACE_URL;
@@ -540,6 +542,9 @@ docker compose up</code></pre>
         { status: 'ok', papers: stats.papers, passages: stats.passages, providers: [] },
         true
       );
+      // A reload keeps the session id, so the papers it names come back with
+      // it rather than appearing to have been lost.
+      void refreshMine(backend);
       return backend;
     })();
 
@@ -594,9 +599,68 @@ docker compose up</code></pre>
    * call. Nothing about it is stored on this page beyond the tab's lifetime,
    * and nothing is written anywhere the reader has not asked for.
    */
-  let session = '';
+  // Kept in sessionStorage, not just in a variable. A reload used to lose the
+  // id while the instance still held the papers for another hour, so they had
+  // not gone anywhere — the page had simply forgotten how to ask for them,
+  // which is indistinguishable from their having vanished.
+  const SESSION_KEY = 'researchlens.session';
+  let session = (() => {
+    try {
+      return sessionStorage.getItem(SESSION_KEY) ?? '';
+    } catch {
+      return '';   // private mode, or storage disabled
+    }
+  })();
+
+  function rememberSession(id: string) {
+    session = id;
+    try {
+      sessionStorage.setItem(SESSION_KEY, id);
+    } catch {
+      // Not being able to remember is survivable; the papers last the tab.
+    }
+  }
+
   const fileInput = document.getElementById('rl-file') as HTMLInputElement | null;
   const fileNote = document.getElementById('rl-file-note');
+  const mineList = document.getElementById('rl-mine');
+
+  /** Draw the reader's papers, so they can see the thing they added is there. */
+  function renderMine(papers: { doc_id: string; title: string; pages: number }[]) {
+    if (!mineList) return;
+    if (!papers.length) {
+      mineList.setAttribute('hidden', '');
+      mineList.innerHTML = '';
+      return;
+    }
+    mineList.removeAttribute('hidden');
+    mineList.innerHTML = papers
+      .map(
+        (d) => `
+        <li>
+          <span class="rl-mine-t">${escape(d.title)}</span>
+          <span>· ${d.pages} pages ·</span>
+          <button type="button" data-similar="${escape(d.doc_id)}">find similar work</button>
+        </li>`
+      )
+      .join('');
+  }
+
+  /** Ask the instance what this session still holds. */
+  async function refreshMine(where: Backend) {
+    if (!session) return;
+    try {
+      const r = where.viaSpace
+        ? await callSpace(where.api, 'my_papers', [session])
+        : await (await fetch(`${where.api}/library?session=${encodeURIComponent(session)}`)).json();
+      const papers = where.viaSpace
+        ? r.papers ?? []
+        : (r.papers ?? []).filter((d: any) => d.uploaded);
+      renderMine(papers);
+    } catch {
+      // The list is a convenience; failing to draw it must not break asking.
+    }
+  }
 
   async function addPaper(where: Backend, file: File): Promise<any> {
     if (!where.viaSpace) {
@@ -639,7 +703,7 @@ docker compose up</code></pre>
         if (r.error) {
           failed.push(`${f.name}: ${r.error}`);
         } else {
-          session = r.session ?? session;
+          if (r.session) rememberSession(r.session);
           added.push(`${r.title ?? f.name} (${r.pages ?? '?'} pages)`);
         }
       } catch (err) {
@@ -648,6 +712,7 @@ docker compose up</code></pre>
     }
 
     fileInput.value = '';
+    await refreshMine(where);
     const parts: string[] = [];
     if (added.length) {
       parts.push(
@@ -661,6 +726,69 @@ docker compose up</code></pre>
         'added to the public corpus, dropped after an hour idle.'
     );
     fileNote.innerHTML = parts.join('<br />');
+  });
+
+  /**
+   * Related work for a paper the reader added.
+   *
+   * The corpus cannot answer this — it is fixed, and the question is about
+   * what else exists — so it goes straight to arXiv, PubMed and OpenAlex.
+   * What comes back is abstracts, and is labelled as such: a paper found this
+   * way is a lead, not a finding.
+   */
+  mineList?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement)?.closest<HTMLButtonElement>('button[data-similar]');
+    if (!btn || !out) return;
+
+    const docId = btn.dataset.similar ?? '';
+    out.hidden = false;
+    out.innerHTML = '<p class="rl-status">Searching arXiv, PubMed and OpenAlex for work like it…</p>';
+
+    let where: Backend;
+    try {
+      where = await connect();
+    } catch {
+      out.innerHTML = '<p class="rl-status rl-error">Nothing is answering right now.</p>';
+      return;
+    }
+
+    try {
+      const r = where.viaSpace
+        ? await callSpace(where.api, 'find_similar', [session, docId, 9])
+        : await (async () => {
+            const res = await fetch(`${where.api}/similar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session, doc_id: docId }),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            return res.json();
+          })();
+
+      if (r.error) throw new Error(r.error);
+
+      const items = (r.results ?? [])
+        .map(
+          (x: Record<string, any>) => `
+          <li class="rl-cite">
+            <span class="rl-cite-n"><span class="rl-live">${escape(x.source ?? 'live')}</span></span>
+            <span class="rl-cite-src">${escape(x.title ?? '')}</span>
+            <span class="rl-cite-loc">${escape((x.authors ?? []).join(', '))} · ${escape(x.published ?? '')} · abstract</span>
+            <blockquote class="rl-quote">${escape(x.abstract ?? '')}</blockquote>
+          </li>`
+        )
+        .join('');
+
+      out.innerHTML = items
+        ? `<p class="rl-status">Work related to <em>${escape(r.for_title ?? '')}</em>. ` +
+          `These are abstracts from the live literature, not passages from a read paper — ` +
+          `a lead rather than a finding.</p>` +
+          `<p class="rl-cite-h">Related work</p><ol class="rl-cites">${items}</ol>`
+        : `<p class="rl-status">Nothing close enough to be worth showing. That is a real ` +
+          `answer for a specific paper — these indexes hold what they hold.</p>`;
+    } catch (err) {
+      out.innerHTML = `<p class="rl-status rl-error">The search failed (${escape(String(err))}).</p>`;
+    }
   });
 
   for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
@@ -1006,6 +1134,34 @@ docker compose up</code></pre>
     margin: 0;
     max-width: var(--measure);
   }
+  /* The reader's own papers, listed. They used to be invisible the moment the
+     upload message was replaced, so there was no way to tell whether a paper
+     was still there — which reads as it having vanished. */
+  .rl-mine { list-style: none; margin: 0.3rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+  .rl-mine li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6ch;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .rl-mine .rl-mine-t { color: var(--ink); }
+  .rl-mine button {
+    font-family: var(--font-mono);
+    font-size: inherit;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    background: none;
+    border: 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 50%, transparent);
+    padding: 0 0 1px;
+    cursor: pointer;
+  }
+  .rl-mine button:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
   .rl-yours {
     font-family: var(--font-mono);
     font-size: 0.72em;
