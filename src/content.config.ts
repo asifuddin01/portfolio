@@ -736,6 +736,13 @@ const projects = defineCollection({
     summary: z.string(),
     /** Kept short on the CV, fuller in the Appendix. */
     cvSummary: z.string().optional(),
+    /**
+     * Where the project can be opened or read. A project with somewhere to go
+     * gets a button in the Appendix; one without stays a paragraph, which is
+     * the right treatment for work that has no public surface.
+     */
+    link: z.string().optional(),
+    linkLabel: z.string().optional(),
   }),
 });
 

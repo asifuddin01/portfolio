@@ -11,6 +11,14 @@ const items = await getProjects();
       <li class="ap-item">
         <h3 class="ap-title">{it.data.title}</h3>
         <p class="ap-body">{it.data.summary}</p>
+        {it.data.link && (
+          <p class="ap-go">
+            <a class="ap-btn" href={it.data.link}>
+              {it.data.linkLabel ?? 'Open'}
+              <span class="ap-arrow" aria-hidden="true">→</span>
+            </a>
+          </p>
+        )}
       </li>
     ))}
   </ol>
@@ -38,4 +46,34 @@ const items = await getProjects();
     margin: 0 0 0.4rem;
   }
   .ap-body { font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); margin: 0; max-width: 66ch; }
+
+  /* Only a project with somewhere to go carries one of these, so the button
+     itself is the signal that there is something to open. */
+  .ap-go { margin: 0.7rem 0 0; }
+  .ap-btn {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5ch;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 0.45rem 0.9rem;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    background: var(--paper-raised);
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+  .ap-btn:hover,
+  .ap-btn:focus-visible {
+    background: color-mix(in srgb, var(--brass) 12%, var(--paper-raised));
+    border-color: var(--brass);
+  }
+  .ap-arrow { transition: transform 120ms ease; }
+  .ap-btn:hover .ap-arrow { transform: translateX(2px); }
+  @media (prefers-reduced-motion: reduce) {
+    .ap-btn, .ap-arrow { transition: none; }
+    .ap-btn:hover .ap-arrow { transform: none; }
+  }
 </style>

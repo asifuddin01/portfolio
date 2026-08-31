@@ -1635,6 +1635,16 @@ collections:
         required: false
         hint: "Leave blank to reuse the description."
       - { label: Order, name: order, widget: number, value_type: int, min: 1 }
+      - label: Link
+        name: link
+        widget: string
+        required: false
+        hint: "Where the project can be opened, e.g. /researchlens. Adds a button in the Appendix."
+      - label: Link label
+        name: linkLabel
+        widget: string
+        required: false
+        hint: "Wording on the button. Defaults to 'Open'."
 
   # ------------------------------------------------------------------
   - name: instrumentarium

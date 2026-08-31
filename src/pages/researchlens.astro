@@ -1,0 +1,474 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { AUTHOR } from '../consts';
+
+/**
+ * ResearchLens — the public exhibit.
+ *
+ * The page is prerendered like the rest of the site; only the question box
+ * talks to anything. The endpoint is read from an environment variable so the
+ * static build carries no hard-coded host, and a deployment can point at a
+ * local container, a staging box or the public API without a code change.
+ *
+ * When no endpoint is configured — the state until the demo backend is
+ * deployed — the page says so plainly and gives the local instructions instead
+ * of presenting a chat box that cannot answer. A demo that fails silently is
+ * worse than one that explains itself.
+ */
+const API = import.meta.env.PUBLIC_RESEARCHLENS_API ?? '';
+
+/* The corpus the public instance is indexed over. Public papers only: the
+   embargoed plates never go near a retrieval index. */
+const CORPUS = {
+  papers: 30,
+  field: 'single-cell genomics, gene regulatory network inference, and causal discovery',
+};
+
+const EXAMPLES = [
+  'Do deep-learning models outperform linear baselines at predicting perturbation effects?',
+  'What datasets are used to benchmark gene regulatory network inference?',
+  'How do GEARS and CPA differ in how they model perturbation interactions?',
+  'When does gene regulatory network inference break down?',
+];
+
+const PIPELINE = [
+  { step: 'Parse', detail: 'sections and page spans, not flat text' },
+  { step: 'Chunk', detail: 'passages that never span two sections' },
+  { step: 'Retrieve', detail: 'BM25 and dense, fused by reciprocal rank' },
+  { step: 'Rerank', detail: 'cross-encoder over the fused candidates' },
+  { step: 'Answer', detail: 'every claim bound to a passage' },
+];
+---
+<BaseLayout
+  title="ResearchLens — evidence-grounded literature retrieval"
+  description="An open-source research assistant that answers questions about scientific papers and traces every claim back to the passage, section and page it came from."
+  folio="RL"
+>
+  <div class="codex rl">
+
+    <header class="rl-head" data-reveal>
+      <p class="rl-eyebrow">Instrumentum · open source</p>
+      <h1 class="rl-title">ResearchLens</h1>
+      <p class="rl-lede">
+        A research assistant that reads papers and shows its working. Every
+        claim it makes resolves to a passage — a paper, a section, a page — and
+        every part of its retrieval stack had to justify itself with a measured
+        number before it was kept.
+      </p>
+      <p class="rl-sub">
+        Indexed over {CORPUS.papers} open-access papers on {CORPUS.field}.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <section class="rl-ask" data-reveal>
+      <h2 class="rl-h2">Ask it something</h2>
+
+      {API ? (
+        <form class="rl-form" id="rl-form" data-api={API}>
+          <label class="rl-label" for="rl-q">Your question</label>
+          <div class="rl-row">
+            <input
+              class="rl-input"
+              id="rl-q"
+              name="q"
+              type="text"
+              autocomplete="off"
+              placeholder="What does the literature say about…"
+              required
+            />
+            <button class="rl-send" type="submit">Ask</button>
+          </div>
+          <fieldset class="rl-models">
+            <legend class="rl-legend">Answer with</legend>
+            <label class="rl-radio">
+              <input type="radio" name="provider" value="hosted" checked />
+              <span>Hosted model</span>
+            </label>
+            <label class="rl-radio">
+              <input type="radio" name="provider" value="local" />
+              <span>Local model <em>· slower to wake</em></span>
+            </label>
+          </fieldset>
+          <p class="rl-hint">
+            Retrieval is identical either way, so switching model changes only
+            the writing — the evidence below stays the same.
+          </p>
+        </form>
+      ) : (
+        <div class="rl-offline">
+          <p class="rl-offline-h">The public demo is not deployed yet</p>
+          <p>
+            The system runs, but the hosted instance is not up — and a question
+            box that cannot answer is worse than none. It runs locally in one
+            command, with no API key:
+          </p>
+          <pre class="rl-code"><code>git clone https://github.com/asifuddin01/researchlens
+cd researchlens
+docker compose up</code></pre>
+          <p class="rl-offline-note">
+            Then open <code>localhost:8000</code>. Your papers stay on your
+            machine; the default model is local.
+          </p>
+        </div>
+      )}
+
+      <ul class="rl-examples" data-reveal-stagger>
+        {EXAMPLES.map((q) => (
+          <li><button class="rl-example" type="button" data-q={q} disabled={!API}>{q}</button></li>
+        ))}
+      </ul>
+
+      <div class="rl-answer" id="rl-answer" hidden aria-live="polite"></div>
+    </section>
+
+    <LesionRule />
+
+    <section class="rl-how" data-reveal>
+      <h2 class="rl-h2">How it answers</h2>
+      <ol class="rl-pipe">
+        {PIPELINE.map((p, i) => (
+          <li class="rl-pipe-item">
+            <span class="rl-pipe-n">{String(i + 1).padStart(2, '0')}</span>
+            <span class="rl-pipe-step">{p.step}</span>
+            <span class="rl-pipe-detail">{p.detail}</span>
+          </li>
+        ))}
+      </ol>
+      <p class="rl-note codex-measure">
+        A PDF is not a string. Headings are found by font geometry, so a passage
+        knows which section it came from and which page it was printed on —
+        which is what lets a citation name a place rather than gesture at a
+        document.
+      </p>
+      <p class="rl-note codex-measure">
+        The two retrievers fail differently. A dense encoder maps
+        <em> Dice 0.91</em> and <em>scGPT</em> into neighbourhoods of things
+        that mean something similar, which for a metric value or a model name is
+        exactly wrong. BM25 matches them literally and is helpless at paraphrase.
+        Fusing them by rank rather than score means no normalisation has to be
+        tuned per corpus.
+      </p>
+    </section>
+
+    <LesionRule />
+
+    <section class="rl-measured" data-reveal>
+      <h2 class="rl-h2">What is measured</h2>
+      <p class="rl-note codex-measure">
+        Sixty questions over the corpus, each hand-labelled with the passages
+        that genuinely answer it. Written before the retrieval code, against a
+        deliberately weak baseline, so every component added afterwards arrives
+        with a delta rather than an intuition. If a model wrote the questions and
+        a model judged the answers, the table would measure a model's agreement
+        with itself.
+      </p>
+      <p class="rl-pending">
+        The ablation is still being labelled. It will report Recall@5, MRR and
+        nDCG@10 across four configurations — dense only, BM25 only, hybrid, and
+        hybrid with reranking — emitted by the harness rather than written by
+        hand, so the published numbers cannot drift from the code.
+      </p>
+      <p class="rl-note codex-measure">
+        Reranking may turn out not to help on a corpus this size. If so, that row
+        goes in unchanged: it is the only result here that could be surprising.
+      </p>
+    </section>
+
+    <LesionRule />
+
+    <section class="rl-links" data-reveal>
+      <a class="rl-cta" href="https://github.com/asifuddin01/researchlens">
+        Source on GitHub <span aria-hidden="true">→</span>
+      </a>
+      <p class="rl-colophon">Built by {AUTHOR}. MIT licensed. Runs with no API key.</p>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<script>
+  /**
+   * The question box. Deliberately small: the page is prerendered and this is
+   * the only part that talks to anything.
+   */
+  const form = document.getElementById('rl-form') as HTMLFormElement | null;
+  const out = document.getElementById('rl-answer');
+
+  if (form && out) {
+    const api = form.dataset.api ?? '';
+    const input = form.querySelector<HTMLInputElement>('#rl-q');
+
+    for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
+      b.addEventListener('click', () => {
+        if (input) input.value = b.dataset.q ?? '';
+        form.requestSubmit();
+      });
+    }
+
+    const escape = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c
+      );
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const question = input?.value?.trim();
+      if (!question) return;
+
+      const provider =
+        form.querySelector<HTMLInputElement>('input[name="provider"]:checked')?.value ?? 'hosted';
+
+      out.hidden = false;
+      // The local model sits behind a container that scales to zero, so a wait
+      // of about a minute is expected rather than a fault. Saying which is
+      // which is the difference between patience and a closed tab.
+      out.innerHTML =
+        provider === 'local'
+          ? '<p class="rl-status">Waking the local model. This takes about a minute — it is what local-first costs.</p>'
+          : '<p class="rl-status">Retrieving evidence…</p>';
+
+      try {
+        const res = await fetch(`${api}/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, provider }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+
+        const cites = (data.citations ?? [])
+          .map(
+            (c: Record<string, string>, i: number) => `
+              <li class="rl-cite">
+                <span class="rl-cite-n">[${i + 1}]</span>
+                <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
+                <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
+                <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
+              </li>`
+          )
+          .join('');
+
+        out.innerHTML =
+          `<div class="rl-text">${escape(data.text ?? '')}</div>` +
+          (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '');
+      } catch {
+        out.innerHTML =
+          '<p class="rl-status rl-error">The demo backend did not answer. It runs locally with <code>docker compose up</code> — no API key needed.</p>';
+      }
+    });
+  }
+</script>
+
+<style>
+  .rl { display: grid; gap: 2.4rem; }
+
+  .rl-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.5rem;
+  }
+  .rl-title {
+    font-family: var(--font-display);
+    font-size: var(--t-xl);
+    line-height: 1.05;
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+  }
+  .rl-lede {
+    font-size: var(--t-md);
+    line-height: 1.65;
+    color: var(--ink);
+    max-width: var(--measure);
+    margin: 0 0 0.7rem;
+  }
+  .rl-sub { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+
+  .rl-h2 {
+    font-family: var(--font-body);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.07em;
+    font-size: var(--t-lg);
+    margin: 0 0 1rem;
+  }
+
+  .rl-form { display: grid; gap: 0.7rem; max-width: 46rem; }
+  .rl-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .rl-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .rl-input {
+    flex: 1 1 20rem;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: var(--t-base);
+    padding: 0.6rem 0.8rem;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 50%, transparent);
+  }
+  .rl-input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+  .rl-send {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.6rem 1.3rem;
+    color: var(--paper);
+    background: var(--ink);
+    border: var(--rule) solid var(--ink);
+    cursor: pointer;
+  }
+  .rl-send:hover { background: var(--oxblood); border-color: var(--oxblood); }
+
+  .rl-models { border: 0; padding: 0; margin: 0; display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: center; }
+  .rl-legend {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0;
+  }
+  .rl-radio { display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--t-sm); color: var(--ink); }
+  .rl-radio em { color: var(--ink-soft); font-style: italic; }
+  .rl-hint { font-size: var(--t-xs); color: var(--ink-soft); margin: 0; max-width: 60ch; }
+
+  .rl-offline {
+    border-left: 2px solid var(--oxblood);
+    background: var(--paper-raised);
+    padding: 1.1rem 1.3rem;
+    max-width: var(--measure);
+    display: grid;
+    gap: 0.7rem;
+  }
+  .rl-offline p { margin: 0; font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); }
+  .rl-offline-h {
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+  }
+  .rl-code {
+    margin: 0;
+    padding: 0.8rem 1rem;
+    background: var(--paper);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.8;
+  }
+  .rl-offline-note code { font-family: var(--font-mono); font-size: 0.95em; }
+
+  .rl-examples { list-style: none; margin: 1.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .rl-example {
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    text-align: left;
+    padding: 0.45rem 0.8rem;
+    color: var(--ink-soft);
+    background: transparent;
+    border: var(--rule) dashed color-mix(in srgb, var(--brass) 45%, transparent);
+    cursor: pointer;
+    max-width: 34ch;
+  }
+  .rl-example:hover:not(:disabled) { color: var(--ink); border-style: solid; }
+  .rl-example:disabled { cursor: default; opacity: 0.55; }
+
+  .rl-answer { margin-top: 1.6rem; max-width: var(--measure); }
+  .rl-status { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .rl-error { color: var(--oxblood-text); }
+  .rl-text { font-size: var(--t-base); line-height: 1.75; }
+  .rl-cite-h {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 1.4rem 0 0.6rem;
+  }
+  .rl-cites { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .rl-cite {
+    display: grid;
+    gap: 0.2rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent);
+    padding-top: 0.6rem;
+  }
+  .rl-cite-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .rl-cite-src { font-size: var(--t-sm); color: var(--ink); }
+  .rl-cite-loc { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .rl-quote {
+    margin: 0.35rem 0 0;
+    padding-left: 0.9rem;
+    border-left: 2px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  .rl-pipe { list-style: none; margin: 0 0 1.4rem; padding: 0; display: grid; gap: 0.5rem; max-width: 44rem; }
+  .rl-pipe-item {
+    display: grid;
+    grid-template-columns: 2.2rem 6.5rem 1fr;
+    gap: 0.8rem;
+    align-items: baseline;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
+    padding-top: 0.45rem;
+  }
+  .rl-pipe-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .rl-pipe-step {
+    font-family: var(--font-body);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.06em;
+    font-size: var(--t-base);
+    color: var(--ink);
+  }
+  .rl-pipe-detail { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.6; }
+  @media (max-width: 34rem) {
+    .rl-pipe-item { grid-template-columns: 2rem 1fr; }
+    .rl-pipe-detail { grid-column: 2; }
+  }
+
+  .rl-note { font-size: var(--t-sm); line-height: 1.75; color: var(--ink-soft); margin: 0 0 0.9rem; }
+  .rl-note em { font-family: var(--font-mono); font-style: normal; font-size: 0.92em; color: var(--ink); }
+  .rl-pending {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.8;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border-left: 2px solid var(--brass);
+    padding: 0.9rem 1.1rem;
+    margin: 0 0 0.9rem;
+    max-width: var(--measure);
+  }
+
+  .rl-links { display: grid; gap: 0.8rem; }
+  .rl-cta {
+    justify-self: start;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5ch;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    text-decoration: none;
+    padding: 0.6rem 1.3rem;
+    border: var(--rule) solid var(--ink);
+  }
+  .rl-cta:hover { background: var(--oxblood); border-color: var(--oxblood); }
+  .rl-colophon { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+</style>
