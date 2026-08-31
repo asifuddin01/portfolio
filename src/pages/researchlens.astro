@@ -137,19 +137,20 @@ const PIPELINE = [
       </form>
 
       {SPACE && (
-        <div class="rl-space" id="rl-space" hidden>
+        <div class="rl-space" id="rl-space" hidden data-space={SPACE}>
           <p class="rl-space-note">
-            Running on a fixed corpus with a hosted model. For your own papers,
-            on your own machine, with no API key — run it locally and open this
-            page from there.
+            The demo runs on Hugging Face, over a fixed corpus. Loading it
+            contacts <code>hf.space</code> — nothing on this page does that
+            until you ask it to, which is why this is a button rather than an
+            embed.
           </p>
-          <iframe
-            class="rl-frame"
-            src={SPACE}
-            title="ResearchLens"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          />
+          <button class="rl-load" id="rl-load" type="button">
+            Load the demo <span class="rl-arrow" aria-hidden="true">→</span>
+          </button>
+          <p class="rl-space-alt">
+            Or run it on your own papers, on your own machine, with no API key —
+            and open this page from there instead.
+          </p>
         </div>
       )}
 
@@ -306,6 +307,26 @@ docker compose up</code></pre>
     return null;
   }
 
+  function wireSpaceLoader() {
+    const panel = document.getElementById('rl-space');
+    const button = document.getElementById('rl-load');
+    const url = panel?.dataset.space;
+    if (!panel || !button || !url) return;
+
+    // The iframe is created on click, not rendered into the page. Until
+    // someone asks, this page makes no request to another origin — which is a
+    // property the site enforces in its own build, and worth keeping rather
+    // than making an exception for.
+    button.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.className = 'rl-frame';
+      frame.title = 'ResearchLens';
+      frame.referrerPolicy = 'no-referrer';
+      frame.src = url;
+      button.replaceWith(frame);
+    });
+  }
+
   function showFallback() {
     probe?.setAttribute('hidden', '');
     // A local instance is the better experience — the reader's own papers, and
@@ -313,8 +334,12 @@ docker compose up</code></pre>
     // is what everyone else gets, and the offline message is for when there is
     // neither.
     const space = document.getElementById('rl-space');
-    if (space) space.removeAttribute('hidden');
-    else offline?.removeAttribute('hidden');
+    if (space) {
+      space.removeAttribute('hidden');
+      wireSpaceLoader();
+    } else {
+      offline?.removeAttribute('hidden');
+    }
   }
 
   function wire(api: string, health: Health) {
@@ -533,6 +558,30 @@ docker compose up</code></pre>
     height: min(78vh, 46rem);
     border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
     background: var(--paper-raised);
+  }
+  .rl-load {
+    justify-self: start;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5ch;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.6rem 1.3rem;
+    color: var(--paper);
+    background: var(--ink);
+    border: var(--rule) solid var(--ink);
+    cursor: pointer;
+  }
+  .rl-load:hover { background: var(--oxblood); border-color: var(--oxblood); }
+  .rl-space-alt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: var(--measure);
   }
 
   .rl-examples { list-style: none; margin: 1.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
