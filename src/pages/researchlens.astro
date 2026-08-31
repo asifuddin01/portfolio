@@ -16,7 +16,23 @@ import { AUTHOR } from '../consts';
  * of presenting a chat box that cannot answer. A demo that fails silently is
  * worse than one that explains itself.
  */
-const API = import.meta.env.PUBLIC_RESEARCHLENS_API ?? '';
+/**
+ * Where to look for a running instance.
+ *
+ * The page is static and served over HTTPS; the system it talks to usually
+ * runs on the reader's own machine. So rather than bake in one host, the page
+ * probes a short list at load and uses whichever answers.
+ *
+ * That makes the demo work for anyone running `docker compose up` with no
+ * hosting at all, and it degrades honestly for everyone else — a question box
+ * that cannot answer is worse than none. Browsers exempt http://localhost from
+ * mixed-content blocking, which is what makes this possible from an HTTPS page.
+ */
+const API_CANDIDATES = [
+  import.meta.env.PUBLIC_RESEARCHLENS_API,
+  'http://localhost:8000',
+  'http://localhost:8001',
+].filter(Boolean);
 
 /* The corpus the public instance is indexed over. Public papers only: the
    embargoed plates never go near a retrieval index.
@@ -65,7 +81,7 @@ const PIPELINE = [
         every part of its retrieval stack had to justify itself with a measured
         number before it was kept.
       </p>
-      <p class="rl-sub">
+      <p class="rl-sub" id="rl-stats">
         {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
         {' '}{CORPUS.field}.
       </p>
@@ -75,59 +91,55 @@ const PIPELINE = [
 
     <section class="rl-ask" data-reveal>
       <h2 class="rl-h2">Ask it something</h2>
+      <script type="application/json" id="rl-endpoints" set:html={JSON.stringify(API_CANDIDATES)} is:inline />
 
-      {API ? (
-        <form class="rl-form" id="rl-form" data-api={API}>
-          <label class="rl-label" for="rl-q">Your question</label>
-          <div class="rl-row">
-            <input
-              class="rl-input"
-              id="rl-q"
-              name="q"
-              type="text"
-              autocomplete="off"
-              placeholder="What does the literature say about…"
-              required
-            />
-            <button class="rl-send" type="submit">Ask</button>
-          </div>
-          <fieldset class="rl-models">
-            <legend class="rl-legend">Answer with</legend>
-            <label class="rl-radio">
-              <input type="radio" name="provider" value="hosted" checked />
-              <span>Hosted model</span>
-            </label>
-            <label class="rl-radio">
-              <input type="radio" name="provider" value="local" />
-              <span>Local model <em>· slower to wake</em></span>
-            </label>
-          </fieldset>
-          <p class="rl-hint">
-            Retrieval is identical either way, so switching model changes only
-            the writing — the evidence below stays the same.
-          </p>
-        </form>
-      ) : (
-        <div class="rl-offline">
-          <p class="rl-offline-h">The public demo is not deployed yet</p>
-          <p>
-            The system runs, but the hosted instance is not up — and a question
-            box that cannot answer is worse than none. It runs locally in one
-            command, with no API key:
-          </p>
-          <pre class="rl-code"><code>git clone https://github.com/asifuddin01/researchlens
+      <div class="rl-probe" id="rl-probe">
+        <p class="rl-status">Looking for a running instance…</p>
+      </div>
+
+      <form class="rl-form" id="rl-form" hidden>
+        <label class="rl-label" for="rl-q">Your question</label>
+        <div class="rl-row">
+          <input
+            class="rl-input"
+            id="rl-q"
+            name="q"
+            type="text"
+            autocomplete="off"
+            placeholder="What does the literature say about…"
+            required
+          />
+          <button class="rl-send" type="submit">Ask</button>
+        </div>
+        <fieldset class="rl-models" id="rl-models">
+          <legend class="rl-legend">Answer with</legend>
+        </fieldset>
+        <p class="rl-hint">
+          Retrieval is identical either way, so switching model changes only the
+          writing — the evidence below stays the same. Questions about what is
+          current also search arXiv and PubMed, and those results are marked as
+          abstracts.
+        </p>
+      </form>
+
+      <div class="rl-offline" id="rl-offline" hidden>
+        <p class="rl-offline-h">No instance running</p>
+        <p>
+          This page talks to ResearchLens on your own machine, and nothing is
+          answering. It runs in one command, with no API key:
+        </p>
+        <pre class="rl-code"><code>git clone https://github.com/asifuddin01/researchlens
 cd researchlens
 docker compose up</code></pre>
-          <p class="rl-offline-note">
-            Then open <code>localhost:8000</code>. Your papers stay on your
-            machine; the default model is local.
-          </p>
-        </div>
-      )}
+        <p class="rl-offline-note">
+          Then reload this page. Your papers stay on your machine; the default
+          model is local.
+        </p>
+      </div>
 
       <ul class="rl-examples" data-reveal-stagger>
         {EXAMPLES.map((q) => (
-          <li><button class="rl-example" type="button" data-q={q} disabled={!API}>{q}</button></li>
+          <li><button class="rl-example" type="button" data-q={q} disabled>{q}</button></li>
         ))}
       </ul>
 
@@ -213,44 +225,107 @@ docker compose up</code></pre>
 
 <script>
   /**
-   * The question box. Deliberately small: the page is prerendered and this is
-   * the only part that talks to anything.
+   * Find a running instance, then wire the question box to it.
+   *
+   * The page is prerendered; this is the only part that talks to anything.
+   * It probes the candidate hosts in order and uses the first that answers
+   * /health, which is also where the corpus size and available models come
+   * from — so the page never states a figure the running system disagrees with.
    */
-  const form = document.getElementById('rl-form') as HTMLFormElement | null;
-  const out = document.getElementById('rl-answer');
+  const CANDIDATES: string[] = JSON.parse(
+    document.getElementById('rl-endpoints')?.textContent ?? '[]'
+  );
 
-  if (form && out) {
-    const api = form.dataset.api ?? '';
-    const input = form.querySelector<HTMLInputElement>('#rl-q');
+  const probe = document.getElementById('rl-probe');
+  const form = document.getElementById('rl-form') as HTMLFormElement | null;
+  const offline = document.getElementById('rl-offline');
+  const models = document.getElementById('rl-models');
+  const out = document.getElementById('rl-answer');
+  const input = document.getElementById('rl-q') as HTMLInputElement | null;
+
+  const escape = (s: string) =>
+    s.replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c
+    );
+
+  type Health = {
+    status: string;
+    papers: number;
+    passages: number;
+    providers: { name: string; model: string; ready: boolean }[];
+  };
+
+  async function findInstance(): Promise<{ api: string; health: Health } | null> {
+    for (const api of CANDIDATES) {
+      try {
+        // Short timeout: an unreachable host should cost a moment, not a wait.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch(`${api}/health`, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) continue;
+        const health = (await res.json()) as Health;
+        if (health.status === 'ok') return { api, health };
+      } catch {
+        // Nothing there. Try the next candidate.
+      }
+    }
+    return null;
+  }
+
+  function showOffline() {
+    probe?.setAttribute('hidden', '');
+    offline?.removeAttribute('hidden');
+  }
+
+  function wire(api: string, health: Health) {
+    probe?.setAttribute('hidden', '');
+    form?.removeAttribute('hidden');
+
+    // Model choices come from the instance, not from the page. An instance
+    // with no hosted provider configured must not offer one.
+    if (models) {
+      const ready = health.providers.filter((p) => p.ready);
+      const choices = ready.length ? ready : health.providers;
+      models.insertAdjacentHTML(
+        'beforeend',
+        choices
+          .map(
+            (p, i) => `
+            <label class="rl-radio">
+              <input type="radio" name="provider" value="${escape(p.name)}" ${i === 0 ? 'checked' : ''} />
+              <span>${p.name === 'local' ? 'Local' : 'Hosted'} · <em>${escape(p.model)}</em></span>
+            </label>`
+          )
+          .join('')
+      );
+    }
+
+    const stats = document.getElementById('rl-stats');
+    if (stats) {
+      stats.textContent =
+        `${health.papers} papers · ${health.passages.toLocaleString('en')} passages · connected`;
+    }
 
     for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
+      b.disabled = false;
       b.addEventListener('click', () => {
         if (input) input.value = b.dataset.q ?? '';
-        form.requestSubmit();
+        form?.requestSubmit();
       });
     }
 
-    const escape = (s: string) =>
-      s.replace(/[&<>"']/g, (c) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c
-      );
-
-    form.addEventListener('submit', async (e) => {
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const question = input?.value?.trim();
-      if (!question) return;
+      if (!question || !out) return;
 
       const provider =
-        form.querySelector<HTMLInputElement>('input[name="provider"]:checked')?.value ?? 'hosted';
+        form.querySelector<HTMLInputElement>('input[name="provider"]:checked')?.value ?? 'local';
 
       out.hidden = false;
-      // The local model sits behind a container that scales to zero, so a wait
-      // of about a minute is expected rather than a fault. Saying which is
-      // which is the difference between patience and a closed tab.
       out.innerHTML =
-        provider === 'local'
-          ? '<p class="rl-status">Waking the local model. This takes about a minute — it is what local-first costs.</p>'
-          : '<p class="rl-status">Retrieving evidence…</p>';
+        '<p class="rl-status">Retrieving evidence, then writing an answer. A local model takes a few seconds.</p>';
 
       try {
         const res = await fetch(`${api}/ask`, {
@@ -262,26 +337,36 @@ docker compose up</code></pre>
         const data = await res.json();
 
         const cites = (data.citations ?? [])
-          .map(
-            (c: Record<string, string>, i: number) => `
+          .map((c: Record<string, string>) => {
+            // A live result is an abstract from arXiv or PubMed, not a passage
+            // from an indexed paper, and is labelled so a reader is never shown
+            // one as though it were the other.
+            const live = /^(arxiv|pubmed):/.test(String(c.chunk_id ?? ''));
+            return `
               <li class="rl-cite">
-                <span class="rl-cite-n">[${i + 1}]</span>
+                <span class="rl-cite-n">[${c.marker}]${live ? ' <span class="rl-live">live</span>' : ''}</span>
                 <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
                 <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
                 <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
-              </li>`
-          )
+              </li>`;
+          })
           .join('');
+
+        const timing =
+          `<p class="rl-timing">${escape(data.model ?? '')} · retrieval ${Math.round(data.retrieval_ms)} ms · generation ${Math.round(data.generation_ms)} ms</p>`;
 
         out.innerHTML =
           `<div class="rl-text">${escape(data.text ?? '')}</div>` +
-          (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '');
-      } catch {
+          (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '') +
+          timing;
+      } catch (err) {
         out.innerHTML =
-          '<p class="rl-status rl-error">The demo backend did not answer. It runs locally with <code>docker compose up</code> — no API key needed.</p>';
+          `<p class="rl-status rl-error">The instance stopped answering (${escape(String(err))}). Check the terminal running it.</p>`;
       }
     });
   }
+
+  findInstance().then((found) => (found ? wire(found.api, found.health) : showOffline()));
 </script>
 
 <style>
@@ -427,6 +512,24 @@ docker compose up</code></pre>
     padding-top: 0.6rem;
   }
   .rl-cite-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  /* Marks a citation that came from a live search rather than the indexed
+     corpus, so an abstract is never mistaken for a passage from a full paper. */
+  .rl-live {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--verdigris);
+    border: 1px solid color-mix(in srgb, var(--verdigris) 45%, transparent);
+    padding: 0 0.3em;
+    border-radius: 2px;
+  }
+  .rl-timing {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 1.1rem 0 0;
+  }
   .rl-cite-src { font-size: var(--t-sm); color: var(--ink); }
   .rl-cite-loc { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
   .rl-quote {
