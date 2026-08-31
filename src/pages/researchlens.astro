@@ -71,12 +71,63 @@ const EXAMPLES = [
 ];
 
 const PIPELINE = [
-  { step: 'Parse', detail: 'sections and page spans, not flat text' },
-  { step: 'Chunk', detail: 'passages that never span two sections' },
-  { step: 'Retrieve', detail: 'BM25 and dense, fused by reciprocal rank' },
-  { step: 'Rerank', detail: 'cross-encoder over the fused candidates' },
-  { step: 'Reach out', detail: 'arXiv and PubMed, when the corpus is thin' },
-  { step: 'Answer', detail: 'every claim bound to a passage' },
+  { step: 'Parse', detail: 'headings by font geometry; sections and page spans, not flat text' },
+  { step: 'Chunk', detail: 'passages that never cross a section, and can cite themselves' },
+  { step: 'Retrieve', detail: 'BM25 and dense, fused by rank rather than by score' },
+  { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
+  { step: 'Reach out', detail: 'arXiv and PubMed when the question asks what is current' },
+  { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
+];
+
+/* The rules that decide whether an answer is shown at all. Each is enforced in
+   code rather than asked of the model, because a 3B model will agree to cite
+   its sources and then not. */
+const GUARANTEES = [
+  {
+    rule: 'No evidence, no call',
+    why: 'A model asked a question with no context answers from its training, fluently. A reader cannot tell that from a grounded answer, so the model is never invoked.',
+  },
+  {
+    rule: 'Citations are checked, not trusted',
+    why: 'A marker pointing at a passage that was never retrieved is deleted after generation. An invented [7] does not reach the page.',
+  },
+  {
+    rule: 'Unsupported becomes refusal',
+    why: 'An answer left with no surviving citation is replaced by a refusal. A fluent unsourced paragraph is worse than none.',
+  },
+  {
+    rule: 'One paper cannot fill the context',
+    why: 'Passages per paper are capped. Otherwise a synthesis and a paraphrase of one document look identical, because both arrive with citations.',
+  },
+  {
+    rule: 'Live evidence is labelled',
+    why: 'An abstract fetched from arXiv or PubMed supports what a paper claims, not what it measured. It is marked, dated, and never given a page number.',
+  },
+];
+
+/* Findings that changed the build. Every one came from running the thing on
+   real papers; none would have been found by reading the code. */
+const FINDINGS = [
+  {
+    n: '19 → 0',
+    what: 'papers with broken titles',
+    detail: 'The largest glyph on page one is often a drop cap or a journal logo, so titles extracted as “M”, “w”, “1 3”. Size tiers are now walked downward until one is title-shaped.',
+  },
+  {
+    n: '111s → 855ms',
+    what: 'retrieval latency',
+    detail: 'CoreML is 2.6× faster for the bi-encoder and 24× slower for the cross-encoder, which splits into 39 partitions and thrashes. A provider is a property of the model, not the machine.',
+  },
+  {
+    n: '45 → 3',
+    what: 'line-break hyphens per paper',
+    detail: '“expres- sion” matches nothing. Whether to rejoin is decided against the document’s own vocabulary, so “single- cell” keeps its hyphen and “con- trol” does not.',
+  },
+  {
+    n: '13% → 70%',
+    what: 'passages in a named section',
+    detail: 'Sections were flat, so “3.2 Training details” lost its parent. Font size already encoded the hierarchy and was being discarded.',
+  },
 ];
 ---
 <BaseLayout
@@ -219,6 +270,45 @@ docker compose up</code></pre>
         Fusing them by rank rather than score means no normalisation has to be
         tuned per corpus.
       </p>
+    </section>
+
+    <LesionRule />
+
+    <section class="rl-rules" data-reveal>
+      <h2 class="rl-h2">What it will not do</h2>
+      <p class="rl-note codex-measure">
+        Grounding is not a line in the prompt. A 3B model will agree to cite its
+        sources and then not, so each of these is enforced in code, after
+        generation, where the model has no say.
+      </p>
+      <dl class="rl-rulelist" data-reveal-stagger>
+        {GUARANTEES.map((g) => (
+          <div class="rl-rule">
+            <dt class="rl-rule-t">{g.rule}</dt>
+            <dd class="rl-rule-d">{g.why}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <LesionRule />
+
+    <section class="rl-findings" data-reveal>
+      <h2 class="rl-h2">Found by running it</h2>
+      <p class="rl-note codex-measure">
+        A corpus of a hundred real papers breaks a parser in ways no test
+        anticipates. Each of these was a silent fault — nothing raised, the
+        output merely got quietly worse.
+      </p>
+      <ol class="rl-finds" data-reveal-stagger>
+        {FINDINGS.map((f) => (
+          <li class="rl-find">
+            <p class="rl-find-n">{f.n}</p>
+            <p class="rl-find-w">{f.what}</p>
+            <p class="rl-find-d">{f.detail}</p>
+          </li>
+        ))}
+      </ol>
     </section>
 
     <LesionRule />
@@ -684,6 +774,61 @@ docker compose up</code></pre>
     margin: 0 0 0.9rem;
     max-width: var(--measure);
   }
+
+  /* ---- guarantees ---- */
+
+  .rl-rulelist { margin: 0 0 0; padding: 0; display: grid; gap: 1.1rem; max-width: 46rem; }
+  .rl-rule {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 32%, transparent);
+    padding-top: 0.6rem;
+  }
+  .rl-rule-t {
+    font-family: var(--font-body);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.06em;
+    font-size: var(--t-base);
+    color: var(--ink);
+    margin: 0 0 0.25rem;
+  }
+  .rl-rule-d {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    max-width: 62ch;
+  }
+
+  /* ---- findings ---- */
+
+  .rl-finds {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    max-width: 62rem;
+  }
+  .rl-find {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    padding-top: 0.7rem;
+  }
+  .rl-find-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    color: var(--brass-text);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .rl-find-w {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0.1rem 0 0.5rem;
+  }
+  .rl-find-d { font-size: var(--t-sm); line-height: 1.65; color: var(--ink-soft); margin: 0; }
 
   .rl-links { display: grid; gap: 0.8rem; }
   .rl-cta {

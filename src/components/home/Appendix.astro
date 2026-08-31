@@ -5,7 +5,14 @@ import { getProjects } from '../../lib/collections';
 const items = await getProjects();
 ---
 <Chapter n={9} title="Appendix" id="appendix">
-  <p class="ap-note codex-measure" data-reveal>Engineering work, set smaller than the research chapters.</p>
+  <p class="ap-note codex-measure" data-reveal>
+    Systems work, most of it on language models and retrieval. The chapters
+    above concern what a model learns; these concern what happens when one has
+    to answer for itself — which turns out to be a different discipline, made
+    of hybrid retrieval, rank fusion, cross-encoder reranking, citation
+    verification, and the measurement that says whether any of it earned its
+    place.
+  </p>
   <ol class="ap" data-reveal-stagger>
     {items.map((it) => (
       <li class="ap-item">
