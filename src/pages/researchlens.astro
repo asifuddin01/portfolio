@@ -665,10 +665,23 @@ docker compose up</code></pre>
           liveCount ? ` · ${liveCount} live` : ''
         }</p>`;
 
+      // The writer can be unavailable while retrieval is fine — a spent GPU
+      // quota on the hosted demo is the usual reason. The passages are most of
+      // what this system is for, so they are shown rather than swallowed by an
+      // error, and labelled as what they are: evidence with nothing written
+      // over it.
+      const head = data.evidence_only
+        ? `<p class="rl-status">The hosted demo's free GPU allowance is spent, so nothing wrote an answer. ` +
+          `These are the passages retrieval found for your question — the evidence, ` +
+          `unsummarised. The allowance refills; running it yourself has none.</p>`
+        : `<div class="rl-text">${escape(data.text ?? '')}</div>`;
+
       out.innerHTML =
-        `<div class="rl-text">${escape(data.text ?? '')}</div>` +
-        (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '') +
-        timing;
+        head +
+        (cites
+          ? `<p class="rl-cite-h">${data.evidence_only ? 'Retrieved passages' : 'Evidence'}</p><ol class="rl-cites">${cites}</ol>`
+          : '') +
+        (data.evidence_only ? '' : timing);
     } catch (err) {
       // Pass the real reason through rather than wrapping every failure in one
       // guess. A quota limit and a cold start need different things from the
