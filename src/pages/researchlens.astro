@@ -123,17 +123,19 @@ const PIPELINE = [
       </form>
 
       <div class="rl-offline" id="rl-offline" hidden>
-        <p class="rl-offline-h">No instance running</p>
+        <p class="rl-offline-h">Not connected</p>
         <p>
-          This page talks to ResearchLens on your own machine, and nothing is
-          answering. It runs in one command, with no API key:
+          Nothing is answering. The hosted instance is not deployed yet, and
+          browsers block a page on the public web from reaching a server on
+          your own machine — so running it locally means opening it locally
+          too:
         </p>
         <pre class="rl-code"><code>git clone https://github.com/asifuddin01/researchlens
 cd researchlens
 docker compose up</code></pre>
         <p class="rl-offline-note">
-          Then reload this page. Your papers stay on your machine; the default
-          model is local.
+          Then open <code>localhost:8000</code>. Your papers stay on your
+          machine, the default model is local, and no API key is needed.
         </p>
       </div>
 
