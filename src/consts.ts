@@ -9,12 +9,17 @@ export const EMAIL = 'md.asif.uddin@g.bracu.ac.bd';
 export const GITHUB = 'https://github.com/asifuddin01';
 export const LINKEDIN = 'https://linkedin.com/in/md-asif-uddin01';
 
+/**
+ * The primary nav. No entry for the home page: the wordmark to its left is
+ * already a link there, and two controls doing the same thing costs a slot
+ * without buying anything.
+ */
 export const NAV = [
-  { href: '/', label: 'Frontispiece' },
   { href: '/elementa', label: 'Elementa' },
   { href: '/papers', label: 'Papers' },
   { href: '/tabulae', label: 'Tabulae' },
   { href: '/marginalia', label: 'Marginalia' },
+  { href: '/researchlens', label: 'ResearchLens' },
   { href: '/vitae', label: 'Vitae' },
 ] as const;
 

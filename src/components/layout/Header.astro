@@ -3,6 +3,11 @@ import ThemeToggle from './ThemeToggle.astro';
 import { NAV, AUTHOR } from '../../consts';
 
 const path = Astro.url.pathname;
+/**
+ * The `href === '/'` case is unreachable while NAV has no home entry, and is
+ * kept deliberately: every path starts with '/', so a root link added back
+ * without this guard would mark every page as the current one.
+ */
 const isActive = (href: string): boolean =>
   href === '/' ? path === '/' : path.startsWith(href);
 ---
