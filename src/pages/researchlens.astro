@@ -210,6 +210,17 @@ const FINDINGS = [
           </label>
         </fieldset>
 
+        <div class="rl-papers">
+          <label class="rl-file">
+            <input type="file" id="rl-file" accept="application/pdf,.pdf" multiple />
+            <span>Add your own PDFs</span>
+          </label>
+          <p class="rl-file-note" id="rl-file-note">
+            Parsed and indexed for your session only — never written to disk,
+            never added to the public corpus, dropped after an hour idle.
+          </p>
+        </div>
+
         <p class="rl-hint" id="rl-hint">
           Local answers only from the indexed corpus, which is fixed and cannot
           say what a field is doing now. Global also searches the live
@@ -576,6 +587,82 @@ docker compose up</code></pre>
    * rendering, two transports: a second answer panel for the hosted case is
    * the beginning of the second implementation that drifts.
    */
+  /**
+   * Papers the reader adds, held for their session only.
+   *
+   * The id is minted by whichever instance answered and carried on every later
+   * call. Nothing about it is stored on this page beyond the tab's lifetime,
+   * and nothing is written anywhere the reader has not asked for.
+   */
+  let session = '';
+  const fileInput = document.getElementById('rl-file') as HTMLInputElement | null;
+  const fileNote = document.getElementById('rl-file-note');
+
+  async function addPaper(where: Backend, file: File): Promise<any> {
+    if (!where.viaSpace) {
+      const body = new FormData();
+      body.append('file', file);
+      if (session) body.append('session', session);
+      const res = await fetch(`${where.api}/ingest`, { method: 'POST', body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail ?? String(res.status));
+      return data;
+    }
+    // Gradio takes an upload first and gives back a server-side path, which is
+    // then passed to the endpoint like any other argument.
+    const body = new FormData();
+    body.append('files', file);
+    const up = await fetch(`${where.api}/gradio_api/upload`, { method: 'POST', body });
+    if (!up.ok) throw new Error(`upload ${up.status}`);
+    const [path] = await up.json();
+    return callSpace(where.api, 'add_paper', [path, session]);
+  }
+
+  fileInput?.addEventListener('change', async () => {
+    const files = [...(fileInput.files ?? [])];
+    if (!files.length || !fileNote) return;
+
+    fileNote.textContent = `Reading ${files.length} file(s)…`;
+    let where: Backend;
+    try {
+      where = await connect();
+    } catch {
+      fileNote.textContent = 'Nothing is answering right now, so there is nowhere to put a paper yet.';
+      return;
+    }
+
+    const added: string[] = [];
+    const failed: string[] = [];
+    for (const f of files) {
+      try {
+        const r = await addPaper(where, f);
+        if (r.error) {
+          failed.push(`${f.name}: ${r.error}`);
+        } else {
+          session = r.session ?? session;
+          added.push(`${r.title ?? f.name} (${r.pages ?? '?'} pages)`);
+        }
+      } catch (err) {
+        failed.push(`${f.name}: ${String(err)}`);
+      }
+    }
+
+    fileInput.value = '';
+    const parts: string[] = [];
+    if (added.length) {
+      parts.push(
+        `Indexed ${escape(added.join('; '))}. Ask about them — your passages get ` +
+          `guaranteed room in the evidence.`
+      );
+    }
+    for (const m of failed) parts.push(`\u26a0 ${escape(m)}`);
+    parts.push(
+      'Held in memory for your session only — never written to disk, never ' +
+        'added to the public corpus, dropped after an hour idle.'
+    );
+    fileNote.innerHTML = parts.join('<br />');
+  });
+
   for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
     b.disabled = false;
     b.addEventListener('click', () => {
@@ -624,12 +711,17 @@ docker compose up</code></pre>
 
     try {
       const data = where.viaSpace
-        ? await callSpace(where.api, 'ask_json', [question, '', [], live])
+        ? await callSpace(where.api, 'ask_json', [question, '', [], live, session])
         : await (async () => {
             const res = await fetch(`${where.api}/ask`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question, provider, live }),
+              body: JSON.stringify({
+                question,
+                provider,
+                live,
+                ...(session ? { session } : {}),
+              }),
             });
             if (!res.ok) throw new Error(String(res.status));
             return res.json();
@@ -647,7 +739,9 @@ docker compose up</code></pre>
             c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''));
           return `
             <li class="rl-cite">
-              <span class="rl-cite-n">[${c.marker}]${isLive ? ' <span class="rl-live">live</span>' : ''}</span>
+              <span class="rl-cite-n">[${c.marker}]${
+                isLive ? ' <span class="rl-live">live</span>' : ''
+              }${c.yours ? ' <span class="rl-yours">yours</span>' : ''}</span>
               <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
               <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
               <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
@@ -879,6 +973,45 @@ docker compose up</code></pre>
     color: var(--ink-soft);
     margin: 0;
     max-width: var(--measure);
+  }
+
+  /* The upload control. A bare file input is unstyleable, so it is hidden
+     inside its own label and the label is what a reader sees and clicks. */
+  .rl-papers { display: grid; gap: 0.4rem; margin: 0.2rem 0 0.9rem; }
+  .rl-file input[type='file'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .rl-file span {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.45rem 1rem;
+    color: var(--ink);
+    border: var(--rule) dashed color-mix(in srgb, var(--brass) 55%, transparent);
+    cursor: pointer;
+  }
+  .rl-file span:hover { border-style: solid; border-color: var(--brass); }
+  .rl-file input[type='file']:focus-visible + span { outline: 2px solid var(--brass); }
+  .rl-file-note {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: var(--measure);
+  }
+  .rl-yours {
+    font-family: var(--font-mono);
+    font-size: 0.72em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
   }
 
   .rl-examples { list-style: none; margin: 1.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
