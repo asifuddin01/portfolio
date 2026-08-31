@@ -141,18 +141,14 @@ const FINDINGS = [
       <p class="rl-eyebrow">Instrumentum · open source</p>
       <h1 class="rl-title">ResearchLens</h1>
       <p class="rl-lede">
-        A research assistant that reads papers and shows its working. Every
-        claim it makes resolves to a passage — a paper, a section, a page — and
-        every part of its retrieval stack had to justify itself with a measured
-        number before it was kept.
+        A research assistant that reads papers and shows its working. Ask it
+        something; every claim comes back bound to the passage it came from.
       </p>
       <p class="rl-sub" id="rl-stats">
         {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
         {' '}{CORPUS.field}.
       </p>
     </header>
-
-    <LesionRule />
 
     <section class="rl-ask" data-reveal>
       <h2 class="rl-h2">Ask it something</h2>
@@ -180,10 +176,9 @@ const FINDINGS = [
           <legend class="rl-legend">Answer with</legend>
         </fieldset>
         <p class="rl-hint">
-          Retrieval is identical either way, so switching model changes only the
-          writing — the evidence below stays the same. Questions about what is
-          current also search arXiv and PubMed, and those results are marked as
-          abstracts.
+          Retrieval is identical either way — switching model changes the
+          writing, not the evidence. Questions about what is{' '}
+          <em>current</em>{' '}also search arXiv and PubMed.
         </p>
       </form>
 
@@ -235,6 +230,10 @@ docker compose up</code></pre>
 
     <section class="rl-how" data-reveal>
       <h2 class="rl-h2">How it answers</h2>
+      <p class="rl-note codex-measure">
+        Every part of the retrieval stack had to justify itself with a measured
+        number before it was kept. What follows is what survived.
+      </p>
       <ol class="rl-pipe">
         {PIPELINE.map((p, i) => (
           <li class="rl-pipe-item">
@@ -558,7 +557,24 @@ docker compose up</code></pre>
     margin: 0 0 1rem;
   }
 
-  .rl-form { display: grid; gap: 0.7rem; max-width: 46rem; }
+  /* The ask panel is the page's instrument, so it is given a plate of its own:
+     a raised ground, a brass rule, and enough room that it reads as the thing
+     you came for rather than a form beneath an essay. */
+  .rl-ask {
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--brass) 7%, var(--paper-raised)),
+        var(--paper-raised)
+      );
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 52%, transparent);
+    padding: clamp(1.2rem, 3.5vw, 2rem);
+    display: grid;
+    gap: 1rem;
+  }
+  .rl-ask .rl-h2 { margin-bottom: 0.2rem; }
+
+  .rl-form { display: grid; gap: 0.9rem; max-width: 46rem; }
   .rl-label {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -568,26 +584,31 @@ docker compose up</code></pre>
   }
   .rl-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
   .rl-input {
-    flex: 1 1 20rem;
+    flex: 1 1 22rem;
     min-width: 0;
     font-family: var(--font-body);
-    font-size: var(--t-base);
-    padding: 0.6rem 0.8rem;
+    font-size: var(--t-md);
+    line-height: 1.5;
+    padding: 0.85rem 1rem;
     color: var(--ink);
-    background: var(--paper-raised);
-    border: var(--rule) solid color-mix(in srgb, var(--brass) 50%, transparent);
+    background: var(--paper);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 58%, transparent);
+    transition: border-color 140ms ease;
   }
+  .rl-input::placeholder { color: var(--ink-soft); opacity: 0.75; }
+  .rl-input:hover { border-color: var(--brass); }
   .rl-input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
   .rl-send {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    padding: 0.6rem 1.3rem;
+    padding: 0.85rem 1.7rem;
     color: var(--paper);
     background: var(--ink);
     border: var(--rule) solid var(--ink);
     cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease;
   }
   .rl-send:hover { background: var(--oxblood); border-color: var(--oxblood); }
 
@@ -602,7 +623,18 @@ docker compose up</code></pre>
   }
   .rl-radio { display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--t-sm); color: var(--ink); }
   .rl-radio em { color: var(--ink-soft); font-style: italic; }
-  .rl-hint { font-size: var(--t-xs); color: var(--ink-soft); margin: 0; max-width: 60ch; }
+  .rl-hint {
+    font-size: var(--t-xs);
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 64ch;
+  }
+  .rl-hint em { font-style: italic; color: var(--ink); }
+
+  @media (min-width: 42rem) {
+    .rl-models { align-items: baseline; gap: 1.4rem; }
+  }
 
   .rl-offline {
     border-left: 2px solid var(--oxblood);
@@ -677,22 +709,31 @@ docker compose up</code></pre>
   .rl-examples { list-style: none; margin: 1.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .rl-example {
     font-family: var(--font-body);
-    font-size: var(--t-xs);
+    font-size: var(--t-sm);
+    line-height: 1.45;
     text-align: left;
-    padding: 0.45rem 0.8rem;
+    padding: 0.55rem 0.9rem;
     color: var(--ink-soft);
-    background: transparent;
-    border: var(--rule) dashed color-mix(in srgb, var(--brass) 45%, transparent);
+    background: var(--paper);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
     cursor: pointer;
-    max-width: 34ch;
+    max-width: 32ch;
+    transition: color 140ms ease, border-color 140ms ease;
   }
-  .rl-example:hover:not(:disabled) { color: var(--ink); border-style: solid; }
+  .rl-example:hover:not(:disabled) { color: var(--ink); border-color: var(--brass); }
   .rl-example:disabled { cursor: default; opacity: 0.55; }
 
-  .rl-answer { margin-top: 1.6rem; max-width: var(--measure); }
+  .rl-answer {
+    margin-top: 0.4rem;
+    max-width: var(--measure);
+    background: var(--paper);
+    border-left: 2px solid var(--brass);
+    padding: 1rem 1.2rem;
+  }
+  .rl-answer[hidden] { display: none; }
   .rl-status { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
   .rl-error { color: var(--oxblood-text); }
-  .rl-text { font-size: var(--t-base); line-height: 1.75; }
+  .rl-text { font-size: var(--t-md); line-height: 1.75; color: var(--ink); }
   .rl-cite-h {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -806,7 +847,11 @@ docker compose up</code></pre>
     padding: 0;
     display: grid;
     gap: 1.4rem;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    /* min() inside minmax, not a bare 17rem. A bare minimum cannot shrink
+       below itself, so three tracks demanded 880px whatever the viewport and
+       the whole page scrolled sideways on a phone. The min() lets a track fall
+       back to the container width when there is less room than the ideal. */
+    grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
     max-width: 62rem;
   }
   .rl-find {

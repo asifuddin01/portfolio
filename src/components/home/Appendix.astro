@@ -6,12 +6,14 @@ const items = await getProjects();
 ---
 <Chapter n={9} title="Appendix" id="appendix">
   <p class="ap-note codex-measure" data-reveal>
-    Systems work, most of it on language models and retrieval. The chapters
-    above concern what a model learns; these concern what happens when one has
-    to answer for itself — which turns out to be a different discipline, made
-    of hybrid retrieval, rank fusion, cross-encoder reranking, citation
-    verification, and the measurement that says whether any of it earned its
-    place.
+    Systems work: where models stop being isolated learners and become
+    architectures. The chapters above concern what a model learns; these
+    concern how intelligence is assembled across vision, language models,
+    vision-language models, and retrieval through model architecture,
+    multimodal integration, retrieval pipelines, reranking, inference, and
+    evaluation. The discipline is no longer only about learning
+    representations, but about designing systems that can perceive, retrieve,
+    reason, and answer.
   </p>
   <ol class="ap" data-reveal-stagger>
     {items.map((it) => (
