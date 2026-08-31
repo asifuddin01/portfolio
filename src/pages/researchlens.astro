@@ -19,17 +19,25 @@ import { AUTHOR } from '../consts';
 const API = import.meta.env.PUBLIC_RESEARCHLENS_API ?? '';
 
 /* The corpus the public instance is indexed over. Public papers only: the
-   embargoed plates never go near a retrieval index. */
+   embargoed plates never go near a retrieval index.
+   Two fields rather than one, on purpose — a query has to discriminate across
+   domains, not merely within one, which is a harder and more honest test. */
 const CORPUS = {
-  papers: 30,
-  field: 'single-cell genomics, gene regulatory network inference, and causal discovery',
+  papers: 101,
+  passages: 9588,
+  field:
+    'vision-language models, retrieval-augmented generation and federated ' +
+    'learning on one side, single-cell genomics and causal discovery on the other',
 };
 
+/* Two from each half of the corpus. A question that can only be answered from
+   one domain is the useful case to show: it demonstrates that retrieval is
+   discriminating, not just returning whatever is topically nearby. */
 const EXAMPLES = [
+  'How does retrieval-augmented generation reduce hallucination?',
   'Do deep-learning models outperform linear baselines at predicting perturbation effects?',
-  'What datasets are used to benchmark gene regulatory network inference?',
-  'How do GEARS and CPA differ in how they model perturbation interactions?',
-  'When does gene regulatory network inference break down?',
+  'What approaches exist for privacy-preserving diabetic retinopathy classification?',
+  'How do vision-language models align image and text representations?',
 ];
 
 const PIPELINE = [
@@ -57,7 +65,8 @@ const PIPELINE = [
         number before it was kept.
       </p>
       <p class="rl-sub">
-        Indexed over {CORPUS.papers} open-access papers on {CORPUS.field}.
+        {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
+        {' '}{CORPUS.field}.
       </p>
     </header>
 
