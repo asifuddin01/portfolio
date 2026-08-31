@@ -24,7 +24,7 @@ const API = import.meta.env.PUBLIC_RESEARCHLENS_API ?? '';
    domains, not merely within one, which is a harder and more honest test. */
 const CORPUS = {
   papers: 101,
-  passages: 9588,
+  passages: 9540,
   field:
     'vision-language models, retrieval-augmented generation and federated ' +
     'learning on one side, single-cell genomics and causal discovery on the other',
@@ -45,6 +45,7 @@ const PIPELINE = [
   { step: 'Chunk', detail: 'passages that never span two sections' },
   { step: 'Retrieve', detail: 'BM25 and dense, fused by reciprocal rank' },
   { step: 'Rerank', detail: 'cross-encoder over the fused candidates' },
+  { step: 'Reach out', detail: 'arXiv and PubMed, when the corpus is thin' },
   { step: 'Answer', detail: 'every claim bound to a passage' },
 ];
 ---
@@ -151,6 +152,18 @@ docker compose up</code></pre>
         knows which section it came from and which page it was printed on —
         which is what lets a citation name a place rather than gesture at a
         document.
+      </p>
+      <p class="rl-note codex-measure">
+        A fixed corpus cannot say what a field is doing <em>now</em>, and
+        answering as though it could is the failure that looks most like
+        success — asked for current trends in large language models, an earlier
+        version answered from <em>Attention Is All You Need</em> (2017) and
+        BERT (2018), with real citations and no sign its evidence was eight
+        years old. So when the corpus holds fewer than four papers on a
+        question, arXiv and PubMed are searched for recent work. Those results
+        are marked as abstracts, dated, and never shown with a page number,
+        because an abstract supports what a paper claims and not what it
+        measured.
       </p>
       <p class="rl-note codex-measure">
         The two retrievers fail differently. A dense encoder maps
