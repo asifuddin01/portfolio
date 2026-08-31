@@ -462,7 +462,10 @@ docker compose up</code></pre>
     const frame = document.getElementById('rl-frame');
     button.addEventListener('click', () => {
       if (!frame) return;
-      frame.src = url;
+      // setAttribute rather than .src: getElementById is typed as
+      // HTMLElement, which has no src, and astro check treats that as an
+      // error rather than a warning.
+      frame.setAttribute('src', url);
       frame.removeAttribute('hidden');
       button.remove();
     });
