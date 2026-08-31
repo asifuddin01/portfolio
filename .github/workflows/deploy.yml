@@ -127,6 +127,15 @@ jobs:
           exit 1
 
       - name: Verify
+        env:
+          # The public demo, embedded on /researchlens. Set here rather than
+          # as a repository secret: it is a public URL, and a value the build
+          # depends on should be readable in the file that builds it.
+          #
+          # Unset it and the page falls back to probing for a local instance,
+          # then to the offline message — which is what it should say when
+          # there is nothing to embed.
+          PUBLIC_RESEARCHLENS_SPACE: https://asifuddin01-researchlens.hf.space
         run: npm run verify
 
       - name: Deploy
