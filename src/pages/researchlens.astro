@@ -172,15 +172,15 @@ const FINDINGS = [
       </p>
     </header>
 
-    <section class="rl-ask" data-reveal>
+    <section class="rl-ask" id="rl-ask" data-reveal data-space={SPACE}>
       <h2 class="rl-h2">Ask it something</h2>
       <script type="application/json" id="rl-endpoints" set:html={JSON.stringify(API_CANDIDATES)} is:inline />
 
-      <div class="rl-probe" id="rl-probe">
-        <p class="rl-status">Looking for a running instance…</p>
+      <div class="rl-probe" id="rl-probe" hidden>
+        <p class="rl-status">Connecting…</p>
       </div>
 
-      <form class="rl-form" id="rl-form" hidden>
+      <form class="rl-form" id="rl-form">
         <label class="rl-label" for="rl-q">Your question</label>
         <div class="rl-row">
           <input
@@ -194,33 +194,33 @@ const FINDINGS = [
           />
           <button class="rl-send" type="submit">Ask</button>
         </div>
-        <fieldset class="rl-models" id="rl-models">
+
+        {/* Not a model switch — a scope switch. The model is the same either
+            way; what changes is where the evidence is allowed to come from,
+            which is the choice that actually alters an answer. */}
+        <fieldset class="rl-scope" id="rl-scope">
+          <legend class="rl-legend">Search</legend>
+          <label class="rl-radio">
+            <input type="radio" name="scope" value="local" checked />
+            <span>Local · <em>the {CORPUS.papers} indexed papers</em></span>
+          </label>
+          <label class="rl-radio">
+            <input type="radio" name="scope" value="global" />
+            <span>Global · <em>also arXiv, PubMed and OpenAlex</em></span>
+          </label>
+        </fieldset>
+
+        <p class="rl-hint" id="rl-hint">
+          Local answers only from the indexed corpus, which is fixed and cannot
+          say what a field is doing now. Global also searches the live
+          literature; those results are abstracts, not full text, and are
+          marked as such.
+        </p>
+        <fieldset class="rl-models" id="rl-models" hidden>
           <legend class="rl-legend">Answer with</legend>
         </fieldset>
-        <p class="rl-hint" id="rl-hint">
-          Retrieval is identical either way — switching model changes the
-          writing, not the evidence. Questions about what is{' '}
-          <em>current</em>{' '}also search arXiv, PubMed and OpenAlex.
-        </p>
       </form>
 
-      {SPACE && (
-        <div class="rl-space" id="rl-space" hidden data-space={SPACE}>
-          <p class="rl-space-note">
-            The demo runs on Hugging Face, over a fixed corpus. Asking contacts
-            <code>hf.space</code> — nothing on this page does that until you
-            ask it to, which is why this is a button rather than a live
-            connection. The answer is rendered here, on this page.
-          </p>
-          <button class="rl-load" id="rl-load" type="button">
-            Connect the demo <span class="rl-arrow" aria-hidden="true">→</span>
-          </button>
-          <p class="rl-space-alt">
-            Or run it on your own papers, on your own machine, with no API key —
-            and open this page from there instead.
-          </p>
-        </div>
-      )}
 
       <div class="rl-offline" id="rl-offline" hidden>
         <p class="rl-offline-h">Not connected</p>
@@ -411,6 +411,8 @@ docker compose up</code></pre>
   const CANDIDATES: string[] = JSON.parse(
     document.getElementById('rl-endpoints')?.textContent ?? '[]'
   );
+  const SPACE_URL: string =
+    document.getElementById('rl-ask')?.dataset.space ?? '';
 
   const probe = document.getElementById('rl-probe');
   const form = document.getElementById('rl-form') as HTMLFormElement | null;
@@ -493,49 +495,76 @@ docker compose up</code></pre>
     return Array.isArray(last) ? last[0] : last;
   }
 
-  function wireSpaceLoader() {
-    const panel = document.getElementById('rl-space');
-    const button = document.getElementById('rl-load');
-    const url = panel?.dataset.space;
-    if (!panel || !button || !url) return;
+  /**
+   * Which instance to ask, resolved once and reused.
+   *
+   * Resolved on the first question rather than on page load. That keeps the
+   * property the site's own audit exists to protect — the page contacts
+   * nothing until the reader acts — while dropping the button that used to
+   * enforce it, which made a reader ask for permission to use the thing they
+   * came for. Asking a question *is* the request.
+   */
+  type Backend = { api: string; viaSpace: boolean };
+  let backend: Backend | null = null;
+  let connecting: Promise<Backend> | null = null;
 
-    // Nothing is requested until this is clicked, which is the property the
-    // site's own audit enforces and the reason this is a button at all.
-    button.addEventListener('click', async () => {
-      button.setAttribute('disabled', '');
-      button.textContent = 'Connecting…';
-      try {
-        const stats = await callSpace(url, 'corpus_stats', []);
-        panel.setAttribute('hidden', '');
-        wire(url, {
-          status: 'ok',
-          papers: stats.papers,
-          passages: stats.passages,
-          providers: [{ name: 'space', model: stats.model, ready: true }],
-        }, true);
-      } catch (err) {
-        button.removeAttribute('disabled');
-        button.textContent = 'Try again';
-        panel.insertAdjacentHTML(
-          'beforeend',
-          `<p class="rl-status rl-error">The demo did not answer (${escape(String(err))}). It sleeps when idle and takes a moment to wake.</p>`
-        );
+  async function connect(): Promise<Backend> {
+    if (backend) return backend;
+    if (connecting) return connecting;
+
+    connecting = (async () => {
+      // A local instance is the better experience — the reader's own papers,
+      // their own model, nothing leaving the machine — so it is tried first.
+      const found = await findInstance();
+      if (found) {
+        backend = { api: found.api, viaSpace: false };
+        describe(found.health, false);
+        return backend;
       }
-    });
+      const url = SPACE_URL;
+      if (!url) throw new Error('no instance is reachable');
+      const stats = await callSpace(url, 'corpus_stats', []);
+      backend = { api: url, viaSpace: true };
+      describe(
+        { status: 'ok', papers: stats.papers, passages: stats.passages, providers: [] },
+        true
+      );
+      return backend;
+    })();
+
+    try {
+      return await connecting;
+    } finally {
+      connecting = null;
+    }
   }
 
-  function showFallback() {
-    probe?.setAttribute('hidden', '');
-    // A local instance is the better experience — the reader's own papers, and
-    // a model on their own machine — so it is tried first. The embedded Space
-    // is what everyone else gets, and the offline message is for when there is
-    // neither.
-    const space = document.getElementById('rl-space');
-    if (space) {
-      space.removeAttribute('hidden');
-      wireSpaceLoader();
-    } else {
-      offline?.removeAttribute('hidden');
+  /** Report what answered, so the page never states a figure it disagrees with. */
+  function describe(health: Health, viaSpace: boolean) {
+    const stats = document.getElementById('rl-stats');
+    if (stats) {
+      stats.textContent =
+        `${health.papers} papers · ${health.passages.toLocaleString('en')} passages · ` +
+        (viaSpace ? 'hosted demo' : 'connected to your own instance');
+    }
+    if (!viaSpace && models) {
+      const ready = health.providers.filter((p) => p.ready);
+      const choices = ready.length ? ready : health.providers;
+      if (choices.length > 1) {
+        models.removeAttribute('hidden');
+        models.insertAdjacentHTML(
+          'beforeend',
+          choices
+            .map(
+              (p, i) => `
+              <label class="rl-radio">
+                <input type="radio" name="provider" value="${escape(p.name)}" ${i === 0 ? 'checked' : ''} />
+                <span>${p.name === 'local' ? 'Local' : 'Hosted'} · <em>${escape(p.model)}</em></span>
+              </label>`
+            )
+            .join('')
+        );
+      }
     }
   }
 
@@ -547,123 +576,118 @@ docker compose up</code></pre>
    * rendering, two transports: a second answer panel for the hosted case is
    * the beginning of the second implementation that drifts.
    */
-  function wire(api: string, health: Health, viaSpace = false) {
-    probe?.setAttribute('hidden', '');
-    form?.removeAttribute('hidden');
-
-    // Model choices come from the instance, not from the page. An instance
-    // with no hosted provider configured must not offer one.
-    if (models && viaSpace) {
-      // One provider, so there is nothing to choose between. A radio group of
-      // one is a control that does nothing — and the hint beside it explains a
-      // choice that is no longer on offer.
-      models.setAttribute('hidden', '');
-      const hint = document.getElementById('rl-hint');
-      if (hint) {
-        hint.innerHTML =
-          'Answers come from the hosted demo, over a fixed corpus of indexed ' +
-          'papers. Questions about what is <em>current</em> also search arXiv, ' +
-          'PubMed and OpenAlex; those results are abstracts, not full text.';
-      }
-    } else if (models) {
-      const ready = health.providers.filter((p) => p.ready);
-      const choices = ready.length ? ready : health.providers;
-      models.insertAdjacentHTML(
-        'beforeend',
-        choices
-          .map(
-            (p, i) => `
-            <label class="rl-radio">
-              <input type="radio" name="provider" value="${escape(p.name)}" ${i === 0 ? 'checked' : ''} />
-              <span>${p.name === 'local' ? 'Local' : 'Hosted'} · <em>${escape(p.model)}</em></span>
-            </label>`
-          )
-          .join('')
-      );
-    }
-
-    const stats = document.getElementById('rl-stats');
-    if (stats) {
-      stats.textContent =
-        `${health.papers} papers · ${health.passages.toLocaleString('en')} passages · connected`;
-    }
-
-    for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
-      b.disabled = false;
-      b.addEventListener('click', () => {
-        if (input) input.value = b.dataset.q ?? '';
-        form?.requestSubmit();
-      });
-    }
-
-    form?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const question = input?.value?.trim();
-      if (!question || !out) return;
-
-      const provider =
-        form.querySelector<HTMLInputElement>('input[name="provider"]:checked')?.value ?? 'local';
-
-      out.hidden = false;
-      out.innerHTML =
-        `<p class="rl-status">Retrieving evidence, then writing an answer. ${
-          viaSpace
-            ? 'The demo runs on shared hardware and takes twenty seconds or so.'
-            : 'A local model takes a few seconds.'
-        }</p>`;
-
-      try {
-        const data = viaSpace
-          ? await callSpace(api, 'ask_json', [question, '', [], 'auto'])
-          : await (async () => {
-              const res = await fetch(`${api}/ask`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, provider }),
-              });
-              if (!res.ok) throw new Error(String(res.status));
-              return res.json();
-            })();
-
-        if (data.error) throw new Error(data.error);
-
-        const cites = (data.citations ?? [])
-          .map((c: Record<string, any>) => {
-            // A live result is an abstract from arXiv, PubMed or OpenAlex, not
-            // a passage from an indexed paper, and is labelled so a reader is
-            // never shown one as though it were the other. The Space says so
-            // outright; the local API is read from the chunk id.
-            const live =
-              c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''));
-            return `
-              <li class="rl-cite">
-                <span class="rl-cite-n">[${c.marker}]${live ? ' <span class="rl-live">live</span>' : ''}</span>
-                <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
-                <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
-                <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
-              </li>`;
-          })
-          .join('');
-
-        const timing =
-          `<p class="rl-timing">${escape(data.model ?? '')} · retrieval ${Math.round(data.retrieval_ms)} ms · generation ${Math.round(data.generation_ms)} ms</p>`;
-
-        out.innerHTML =
-          `<div class="rl-text">${escape(data.text ?? '')}</div>` +
-          (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '') +
-          timing;
-      } catch (err) {
-        out.innerHTML =
-          `<p class="rl-status rl-error">${
-            viaSpace
-              ? `The demo stopped answering (${escape(String(err))}). It sleeps when idle; asking again usually wakes it.`
-              : `The instance stopped answering (${escape(String(err))}). Check the terminal running it.`
-          }</p>`;
-      }
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.rl-example')) {
+    b.disabled = false;
+    b.addEventListener('click', () => {
+      if (input) input.value = b.dataset.q ?? '';
+      form?.requestSubmit();
     });
   }
 
-  findInstance().then((found) => (found ? wire(found.api, found.health) : showFallback()));
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const question = input?.value?.trim();
+    if (!question || !out) return;
+
+    // Local searches the indexed corpus alone; global also reaches arXiv,
+    // PubMed and OpenAlex. This is the choice that changes an answer — a fixed
+    // corpus cannot say what a field is doing now, and letting it try is the
+    // failure that looks most like success.
+    const scope =
+      form.querySelector<HTMLInputElement>('input[name="scope"]:checked')?.value ?? 'local';
+    const live = scope === 'global' ? 'always' : 'never';
+    const provider =
+      form.querySelector<HTMLInputElement>('input[name="provider"]:checked')?.value ?? 'local';
+
+    out.hidden = false;
+    out.innerHTML = '<p class="rl-status">Connecting…</p>';
+
+    let where: Backend;
+    try {
+      where = await connect();
+    } catch {
+      out.innerHTML =
+        `<p class="rl-status rl-error">Nothing is answering right now. The hosted demo sleeps when idle — asking again usually wakes it — or run it yourself with <code>docker compose up</code> and reload this page.</p>`;
+      return;
+    }
+
+    out.innerHTML =
+      `<p class="rl-status">${
+        scope === 'global'
+          ? 'Searching the indexed papers and the live literature, then writing an answer.'
+          : 'Retrieving evidence, then writing an answer.'
+      } ${
+        where.viaSpace
+          ? 'The demo runs on shared hardware and takes twenty seconds or so.'
+          : 'A local model takes a few seconds.'
+      }</p>`;
+
+    try {
+      const data = where.viaSpace
+        ? await callSpace(where.api, 'ask_json', [question, '', [], live])
+        : await (async () => {
+            const res = await fetch(`${where.api}/ask`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question, provider, live }),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            return res.json();
+          })();
+
+      if (data.error) throw new Error(data.error);
+
+      const cites = (data.citations ?? [])
+        .map((c: Record<string, any>) => {
+          // A live result is an abstract from arXiv, PubMed or OpenAlex, not a
+          // passage from an indexed paper, and is labelled so a reader is
+          // never shown one as though it were the other. The Space says so
+          // outright; the local API is read from the chunk id.
+          const isLive =
+            c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''));
+          return `
+            <li class="rl-cite">
+              <span class="rl-cite-n">[${c.marker}]${isLive ? ' <span class="rl-live">live</span>' : ''}</span>
+              <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
+              <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
+              <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
+            </li>`;
+        })
+        .join('');
+
+      const liveCount = (data.citations ?? []).filter(
+        (c: Record<string, any>) =>
+          c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''))
+      ).length;
+
+      const timing =
+        `<p class="rl-timing">${escape(data.model ?? '')} · retrieval ${Math.round(data.retrieval_ms)} ms · generation ${Math.round(data.generation_ms)} ms${
+          liveCount ? ` · ${liveCount} live` : ''
+        }</p>`;
+
+      out.innerHTML =
+        `<div class="rl-text">${escape(data.text ?? '')}</div>` +
+        (cites ? `<p class="rl-cite-h">Evidence</p><ol class="rl-cites">${cites}</ol>` : '') +
+        timing;
+    } catch (err) {
+      // Pass the real reason through rather than wrapping every failure in one
+      // guess. A quota limit and a cold start need different things from the
+      // reader — waiting, or coming back later — and telling someone to try
+      // again when the answer is "not for another few minutes" wastes their
+      // time and makes the system look broken rather than rationed.
+      const detail = String(err);
+      const quota = /quota|exceeded|rate limit|429/i.test(detail);
+      out.innerHTML =
+        `<p class="rl-status rl-error">${
+          !where.viaSpace
+            ? `The instance stopped answering (${escape(detail)}). Check the terminal running it.`
+            : quota
+              ? 'The hosted demo has used up its free GPU allowance for now — it is a shared, unpaid tier, and the quota refills after a while. Running it yourself has no such limit: <code>docker compose up</code>.'
+              : `The demo stopped answering (${escape(detail)}). It sleeps when idle; asking again usually wakes it.`
+        }</p>`;
+    }
+  });
+
 </script>
 
 <style>
