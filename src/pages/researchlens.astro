@@ -198,6 +198,23 @@ const FINDINGS = [
           <button class="rl-load" id="rl-load" type="button">
             Load the demo <span class="rl-arrow" aria-hidden="true">→</span>
           </button>
+          {/* Rendered here rather than created on click, and deliberately
+              without a src. An iframe with no src is inert — it points at
+              about:blank and makes no request — so the page still contacts
+              nothing until the reader asks, which is the property the build's
+              own audit enforces. Creating it in script instead cost it its
+              styling: Astro scopes a component's CSS by stamping a
+              data-astro-cid attribute onto the elements in its template, and
+              an element built by document.createElement never receives one.
+              The .rl-frame rule therefore never matched and the frame drew at
+              the browser default of 300x150. */}
+          <iframe
+            class="rl-frame"
+            id="rl-frame"
+            title="ResearchLens"
+            referrerpolicy="no-referrer"
+            hidden
+          />
           <p class="rl-space-alt">
             Or run it on your own papers, on your own machine, with no API key —
             and open this page from there instead.
@@ -438,17 +455,16 @@ docker compose up</code></pre>
     const url = panel?.dataset.space;
     if (!panel || !button || !url) return;
 
-    // The iframe is created on click, not rendered into the page. Until
-    // someone asks, this page makes no request to another origin — which is a
-    // property the site enforces in its own build, and worth keeping rather
-    // than making an exception for.
+    // The frame sits in the page with no src, which loads nothing. Giving it
+    // one is what makes the request, so until someone asks, this page contacts
+    // no other origin — the property the site enforces in its own build, kept
+    // rather than excepted.
+    const frame = document.getElementById('rl-frame');
     button.addEventListener('click', () => {
-      const frame = document.createElement('iframe');
-      frame.className = 'rl-frame';
-      frame.title = 'ResearchLens';
-      frame.referrerPolicy = 'no-referrer';
+      if (!frame) return;
       frame.src = url;
-      button.replaceWith(frame);
+      frame.removeAttribute('hidden');
+      button.remove();
     });
   }
 
