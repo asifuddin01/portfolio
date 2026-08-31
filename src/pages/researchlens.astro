@@ -121,8 +121,18 @@ const GUARANTEES = [
 const FINDINGS = [
   {
     n: '19 → 0',
-    what: 'papers with broken titles',
-    detail: 'The largest glyph on page one is often a drop cap or a journal logo, so titles extracted as “M”, “w”, “1 3”. Size tiers are now walked downward until one is title-shaped.',
+    what: 'papers with broken titles, twice',
+    detail: 'The first fix walked size tiers downward, because the largest glyph on page one is often a drop cap and titles extracted as “M”, “w”, “1 3”. That claim was premature: an audit later found nineteen still wrong for three other reasons. Small-caps titles lost every word’s first letter — “N MAGE IS ORTH X ORDS” — because a capital and its small caps share a baseline, not a top. arXiv’s sideways margin stamp scattered into seven titles. And Elsevier sets its own masthead half a point larger than the paper’s title.',
+  },
+  {
+    n: '77%',
+    what: 'of passages changed by that fix',
+    detail: 'Grouping lines by baseline rather than by top was meant to repair titles. It repaired the body too: columns had been interleaving mid-sentence, rotated axis labels landed in paragraphs, and subscripts were flung to the end of the line. Fewer passages now — 9,870 to 9,593 — because there is less rubbish to cut up.',
+  },
+  {
+    n: '2×',
+    what: 'faster embedding, from one number',
+    detail: 'Batches of 32 embed 43 passages in 6.7s; batches of 64 take 11.2s. A batch is padded to its longest member, and past about thirty the odds of catching a 512-token passage approach one, so the whole batch pays for it. The vectors agree to seven decimal places.',
   },
   {
     n: '111s → 855ms',
