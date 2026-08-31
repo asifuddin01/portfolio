@@ -29,13 +29,20 @@ import { AUTHOR } from '../consts';
  * mixed-content blocking, which is what makes this possible from an HTTPS page.
  */
 /**
- * A public instance, embedded rather than called.
+ * A public instance, called rather than embedded.
  *
- * Hugging Face serves a Space in an iframe, which sidesteps the thing that
- * broke the earlier design: browsers refuse to let a page on the public web
- * open a connection to a server on the visitor's own machine, so the probe
- * below only ever succeeds for a reader running the container *and* opening
- * this page locally. An embedded Space works for everyone else.
+ * It was an iframe first, because a Space is served as one and that sidesteps
+ * the thing that broke the earlier design: browsers refuse to let a page on
+ * the public web open a connection to a server on the visitor's own machine,
+ * so the probe below only ever succeeds for a reader running the container
+ * *and* opening this page locally.
+ *
+ * But an embedded Space brings Gradio's entire visual language into the middle
+ * of this page, and a reader then meets two designs at once — this one, and a
+ * different one inside a box in it. So the Space exposes `ask_json` beside its
+ * own UI and this page draws the answer the way it draws everything else.
+ * Cross-origin calls are permitted: the Space answers a preflight from
+ * https://asifuddin.com with that exact origin.
  *
  * Set to '' until the Space exists; the page then falls back to the offline
  * message, which is what it should say when there is nothing to show.
@@ -180,7 +187,7 @@ const FINDINGS = [
         <fieldset class="rl-models" id="rl-models">
           <legend class="rl-legend">Answer with</legend>
         </fieldset>
-        <p class="rl-hint">
+        <p class="rl-hint" id="rl-hint">
           Retrieval is identical either way — switching model changes the
           writing, not the evidence. Questions about what is{' '}
           <em>current</em>{' '}also search arXiv, PubMed and OpenAlex.
@@ -190,31 +197,14 @@ const FINDINGS = [
       {SPACE && (
         <div class="rl-space" id="rl-space" hidden data-space={SPACE}>
           <p class="rl-space-note">
-            The demo runs on Hugging Face, over a fixed corpus. Loading it
-            contacts <code>hf.space</code> — nothing on this page does that
-            until you ask it to, which is why this is a button rather than an
-            embed.
+            The demo runs on Hugging Face, over a fixed corpus. Asking contacts
+            <code>hf.space</code> — nothing on this page does that until you
+            ask it to, which is why this is a button rather than a live
+            connection. The answer is rendered here, on this page.
           </p>
           <button class="rl-load" id="rl-load" type="button">
-            Load the demo <span class="rl-arrow" aria-hidden="true">→</span>
+            Connect the demo <span class="rl-arrow" aria-hidden="true">→</span>
           </button>
-          {/* Rendered here rather than created on click, and deliberately
-              without a src. An iframe with no src is inert — it points at
-              about:blank and makes no request — so the page still contacts
-              nothing until the reader asks, which is the property the build's
-              own audit enforces. Creating it in script instead cost it its
-              styling: Astro scopes a component's CSS by stamping a
-              data-astro-cid attribute onto the elements in its template, and
-              an element built by document.createElement never receives one.
-              The .rl-frame rule therefore never matched and the frame drew at
-              the browser default of 300x150. */}
-          <iframe
-            class="rl-frame"
-            id="rl-frame"
-            title="ResearchLens"
-            referrerpolicy="no-referrer"
-            hidden
-          />
           <p class="rl-space-alt">
             Or run it on your own papers, on your own machine, with no API key —
             and open this page from there instead.
@@ -449,25 +439,78 @@ docker compose up</code></pre>
     return null;
   }
 
+  /**
+   * Call a Gradio endpoint on the Space and return its single result.
+   *
+   * Gradio's HTTP API is two requests: a POST that queues the call and hands
+   * back an event id, then an event stream that carries the result. The
+   * stream is read to completion rather than rendered as it arrives, because
+   * these endpoints return one final object rather than a growing answer.
+   */
+  async function callSpace(base: string, name: string, data: unknown[]): Promise<any> {
+    const queued = await fetch(`${base}/gradio_api/call/${name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data }),
+    });
+    if (!queued.ok) throw new Error(`queue ${queued.status}`);
+    const { event_id } = await queued.json();
+
+    const stream = await fetch(`${base}/gradio_api/call/${name}/${event_id}`);
+    if (!stream.ok || !stream.body) throw new Error(`stream ${stream.status}`);
+
+    const reader = stream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let last: any = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // Events are separated by a blank line; the payload line starts "data:".
+      for (const line of buffer.split('\n')) {
+        if (line.startsWith('data:')) {
+          try {
+            last = JSON.parse(line.slice(5).trim());
+          } catch {
+            // A partial line — the next read completes it.
+          }
+        }
+      }
+      buffer = buffer.slice(buffer.lastIndexOf('\n') + 1);
+    }
+    if (last === null) throw new Error('the Space returned nothing');
+    return Array.isArray(last) ? last[0] : last;
+  }
+
   function wireSpaceLoader() {
     const panel = document.getElementById('rl-space');
     const button = document.getElementById('rl-load');
     const url = panel?.dataset.space;
     if (!panel || !button || !url) return;
 
-    // The frame sits in the page with no src, which loads nothing. Giving it
-    // one is what makes the request, so until someone asks, this page contacts
-    // no other origin — the property the site enforces in its own build, kept
-    // rather than excepted.
-    const frame = document.getElementById('rl-frame');
-    button.addEventListener('click', () => {
-      if (!frame) return;
-      // setAttribute rather than .src: getElementById is typed as
-      // HTMLElement, which has no src, and astro check treats that as an
-      // error rather than a warning.
-      frame.setAttribute('src', url);
-      frame.removeAttribute('hidden');
-      button.remove();
+    // Nothing is requested until this is clicked, which is the property the
+    // site's own audit enforces and the reason this is a button at all.
+    button.addEventListener('click', async () => {
+      button.setAttribute('disabled', '');
+      button.textContent = 'Connecting…';
+      try {
+        const stats = await callSpace(url, 'corpus_stats', []);
+        panel.setAttribute('hidden', '');
+        wire(url, {
+          status: 'ok',
+          papers: stats.papers,
+          passages: stats.passages,
+          providers: [{ name: 'space', model: stats.model, ready: true }],
+        }, true);
+      } catch (err) {
+        button.removeAttribute('disabled');
+        button.textContent = 'Try again';
+        panel.insertAdjacentHTML(
+          'beforeend',
+          `<p class="rl-status rl-error">The demo did not answer (${escape(String(err))}). It sleeps when idle and takes a moment to wake.</p>`
+        );
+      }
     });
   }
 
@@ -486,13 +529,33 @@ docker compose up</code></pre>
     }
   }
 
-  function wire(api: string, health: Health) {
+  /**
+   * Point the question box at an instance.
+   *
+   * `viaSpace` chooses which shape of call to make — the local build serves
+   * this project's own REST API, the Space serves Gradio's. One form, one
+   * rendering, two transports: a second answer panel for the hosted case is
+   * the beginning of the second implementation that drifts.
+   */
+  function wire(api: string, health: Health, viaSpace = false) {
     probe?.setAttribute('hidden', '');
     form?.removeAttribute('hidden');
 
     // Model choices come from the instance, not from the page. An instance
     // with no hosted provider configured must not offer one.
-    if (models) {
+    if (models && viaSpace) {
+      // One provider, so there is nothing to choose between. A radio group of
+      // one is a control that does nothing — and the hint beside it explains a
+      // choice that is no longer on offer.
+      models.setAttribute('hidden', '');
+      const hint = document.getElementById('rl-hint');
+      if (hint) {
+        hint.innerHTML =
+          'Answers come from the hosted demo, over a fixed corpus of indexed ' +
+          'papers. Questions about what is <em>current</em> also search arXiv, ' +
+          'PubMed and OpenAlex; those results are abstracts, not full text.';
+      }
+    } else if (models) {
       const ready = health.providers.filter((p) => p.ready);
       const choices = ready.length ? ready : health.providers;
       models.insertAdjacentHTML(
@@ -533,23 +596,35 @@ docker compose up</code></pre>
 
       out.hidden = false;
       out.innerHTML =
-        '<p class="rl-status">Retrieving evidence, then writing an answer. A local model takes a few seconds.</p>';
+        `<p class="rl-status">Retrieving evidence, then writing an answer. ${
+          viaSpace
+            ? 'The demo runs on shared hardware and takes twenty seconds or so.'
+            : 'A local model takes a few seconds.'
+        }</p>`;
 
       try {
-        const res = await fetch(`${api}/ask`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, provider }),
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
+        const data = viaSpace
+          ? await callSpace(api, 'ask_json', [question, '', [], 'auto'])
+          : await (async () => {
+              const res = await fetch(`${api}/ask`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, provider }),
+              });
+              if (!res.ok) throw new Error(String(res.status));
+              return res.json();
+            })();
+
+        if (data.error) throw new Error(data.error);
 
         const cites = (data.citations ?? [])
-          .map((c: Record<string, string>) => {
-            // A live result is an abstract from arXiv or PubMed, not a passage
-            // from an indexed paper, and is labelled so a reader is never shown
-            // one as though it were the other.
-            const live = /^(arxiv|pubmed):/.test(String(c.chunk_id ?? ''));
+          .map((c: Record<string, any>) => {
+            // A live result is an abstract from arXiv, PubMed or OpenAlex, not
+            // a passage from an indexed paper, and is labelled so a reader is
+            // never shown one as though it were the other. The Space says so
+            // outright; the local API is read from the chunk id.
+            const live =
+              c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''));
             return `
               <li class="rl-cite">
                 <span class="rl-cite-n">[${c.marker}]${live ? ' <span class="rl-live">live</span>' : ''}</span>
@@ -569,7 +644,11 @@ docker compose up</code></pre>
           timing;
       } catch (err) {
         out.innerHTML =
-          `<p class="rl-status rl-error">The instance stopped answering (${escape(String(err))}). Check the terminal running it.</p>`;
+          `<p class="rl-status rl-error">${
+            viaSpace
+              ? `The demo stopped answering (${escape(String(err))}). It sleeps when idle; asking again usually wakes it.`
+              : `The instance stopped answering (${escape(String(err))}). Check the terminal running it.`
+          }</p>`;
       }
     });
   }
@@ -729,12 +808,6 @@ docker compose up</code></pre>
     color: var(--ink-soft);
     margin: 0;
     max-width: var(--measure);
-  }
-  .rl-frame {
-    width: 100%;
-    height: min(78vh, 46rem);
-    border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
-    background: var(--paper-raised);
   }
   .rl-load {
     justify-self: start;
