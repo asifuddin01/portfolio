@@ -11,10 +11,11 @@ import { AUTHOR } from '../consts';
  * static build carries no hard-coded host, and a deployment can point at a
  * local container, a staging box or the public API without a code change.
  *
- * When no endpoint is configured — the state until the demo backend is
- * deployed — the page says so plainly and gives the local instructions instead
- * of presenting a chat box that cannot answer. A demo that fails silently is
- * worse than one that explains itself.
+ * When nothing is reachable the page says so plainly, and gives the local
+ * instructions — but in the answer panel, at the moment a reader asks, rather
+ * than in a standing notice above a question box they have not used yet. A
+ * demo that fails silently is worse than one that explains itself; one that
+ * announces failure before anybody has asked is worse than both.
  */
 /**
  * Where to look for a running instance.
@@ -44,8 +45,9 @@ import { AUTHOR } from '../consts';
  * Cross-origin calls are permitted: the Space answers a preflight from
  * https://asifuddin.com with that exact origin.
  *
- * Set to '' until the Space exists; the page then falls back to the offline
- * message, which is what it should say when there is nothing to show.
+ * Set to '' until the Space exists. With no Space and no local instance the
+ * first question falls through to the answer panel's own "nothing is
+ * answering" message, which is where the reader is already looking.
  */
 const SPACE = import.meta.env.PUBLIC_RESEARCHLENS_SPACE ?? '';
 
@@ -178,10 +180,6 @@ const FINDINGS = [
       <h2 class="rl-h2">Ask it something</h2>
       <script type="application/json" id="rl-endpoints" set:html={JSON.stringify(API_CANDIDATES)} is:inline />
 
-      <div class="rl-probe" id="rl-probe" hidden>
-        <p class="rl-status">Connecting…</p>
-      </div>
-
       <form class="rl-form" id="rl-form">
         <label class="rl-label" for="rl-q">Your question</label>
         <div class="rl-row">
@@ -234,24 +232,6 @@ const FINDINGS = [
           <legend class="rl-legend">Answer with</legend>
         </fieldset>
       </form>
-
-
-      <div class="rl-offline" id="rl-offline" hidden>
-        <p class="rl-offline-h">Not connected</p>
-        <p>
-          Nothing is answering. The hosted instance is not deployed yet, and
-          browsers block a page on the public web from reaching a server on
-          your own machine — so running it locally means opening it locally
-          too:
-        </p>
-        <pre class="rl-code"><code>git clone https://github.com/asifuddin01/researchlens
-cd researchlens
-docker compose up</code></pre>
-        <p class="rl-offline-note">
-          Then open <code>localhost:8000</code>. Your papers stay on your
-          machine, the default model is local, and no API key is needed.
-        </p>
-      </div>
 
       <ul class="rl-examples" data-reveal-stagger>
         {EXAMPLES.map((q) => (
@@ -428,9 +408,7 @@ docker compose up</code></pre>
   const SPACE_URL: string =
     document.getElementById('rl-ask')?.dataset.space ?? '';
 
-  const probe = document.getElementById('rl-probe');
   const form = document.getElementById('rl-form') as HTMLFormElement | null;
-  const offline = document.getElementById('rl-offline');
   const models = document.getElementById('rl-models');
   const out = document.getElementById('rl-answer');
   const input = document.getElementById('rl-q') as HTMLInputElement | null;
@@ -984,7 +962,10 @@ docker compose up</code></pre>
   }
   .rl-ask .rl-h2 { margin-bottom: 0.2rem; }
 
-  .rl-form { display: grid; gap: 0.9rem; max-width: 46rem; }
+  /* No max-width here. The heading above and the example cards below both run
+     the full width of the panel, so a 46rem cap made the form the one child
+     that stopped short and left the box looking ragged down its right edge. */
+  .rl-form { display: grid; gap: 0.9rem; }
   .rl-label {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -1022,6 +1003,12 @@ docker compose up</code></pre>
   }
   .rl-send:hover { background: var(--oxblood); border-color: var(--oxblood); }
 
+  /* Both scope fieldsets need this. .rl-scope never had a rule of its own, so
+     its two labels were inline-flex boxes separated by nothing but collapsed
+     whitespace — "…indexed papers" ran straight into the Global radio with a
+     measured 0px between them. A <legend> is not a flex item, so SEARCH still
+     sits on its own line above. */
+  .rl-scope,
   .rl-models { border: 0; padding: 0; margin: 0; display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: center; }
   .rl-legend {
     font-family: var(--font-mono);
@@ -1043,35 +1030,9 @@ docker compose up</code></pre>
   .rl-hint em { font-style: italic; color: var(--ink); }
 
   @media (min-width: 42rem) {
+    .rl-scope,
     .rl-models { align-items: baseline; gap: 1.4rem; }
   }
-
-  .rl-offline {
-    border-left: 2px solid var(--oxblood);
-    background: var(--paper-raised);
-    padding: 1.1rem 1.3rem;
-    max-width: var(--measure);
-    display: grid;
-    gap: 0.7rem;
-  }
-  .rl-offline p { margin: 0; font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); }
-  .rl-offline-h {
-    font-family: var(--font-mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--oxblood-text);
-  }
-  .rl-code {
-    margin: 0;
-    padding: 0.8rem 1rem;
-    background: var(--paper);
-    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    line-height: 1.8;
-  }
-  .rl-offline-note code { font-family: var(--font-mono); font-size: 0.95em; }
 
   /* The embedded Space. Tall enough that a question and its evidence are
      visible together — a shorter frame turns reading the evidence into
