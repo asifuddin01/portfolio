@@ -1586,6 +1586,80 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: bibliotheca
+    label: Bibliotheca — the books
+    label_singular: Book
+    description: >-
+      Marginalia III. The textbooks behind the reading course, kept separate from it on purpose: a part of the Lectiones is a week of papers in an order that matters, while a book is opened at the chapter you need. Add one here and it appears on its shelf at /marginalia/bibliotheca and in the index on the Marginalia page. Not to be confused with the Elementa's own Books, which are yours.
+    folder: src/content/bibliotheca
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{shelf}} · {{title}}"
+    sortable_fields: [ order, title, year ]
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "As printed on the cover, subtitle and all if it has one."
+      - label: Authors
+        name: authors
+        widget: string
+        hint: >-
+          Written out as a sentence — "Richard S. Sutton and Andrew G. Barto" —
+          not a list. It is read, not sorted on.
+      - label: Year
+        name: year
+        widget: string
+        required: false
+        default: ""
+        hint: "The edition you actually have. Leave blank if it does not matter."
+      - label: Shelf
+        name: shelf
+        widget: select
+        default: deep-learning
+        hint: >-
+          Which section of the page it stands in. Pick the shelf a reader would
+          look on, not the one the publisher would file it under.
+        options:
+          - { label: "Foundations — statistics and learning theory", value: foundations }
+          - { label: "Deep learning — the mechanisms, and how to build them", value: deep-learning }
+          - { label: "Causality — the ladder, and what climbs it", value: causality }
+          - { label: "Decisions — optimisation, control and agents", value: decisions }
+      - label: Order on the shelf
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+        hint: >-
+          Where to start, not the alphabet. 1 is the first book somebody should
+          open on that shelf. Ties fall back to the title, so gaps are fine.
+      - label: Two lines on what it is
+        name: note
+        widget: text
+        hint: >-
+          What the book covers, then why it is on the shelf rather than merely
+          famous. Two sentences — it is read under the title, not instead of it.
+      - label: Link
+        name: url
+        widget: string
+        required: false
+        hint: "The address only. A sentence with a link in it will not be accepted here."
+        pattern:
+          - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+          - Paste the address only, e.g. https://example.com/page — not a sentence.
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
   - name: education
     label: Education
     label_singular: Entry

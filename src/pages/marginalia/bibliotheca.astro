@@ -1,0 +1,165 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getBibliotheca } from '../../lib/collections';
+import { toRoman, AUTHOR } from '../../consts';
+
+/**
+ * Marginalia III — the books.
+ *
+ * Kept apart from the Lectiones on purpose. A part of the reading course is a
+ * week of papers, capped at five and read in an order that matters; a textbook
+ * is not read that way and does not belong to any one week. Filing the same
+ * volume under six parts would misdescribe how it is actually used, which is:
+ * open it at the chapter you need, close it again.
+ */
+const shelves = await getBibliotheca();
+const total = shelves.reduce((n, s) => n + s.books.length, 0);
+---
+<BaseLayout
+  title={`Bibliotheca — ${AUTHOR}`}
+  description="The books behind the reading course: statistics and learning theory, deep learning, causality, and decisions under uncertainty."
+  folio="B"
+>
+  <div class="codex bb">
+    <header class="bb-head">
+      <p class="bb-kicker" data-reveal>Marginalia III</p>
+      <h1 class="bb-h1" data-press>Bibliotheca</h1>
+      <p class="bb-lede codex-measure" data-reveal>
+        The shelf the Lectiones sits on. A part of the reading course is a week
+        of papers, in an order that matters; these are the volumes you keep
+        open beside them, and no one of them belongs to any one week.
+      </p>
+      <p class="bb-lede codex-measure" data-reveal>
+        Ordered within each shelf by where to start rather than by author, so
+        reading top to bottom is a route and not a catalogue.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <p class="bb-count">{total} books · {shelves.length} shelves</p>
+
+    {shelves.length === 0 ? (
+      <p class="bb-empty">Nothing on the shelves yet.</p>
+    ) : (
+      shelves.map((group, gi) => (
+        <section class="bb-shelf" aria-labelledby={`shelf-${group.shelf.id}`}>
+          <h2 class="bb-shelf-h" id={`shelf-${group.shelf.id}`}>
+            <span class="bb-shelf-n" aria-hidden="true">{toRoman(gi + 1)}</span>
+            <span class="bb-shelf-name">{group.shelf.label}</span>
+            <span class="bb-shelf-gloss">{group.shelf.gloss}</span>
+          </h2>
+          <ol class="bb-list" data-reveal-stagger>
+            {group.books.map((b) => (
+              <li class="bb-item">
+                <p class="bb-title">
+                  {b.data.url ? (
+                    <a class="link" href={b.data.url} rel="noopener">{b.data.title}</a>
+                  ) : b.data.title}
+                </p>
+                <p class="bb-by">
+                  {b.data.authors}{b.data.year && <span class="bb-year"> · {b.data.year}</span>}
+                </p>
+                <p class="bb-note">{b.data.note}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    )}
+
+    <LesionRule />
+
+    <p class="bb-back">
+      <a class="link" href="/marginalia/lectiones">The reading course — papers, in order</a>
+      <span class="bb-sep" aria-hidden="true"> · </span>
+      <a class="link" href="/marginalia">Back to Marginalia</a>
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .bb { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .bb-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .bb-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .bb-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .bb-lede + .bb-lede { margin-top: 0.9em; }
+
+  .bb-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 2rem;
+  }
+  .bb-empty { color: var(--ink-soft); }
+
+  .bb-shelf { margin-bottom: 3rem; max-width: 64rem; }
+  .bb-shelf-h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.9rem;
+    margin: 0 0 1.4rem;
+    padding-bottom: 0.6rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .bb-shelf-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    color: var(--brass-text);
+  }
+  .bb-shelf-name { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); }
+  .bb-shelf-gloss {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink-soft);
+  }
+
+  .bb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; }
+  .bb-item {
+    /* minmax(0, …) is not needed here — the items are block, not tracks — but
+       the measure is, or a note runs to 64rem and stops being readable. */
+    max-width: var(--measure);
+  }
+  .bb-title {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    line-height: 1.35;
+    color: var(--ink);
+    margin: 0 0 0.15rem;
+  }
+  .bb-by {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.04em;
+    color: var(--brass-text);
+    margin: 0 0 0.45rem;
+  }
+  .bb-year { color: var(--ink-soft); }
+  .bb-note {
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .bb-back { font-size: var(--t-sm); margin-top: 1.6rem; }
+  .bb-sep { color: var(--brass-text); }
+
+  @media (max-width: 560px) {
+    .bb-shelf { margin-bottom: 2.4rem; }
+    .bb-list { gap: 1.3rem; }
+  }
+</style>

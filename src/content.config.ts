@@ -594,6 +594,42 @@ const lectiones = defineCollection({
 });
 
 /**
+ * Bibliotheca — Marginalia III. The books behind the course.
+ *
+ * A separate collection from `lectiones` rather than a field on it, because
+ * they answer different questions and mixing them would spoil both. A part of
+ * the Lectiones is a week of *papers*, capped at five, read in an order that
+ * matters. A book is not read that way and does not belong to one week: the
+ * same textbook sits under six parts at once, and putting it inside any of
+ * them would be a lie about how it gets used.
+ *
+ * Not to be confused with `books`, which is the Elementa's own volumes. This
+ * one is other people's.
+ */
+const bibliotheca = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/bibliotheca' }),
+  schema: z.object({
+    /** Position on its shelf. Ties are broken by title, so it need not be dense. */
+    order: z.number().int().min(1).default(1),
+    title: z.string(),
+    /** Written out as on the cover, so a reader can search for the thing. */
+    authors: z.string(),
+    year: z.string().default(''),
+    /**
+     * Which shelf it stands on. An enum rather than free text: the page groups
+     * by this, and two spellings of "causality" would silently become two
+     * shelves with one book each.
+     */
+    shelf: z.enum(['foundations', 'deep-learning', 'causality', 'decisions']),
+    /** Two lines. What the book is, and why it is on the shelf. */
+    note: z.string(),
+    /** Where to read it. */
+    url: optionalUrl,
+    status: z.enum(['draft', 'published']).default('published'),
+  }),
+});
+
+/**
  * Editable page prose. These exist as content rather than as JSX so they can
  * be changed from /admin without touching the codebase.
  */
@@ -776,7 +812,7 @@ const axioms = defineCollection({
 });
 
 export const collections = {
-  works, elementa, marginalia, lectiones, site, art, books, instrumentarium,
+  works, elementa, marginalia, lectiones, bibliotheca, site, art, books, instrumentarium,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

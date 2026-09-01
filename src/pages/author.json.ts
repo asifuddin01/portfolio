@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import { AUTHOR, SITE, ROLE } from '../consts';
 import {
   getPapers, getProjects, getEducation, getMarginalia, getAxioms,
-  getContact, getBooks, getChapters,
+  getContact, getBooks, getChapters, getBibliotheca,
 } from '../lib/collections';
 
 /**
@@ -78,12 +78,13 @@ export const GET: APIRoute = async () => {
 
   const [
     papers, projects, education, marginalia, axioms, contact, books, chapters,
-    works, siteText,
+    works, siteText, shelves,
   ] = await Promise.all([
     getPapers(), getProjects(), getEducation(), getMarginalia(), getAxioms(),
     getContact(), getBooks(), getChapters(),
     getCollection('works'),
     getCollection('site'),
+    getBibliotheca(),
   ]);
 
   const site = (id: string) => siteText.find((e) => e.id === id)?.data;
@@ -227,6 +228,30 @@ export const GET: APIRoute = async () => {
         `${AUTHOR} is writing the Elementa, a textbook built from numbered propositions in the manner of Euclid,`,
         `covering ${books.length} books: ${perBook.join('; ')}.`,
         site('elementa')?.lede
+      )),
+    });
+  }
+
+  /* ---- What he studies from ------------------------------------------- */
+  //
+  // One document per shelf, not one per book. Twenty short entries would each
+  // compete for a slot on any question about him and mostly lose, while
+  // crowding out the profile that actually answers it — the same crowding the
+  // marginalia reviews already cause. A shelf is also the more useful unit:
+  // "he works through the causality literature from Pearl" is the fact, and
+  // the titles are the evidence for it.
+  for (const { shelf, books: onShelf } of shelves) {
+    docs.push({
+      id: `shelf:${shelf.id}`,
+      kind: 'reading',
+      title: `${AUTHOR} — what he reads on ${shelf.label.toLowerCase()}`,
+      url: abs(`/marginalia/bibliotheca#shelf-${shelf.id}`),
+      text: tidy(sentence(
+        `${AUTHOR} keeps a shelf of ${onShelf.length} books on ${shelf.label.toLowerCase()} — ${shelf.gloss}.`,
+        `In the order he would have them read:`,
+        onShelf
+          .map((b) => `"${b.data.title}" by ${b.data.authors}${b.data.year ? ` (${b.data.year})` : ''} — ${b.data.note}`)
+          .join(' '),
       )),
     });
   }

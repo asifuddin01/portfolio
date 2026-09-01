@@ -2,12 +2,14 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import KindMark from '../../components/marginalia/KindMark.astro';
-import { getMarginalia, getLectiones } from '../../lib/collections';
+import { getMarginalia, getLectiones, getBibliotheca } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
 const entries = await getMarginalia();
 const parts = await getLectiones();
 const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
+const shelves = await getBibliotheca();
+const bookCount = shelves.reduce((n, s) => n + s.books.length, 0);
 const kinds = ['all', 'book', 'paper', 'model', 'essay', 'note'] as const;
 const counts = Object.fromEntries(
   kinds.map((k) => [k, k === 'all' ? entries.length : entries.filter((e) => e.data.kind === k).length])
@@ -28,9 +30,11 @@ const counts = Object.fromEntries(
         not fit anywhere else. Kept in one ledger, numbered as they are written.
       </p>
       <p class="mg-lede codex-measure" data-reveal>
-        Two parts. The first is the ledger — my opinion of something after
+        Three parts. The first is the ledger — my opinion of something after
         reading it. The second is a reading course: what somebody else should
-        read, in what order, and what to take from each one.
+        read, in what order, and what to take from each one. The third is the
+        shelf those two are worked out on — the textbooks, which are not read
+        in an order and so are not filed in one.
       </p>
     </header>
 
@@ -113,11 +117,79 @@ const counts = Object.fromEntries(
     <p class="mg-all">
       <a class="link" href="/marginalia/lectiones">The whole course, with what each part is for</a>
     </p>
+
+    <LesionRule />
+
+    <h2 class="mg-part" id="bibliotheca">
+      <span class="mg-part-n" aria-hidden="true">III</span>
+      <span class="mg-part-name">Bibliotheca</span>
+      <span class="mg-part-gloss">The books behind it</span>
+    </h2>
+
+    <p class="mg-lede codex-measure">
+      Textbooks rather than papers, and kept apart from the course for a
+      reason: a part of the Lectiones is a week of reading in an order that
+      matters, while a textbook is opened at the chapter you need and closed
+      again. {bookCount} books on {shelves.length} shelves.
+    </p>
+
+    {shelves.length > 0 && (
+      <ul class="mg-shelves">
+        {shelves.map((g) => (
+          <li class="mg-shelf">
+            <a class="mg-slink" href={`/marginalia/bibliotheca#shelf-${g.shelf.id}`}>
+              <span class="mg-sname">{g.shelf.label}</span>
+              <span class="mg-sgloss">{g.shelf.gloss}</span>
+              <span class="mg-sn">{g.books.length}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <p class="mg-all">
+      <a class="link" href="/marginalia/bibliotheca">The whole shelf, with what each book is for</a>
+    </p>
   </div>
 </BaseLayout>
 
 <style>
   .mg { padding-top: clamp(2.5rem, 7vh, 5rem); }
+
+  /* The shelves, as a compact index. The books themselves live on their own
+     page — twenty of them with a note each would bury the two sections above. */
+  .mg-shelves {
+    list-style: none;
+    margin: 0 0 1.4rem;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .mg-shelf { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .mg-slink {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.2rem 1.2rem;
+    align-items: baseline;
+    padding: 0.9rem 0;
+    color: var(--ink);
+  }
+  .mg-sname { font-family: var(--font-display); font-size: var(--t-md); }
+  .mg-slink:hover .mg-sname { color: var(--fundus); }
+  .mg-sgloss {
+    grid-column: 1;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink-soft);
+  }
+  .mg-sn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+  }
   .mg-kicker {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

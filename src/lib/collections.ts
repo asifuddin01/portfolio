@@ -417,6 +417,43 @@ export async function getHomePlates(): Promise<{
 }
 
 /** Papers, newest first, with the published ones ahead of the drafts. */
+/**
+ * The shelves of the Bibliotheca, in reading order rather than alphabetical:
+ * a reader working through them wants the statistics before the deep learning
+ * and the primer before Pearl. The order here is the order on the page.
+ */
+export const SHELVES = [
+  { id: 'foundations', label: 'Foundations', gloss: 'statistics and learning theory' },
+  { id: 'deep-learning', label: 'Deep learning', gloss: 'the mechanisms, and how to build them' },
+  { id: 'causality', label: 'Causality', gloss: 'the ladder, and what climbs it' },
+  { id: 'decisions', label: 'Decisions', gloss: 'optimisation, control and agents' },
+] as const;
+
+export type Shelf = (typeof SHELVES)[number]['id'];
+
+/** Books, grouped by shelf. Empty shelves are dropped rather than shown bare. */
+export async function getBibliotheca(): Promise<
+  { shelf: (typeof SHELVES)[number]; books: CollectionEntry<'bibliotheca'>[] }[]
+> {
+  const all = (await getCollection('bibliotheca')).filter(visible);
+  return SHELVES
+    .map((shelf) => ({
+      shelf,
+      books: all
+        .filter((b) => b.data.shelf === shelf.id)
+        .sort(
+          (a, b) =>
+            a.data.order - b.data.order || a.data.title.localeCompare(b.data.title)
+        ),
+    }))
+    .filter((g) => g.books.length > 0);
+}
+
+/** How many books are on the shelves. Used for the count on /marginalia. */
+export async function countBooks(): Promise<number> {
+  return (await getCollection('bibliotheca')).filter(visible).length;
+}
+
 export async function getPapers(): Promise<CollectionEntry<'papers'>[]> {
   const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3 };
   const all = await getCollection('papers');
