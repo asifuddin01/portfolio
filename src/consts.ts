@@ -10,11 +10,14 @@ export const GITHUB = 'https://github.com/asifuddin01';
 export const LINKEDIN = 'https://linkedin.com/in/md-asif-uddin01';
 
 /**
- * The primary nav. No entry for the home page: the wordmark to its left is
- * already a link there, and two controls doing the same thing costs a slot
- * without buying anything.
+ * The primary nav. Frontispiece is the home page, which the wordmark to its
+ * left also reaches; the duplicate is deliberate, so the way back is named in
+ * the row a reader is already scanning and not only in the wordmark.
+ * It must stay first: `isActive` matches by prefix, so the '/' entry is the
+ * one case the header special-cases to avoid marking every page current.
  */
 export const NAV = [
+  { href: '/', label: 'Frontispiece' },
   { href: '/elementa', label: 'Elementa' },
   { href: '/papers', label: 'Papers' },
   { href: '/tabulae', label: 'Tabulae' },

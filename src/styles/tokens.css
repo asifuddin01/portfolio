@@ -48,9 +48,11 @@
 
   /* ---- Type scale (rem, root 16px) ---- */
   --t-xs:   0.8125rem;
-  /* The header row only. A shade under --t-xs so the nav sits back from
-     the name without the rest of the site's mono lettering moving. */
-  --t-nav:  0.75rem;
+  /* The header row only — nav links and the theme toggle, never the wordmark.
+     A shade under --t-xs so the nav sits back from the name without the rest
+     of the site's mono lettering moving, and small enough that seven entries
+     plus the toggle hold one row down to 1024px. */
+  --t-nav:  0.6875rem;
   --t-sm:   0.875rem;
   --t-base: 1rem;
   --t-md:   1.1875rem;
