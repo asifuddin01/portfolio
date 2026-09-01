@@ -74,7 +74,10 @@ const CORPUS = {
    discriminating, not just returning whatever is topically nearby. */
 const EXAMPLES = [
   'How does retrieval-augmented generation reduce hallucination?',
-  'Do deep-learning models outperform linear baselines at predicting perturbation effects?',
+  // Nobody guesses that a literature tool will answer this, so one of the
+  // four says it outright. The site is a source like any other here — the
+  // answer arrives cited, and the citation is a page anyone can open.
+  'What research does the author do, and what is he working on now?',
   'What approaches exist for privacy-preserving diabetic retinopathy classification?',
   'How do vision-language models align image and text representations?',
 ];
@@ -85,6 +88,7 @@ const PIPELINE = [
   { step: 'Retrieve', detail: 'BM25 and dense, fused by rank rather than by score' },
   { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
   { step: 'Reach out', detail: 'arXiv, PubMed and OpenAlex when the question asks what is current' },
+  { step: 'Read this site', detail: 'when the question is about me, fetched fresh so it cannot go stale' },
   { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
   { step: 'Add', detail: 'your own PDFs, indexed for your session and nobody else’s' },
 ];
@@ -168,7 +172,9 @@ const FINDINGS = [
         A research assistant that reads papers and shows its working. Ask it
         something — or hand it your own PDF — and every claim comes back bound
         to the passage it came from. When nothing supports an answer it says
-        so, which is the harder half.
+        so, which is the harder half. It will also answer questions about me:
+        it reads this site, so it knows what I am working on as of the last
+        time I changed anything here.
       </p>
       <p class="rl-sub" id="rl-stats">
         {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
@@ -226,7 +232,10 @@ const FINDINGS = [
           Local answers only from the indexed corpus, which is fixed and cannot
           say what a field is doing now. Global also searches the live
           literature; those results are abstracts, not full text, and are
-          marked as such.
+          marked as such. A question about me is answered from this site under
+          either setting — it is not a literature, so the switch does not apply
+          to it — and those passages are marked <em>site</em>, because what a
+          person writes about their own work is not a reviewed finding.
         </p>
         <fieldset class="rl-models" id="rl-models" hidden>
           <legend class="rl-legend">Answer with</legend>
@@ -845,13 +854,28 @@ const FINDINGS = [
           // outright; the local API is read from the chunk id.
           const isLive =
             c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''));
+          // The author's own site, which is a self-description and not a
+          // finding. Badged separately from `live` so the two are never
+          // conflated: one is a paper's abstract, the other is a person
+          // writing about themselves.
+          const isSite =
+            c.site === true || /^site:/.test(String(c.chunk_id ?? ''));
+          // "p" belongs in front of a page number and nowhere else. Without
+          // this the label read "pabstract" for live results and "pwebsite"
+          // for the site.
+          const where = String(c.pages ?? '');
+          const loc = /^\d/.test(where) ? `p${where}` : where;
+          const title = escape(c.doc_title ?? '');
           return `
             <li class="rl-cite">
               <span class="rl-cite-n">[${c.marker}]${
                 isLive ? ' <span class="rl-live">live</span>' : ''
+              }${isSite ? ' <span class="rl-site">site</span>' : ''
               }${c.yours ? ' <span class="rl-yours">yours</span>' : ''}</span>
-              <span class="rl-cite-src">${escape(c.doc_title ?? '')}</span>
-              <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · p${escape(c.pages ?? '')}</span>
+              <span class="rl-cite-src">${
+                c.url ? `<a class="link" href="${escape(c.url)}">${title}</a>` : title
+              }</span>
+              <span class="rl-cite-loc">${escape(c.section_heading ?? '')} · ${escape(loc)}</span>
               <blockquote class="rl-quote">${escape(c.quote ?? '')}</blockquote>
             </li>`;
         })
@@ -862,9 +886,21 @@ const FINDINGS = [
           c.live === true || /^(arxiv|pubmed|openalex):/.test(String(c.chunk_id ?? ''))
       ).length;
 
+      // Says who wrote the answer and what it was written from. When the
+      // evidence is the site, that is named outright rather than left for a
+      // reader to infer from the citations: an answer about a person, sourced
+      // from that person's own page, should say so under itself.
+      const aboutAuthor =
+        data.about_author === true ||
+        (data.citations ?? []).some((c: Record<string, any>) =>
+          c.site === true || /^site:/.test(String(c.chunk_id ?? ''))
+        );
+
       const timing =
         `<p class="rl-timing">${escape(data.model ?? '')} · retrieval ${Math.round(data.retrieval_ms)} ms · generation ${Math.round(data.generation_ms)} ms${
           liveCount ? ` · ${liveCount} live` : ''
+        }${
+          aboutAuthor ? ' · about the author, from asifuddin.com' : ''
         }</p>`;
 
       // The writer can be unavailable while retrieval is fine — a spent GPU
@@ -1184,15 +1220,26 @@ const FINDINGS = [
   .rl-cite-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
   /* Marks a citation that came from a live search rather than the indexed
      corpus, so an abstract is never mistaken for a passage from a full paper. */
-  .rl-live {
+  .rl-live,
+  .rl-site {
     font-family: var(--font-mono);
     font-size: 0.85em;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--verdigris);
-    border: 1px solid color-mix(in srgb, var(--verdigris) 45%, transparent);
     padding: 0 0.3em;
     border-radius: 2px;
+  }
+  .rl-live {
+    color: var(--verdigris);
+    border: 1px solid color-mix(in srgb, var(--verdigris) 45%, transparent);
+  }
+  /* Brass rather than verdigris: a different colour for a different kind of
+     claim. Live means an abstract from a literature index; site means the
+     author describing his own work, which is a weaker sort of evidence and
+     should not be able to pass for the other at a glance. */
+  .rl-site {
+    color: var(--brass-text);
+    border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
   }
   .rl-timing {
     font-family: var(--font-mono);
