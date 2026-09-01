@@ -43,7 +43,7 @@ import { AUTHOR } from '../consts';
   .nf-lede { font-size: var(--body-size); line-height: var(--body-leading); }
   .nf-nav {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
     gap: 0;
     max-width: 62rem;
     border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);

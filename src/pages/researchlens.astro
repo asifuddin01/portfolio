@@ -928,7 +928,12 @@ docker compose up</code></pre>
 </script>
 
 <style>
-  .rl { display: grid; gap: 2.4rem; }
+  /* minmax(0, 1fr), not the implicit `auto`: an auto column floors at the
+     widest child's min-content, and .rl-row's 22rem input basis set that floor
+     at 558px. Every section then stretched to 558 inside a 335px phone and the
+     page scrolled sideways. A definite column also lets the percentages inside
+     resolve against the real width, so the input wraps instead of overflowing. */
+  .rl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.4rem; }
 
   .rl-eyebrow {
     font-family: var(--font-mono);

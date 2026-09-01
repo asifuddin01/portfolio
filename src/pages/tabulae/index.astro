@@ -48,7 +48,7 @@ const meta = await getEntry('site', 'tabulae');
   .tb-lede { font-size: var(--body-size); line-height: var(--body-leading); }
   .tb-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
     gap: 3rem 2.5rem;
     align-items: start;
   }

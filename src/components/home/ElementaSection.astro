@@ -72,7 +72,10 @@ const recent = (await getPropositionContexts())
   .el-book-row {
     display: grid;
     color: var(--ink);
-    grid-template-columns: 7rem 12rem 1fr;
+    /* minmax(0, …) not 1fr: a bare `1fr` floors at the track's min-content,
+       so the longest word in `covers` sets a width the row cannot go below
+       and the whole page gains a horizontal scrollbar. */
+    grid-template-columns: 7rem 12rem minmax(0, 1fr);
     gap: 1rem;
     align-items: baseline;
     padding: 0.75rem 0;
@@ -104,7 +107,10 @@ const recent = (await getPropositionContexts())
   .el-recent-link:hover .el-recent-st { color: var(--fundus); }
   .el-sep { color: var(--brass-text); }
 
+  /* .el-book is the <li>; the grid is the <a> inside it. Naming the wrong one
+     here left the three columns at their desktop widths on every phone: 7rem
+     + 12rem + gap is 336px before the third column has said anything. */
   @media (max-width: 700px) {
-    .el-book { grid-template-columns: 1fr; gap: 0.15rem; }
+    .el-book-row { grid-template-columns: 1fr; gap: 0.15rem; }
   }
 </style>
