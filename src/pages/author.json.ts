@@ -256,17 +256,23 @@ export const GET: APIRoute = async () => {
     documents: raw,
   };
 
+  /**
+   * Only Content-Type is worth setting here, and even that is advisory.
+   *
+   * The site builds static, so this route runs at build time and Astro writes
+   * the body to dist/author.json — the Response's headers are discarded with
+   * the rest of the object. Checked against the deployed file rather than
+   * assumed: it comes back `max-age=0, must-revalidate` from Cloudflare's own
+   * asset handling, and carries no Access-Control-Allow-Origin.
+   *
+   * Neither absence matters, which is why this is a comment and not a fix.
+   * Freshness is the consumer's business: ResearchLens caches for fifteen
+   * minutes and revalidates against the ETag Cloudflare generates, so a
+   * Cache-Control from here would be advice nobody was waiting for. And CORS
+   * governs browsers, not servers — the Space fetches this from Python, and
+   * the only browser that wants it is on this origin already.
+   */
   return new Response(JSON.stringify(body, null, 2), {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      /**
-       * Public and cacheable, but revalidated often: this is the file that
-       * makes "ResearchLens knows what the site knows" true, and a long cache
-       * would make the promise false for as long as it held.
-       */
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-      // The Space fetches this cross-origin.
-      'Access-Control-Allow-Origin': '*',
-    },
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });
 };
