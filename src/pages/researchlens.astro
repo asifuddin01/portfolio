@@ -264,6 +264,24 @@ const FINDINGS = [
             <input type="file" id="rl-file" accept="application/pdf,.pdf" multiple />
             <span>Add your own PDFs</span>
           </label>
+          {/* Indexing a 42-page paper took 58 seconds on the hosted demo,
+              during which the only feedback was one line of text that never
+              changed. That is indistinguishable from broken, and it is why
+              this exists. The upload half is a real percentage from the
+              browser's own progress events; the reading half cannot be, so it
+              says what it is doing and how long it has been doing it rather
+              than inventing a number. */}
+          <div class="rl-prog" id="rl-prog" hidden>
+            <div class="rl-prog-head">
+              <span class="rl-prog-stage" id="rl-prog-stage">Uploading</span>
+              <span class="rl-prog-of" id="rl-prog-of"></span>
+              <span class="rl-prog-time" id="rl-prog-time"></span>
+            </div>
+            <div class="rl-prog-track">
+              <div class="rl-prog-bar" id="rl-prog-bar"></div>
+            </div>
+            <p class="rl-prog-file" id="rl-prog-file"></p>
+          </div>
           <p class="rl-file-note" id="rl-file-note">
             Parsed and indexed for your session only — never written to disk,
             never added to the public corpus, dropped after an hour idle.
@@ -694,7 +712,11 @@ const FINDINGS = [
     }
   }
 
-  async function addPaper(where: Backend, file: File): Promise<any> {
+  async function addPaper(
+    where: Backend,
+    file: File,
+    onProgress?: (fraction: number) => void,
+  ): Promise<any> {
     if (!where.viaSpace) {
       const body = new FormData();
       body.append('file', file);
@@ -706,32 +728,132 @@ const FINDINGS = [
     }
     // Gradio takes an upload first and gives back a server-side path, which is
     // then passed to the endpoint like any other argument.
-    const body = new FormData();
-    body.append('files', file);
-    const up = await fetch(`${where.api}/gradio_api/upload`, { method: 'POST', body });
-    if (!up.ok) throw new Error(`upload ${up.status}`);
-    const [path] = await up.json();
+    //
+    // XHR rather than fetch, for one reason: `upload.onprogress` reports bytes
+    // actually sent. fetch() has no equivalent that is usable here, and a
+    // 32MB paper over a slow line is exactly when a reader needs to see that
+    // something is happening.
+    const path = await new Promise<string>((resolve, reject) => {
+      const body = new FormData();
+      body.append('files', file);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${where.api}/gradio_api/upload`);
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) onProgress?.(e.loaded / e.total);
+      });
+      xhr.addEventListener('load', () => {
+        if (xhr.status !== 200) return reject(new Error(`upload ${xhr.status}`));
+        try {
+          resolve(JSON.parse(xhr.responseText)[0]);
+        } catch {
+          reject(new Error('the upload returned something unreadable'));
+        }
+      });
+      xhr.addEventListener('error', () => reject(new Error('the upload failed')));
+      xhr.addEventListener('abort', () => reject(new Error('the upload was cancelled')));
+      xhr.send(body);
+    });
+    onProgress?.(1);
     return callSpace(where.api, 'add_paper', [path, session]);
   }
+
+  /**
+   * The upload progress bar.
+   *
+   * Two stages, honest about which is which. Uploading is a real fraction
+   * from the browser's own progress events. Reading is not — the Space
+   * parses, chunks and embeds behind one call that returns when it is done,
+   * and there is no progress to report from inside it. So that stage shows an
+   * indeterminate bar and a running clock instead of a number nobody
+   * measured. A bar that pretends to know is worse than one that says it
+   * does not: this system's whole claim is that it does not make things up.
+   */
+  const progress = (() => {
+    const box = document.getElementById('rl-prog');
+    const stage = document.getElementById('rl-prog-stage');
+    const ofEl = document.getElementById('rl-prog-of');
+    const timeEl = document.getElementById('rl-prog-time');
+    const bar = document.getElementById('rl-prog-bar');
+    const nameEl = document.getElementById('rl-prog-file');
+    let total = 0;
+    let startedAt = 0;
+    let ticker: ReturnType<typeof setInterval> | undefined;
+
+    const tick = () => {
+      if (!timeEl) return;
+      const s = Math.round((Date.now() - startedAt) / 1000);
+      timeEl.textContent = s >= 1 ? `${s}s` : '';
+    };
+
+    return {
+      start(files: File[]) {
+        total = files.length;
+        startedAt = Date.now();
+        if (box) box.hidden = false;
+        clearInterval(ticker);
+        ticker = setInterval(tick, 1000);
+        tick();
+      },
+      file(i: number, f: File) {
+        if (ofEl) ofEl.textContent = total > 1 ? `${i + 1} of ${total}` : '';
+        if (nameEl) nameEl.textContent = `${f.name} · ${(f.size / 1e6).toFixed(1)} MB`;
+        if (bar) {
+          bar.classList.remove('is-reading');
+          bar.style.width = '0%';
+        }
+        if (stage) stage.textContent = 'Uploading';
+      },
+      uploading(fraction: number) {
+        if (stage) stage.textContent = 'Uploading';
+        if (bar) {
+          bar.classList.remove('is-reading');
+          bar.style.width = `${Math.round(fraction * 100)}%`;
+        }
+      },
+      reading() {
+        // Sent, and now being read. The bar goes indeterminate because the
+        // honest answer to "how far along" is that nobody knows — a 42-page
+        // paper took 58 seconds on the hosted demo and a short one takes two.
+        if (stage) stage.textContent = 'Reading the paper — parsing, chunking, indexing';
+        if (bar) {
+          bar.style.width = '100%';
+          bar.classList.add('is-reading');
+        }
+      },
+      stop() {
+        clearInterval(ticker);
+        ticker = undefined;
+        if (box) box.hidden = true;
+        if (bar) {
+          bar.classList.remove('is-reading');
+          bar.style.width = '0%';
+        }
+      },
+    };
+  })();
 
   fileInput?.addEventListener('change', async () => {
     const files = [...(fileInput.files ?? [])];
     if (!files.length || !fileNote) return;
 
-    fileNote.textContent = `Reading ${files.length} file(s)…`;
+    progress.start(files);
     let where: Backend;
     try {
       where = await connect();
     } catch {
+      progress.stop();
       fileNote.textContent = 'Nothing is answering right now, so there is nowhere to put a paper yet.';
       return;
     }
 
     const added: string[] = [];
     const failed: string[] = [];
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      progress.file(i, f);
       try {
-        const r = await addPaper(where, f);
+        const r = await addPaper(where, f, (frac) => progress.uploading(frac));
+        progress.reading();
         if (r.error) {
           failed.push(`${f.name}: ${r.error}`);
         } else {
@@ -742,6 +864,7 @@ const FINDINGS = [
         failed.push(`${f.name}: ${String(err)}`);
       }
     }
+    progress.stop();
 
     fileInput.value = '';
     await refreshMine(where);
@@ -1202,6 +1325,61 @@ const FINDINGS = [
   }
   .rl-file span:hover { border-style: solid; border-color: var(--brass); }
   .rl-file input[type='file']:focus-visible + span { outline: 2px solid var(--brass); }
+  /* The upload progress bar. Two stages: a real percentage while bytes are
+     going up, then an indeterminate sweep while the Space reads the paper —
+     because there is no progress to report from inside that call, and a bar
+     that invents one would be the one dishonest thing on this page. */
+  .rl-prog { margin: 0.6rem 0 0.2rem; max-width: 34rem; }
+  .rl-prog-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    color: var(--brass-text);
+    margin-bottom: 0.35rem;
+  }
+  .rl-prog-stage { flex: 1 1 auto; min-width: 0; }
+  .rl-prog-of, .rl-prog-time { color: var(--ink-soft); flex: 0 0 auto; }
+  .rl-prog-track {
+    height: 3px;
+    background: color-mix(in srgb, var(--brass) 22%, transparent);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .rl-prog-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--fundus);
+    transition: width 180ms var(--ease-out);
+  }
+  /* Indeterminate: the fill is full width and a lighter band travels across
+     it, so the bar reads as working rather than as finished. */
+  .rl-prog-bar.is-reading {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--fundus) 35%, transparent) 0%,
+      var(--fundus) 45%,
+      color-mix(in srgb, var(--fundus) 35%, transparent) 100%
+    );
+    background-size: 220% 100%;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rl-prog-bar.is-reading { animation: rl-sweep 1.5s linear infinite; }
+  }
+  @keyframes rl-sweep {
+    from { background-position: 120% 0; }
+    to   { background-position: -120% 0; }
+  }
+  .rl-prog-file {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.35rem 0 0;
+    overflow-wrap: anywhere;
+  }
+
   .rl-file-note {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

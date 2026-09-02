@@ -28,3 +28,4 @@ public/admin/sveltia-cms.js
 
 # CV, regenerated from content on every build
 public/cv/
+.env.local
