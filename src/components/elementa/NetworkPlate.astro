@@ -9,6 +9,10 @@
  * wires, in a different colour, and the edges that carry the most of it are
  * the ones that would move most under an update.
  *
+ * It loops, and the caption says so, because one pair of passes is not
+ * training — the repetition is. A plate that ran once and stopped would be a
+ * diagram of a single step, which is the thing nobody actually does.
+ *
  * Nothing is illustrated. Weights come from a seeded generator, activations
  * are what this network computes for a fixed input, and the edge intensities
  * on the way back are real gradients from one backward pass — all in
@@ -32,19 +36,28 @@ import '../../styles/math.css';
  * rest of the corpus (spec §5.8) — a malformed formula stops the build rather
  * than shipping as a red string nobody notices.
  */
-const FORMULAE: { label: string; tex: string }[] = [
+type Eq = { label: string; tex: string };
+
+/** What the forward pass just did — shown once it has crossed. */
+const FORWARD_EQ: Eq[] = [
   { label: 'the unit', tex: String.raw`z = \sum_{i=1}^{n} w_i x_i + b = \mathbf{w} \cdot \mathbf{x} + b` },
   { label: 'activation', tex: String.raw`a = f(z)` },
   { label: 'ReLU', tex: String.raw`f(z) = \max(0,\, z)` },
   { label: 'logistic', tex: String.raw`f(z) = \frac{1}{1 + e^{-z}}` },
-  { label: 'squared error', tex: String.raw`L = \tfrac{1}{2}\,(\hat{y} - y)^2` },
+];
+
+/** What the backward pass just did — shown once the gradient has returned. */
+const BACKWARD_EQ: Eq[] = [
+  { label: 'the loss', tex: String.raw`L = \tfrac{1}{2}\,(\hat{y} - y)^2` },
   { label: 'the update', tex: String.raw`w_{\text{new}} = w_{\text{old}} - \alpha \, \frac{\partial L}{\partial w_{\text{old}}}` },
 ];
 
-const RENDERED = FORMULAE.map((f) => ({
-  ...f,
-  html: katex.renderToString(f.tex, { displayMode: false, throwOnError: true }),
-}));
+const render = (e: Eq) => ({
+  ...e,
+  html: katex.renderToString(e.tex, { displayMode: false, throwOnError: true }),
+});
+const FWD_EQ = FORWARD_EQ.map(render);
+const BWD_EQ = BACKWARD_EQ.map(render);
 
 const LAYERS = build(7);
 const W = 300;
@@ -168,12 +181,19 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     )}
   </svg>
 
-  {/* One formula per completed loop. A fixed-height slot, because six stacked
-      absolutes with nothing reserving space would collapse the caption upward
-      and the whole plate would jog every seven seconds. */}
+  {/* Two formulae per cycle, each naming the pass that has just finished — the
+      forward computation once signal has crossed, the loss and the update once
+      gradient has returned. One slot, because they never show at the same
+      time, with its height reserved so the caption below never jogs. */}
   <div class="np-eq" aria-hidden="true">
-    {RENDERED.map((f, i) => (
-      <span class="np-eq-i" style={`--i:${i}`}>
+    {FWD_EQ.map((f, i) => (
+      <span class="np-eq-i np-eq-f" style={`--i:${i}`}>
+        <span class="np-eq-l">{f.label}</span>
+        <span class="np-eq-m" set:html={f.html} />
+      </span>
+    ))}
+    {BWD_EQ.map((f, i) => (
+      <span class="np-eq-i np-eq-b" style={`--i:${i}`}>
         <span class="np-eq-l">{f.label}</span>
         <span class="np-eq-m" set:html={f.html} />
       </span>
@@ -182,17 +202,25 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
 
   <figcaption class="np-cap" id="np-cap">
     <span class="np-cap-n">Figura II</span>
-    <span class="np-cap-t">One forward pass, one backward pass</span>
+    <span class="np-cap-t">One forward pass, one backward pass — and it continues</span>
     <span class="np-cap-d">
       Signal crosses; the units take their values. Gradient returns along the
       same wires, and the bright ones are where the loss is most sensitive —
-      which is to say, where an update would move things.
+      which is to say, where an update would move things. Then it happens
+      again. The repetition is the training.
     </span>
   </figcaption>
 </figure>
 
 <style>
-  .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 7600ms; }
+  /* 9.5s, up from 7.6. The cycle now has to hold four phases rather than
+     three — pass, formula, pass, formula — and at the old length the window
+     after the forward pass was about a second, which is not long enough to
+     read `z = \sum w_i x_i + b`. */
+  /* --hop is one layer-to-layer crossing. Three of them make the forward pass,
+     and a packet does not leave a layer until the packets feeding it have
+     arrived — which is the only order a network actually computes in. */
+  .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 9500ms; --hop: 760ms; }
   .np-svg { width: 100%; height: auto; display: block; overflow: visible; }
 
   .np-wire { stroke: var(--brass); }
@@ -254,7 +282,11 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
   /* With motion disabled nothing cycles, so the first equation stands rather
      than the slot sitting empty under a network with no explanation. */
   @media (prefers-reduced-motion: reduce) {
-    .np-eq-i:first-child { opacity: 1; }
+    /* Nothing cycles, so one from each phase stands rather than the slot
+       sitting empty under a network with no explanation. */
+    .np-eq { min-height: 5rem; align-content: center; gap: 0.35rem; }
+    .np-eq-i { position: static; opacity: 1; }
+    .np-eq-f:not(:first-of-type), .np-eq-b:not(:first-of-type) { display: none; }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -270,21 +302,37 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     /* A packet is a short dash travelling the length of its own wire. The
        pattern is `dash, len`, so exactly one dash is ever on a wire, and the
        offset carries it from one end to the other. */
+    /* One hop at a time.
+       `--l` is the crossing's index — 1, 2, 3 going forward, and reversed for
+       the return — so `(--l - 1) * --hop` holds each layer back until the one
+       feeding it has finished. The stagger used to be 140ms against a 2280ms
+       traversal, which is not a wave: every layer was lit at once and the
+       whole network flashed. A hop is now the full width of a crossing, so
+       the second layer starts as the first arrives. */
     :global(.js) .np.is-revealed .np-fwd {
       stroke-dasharray: 7 var(--len);
       animation: np-fwd var(--cycle) linear infinite;
-      /* Layer by layer, so the wave crosses rather than flashing at once. */
-      animation-delay: calc(900ms + var(--l) * 230ms);
+      animation-delay: calc(900ms + (var(--l) - 1) * var(--hop));
     }
     :global(.js) .np.is-revealed .np-bwd {
       stroke-dasharray: 7 var(--len);
       animation: np-bwd var(--cycle) linear infinite;
-      animation-delay: calc(900ms + var(--l) * 230ms);
+      animation-delay: calc(900ms + (var(--l) - 1) * var(--hop));
     }
 
-    /* Forward occupies the first third; the return, the second. The gap
-       between them is deliberate — the two passes are separate events and
-       running them together would say something false about training. */
+    /* The cycle in four beats, as fractions of --cycle:
+         0–24%   signal crosses
+         30–46%  what the forward pass just computed
+         48–70%  gradient returns
+         76–97%  the loss, and the update it implies
+       Everything shares one 900ms origin, and the gaps are sized against the
+       *staggered* end of each pass rather than its nominal one. That is what
+       went wrong first: layers are offset from each other, so the last
+       packet lands well after the keyframe percentage suggests, and the
+       formula was opening while the final wire was still lighting. With a
+       140ms stagger the last forward packet lands at 3.6s and the formula
+       opens at 3.75s; the last backward packet lands at 8.0s and its formula
+       opens at 8.1s. Verified by sampling, not by arithmetic alone. */
     /* The offset runs +dash to -len, and getting this backwards is why the
        wires looked dead.
        `stroke-dashoffset: d` shifts the pattern backwards along the path, so
@@ -303,56 +351,71 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
        at 7. Both times the opacity animated correctly, so a check for "how
        many are lit" reported success while the wires were visibly dead.
        A plain custom property has nothing left to get wrong. */
+    /* A pulse now spans one hop — 8% of the cycle, 760ms — rather than the
+       whole pass. Three hops staggered by the same 8% make the forward phase,
+       so the packets arrive at a layer and leave it in order. */
     @keyframes np-fwd {
       0%   { stroke-dashoffset: 7; opacity: 0; }
-      3%   { opacity: 1; }
-      27%  { opacity: 1; }
-      30%  { stroke-dashoffset: var(--end); opacity: 0; }
+      1%   { opacity: 1; }
+      7%   { opacity: 1; }
+      8%   { stroke-dashoffset: var(--end); opacity: 0; }
       100% { stroke-dashoffset: var(--end); opacity: 0; }
     }
     @keyframes np-bwd {
-      0%, 44% { stroke-dashoffset: 7; opacity: 0; }
-      47%     { opacity: 1; }
-      73%     { opacity: 1; }
-      76%     { stroke-dashoffset: var(--end); opacity: 0; }
+      0%, 48% { stroke-dashoffset: 7; opacity: 0; }
+      49%     { opacity: 1; }
+      55%     { opacity: 1; }
+      56%     { stroke-dashoffset: var(--end); opacity: 0; }
       100%    { stroke-dashoffset: var(--end); opacity: 0; }
     }
 
-    /* One formula per loop, six loops to a rotation.
-       Each equation runs a 6x-cycle animation offset by one cycle, so exactly
-       one is visible at a time and it appears in the quiet after that loop's
-       backward pass — 72% to 100% of its own cycle, which is 12% to 16.67% of
-       the rotation. Six of these on one timeline rather than a script, so the
-       plate still costs no JavaScript. */
-    :global(.js) .np.is-revealed .np-eq-i {
-      animation: np-eq calc(var(--cycle) * 6) linear infinite;
+    /* Two rotations, not one. The four forward formulae take four cycles to
+       come round; the two backward ones take two. Each element runs its own
+       group's period offset by one cycle, so exactly one of the six is ever
+       showing and each appears in the window belonging to the pass it
+       describes. Still one timeline and no script.
+
+       The percentages are that window expressed against the group's period:
+       28–44% of a single cycle is 7–11% of four, and 75–97% of a single cycle
+       is 37.5–48.5% of two. */
+    :global(.js) .np.is-revealed .np-eq-f {
+      animation: np-eq-f calc(var(--cycle) * 4) linear infinite;
       animation-delay: calc(900ms + var(--i) * var(--cycle));
     }
-    /* 12.9% to 17.9% of the rotation — 5.9s to 8.2s within its own cycle, so
-       it arrives as the backward pass finishes and holds through the quiet
-       into the head of the next loop. 2.3 seconds visible: the first version
-       gave 1.5s, which is enough for `a = f(z)` and not enough for the update
-       rule. The next formula does not open until 13.3s, so they never meet. */
-    @keyframes np-eq {
-      0%, 11.9%    { opacity: 0; transform: translateY(3px); }
-      12.9%, 16.9% { opacity: 1; transform: none; }
-      17.9%, 100%  { opacity: 0; transform: translateY(-3px); }
+    :global(.js) .np.is-revealed .np-eq-b {
+      animation: np-eq-b calc(var(--cycle) * 2) linear infinite;
+      animation-delay: calc(900ms + var(--i) * var(--cycle));
+    }
+    @keyframes np-eq-f {
+      0%, 7.1%     { opacity: 0; transform: translateY(3px); }
+      7.5%, 11.1%  { opacity: 1; transform: none; }
+      11.5%, 100%  { opacity: 0; transform: translateY(-3px); }
+    }
+    @keyframes np-eq-b {
+      0%, 37.6%    { opacity: 0; transform: translateY(3px); }
+      38%, 48.2%   { opacity: 1; transform: none; }
+      48.5%, 100%  { opacity: 0; transform: translateY(-3px); }
     }
 
     /* Each unit brightens as the wave reaches it, and again on the way back. */
+    /* A unit brightens when its own inputs land, so the delay is its layer's
+       hop rather than a fixed offset. One peak, not two: a second peak timed
+       for the return would need the reverse layer order, and running both from
+       one keyframe set made the backward wave appear to travel forward. The
+       return is carried by the oxblood packets instead. */
     :global(.js) .np.is-revealed .np-fill {
       animation: np-lit var(--cycle) ease-in-out infinite;
-      animation-delay: calc(1000ms + var(--l) * 230ms);
+      animation-delay: calc(900ms + var(--l) * var(--hop));
       transform-box: fill-box;
       transform-origin: center;
     }
+    /* The peak sits at the moment this layer's inputs arrive, which the
+       per-layer delay has already placed correctly. */
     @keyframes np-lit {
-      0%, 8%    { transform: scale(1); }
-      16%       { transform: scale(1.5); }
-      26%       { transform: scale(1); }
-      58%       { transform: scale(1); }
-      66%       { transform: scale(1.32); }
-      76%, 100% { transform: scale(1); }
+      0%       { transform: scale(1); }
+      3%       { transform: scale(1.55); }
+      11%      { transform: scale(1); }
+      100%     { transform: scale(1); }
     }
   }
 </style>
