@@ -91,6 +91,7 @@ const PIPELINE = [
   { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
   { step: 'Reach out', detail: 'arXiv, PubMed and OpenAlex when the question asks what is current' },
   { step: 'Read this site', detail: 'when the question is about me, fetched fresh so it cannot go stale' },
+  { step: 'Read the Elementa', detail: 'my own textbook, so a question about the mechanism can be answered from it' },
   { step: 'Concede', detail: 'on a question about limits, the passages where authors state their own' },
   { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
   { step: 'Add', detail: 'your own PDFs, indexed for your session and nobody else’s' },
@@ -863,6 +864,10 @@ const FINDINGS = [
           // writing about themselves.
           const isSite =
             c.site === true || /^site:/.test(String(c.chunk_id ?? ''));
+          // A proposition from the Elementa. Badged apart from `site` because
+          // teaching and self-description are different kinds of claim.
+          const isBook =
+            c.textbook === true || /^elementa:/.test(String(c.chunk_id ?? ''));
           // "p" belongs in front of a page number and nowhere else. Without
           // this the label read "pabstract" for live results and "pwebsite"
           // for the site.
@@ -874,6 +879,7 @@ const FINDINGS = [
               <span class="rl-cite-n">[${c.marker}]${
                 isLive ? ' <span class="rl-live">live</span>' : ''
               }${isSite ? ' <span class="rl-site">site</span>' : ''
+              }${isBook ? ' <span class="rl-book">elementa</span>' : ''
               }${c.yours ? ' <span class="rl-yours">yours</span>' : ''}</span>
               <span class="rl-cite-src">${
                 c.url ? `<a class="link" href="${escape(c.url)}">${title}</a>` : title
@@ -1247,7 +1253,8 @@ const FINDINGS = [
   /* Marks a citation that came from a live search rather than the indexed
      corpus, so an abstract is never mistaken for a passage from a full paper. */
   .rl-live,
-  .rl-site {
+  .rl-site,
+  .rl-book {
     font-family: var(--font-mono);
     font-size: 0.85em;
     letter-spacing: 0.08em;
@@ -1266,6 +1273,12 @@ const FINDINGS = [
   .rl-site {
     color: var(--brass-text);
     border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  /* A third colour for a third kind of claim: live is a paper's abstract,
+     site is me describing my work, elementa is me explaining a mechanism. */
+  .rl-book {
+    color: var(--verdigris);
+    border: 1px solid color-mix(in srgb, var(--verdigris) 50%, transparent);
   }
   /* A recency question asked in Local. Marked as a limit of the setting, not
      as an error — nothing went wrong, the corpus simply cannot answer it. */

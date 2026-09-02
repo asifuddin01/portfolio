@@ -109,6 +109,44 @@ const CHAPTERS = [
     addEventListener('scroll', schedule, { passive: true });
     addEventListener('resize', schedule, { passive: true });
     update();
+
+    /**
+     * Reveal on approach, and while scrolling.
+     *
+     * The threshold is generous — a fifth of the window, at least 180px —
+     * because reaching for something you cannot see is imprecise, and a target
+     * that only appears once the pointer is already on it is no easier to find
+     * than one that never appears.
+     */
+    const rail = document.querySelector<HTMLElement>('.sr');
+    if (rail) {
+      let near = 0;
+      const proximity = (e: PointerEvent) => {
+        cancelAnimationFrame(near);
+        near = requestAnimationFrame(() => {
+          const edge = Math.max(180, window.innerWidth * 0.2);
+          rail.classList.toggle('is-near', e.clientX < edge);
+        });
+      };
+      addEventListener('pointermove', proximity, { passive: true });
+      /* Pointer gone from the window entirely — a rail left showing would sit
+         over a screenshot or a screen share for no reason. */
+      addEventListener('pointerleave', () => rail.classList.remove('is-near'));
+
+      /* `ReturnType<typeof setTimeout>` rather than number: the ambient types
+         here resolve to Node's Timeout, and pinning it to number does not
+         typecheck even though the browser returns one. */
+      let settle: ReturnType<typeof setTimeout>;
+      addEventListener(
+        'scroll',
+        () => {
+          rail.classList.add('is-scrolling');
+          clearTimeout(settle);
+          settle = setTimeout(() => rail.classList.remove('is-scrolling'), 1100);
+        },
+        { passive: true }
+      );
+    }
   }
 </script>
 
@@ -129,7 +167,31 @@ const CHAPTERS = [
       top: 50%;
       transform: translateY(-50%);
       z-index: 30;
+      /* Never a solid object. Even shown it is a watermark in the margin,
+         not a panel competing with the page it indexes. */
+      opacity: 0.85;
     }
+  }
+
+  /**
+   * Out of the way until it is wanted.
+   *
+   * Hidden while the pointer is elsewhere, revealed when it comes near the
+   * left edge — and revealed while scrolling too, which is the other moment
+   * navigation is wanted and the only thing that makes the rail discoverable
+   * at all. A control that appears solely when you happen to move the mouse to
+   * a corner you had no reason to visit is a control nobody finds.
+   *
+   * Only where hovering is possible. On a touch screen there is no pointer to
+   * be near or far, so the rail simply stays visible rather than becoming
+   * permanently invisible.
+   */
+  @media (min-width: 1080px) and (hover: hover) {
+    .sr { opacity: 0; pointer-events: none; }
+    .sr.is-near,
+    .sr.is-scrolling,
+    .sr:hover,
+    .sr:focus-within { opacity: 0.85; pointer-events: auto; }
   }
 
   .sr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
@@ -205,6 +267,12 @@ const CHAPTERS = [
   }
 
   @media (prefers-reduced-motion: no-preference) {
+    /* Slow out, quick in: appearing should feel immediate when you reach for
+       it, and leaving should not snatch itself away as the pointer drifts. */
+    .sr { transition: opacity 420ms var(--ease-out); }
+    .sr.is-near, .sr.is-scrolling, .sr:hover, .sr:focus-within {
+      transition-duration: 160ms;
+    }
     .sr-n { transition: opacity 200ms var(--ease-out), color 200ms var(--ease-out); }
     .sr-name {
       transition:
