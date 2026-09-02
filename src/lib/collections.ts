@@ -467,6 +467,14 @@ export async function getPapers(): Promise<CollectionEntry<'papers'>[]> {
     );
 }
 
+/** Papers added through /admin, in order. Drafts excluded in production. */
+export async function getLibrary(): Promise<CollectionEntry<'library'>[]> {
+  const all = await getCollection('library');
+  return all
+    .filter(visible)
+    .sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title));
+}
+
 /** Scoping reviews in progress, in reading order. */
 export async function getReviews(): Promise<CollectionEntry<'reviews'>[]> {
   const all = await getCollection('reviews');

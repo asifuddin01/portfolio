@@ -1,13 +1,14 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
-import { getPapers, getLectiones, getReviews } from '../../lib/collections';
+import { getPapers, getLectiones, getReviews, getLibrary } from '../../lib/collections';
 import { AUTHOR, toRoman } from '../../consts';
 
 const papers = await getPapers();
 const parts = await getLectiones();
 const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
 const reviews = await getReviews();
+const library = await getLibrary();
 
 /* A protocol is not a manuscript, and the label says which. */
 const STAGE: Record<string, string> = {
@@ -131,8 +132,38 @@ const LABEL: Record<string, string> = {
       </>
     )}
 
+    {library.length > 0 && (
+      <>
+        <h2 class="pp-part" id="library">
+          <span class="pp-part-n" aria-hidden="true">III</span>
+          <span class="pp-part-name">Library</span>
+          <span class="pp-part-gloss">Readable by the machine</span>
+        </h2>
+
+        <p class="pp-lede codex-measure">
+          Papers I have added for ResearchLens to read. It indexes them rather
+          than learning them, so anything it says from one arrives with a
+          citation to the passage it came from.
+        </p>
+
+        <ol class="pp-lib" data-reveal-stagger>
+          {library.map((b) => (
+            <li class="pp-lib-i">
+              <a class="pp-lib-t" href={b.data.pdf}>{b.data.title}</a>
+              <p class="pp-lib-m">
+                {[b.data.authors, b.data.year].filter(Boolean).join(' · ')}
+              </p>
+              {b.data.note && <p class="pp-lib-n">{b.data.note}</p>}
+            </li>
+          ))}
+        </ol>
+
+        <LesionRule />
+      </>
+    )}
+
     <h2 class="pp-part" id="lectiones">
-      <span class="pp-part-n" aria-hidden="true">III</span>
+      <span class="pp-part-n" aria-hidden="true">{library.length > 0 ? 'IV' : 'III'}</span>
       <span class="pp-part-name">Lectiones</span>
       <span class="pp-part-gloss">Everyone else's, in order</span>
     </h2>
@@ -167,6 +198,33 @@ const LABEL: Record<string, string> = {
 </BaseLayout>
 
 <style>
+  /* ---- The library ---------------------------------------------------- */
+  .pp-lib { list-style: none; margin: 0 0 2.4rem; padding: 0; display: grid; gap: 1.3rem; max-width: 64rem; }
+  .pp-lib-i {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    padding-top: 0.75rem;
+  }
+  .pp-lib-t {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  .pp-lib-t:hover { color: var(--fundus); }
+  .pp-lib-m {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    margin: 0.2rem 0 0;
+  }
+  .pp-lib-n {
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0.35rem 0 0;
+    max-width: var(--measure);
+  }
+
   /* ---- Reviews under way -------------------------------------------
      A protocol has no abstract to quote and no result to report, so the
      block is a label, a question and a short table of what it commits to.

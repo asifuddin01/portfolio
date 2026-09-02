@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import { AUTHOR } from '../consts';
-import { getPropositionContexts } from '../lib/collections';
+import { getLibrary, getPropositionContexts } from '../lib/collections';
 
 /**
  * ResearchLens — the public exhibit.
@@ -81,6 +81,18 @@ const CORPUS = {
  * is exactly what happened to the passage count above.
  */
 const PROPOSITIONS = (await getPropositionContexts()).length;
+
+/**
+ * Papers added since the bundle was built.
+ *
+ * The corpus above is fixed at deploy time; these are the ones uploaded
+ * through /admin, which the retrieval system fetches and indexes at run time.
+ * Added to the paper count here so the figure is right before the page has
+ * heard from the live instance — the passage count cannot be, because how many
+ * passages a PDF becomes is something only the parser knows. `#rl-stats` is
+ * replaced from /health as soon as that answers, and that number counts both.
+ */
+const ADDED = (await getLibrary()).length;
 
 /* Two from each half of the corpus. A question that can only be answered from
    one domain is the useful case to show: it demonstrates that retrieval is
@@ -194,13 +206,22 @@ const FINDINGS = [
         time I changed anything here.
       </p>
       <p class="rl-sub" id="rl-stats">
-        {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
+        {CORPUS.papers + ADDED} papers · {CORPUS.passages.toLocaleString('en')} passages —
         {' '}{CORPUS.field}.
       </p>
       <p class="rl-sub rl-sub-2">
         It also reads this site and the {PROPOSITIONS} propositions of the
         Elementa, so a question about me, or about a mechanism I have written
         up, is answered from those and cited to them.
+        {ADDED > 0 && (
+          <>
+            {' '}The last {ADDED === 1 ? 'paper' : `${ADDED} papers`} in the
+            list below {ADDED === 1 ? 'was' : 'were'} added after the index was
+            built, and {ADDED === 1 ? 'is' : 'are'} searchable anyway: the
+            system fetches and indexes them at run time rather than being
+            retrained on them.
+          </>
+        )}
       </p>
     </header>
 

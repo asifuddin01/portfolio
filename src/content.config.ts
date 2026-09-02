@@ -821,6 +821,40 @@ const reviews = defineCollection({
   }),
 });
 
+/**
+ * The library — papers added through /admin and indexed by ResearchLens.
+ *
+ * The PDF itself is committed to the repository and served from this origin,
+ * and the manifest at /library.json points at it. The retrieval system fetches
+ * that manifest, downloads what it has not seen, and parses it — the same path
+ * a reader's own upload already takes, which is why this needed a manifest
+ * rather than a new ingestion pipeline.
+ *
+ * A note on what this does and does not do: adding a paper makes it findable
+ * and quotable, with every claim still bound to a passage. It does not train
+ * anything. That is the property worth having — a paper added now is
+ * answerable now, and nothing it says can reach a reader without a citation
+ * pointing at the page it came from.
+ */
+const library = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/library' }),
+  schema: z.object({
+    order: z.number().int().min(1).default(1),
+    title: z.string(),
+    authors: z.string().default(''),
+    year: z.string().default(''),
+    /**
+     * Path to the committed PDF, written by the editor's file picker. A
+     * repository is a poor home for large binaries, so this is for papers
+     * worth carrying rather than for a whole reading pile.
+     */
+    pdf: z.string(),
+    /** One line on why it is in the library. Optional. */
+    note: optionalText,
+    status: z.enum(['draft', 'published']).default('published'),
+  }),
+});
+
 /** Education, read by both the vitae page and the generated CV. */
 const education = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/education' }),
@@ -889,7 +923,7 @@ const axioms = defineCollection({
 });
 
 export const collections = {
-  works, elementa, marginalia, lectiones, bibliotheca, reviews, site, art, books, instrumentarium,
+  works, elementa, marginalia, lectiones, bibliotheca, reviews, library, site, art, books, instrumentarium,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

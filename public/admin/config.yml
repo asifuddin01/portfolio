@@ -1587,6 +1587,65 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: library
+    label: Library — papers ResearchLens can read
+    label_singular: Paper
+    description: >-
+      Upload a PDF here and ResearchLens indexes it: it becomes searchable and quotable, and answers can cite the page it came from. Adding a paper does not train anything — the system reads it at question time, which is why a paper added now is answerable now and why every claim from it still arrives with a citation you can check. Papers appear on the Papers page and the counts on the ResearchLens page update on their own. Keep it to papers worth carrying: the PDF is committed to the repository, so a large pile makes the site slow to clone and slow to deploy.
+    folder: src/content/library
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    sortable_fields: [ order, title, year ]
+    media_folder: "../../../public/library"
+    public_folder: "/library"
+    fields:
+      - label: The PDF
+        name: pdf
+        widget: file
+        media_library:
+          config:
+            max_file_size: 26214400
+        hint: >-
+          The paper itself. Text PDFs only — a scan with no text layer parses to
+          nothing, and ResearchLens will say so rather than index an empty
+          document. 25MB limit.
+      - label: Title
+        name: title
+        widget: string
+        hint: "As it should appear in a citation."
+      - label: Authors
+        name: authors
+        widget: string
+        required: false
+        hint: 'Written out, e.g. "Vaswani et al." or the full list.'
+      - label: Year
+        name: year
+        widget: string
+        required: false
+      - label: Why it is here
+        name: note
+        widget: text
+        required: false
+        hint: "One line. Shown on the Papers page beside the title."
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — not indexed, not shown", value: draft }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
   - name: reviews
     label: Scoping reviews
     label_singular: Review
