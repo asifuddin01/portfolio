@@ -113,7 +113,7 @@ export const GET: APIRoute = async () => {
       id: 'axioms',
       kind: 'principles',
       title: `${AUTHOR} — the principles he works by`,
-      url: abs('/codex#axioms'),
+      url: abs('/home#axioms'),
       text: tidy(
         `${AUTHOR} states five maxims that govern how he works. ` +
         axioms.map((a) => `"${a.data.text}" (from ${a.data.cite}).`).join(' ')
@@ -173,7 +173,7 @@ export const GET: APIRoute = async () => {
       id: `project:${p.id}`,
       kind: 'project',
       title: p.data.title,
-      url: p.data.link ? abs(p.data.link) : abs('/codex#appendix'),
+      url: p.data.link ? abs(p.data.link) : abs('/home#appendix'),
       text: tidy(sentence(
         `${AUTHOR} built "${p.data.title}".`,
         p.data.summary

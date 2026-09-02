@@ -76,6 +76,13 @@ function rehypeProseDefaults() {
 export default defineConfig({
   site: SITE,
   trailingSlash: 'never',
+  /**
+   * /codex was the long page's address for about a day before it became
+   * /home. Short-lived, but it was live and linked, and a bookmark that
+   * 404s is a worse outcome than a redirect nobody needs. Kept because it
+   * costs one line; it can go once nothing points at it.
+   */
+  redirects: { '/codex': '/home' },
   build: { inlineStylesheets: 'auto' },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {

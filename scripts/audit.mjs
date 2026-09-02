@@ -26,6 +26,15 @@ for await (const file of walk('dist')) {
   if (file.includes(`dist${path.sep}admin${path.sep}`)) continue;
 
   const html = await readFile(file, 'utf8');
+
+  /**
+   * Redirect stubs are not documents. Astro writes a meta-refresh page for
+   * every entry in `redirects`, and holding it to the rules below reported
+   * three failures for a file whose entire job is to not be read: no h1, no
+   * lang, no <main>. Detected by the refresh tag rather than by path, so
+   * adding a redirect never means remembering to update an exclusion list.
+   */
+  if (/<meta\s+http-equiv=["']?refresh/i.test(html)) continue;
   const page = file.replace(/^dist/, '').replace(/index\.html$/, '') || '/';
 
   // one h1, no skipped levels
