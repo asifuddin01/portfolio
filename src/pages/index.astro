@@ -255,19 +255,31 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       requestAnimationFrame(tick);
     };
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          run(e.target as HTMLElement);
-          io.unobserve(e.target);
-        }
-      },
-      { rootMargin: '0px 0px -15% 0px' }
-    );
+    /* No negative rootMargin. The strip sits near the fold on a laptop, and a
+       -15% bottom inset put it *outside* the observer's box on first paint —
+       so four zeroes sat there until the reader scrolled, which reads as a
+       broken page rather than a pending animation. */
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        run(e.target as HTMLElement);
+        io.unobserve(e.target);
+      }
+    });
+
     for (const c of cells) {
-      c.textContent = (0).toFixed((c.dataset.count?.split('.')[1] ?? '').length);
-      io.observe(c);
+      const dp = (c.dataset.count?.split('.')[1] ?? '').length;
+      /* Zero it only if it is going to be animated up from zero. An element
+         already on screen is counted immediately, so it never shows a zero. */
+      const box = c.getBoundingClientRect();
+      const onScreen = box.top < window.innerHeight && box.bottom > 0;
+      if (onScreen) {
+        c.textContent = (0).toFixed(dp);
+        run(c);
+      } else {
+        c.textContent = (0).toFixed(dp);
+        io.observe(c);
+      }
     }
   }
 </script>

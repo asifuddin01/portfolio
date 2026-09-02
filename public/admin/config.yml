@@ -1896,13 +1896,66 @@ collections:
               number of plates — you add them from Tabulae and the text would go
               stale.
       - name: frontispiece
-        label: Frontispiece
+        label: Frontispiece — the landing page
         file: src/content/site/frontispiece.mdx
         extension: mdx
         format: frontmatter
+        description: >-
+          The page a stranger lands on. It is arranged around one question — can he build things that work — so the copy here should answer that and nothing else. The long version lives on the codex, reached by clicking your name.
         fields:
           - { label: Heading, name: title, widget: string }
-          - { label: Role line, name: role, widget: text }
+          - label: Tagline
+            name: tagline
+            widget: text
+            required: false
+            hint: >-
+              The line under your name on the landing page, and the description
+              search engines and Slack show. Lead with the engineering. One
+              sentence — a visitor reads it in two seconds or not at all.
+          - label: Role line
+            name: role
+            widget: text
+            hint: >-
+              The long scholarly line. Used on the codex and as a fallback if
+              the tagline is empty.
           - { label: Epigraph, name: epigraph, widget: text }
           - { label: Attributed to, name: attribution, widget: string }
           - { label: Location, name: location, widget: string }
+          - label: Now — the date
+            name: nowLabel
+            widget: string
+            required: false
+            hint: 'e.g. "September 2026". Undated, a "now" line reads as stale the moment it is not.'
+          - label: Now — what you are working on
+            name: now
+            widget: text
+            required: false
+            hint: >-
+              Two or three sentences on the current problem. This is the part of
+              a portfolio that shows momentum, and the part that is almost always
+              missing. Change it when the work changes.
+          - label: Evidence — the numbers under the hero
+            name: highlights
+            widget: list
+            required: false
+            label_singular: Fact
+            summary: "{{fields.value}} — {{fields.label}}"
+            hint: >-
+              Three or four facts worth a stranger's first ten seconds. Numbers
+              count up when they scroll into view, so a plain number reads best.
+              Each one should be checkable — link it to the page that proves it.
+            fields:
+              - label: Number
+                name: value
+                widget: string
+                hint: 'A plain number, e.g. "0.9422" or "101". Decimals are preserved exactly.'
+              - label: What it is
+                name: label
+                widget: text
+                hint: "One line. What the number measures, in words a non-specialist can follow."
+              - label: Link
+                name: href
+                widget: string
+                required: false
+                hint: "The page that proves it, e.g. /works/hierarchiretina. Defaults to the codex."
+
