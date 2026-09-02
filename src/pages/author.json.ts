@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import { AUTHOR, SITE, ROLE } from '../consts';
 import {
   getPapers, getProjects, getEducation, getMarginalia, getAxioms,
-  getContact, getBooks, getChapters, getBibliotheca,
+  getContact, getBooks, getChapters, getBibliotheca, getReviews,
 } from '../lib/collections';
 
 /**
@@ -78,13 +78,14 @@ export const GET: APIRoute = async () => {
 
   const [
     papers, projects, education, marginalia, axioms, contact, books, chapters,
-    works, siteText, shelves,
+    works, siteText, shelves, reviews,
   ] = await Promise.all([
     getPapers(), getProjects(), getEducation(), getMarginalia(), getAxioms(),
     getContact(), getBooks(), getChapters(),
     getCollection('works'),
     getCollection('site'),
     getBibliotheca(),
+    getReviews(),
   ]);
 
   const site = (id: string) => siteText.find((e) => e.id === id)?.data;
@@ -253,6 +254,27 @@ export const GET: APIRoute = async () => {
           .map((b) => `"${b.data.title}" by ${b.data.authors}${b.data.year ? ` (${b.data.year})` : ''} — ${b.data.note}`)
           .join(' '),
       )),
+    });
+  }
+
+  /* ---- Reviews under way ----------------------------------------------- */
+  for (const r of reviews) {
+    docs.push({
+      id: `review:${r.id}`,
+      kind: 'review-in-progress',
+      title: r.data.title,
+      url: abs('/papers#reviews'),
+      text: tidy(sentence(
+        `${AUTHOR} is running a scoping review, "${r.data.title}", in ${r.data.domain}.`,
+        r.data.question,
+        `It reports under ${r.data.framework}`,
+        r.data.registry && `and will be registered with ${r.data.registry}`,
+        // The stage is a claim about what has actually happened, so it is
+        // stated rather than left for a reader to assume from the rest.
+        `; the review is at the ${r.data.stage} stage.`,
+        r.data.instrument,
+        r.data.scale,
+      )).replace(/\s+;/, ';'),
     });
   }
 

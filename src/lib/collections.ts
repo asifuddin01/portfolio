@@ -467,6 +467,12 @@ export async function getPapers(): Promise<CollectionEntry<'papers'>[]> {
     );
 }
 
+/** Scoping reviews in progress, in reading order. */
+export async function getReviews(): Promise<CollectionEntry<'reviews'>[]> {
+  const all = await getCollection('reviews');
+  return all.filter(visible).sort((a, b) => a.data.order - b.data.order);
+}
+
 export async function getEducation(): Promise<CollectionEntry<'education'>[]> {
   return (await getCollection('education')).sort((a, b) => a.data.order - b.data.order);
 }

@@ -1586,6 +1586,97 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: reviews
+    label: Scoping reviews
+    label_singular: Review
+    description: >-
+      Reviews under way, shown on the Papers page between your own record and the reading course. Kept apart from Papers on purpose: a protocol is not a manuscript, and the Stage field is what says which. Every field here wants a short factual answer — the point of a review at this stage is what it commits to, and a paragraph about it would be longer than the commitments.
+    folder: src/content/reviews
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{stage}} · {{title}}"
+    sortable_fields: [ order, title ]
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "What the review maps. A noun phrase, not a question."
+      - label: Domain
+        name: domain
+        widget: string
+        hint: >-
+          The field, in a few words, separated by · — it is read as a label.
+          e.g. "Medical imaging · segmentation · report generation".
+      - label: The question
+        name: question
+        widget: text
+        hint: "One sentence on what the review is looking for."
+      - label: Stage
+        name: stage
+        widget: select
+        default: protocol
+        hint: >-
+          Say where it actually is. Protocol and Registered are different
+          claims — nothing is registered until it is, and the page should
+          not blur the two.
+        options:
+          - { label: "Protocol — being written, not yet registered", value: protocol }
+          - { label: "Registered", value: registered }
+          - { label: "Screening", value: screening }
+          - { label: "Charting", value: charting }
+          - { label: "Drafting the manuscript", value: drafting }
+      - label: Reporting guideline
+        name: framework
+        widget: string
+        default: PRISMA-ScR
+        hint: 'e.g. "PRISMA-ScR" or "PRISMA-ScR, JBI methodology".'
+      - label: Registry
+        name: registry
+        widget: string
+        required: false
+        default: OSF Registries
+        hint: "Where it will be filed. Leave blank if undecided."
+      - label: Instrument
+        name: instrument
+        widget: text
+        required: false
+        hint: >-
+          The scoring instrument, if the review has one of its own. Two
+          sentences at most — what it measures and the rule that is easy to
+          get wrong.
+      - label: Scale
+        name: scale
+        widget: text
+        required: false
+        hint: 'One line: records piloted, databases searched, fields charted.'
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+      - label: Supports — link
+        name: related
+        widget: string
+        required: false
+        hint: "The project it feeds, e.g. /works/hcgt-pg."
+      - label: Supports — label
+        name: relatedLabel
+        widget: string
+        required: false
+        hint: "What that link should say, e.g. HCGT-PG."
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
   - name: bibliotheca
     label: Bibliotheca — the books
     label_singular: Book

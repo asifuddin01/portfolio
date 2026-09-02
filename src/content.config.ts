@@ -765,6 +765,49 @@ const papers = defineCollection({
   }),
 });
 
+/**
+ * Scoping reviews in progress.
+ *
+ * Kept apart from `papers` because a protocol is not a manuscript and saying
+ * otherwise on a page headed "the record" would overstate it. What a review at
+ * this stage has to show is its method — the framework it reports under, the
+ * registry it will be filed with, the instrument it scores on — and none of
+ * that fits the `papers` schema without being flattened into prose.
+ *
+ * Every field here is a fact with a short answer. That is deliberate: a review
+ * in protocol stage is interesting for what it commits to, and a paragraph
+ * about it would be longer than the commitments.
+ */
+const reviews = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/reviews' }),
+  schema: z.object({
+    order: z.number().int().min(1).default(1),
+    title: z.string(),
+    /** The field, in a few words. Read as a label, not a sentence. */
+    domain: z.string(),
+    /** One line: what the review maps. */
+    question: z.string(),
+    /** The reporting guideline. PRISMA-ScR for a scoping review. */
+    framework: z.string(),
+    /** Where it will be registered. */
+    registry: z.string().default(''),
+    /**
+     * Honest about where it actually is. `protocol` and `registered` are
+     * different claims and the site must not blur them — nothing is registered
+     * until it is.
+     */
+    stage: z.enum(['protocol', 'registered', 'screening', 'charting', 'drafting']),
+    /** The scoring instrument, if the review has one of its own. */
+    instrument: optionalText,
+    /** One line of scale — records piloted, databases searched. */
+    scale: optionalText,
+    /** The project it supports. */
+    related: z.string().optional(),
+    relatedLabel: z.string().optional(),
+    status: z.enum(['draft', 'published']).default('published'),
+  }),
+});
+
 /** Education, read by both the vitae page and the generated CV. */
 const education = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/education' }),
@@ -833,7 +876,7 @@ const axioms = defineCollection({
 });
 
 export const collections = {
-  works, elementa, marginalia, lectiones, bibliotheca, site, art, books, instrumentarium,
+  works, elementa, marginalia, lectiones, bibliotheca, reviews, site, art, books, instrumentarium,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

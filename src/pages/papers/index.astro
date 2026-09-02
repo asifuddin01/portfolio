@@ -1,12 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
-import { getPapers, getLectiones } from '../../lib/collections';
+import { getPapers, getLectiones, getReviews } from '../../lib/collections';
 import { AUTHOR, toRoman } from '../../consts';
 
 const papers = await getPapers();
 const parts = await getLectiones();
 const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
+const reviews = await getReviews();
+
+/* A protocol is not a manuscript, and the label says which. */
+const STAGE: Record<string, string> = {
+  protocol: 'Protocol',
+  registered: 'Registered',
+  screening: 'Screening',
+  charting: 'Charting',
+  drafting: 'Drafting',
+};
 
 const LABEL: Record<string, string> = {
   published: 'Published',
@@ -29,9 +39,9 @@ const LABEL: Record<string, string> = {
         piece of work argues lives on its plate; this page is only the citation.
       </p>
       <p class="pp-lede codex-measure" data-reveal>
-        Two parts. The first is mine. The second is everyone else's — the
-        papers I would hand somebody who wanted to learn this properly, in the
-        order they make sense.
+        Three parts. The first is mine. The second is the reviews under way —
+        method rather than manuscript, since nothing is registered until it is.
+        The third is everyone else's, in the order they make sense.
       </p>
     </header>
 
@@ -83,8 +93,46 @@ const LABEL: Record<string, string> = {
 
     <LesionRule />
 
+    {reviews.length > 0 && (
+      <>
+        <h2 class="pp-part" id="reviews">
+          <span class="pp-part-n" aria-hidden="true">II</span>
+          <span class="pp-part-name">Reviews</span>
+          <span class="pp-part-gloss">Under way</span>
+        </h2>
+
+        <ol class="pp-rv" data-reveal-stagger>
+          {reviews.map((r) => (
+            <li class="pp-rv-i">
+              <p class="pp-rv-top">
+                <span class="pp-rv-stage">{STAGE[r.data.stage] ?? r.data.stage}</span>
+                <span class="pp-rv-dom">{r.data.domain}</span>
+              </p>
+              <h3 class="pp-rv-t">{r.data.title}</h3>
+              <p class="pp-rv-q">{r.data.question}</p>
+
+              <dl class="pp-rv-meta">
+                <div><dt>Reporting</dt><dd>{r.data.framework}</dd></div>
+                {r.data.registry && <div><dt>Registry</dt><dd>{r.data.registry}</dd></div>}
+                {r.data.instrument && <div><dt>Instrument</dt><dd>{r.data.instrument}</dd></div>}
+                {r.data.scale && <div><dt>Scale</dt><dd>{r.data.scale}</dd></div>}
+                {r.data.related && (
+                  <div>
+                    <dt>Supports</dt>
+                    <dd><a class="link" href={r.data.related}>{r.data.relatedLabel ?? r.data.related}</a></dd>
+                  </div>
+                )}
+              </dl>
+            </li>
+          ))}
+        </ol>
+
+        <LesionRule />
+      </>
+    )}
+
     <h2 class="pp-part" id="lectiones">
-      <span class="pp-part-n" aria-hidden="true">II</span>
+      <span class="pp-part-n" aria-hidden="true">III</span>
       <span class="pp-part-name">Lectiones</span>
       <span class="pp-part-gloss">Everyone else's, in order</span>
     </h2>
@@ -119,6 +167,67 @@ const LABEL: Record<string, string> = {
 </BaseLayout>
 
 <style>
+  /* ---- Reviews under way -------------------------------------------
+     A protocol has no abstract to quote and no result to report, so the
+     block is a label, a question and a short table of what it commits to.
+     Prose here would be longer than the commitments it described. */
+  .pp-rv { list-style: none; margin: 0 0 2.4rem; padding: 0; display: grid; gap: 2.2rem; max-width: 64rem; }
+  .pp-rv-i {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    padding-top: 1rem;
+  }
+  .pp-rv-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.9rem;
+    margin: 0 0 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .pp-rv-stage {
+    color: var(--brass-text);
+    border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0 0.4em;
+    border-radius: 2px;
+  }
+  .pp-rv-dom { color: var(--ink-soft); letter-spacing: 0.08em; }
+  .pp-rv-t {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    line-height: 1.3;
+    color: var(--ink);
+    margin: 0 0 0.35rem;
+  }
+  .pp-rv-q {
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0 0 1rem;
+    max-width: var(--measure);
+  }
+  .pp-rv-meta { margin: 0; display: grid; gap: 0.5rem; }
+  .pp-rv-meta > div { display: grid; gap: 0.15rem 1.2rem; }
+  @media (min-width: 700px) {
+    .pp-rv-meta > div { grid-template-columns: 7.5rem minmax(0, 1fr); }
+  }
+  .pp-rv-meta dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .pp-rv-meta dd {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    color: var(--ink);
+    max-width: var(--measure);
+  }
+
   .pp { padding-top: clamp(2.5rem, 7vh, 5rem); }
   .pp-kicker {
     font-family: var(--font-mono);
