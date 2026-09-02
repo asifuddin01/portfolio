@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import ArtInterleaf from '../components/art/ArtInterleaf.astro';
+import { getHomePlates } from '../lib/collections';
+
+import Frontispiece from '../components/home/Frontispiece.astro';
+import Prologue from '../components/home/Prologue.astro';
+import Axioms from '../components/home/Axioms.astro';
+import Instrumentarium from '../components/home/Instrumentarium.astro';
+import Compendium from '../components/home/Compendium.astro';
+import InstrumentaPropria from '../components/home/InstrumentaPropria.astro';
+import ElementaSection from '../components/home/ElementaSection.astro';
+import MarginaliaSection from '../components/home/MarginaliaSection.astro';
+import Chronicle from '../components/home/Chronicle.astro';
+import Appendix from '../components/home/Appendix.astro';
+import Correspondence from '../components/home/Correspondence.astro';
+
+import { AUTHOR, ROLE, toRoman } from '../consts';
+
+/* "Show on the home page" decides whether a plate appears; placement decides
+   only where. Numerals stay tied to the gallery sequence. */
+const { numeral, bySlot } = await getHomePlates();
+---
+<BaseLayout
+  title={`The codex — ${AUTHOR}`}
+  description={ROLE}
+  folio={toRoman(2)}
+>
+  <Frontispiece />
+
+  <div class="codex">
+    <LesionRule />
+    <Prologue />
+    {(bySlot.get('prologue') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Axioms />
+    {(bySlot.get('axioms') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Instrumentarium />
+    {(bySlot.get('instrumentarium') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Compendium />
+    {(bySlot.get('compendium') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <InstrumentaPropria />
+    {(bySlot.get('instrumenta') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <ElementaSection />
+    {(bySlot.get('elementa') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <MarginaliaSection />
+    {(bySlot.get('marginalia') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Chronicle />
+    {(bySlot.get('chronicle') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Appendix />
+    {(bySlot.get('appendix') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+
+    <LesionRule />
+    <Correspondence />
+    {(bySlot.get('correspondence') ?? []).map((t) => (
+      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
+    ))}
+  </div>
+</BaseLayout>

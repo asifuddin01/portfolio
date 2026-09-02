@@ -78,7 +78,9 @@ const EXAMPLES = [
   // four says it outright. The site is a source like any other here — the
   // answer arrives cited, and the citation is a page anyone can open.
   'What research does the author do, and what is he working on now?',
-  'What approaches exist for privacy-preserving diabetic retinopathy classification?',
+  // Limitations get a slot because nobody thinks to ask for them, and they
+  // are the part of a paper a reader is least likely to reach on their own.
+  'What limitations do the authors state for retrieval-augmented generation?',
   'How do vision-language models align image and text representations?',
 ];
 
@@ -89,6 +91,7 @@ const PIPELINE = [
   { step: 'Rerank', detail: 'a cross-encoder that sees query and passage together' },
   { step: 'Reach out', detail: 'arXiv, PubMed and OpenAlex when the question asks what is current' },
   { step: 'Read this site', detail: 'when the question is about me, fetched fresh so it cannot go stale' },
+  { step: 'Concede', detail: 'on a question about limits, the passages where authors state their own' },
   { step: 'Answer', detail: 'markers resolved against the evidence, or a refusal' },
   { step: 'Add', detail: 'your own PDFs, indexed for your session and nobody else’s' },
 ];
@@ -903,6 +906,19 @@ const FINDINGS = [
           aboutAuthor ? ' · about the author, from asifuddin.com' : ''
         }</p>`;
 
+      // A recency question asked in Local. The corpus is fixed, so the honest
+      // answer is that it cannot say — which the model does say, in a clause
+      // buried at the end of a paragraph that offers no way out. The server
+      // decides this, not a copy of the word list kept here: three copies of
+      // that judgement had already drifted apart once inside the engine.
+      const stranded = data.asks_current_but_local === true;
+      const strandedNote = stranded
+        ? `<p class="rl-stranded">This asks what is <em>current</em>, and Local
+             answers only from the indexed corpus, which is fixed and cannot
+             say what a field is doing now.
+             <button class="rl-again" type="button">Ask again with Global</button></p>`
+        : '';
+
       // The writer can be unavailable while retrieval is fine — a spent GPU
       // quota on the hosted demo is the usual reason. The passages are most of
       // what this system is for, so they are shown rather than swallowed by an
@@ -919,7 +935,17 @@ const FINDINGS = [
         (cites
           ? `<p class="rl-cite-h">${data.evidence_only ? 'Retrieved passages' : 'Evidence'}</p><ol class="rl-cites">${cites}</ol>`
           : '') +
+        strandedNote +
         (data.evidence_only ? '' : timing);
+
+      // Switch the scope and ask the same question again. Wired here rather
+      // than inline in the template string because the answer is rebuilt on
+      // every question and an inline handler would be re-parsed each time.
+      out.querySelector<HTMLButtonElement>('.rl-again')?.addEventListener('click', () => {
+        const g = form.querySelector<HTMLInputElement>('input[name="scope"][value="global"]');
+        if (g) g.checked = true;
+        form.requestSubmit();
+      });
     } catch (err) {
       // Pass the real reason through rather than wrapping every failure in one
       // guess. A quota limit and a cold start need different things from the
@@ -1241,6 +1267,34 @@ const FINDINGS = [
     color: var(--brass-text);
     border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
   }
+  /* A recency question asked in Local. Marked as a limit of the setting, not
+     as an error — nothing went wrong, the corpus simply cannot answer it. */
+  .rl-stranded {
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 1rem 0 0;
+    padding-left: 0.9rem;
+    border-left: 2px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    max-width: var(--measure);
+  }
+  .rl-stranded em { font-style: italic; color: var(--ink); }
+  .rl-again {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fundus);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--fundus) 45%, transparent);
+    border-radius: 2px;
+    padding: 0.2em 0.55em;
+    margin-left: 0.2rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .rl-again:hover { border-color: var(--fundus); color: var(--ink); }
+
   .rl-timing {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

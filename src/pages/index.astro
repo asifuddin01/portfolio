@@ -1,93 +1,519 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
-import ArtInterleaf from '../components/art/ArtInterleaf.astro';
-import { getHomePlates } from '../lib/collections';
+import DescentPlate from '../components/front/DescentPlate.astro';
+import { getCollection, getEntry } from 'astro:content';
+import { getProjects } from '../lib/collections';
+import { AUTHOR, LOCATION, GITHUB } from '../consts';
 
-import Frontispiece from '../components/home/Frontispiece.astro';
-import Prologue from '../components/home/Prologue.astro';
-import Axioms from '../components/home/Axioms.astro';
-import Instrumentarium from '../components/home/Instrumentarium.astro';
-import Compendium from '../components/home/Compendium.astro';
-import InstrumentaPropria from '../components/home/InstrumentaPropria.astro';
-import ElementaSection from '../components/home/ElementaSection.astro';
-import MarginaliaSection from '../components/home/MarginaliaSection.astro';
-import Chronicle from '../components/home/Chronicle.astro';
-import Appendix from '../components/home/Appendix.astro';
-import Correspondence from '../components/home/Correspondence.astro';
+/**
+ * The frontispiece — the landing page.
+ *
+ * The codex it used to be is still there, at /codex, reached by the wordmark.
+ * That page is the whole person in order and takes twenty minutes; this one
+ * is the first ten seconds, and it is arranged around a single question a
+ * stranger actually asks: can he build things that work.
+ *
+ * The measurement that produced this page: on the codex, the systems work —
+ * ResearchLens, LocalScholar, the backend — began at 19,091px, seventy-nine
+ * per cent of the way down, and the first GitHub link at eighty-four. The
+ * evidence was all there and almost nobody was going to reach it. Nothing
+ * here is new material; it is the same work, put where it can be seen.
+ */
+const fp = await getEntry('site', 'frontispiece');
+const tagline = fp?.data.tagline ?? fp?.data.role ?? '';
+const epigraph = fp?.data.epigraph ?? '';
+const highlights = fp?.data.highlights ?? [];
+const now = fp?.data.now ?? '';
+const nowLabel = fp?.data.nowLabel ?? '';
+const location = fp?.data.location ?? LOCATION;
+const words = epigraph.split(' ').filter(Boolean);
 
-import { AUTHOR, ROLE, toRoman } from '../consts';
+const projects = await getProjects();
+/* The two that run. Everything else on the appendix is coursework beside them. */
+const systems = projects.filter((p) => /researchlens|localscholar/i.test(p.id));
 
-/* "Show on the home page" decides whether a plate appears; placement decides
-   only where. Numerals stay tied to the gallery sequence. */
-const { numeral, bySlot } = await getHomePlates();
+const instrumenta = (await getCollection('instrumenta'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const stack = (await getCollection('instrumentarium'))
+  .sort((a, b) => a.data.order - b.data.order)
+  /* The AI/ML rows only. Languages, backend and "other" belong on the codex,
+     where the whole inventory is the point; here they dilute it. */
+  .filter((r) => /deep learning|architectures|medical imaging|evaluation|causal/i.test(r.data.title));
+
+const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
 ---
 <BaseLayout
-  title={`${AUTHOR} — Deep learning researcher`}
-  description={ROLE}
-  folio={toRoman(1)}
+  title={`${AUTHOR} — AI/ML engineer`}
+  description={tagline}
+  folio="I"
 >
-  <Frontispiece />
+  <div class="codex fr">
 
-  <div class="codex">
-    <LesionRule />
-    <Prologue />
-    {(bySlot.get('prologue') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+    {/* ---- Hero ------------------------------------------------------ */}
+    <section class="fr-hero" aria-labelledby="fr-h">
+      <div class="fr-hero-text">
+        <h1 class="fr-name" id="fr-h" data-intro="press">{AUTHOR}</h1>
+        <p class="fr-tag" data-intro style="--d:160ms">{tagline}</p>
 
-    <LesionRule />
-    <Axioms />
-    {(bySlot.get('axioms') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+        <blockquote class="fr-epi">
+          <p class="fr-epi-t">
+            {words.map((w, i) => (
+              <span class="word" style={`--d:${380 + i * 52}ms`}>{w}&nbsp;</span>
+            ))}
+          </p>
+        </blockquote>
 
-    <LesionRule />
-    <Instrumentarium />
-    {(bySlot.get('instrumentarium') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+        <p class="fr-where" data-intro style="--d:840ms">
+          {location}
+          <span class="fr-dot" aria-hidden="true"> · </span>
+          <a class="link" href={GITHUB} rel="noopener">github.com/asifuddin01</a>
+          <span class="fr-dot" aria-hidden="true"> · </span>
+          <a class="link" href="/vitae/cv">CV</a>
+        </p>
+      </div>
 
-    <LesionRule />
-    <Compendium />
-    {(bySlot.get('compendium') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+      <div class="fr-hero-plate" data-intro style="--d:280ms">
+        <DescentPlate />
+      </div>
+    </section>
 
-    <LesionRule />
-    <InstrumentaPropria />
-    {(bySlot.get('instrumenta') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
-
-    <LesionRule />
-    <ElementaSection />
-    {(bySlot.get('elementa') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
-
-    <LesionRule />
-    <MarginaliaSection />
-    {(bySlot.get('marginalia') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
-
-    <LesionRule />
-    <Chronicle />
-    {(bySlot.get('chronicle') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+    {/* ---- The evidence strip ---------------------------------------- */}
+    {highlights.length > 0 && (
+      <ul class="fr-ev" id="fr-ev" data-reveal-stagger>
+        {highlights.map((h) => (
+          <li class="fr-ev-i">
+            <a class="fr-ev-link" href={h.href ?? '/codex'}>
+              <span class="fr-ev-v" data-count={h.value}>{h.value}</span>
+              <span class="fr-ev-l">{h.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
 
     <LesionRule />
-    <Appendix />
-    {(bySlot.get('appendix') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+
+    {/* ---- Now -------------------------------------------------------- */}
+    {now && (
+      <section class="fr-now" data-reveal aria-labelledby="fr-now-h">
+        <h2 class="fr-eyebrow" id="fr-now-h">
+          Now{nowLabel && <span class="fr-now-d"> · {nowLabel}</span>}
+        </h2>
+        <p class="fr-now-t">{now}</p>
+      </section>
+    )}
 
     <LesionRule />
-    <Correspondence />
-    {(bySlot.get('correspondence') ?? []).map((t) => (
-      <ArtInterleaf entry={t} n={numeral.get(t.id)} />
-    ))}
+
+    {/* ---- Systems that run ------------------------------------------ */}
+    <section class="fr-sec" aria-labelledby="fr-sys-h">
+      <h2 class="fr-h2" id="fr-sys-h">Systems that run</h2>
+      <p class="fr-lede">
+        Not repositories — things a stranger can open and put a question to.
+        Both ground every claim in a passage you can check, and both refuse
+        when the evidence is not there, which is the part that takes the work.
+      </p>
+
+      <ul class="fr-sys" data-reveal-stagger>
+        {systems.map((p) => (
+          <li class="fr-sys-i">
+            <h3 class="fr-sys-t">{p.data.title}</h3>
+            <p class="fr-sys-s">{p.data.cvSummary ?? p.data.summary}</p>
+            {p.data.link && (
+              <a class="fr-cta" href={p.data.link} data-magnet>
+                {p.data.linkLabel ?? 'Open'}<span class="fr-cta-a" aria-hidden="true">→</span>
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <LesionRule />
+
+    {/* ---- Architectures --------------------------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-arch-h">
+      <h2 class="fr-h2" id="fr-arch-h">Architectures built, not fine-tuned</h2>
+      <p class="fr-lede">
+        Each of these exists because an off-the-shelf model was wrong about the
+        problem in a way that could be named. The rejected list matters as much
+        as the kept one — it is the difference between a choice and a default.
+      </p>
+
+      <ol class="fr-arch" data-reveal-stagger>
+        {instrumenta.map((f) => (
+          <li class="fr-arch-i">
+            <h3 class="fr-arch-n">{f.data.name}</h3>
+            <p class="fr-arch-p">{f.data.problem}</p>
+            <p class="fr-arch-d">{f.data.decision}</p>
+            {f.data.rejections.length > 0 && (
+              <p class="fr-arch-r">
+                <span class="fr-arch-rl">Rejected —</span>
+                {f.data.rejections.join(', ')}
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <LesionRule />
+
+    {/* ---- The stack -------------------------------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-stack-h">
+      <h2 class="fr-h2" id="fr-stack-h">What that takes, in practice</h2>
+      <p class="fr-lede">
+        Training discipline more than library familiarity. The whole inventory,
+        including what is <em>not</em> known yet, is on <a class="link" href="/codex#instrumentarium">the codex</a>.
+      </p>
+
+      <dl class="fr-stack" data-reveal-stagger>
+        {stack.map((r) => (
+          <div class="fr-stack-r">
+            <dt class="fr-stack-t">{r.data.title}</dt>
+            <dd class="fr-stack-d">
+              <span class="fr-stack-i">{r.data.items}</span>
+              <span class="fr-stack-n">{r.data.note}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <LesionRule />
+
+    {/* ---- Research --------------------------------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-res-h">
+      <h2 class="fr-h2" id="fr-res-h">Research</h2>
+      <ol class="fr-res" data-reveal-stagger>
+        {works.map((w) => (
+          <li class="fr-res-i">
+            <a class="fr-res-link" href={`/works/${w.id}`}>
+              <span class="fr-res-y">{w.data.year}</span>
+              <span class="fr-res-m">
+                <span class="fr-res-t">{w.data.title}</span>
+                <span class="fr-res-s">{w.data.subtitle}</span>
+              </span>
+              <span class="fr-res-st">{w.data.status.replace(/-/g, ' ')}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <LesionRule />
+
+    {/* ---- Into the codex --------------------------------------------- */}
+    <section class="fr-into" data-reveal>
+      <h2 class="fr-h2">The long version</h2>
+      <p class="fr-lede">
+        This page is the case. The codex is the whole of it — the prologue, the
+        axioms each project left behind, the full inventory, a textbook being
+        written in propositions, and a commonplace book of what has been read.
+      </p>
+      <a class="fr-cta fr-cta-big" href="/codex" data-magnet>
+        Open the codex<span class="fr-cta-a" aria-hidden="true">→</span>
+      </a>
+    </section>
   </div>
 </BaseLayout>
+
+<script>
+  /**
+   * Count the evidence numbers up on first reveal.
+   *
+   * Deliberately not a generic odometer: "0.9422" must keep four decimals and
+   * land exactly on its printed value, because it is a measured result and an
+   * animation that overshoots to 0.9431 and settles back would be inventing
+   * a number. Decimal places are read off the source string and preserved.
+   */
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const strip = document.getElementById('fr-ev');
+
+  if (strip && !reduce) {
+    const cells = [...strip.querySelectorAll<HTMLElement>('[data-count]')];
+
+    const run = (el: HTMLElement) => {
+      const raw = el.dataset.count ?? '';
+      const target = Number(raw);
+      // Anything that is not a plain number — a range, a "6×" — is left alone.
+      if (!Number.isFinite(target)) return;
+      const dp = (raw.split('.')[1] ?? '').length;
+      const started = performance.now();
+      const DURATION = 1100;
+
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - started) / DURATION);
+        // Ease out cubic: fast first, so the final digits settle rather than race.
+        const v = target * (1 - Math.pow(1 - p, 3));
+        el.textContent = v.toFixed(dp);
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = raw;      // land on the printed value exactly
+      };
+      requestAnimationFrame(tick);
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          run(e.target as HTMLElement);
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: '0px 0px -15% 0px' }
+    );
+    for (const c of cells) {
+      c.textContent = (0).toFixed((c.dataset.count?.split('.')[1] ?? '').length);
+      io.observe(c);
+    }
+  }
+</script>
+
+<style>
+  .fr { padding-top: clamp(2rem, 5vh, 4rem); padding-bottom: 2rem; }
+
+  /* ---- Hero -------------------------------------------------------- */
+  .fr-hero {
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    min-height: clamp(26rem, 72vh, 40rem);
+    padding-block: clamp(1rem, 4vh, 3rem);
+  }
+  @media (min-width: 940px) {
+    .fr-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+  }
+  .fr-name {
+    font-size: clamp(2.6rem, 8.5vw, 4rem);
+    letter-spacing: 0.02em;
+    line-height: 1.02;
+    color: var(--ink);
+    margin-bottom: 1.1rem;
+  }
+  .fr-tag {
+    font-family: var(--font-body);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 34ch;
+    margin-bottom: 2rem;
+  }
+  .fr-epi { margin: 0 0 2rem; padding-left: clamp(0.8rem, 4vw, 2.4rem); border: 0; max-width: 46ch; }
+  .fr-epi-t {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--t-lg);
+    line-height: 1.45;
+    color: var(--ink);
+    margin: 0;
+  }
+  .fr-where {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .fr-dot { color: var(--brass-text); }
+
+  /* ---- Evidence strip ---------------------------------------------- */
+  .fr-ev {
+    list-style: none;
+    margin: 0 0 2.6rem;
+    padding: 1.4rem 0 0;
+    display: grid;
+    gap: 1.4rem 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .fr-ev-link { display: grid; gap: 0.3rem; color: var(--ink); }
+  .fr-ev-v {
+    font-family: var(--font-display);
+    font-size: var(--t-xl);
+    line-height: 1;
+    color: var(--fundus);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .fr-ev-l {
+    font-size: var(--t-xs);
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .fr-ev-link:hover .fr-ev-l { color: var(--ink); }
+
+  /* ---- Sections ----------------------------------------------------- */
+  .fr-sec, .fr-into, .fr-now { margin-block: clamp(2.5rem, 7vh, 4.5rem); }
+  .fr-h2 { font-size: var(--t-xl); color: var(--ink); margin: 0 0 0.9rem; }
+  .fr-lede {
+    font-size: var(--body-size);
+    line-height: var(--body-leading);
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    margin: 0 0 2rem;
+  }
+  .fr-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.7rem;
+  }
+  .fr-now-d { color: var(--ink-soft); }
+  .fr-now-t {
+    font-family: var(--font-display);
+    font-size: var(--t-lg);
+    line-height: 1.45;
+    color: var(--ink);
+    max-width: 44ch;
+    margin: 0;
+  }
+
+  /* ---- Systems ------------------------------------------------------ */
+  .fr-sys {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr));
+  }
+  .fr-sys-i {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    background: var(--paper-raised);
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+    display: grid;
+    align-content: start;
+    gap: 0.7rem;
+  }
+  .fr-sys-t { font-size: var(--t-md); color: var(--ink); margin: 0; line-height: 1.35; }
+  .fr-sys-s { font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); margin: 0; }
+
+  .fr-cta {
+    justify-self: start;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: var(--rule) solid var(--brass);
+    padding: 0.55rem 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6ch;
+    margin-top: 0.3rem;
+  }
+  .fr-cta:hover { color: var(--fundus); border-color: var(--fundus); }
+  .fr-cta-a { transition: transform 240ms var(--ease-out); }
+  .fr-cta:hover .fr-cta-a { transform: translateX(3px); }
+  .fr-cta-big { font-size: var(--t-sm); padding: 0.75rem 1.3rem; }
+
+  /* ---- Architectures ------------------------------------------------ */
+  .fr-arch {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.8rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  }
+  .fr-arch-i {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    padding-top: 0.9rem;
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+  }
+  .fr-arch-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    letter-spacing: 0.06em;
+    color: var(--fundus);
+    margin: 0;
+  }
+  .fr-arch-p {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--ink);
+    margin: 0;
+  }
+  .fr-arch-d { font-size: var(--t-xs); line-height: 1.7; color: var(--ink-soft); margin: 0; }
+  .fr-arch-r { font-size: var(--t-xs); line-height: 1.6; color: var(--ink-soft); margin: 0; opacity: 0.85; }
+  .fr-arch-rl {
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-right: 0.5ch;
+  }
+
+  /* ---- Stack -------------------------------------------------------- */
+  .fr-stack { margin: 0; display: grid; gap: 1.5rem; max-width: 64rem; }
+  .fr-stack-r {
+    display: grid;
+    gap: 0.3rem 1.5rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    padding-top: 0.8rem;
+  }
+  @media (min-width: 760px) {
+    .fr-stack-r { grid-template-columns: 13rem minmax(0, 1fr); }
+  }
+  .fr-stack-t {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .fr-stack-d { margin: 0; display: grid; gap: 0.35rem; }
+  .fr-stack-i { font-size: var(--t-sm); line-height: 1.7; color: var(--ink); }
+  .fr-stack-n {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+
+  /* ---- Research ----------------------------------------------------- */
+  .fr-res {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 64rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .fr-res-i { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .fr-res-link {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
+    gap: 0.2rem 1.2rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    color: var(--ink);
+  }
+  .fr-res-y { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .fr-res-m { display: grid; gap: 0.2rem; min-width: 0; }
+  .fr-res-t { font-family: var(--font-display); font-size: var(--t-md); line-height: 1.3; }
+  .fr-res-link:hover .fr-res-t { color: var(--fundus); }
+  .fr-res-s { font-size: var(--t-xs); color: var(--ink-soft); line-height: 1.5; }
+  .fr-res-st {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 620px) {
+    .fr-res-link { grid-template-columns: minmax(0, 1fr) auto; }
+    .fr-res-y { grid-column: 1 / -1; }
+  }
+
+  .fr-into { padding-bottom: 1rem; }
+</style>

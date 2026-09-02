@@ -1,0 +1,178 @@
+---
+/**
+ * The frontispiece plate: gradient descent on a non-convex surface.
+ *
+ * Chosen over the obvious alternatives — a particle field, a rotating globe,
+ * a neural-net graph — because it is the one picture that is both ornamental
+ * enough to sit where a Raphael used to and *true* of the work. Contour lines
+ * are also what an engraver would have drawn, so it belongs to the rest of the
+ * site rather than arriving from a different century.
+ *
+ * The motion is the argument: the path does not glide to the minimum. It
+ * overshoots a ridge, doubles back, and settles — which is what training
+ * actually looks like and what a smooth animation would misrepresent.
+ *
+ * Mechanically it reuses `fig-draw` from motion.css: `data-draw` strokes
+ * reveal by stroke-dashoffset, `data-fade` elements fade after them. Under
+ * `prefers-reduced-motion` that file already resolves both to their finished
+ * state, so this arrives drawn rather than not at all.
+ */
+
+/** Contours of a warped bowl: an ellipse family, rotated and drifting. */
+const CONTOURS = [
+  { rx: 150, ry: 108, rot: -14, o: 0.16 },
+  { rx: 124, ry: 88, rot: -11, o: 0.2 },
+  { rx: 99, ry: 70, rot: -8, o: 0.24 },
+  { rx: 76, ry: 53, rot: -5, o: 0.3 },
+  { rx: 55, ry: 38, rot: -2, o: 0.36 },
+  { rx: 36, ry: 25, rot: 0, o: 0.44 },
+  { rx: 20, ry: 14, rot: 0, o: 0.56 },
+];
+
+/**
+ * The descent. Hand-placed rather than simulated: a real optimiser on a real
+ * surface produces a path that reads as noise at this size, and the point is
+ * legibility — a long first step, a ridge overshot, a correction, then small
+ * steps into the basin.
+ */
+const STEPS = [
+  [58, 44], [104, 96], [163, 74], [196, 132], [151, 158],
+  [199, 186], [232, 168], [246, 197], [228, 208], [243, 203], [236, 212],
+];
+const PATH = STEPS.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`).join(' ');
+const CX = 238;
+const CY = 207;
+---
+<figure class="dp fig-draw" data-reveal aria-labelledby="dp-cap">
+  <svg
+    class="dp-svg"
+    viewBox="0 0 300 250"
+    role="img"
+    aria-label="Contour map of a loss surface with a gradient-descent path descending into the minimum."
+  >
+    <defs>
+      <radialGradient id="dp-glow" cx="50%" cy="50%">
+        <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28" />
+        <stop offset="100%" stop-color="var(--brass)" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+
+    <circle cx={CX} cy={CY} r="66" fill="url(#dp-glow)" data-fade />
+
+    {CONTOURS.map((c, i) => (
+      <ellipse
+        class="dp-contour"
+        cx={CX}
+        cy={CY}
+        rx={c.rx}
+        ry={c.ry}
+        transform={`rotate(${c.rot} ${CX} ${CY})`}
+        stroke="var(--brass)"
+        stroke-opacity={c.o}
+        fill="none"
+        data-draw
+        style={`--len:${Math.round(Math.PI * (3 * (c.rx + c.ry) - Math.sqrt((3 * c.rx + c.ry) * (c.rx + 3 * c.ry))))}; --i:${i}`}
+      />
+    ))}
+
+    {/* The steps, as an engraver would mark a survey: a tick at each. */}
+    {STEPS.map(([x, y], i) => (
+      <circle class="dp-step" cx={x} cy={y} r="1.6" fill="var(--brass-text)" data-fade style={`--i:${i}`} />
+    ))}
+
+    <path
+      class="dp-path"
+      d={PATH}
+      fill="none"
+      stroke="var(--fundus)"
+      stroke-width="1.4"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+      data-draw
+      style="--len:640"
+    />
+
+    {/* Where it stopped. Not the true minimum — nothing ever lands there. */}
+    <circle class="dp-min" cx={CX} cy={CY} r="3.4" fill="var(--fundus)" data-fade />
+    <circle class="dp-halo" cx={CX} cy={CY} r="3.4" fill="none" stroke="var(--fundus)" data-fade />
+  </svg>
+
+  <figcaption class="dp-cap" id="dp-cap">
+    <span class="dp-cap-n">Plate I</span>
+    <span class="dp-cap-t">Descent on a non-convex surface</span>
+    <span class="dp-cap-d">
+      The path overshoots a ridge and doubles back. Training looks like this;
+      the smooth version is a diagram of something else.
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .dp { margin: 0; display: grid; gap: 1rem; }
+  .dp-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  /* Contours draw outward-in, so the surface appears before the basin. */
+  .dp-contour { stroke-width: 0.6; }
+
+  .dp-cap {
+    display: grid;
+    gap: 0.25rem;
+    max-width: 30rem;
+  }
+  .dp-cap-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .dp-cap-t {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink);
+  }
+  .dp-cap-d {
+    font-size: var(--t-xs);
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Contours stagger from the outside in — 90ms apart, so the whole family
+       lands in under a second and the path starts while they are still
+       settling. A sequential reveal of seven rings reads as a loading bar. */
+    :global(.js) .dp-contour { transition-delay: calc(var(--i) * 90ms); }
+
+    /* The path waits for the surface it descends. */
+    :global(.js) .dp-path {
+      transition-duration: 1700ms;
+      transition-delay: 620ms;
+    }
+
+    /* Step ticks appear in order, timed to trail the path drawing over it. */
+    :global(.js) .dp-step {
+      transition: opacity 260ms var(--ease-out);
+      transition-delay: calc(760ms + var(--i) * 140ms);
+    }
+
+    :global(.js) .dp-min { transition-delay: 2300ms; }
+
+    /* One slow pulse at the minimum, started only once the run has landed.
+       A loop that runs from page load would be decoration; this reads as the
+       thing having converged. */
+    :global(.js) .fig-draw.is-revealed .dp-halo {
+      animation: dp-settle 3.4s var(--ease-out) 2.5s infinite;
+    }
+    @keyframes dp-settle {
+      0%   { r: 3.4; opacity: 0.8; }
+      70%  { r: 22;  opacity: 0; }
+      100% { r: 22;  opacity: 0; }
+    }
+  }
+</style>

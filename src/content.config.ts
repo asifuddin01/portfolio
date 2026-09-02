@@ -643,6 +643,27 @@ const site = defineCollection({
     epigraph: z.string().optional(),
     attribution: z.string().optional(),
     location: z.string().optional(),
+    /**
+     * The landing page's own copy. `role` is the long scholarly line the codex
+     * uses; `tagline` is the short one a visitor reads in two seconds, and it
+     * leads with the engineering because that is what the page is for.
+     */
+    tagline: z.string().optional(),
+    /** What is being worked on now, and when that was last true. */
+    now: z.string().optional(),
+    nowLabel: z.string().optional(),
+    /**
+     * The evidence strip. Hand-picked rather than derived: the point is the
+     * three or four facts worth a stranger's first ten seconds, and no query
+     * knows which those are.
+     */
+    highlights: z
+      .array(z.object({
+        value: z.string(),
+        label: z.string(),
+        href: z.string().optional(),
+      }))
+      .default([]),
     // Instrumentarium closing line.
     notYet: z.string().optional(),
     // Chronicle.

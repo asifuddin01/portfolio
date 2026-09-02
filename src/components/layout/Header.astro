@@ -13,7 +13,11 @@ const isActive = (href: string): boolean =>
 ---
 <header class="hd">
   <div class="codex hd-inner">
-    <a class="hd-name" href="/">{AUTHOR}</a>
+    {/* The wordmark goes to the codex, not to '/'. In a book the frontispiece
+        is the plate; the title page carrying the name is what opens the volume,
+        and the volume is what the name should give you. The landing page stays
+        one click away as the nav's first entry. */}
+    <a class="hd-name" href="/codex">{AUTHOR}</a>
     <nav class="hd-nav" aria-label="Primary">
       <ul>
         {NAV.map((item) => (
