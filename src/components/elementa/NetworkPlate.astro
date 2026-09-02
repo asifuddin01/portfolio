@@ -15,7 +15,36 @@
  * `lib/network.ts`, evaluated at build time. The page ships numbers, not a
  * simulation, and the animation is pure CSS.
  */
+import katex from 'katex';
 import { build, maxAbs } from '../../lib/network';
+/* KaTeX's stylesheet. Imported here rather than relied on from the page, so
+   the plate carries what it needs wherever it is placed. Astro dedupes it
+   against the Elementa routes that already import the same file. */
+import '../../styles/math.css';
+
+/**
+ * One formula per completed loop, in the order the animation performs them:
+ * the unit computes a weighted sum, an activation shapes it, a loss scores the
+ * output, and the update moves the weight. The plate shows the mechanism; these
+ * name it.
+ *
+ * Rendered at build time with `throwOnError`, on the same principle as the
+ * rest of the corpus (spec §5.8) — a malformed formula stops the build rather
+ * than shipping as a red string nobody notices.
+ */
+const FORMULAE: { label: string; tex: string }[] = [
+  { label: 'the unit', tex: String.raw`z = \sum_{i=1}^{n} w_i x_i + b = \mathbf{w} \cdot \mathbf{x} + b` },
+  { label: 'activation', tex: String.raw`a = f(z)` },
+  { label: 'ReLU', tex: String.raw`f(z) = \max(0,\, z)` },
+  { label: 'logistic', tex: String.raw`f(z) = \frac{1}{1 + e^{-z}}` },
+  { label: 'squared error', tex: String.raw`L = \tfrac{1}{2}\,(\hat{y} - y)^2` },
+  { label: 'the update', tex: String.raw`w_{\text{new}} = w_{\text{old}} - \alpha \, \frac{\partial L}{\partial w_{\text{old}}}` },
+];
+
+const RENDERED = FORMULAE.map((f) => ({
+  ...f,
+  html: katex.renderToString(f.tex, { displayMode: false, throwOnError: true }),
+}));
 
 const LAYERS = build(7);
 const W = 300;
@@ -23,12 +52,27 @@ const H = 220;
 const PAD_X = 26;
 const PAD_Y = 22;
 
-/** Column x for a layer, row y for a node — layers are vertically centred. */
+/**
+ * Column x for a layer, row y for a node.
+ *
+ * Every layer uses the *widest* layer's spacing and is then centred in the
+ * band, so the columns line up and nothing leaves the box. The first version
+ * spaced each layer across the full span and then applied a centring fudge,
+ * which put the input layer's fourth node at y=233 and the output layer's
+ * third at y=251 — in a viewBox 220 tall, with overflow visible, so they
+ * painted straight over the caption underneath.
+ */
 const cx = (l: number) => PAD_X + (l * (W - PAD_X * 2)) / (LAYERS.length - 1);
+
+const SPAN = H - PAD_Y * 2;
+const WIDEST = Math.max(...LAYERS.map((l) => l.a.length));
+const STEP = SPAN / (WIDEST - 1);
+
 const cy = (l: number, i: number) => {
   const n = LAYERS[l].a.length;
-  const span = H - PAD_Y * 2;
-  return n === 1 ? H / 2 : PAD_Y + (i * span) / (n - 1) + (span * (1 - (n - 1) / 5)) / 2;
+  if (n === 1) return H / 2;
+  const top = PAD_Y + (SPAN - (n - 1) * STEP) / 2;
+  return top + i * STEP;
 };
 
 const wMax = maxAbs(LAYERS, 'w');
@@ -120,8 +164,20 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
     )}
   </svg>
 
+  {/* One formula per completed loop. A fixed-height slot, because six stacked
+      absolutes with nothing reserving space would collapse the caption upward
+      and the whole plate would jog every seven seconds. */}
+  <div class="np-eq" aria-hidden="true">
+    {RENDERED.map((f, i) => (
+      <span class="np-eq-i" style={`--i:${i}`}>
+        <span class="np-eq-l">{f.label}</span>
+        <span class="np-eq-m" set:html={f.html} />
+      </span>
+    ))}
+  </div>
+
   <figcaption class="np-cap" id="np-cap">
-    <span class="np-cap-n">Plate</span>
+    <span class="np-cap-n">Figura II</span>
     <span class="np-cap-t">One forward pass, one backward pass</span>
     <span class="np-cap-d">
       Signal crosses; the units take their values. Gradient returns along the
@@ -147,6 +203,34 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
   .np-fwd { stroke: var(--fundus); }
   .np-bwd { stroke: var(--oxblood-text); }
 
+  /* The formula slot. Height is reserved whether or not anything is showing,
+     and the equations are stacked in it rather than swapped, so nothing moves
+     when one replaces another. */
+  .np-eq {
+    position: relative;
+    min-height: 2.6rem;
+    display: grid;
+    align-items: center;
+  }
+  .np-eq-i {
+    grid-area: 1 / 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.9rem;
+    /* Only the running one is shown. Without motion the first stands alone —
+       see the reduced-motion rule at the end. */
+    opacity: 0;
+  }
+  .np-eq-l {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .np-eq-m { color: var(--ink); }
+
   .np-cap { display: grid; gap: 0.25rem; max-width: 26rem; }
   .np-cap-n {
     font-family: var(--font-mono);
@@ -162,6 +246,12 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
     color: var(--ink);
   }
   .np-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
+
+  /* With motion disabled nothing cycles, so the first equation stands rather
+     than the slot sitting empty under a network with no explanation. */
+  @media (prefers-reduced-motion: reduce) {
+    .np-eq-i:first-child { opacity: 1; }
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     /* The wires and units draw themselves once, outward from the input. */
@@ -204,6 +294,27 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
       72%     { stroke-dashoffset: 0; opacity: 1; }
       76%     { stroke-dashoffset: 0; opacity: 0; }
       100%    { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    /* One formula per loop, six loops to a rotation.
+       Each equation runs a 6x-cycle animation offset by one cycle, so exactly
+       one is visible at a time and it appears in the quiet after that loop's
+       backward pass — 72% to 100% of its own cycle, which is 12% to 16.67% of
+       the rotation. Six of these on one timeline rather than a script, so the
+       plate still costs no JavaScript. */
+    :global(.js) .np.is-revealed .np-eq-i {
+      animation: np-eq calc(var(--cycle) * 6) linear infinite;
+      animation-delay: calc(900ms + var(--i) * var(--cycle));
+    }
+    /* 12.9% to 17.9% of the rotation — 5.9s to 8.2s within its own cycle, so
+       it arrives as the backward pass finishes and holds through the quiet
+       into the head of the next loop. 2.3 seconds visible: the first version
+       gave 1.5s, which is enough for `a = f(z)` and not enough for the update
+       rule. The next formula does not open until 13.3s, so they never meet. */
+    @keyframes np-eq {
+      0%, 11.9%    { opacity: 0; transform: translateY(3px); }
+      12.9%, 16.9% { opacity: 1; transform: none; }
+      17.9%, 100%  { opacity: 0; transform: translateY(-3px); }
     }
 
     /* Each unit brightens as the wave reaches it, and again on the way back. */
