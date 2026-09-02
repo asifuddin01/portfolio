@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import Progress from '../../components/elementa/Progress.astro';
+import NetworkPlate from '../../components/elementa/NetworkPlate.astro';
 import MathTier from '../../components/elementa/MathTier.astro';
 import { getEntry } from 'astro:content';
 import { getElementaTree, getProblems, getApparatus } from '../../lib/collections';
@@ -65,16 +66,22 @@ const total = {
 >
   <div class="codex el">
     <header class="el-head">
-      {meta?.data.kicker && <p class="el-kicker" data-reveal>{meta.data.kicker}</p>}
-      <h1 class="el-h1" data-press>Elementa</h1>
-      {meta?.data.lede && <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>}
-      <div class="el-meta" data-reveal>
-        <Progress done={written} label={`${tree.length} books · ${chapters} chapters`} />
-        <p class="el-figlink">
-          <a class="link" href="/elementa/map">The whole work as a graph →</a><br />
-          <a class="link" href="/elementa/figures">Every figure, with permalinks →</a>
-        </p>
+      <div class="el-head-text">
+        {meta?.data.kicker && <p class="el-kicker" data-reveal>{meta.data.kicker}</p>}
+        <h1 class="el-h1" data-press>Elementa</h1>
+        {meta?.data.lede && <p class="el-lede codex-measure" data-reveal>{meta.data.lede}</p>}
+        <div class="el-meta" data-reveal>
+          <Progress done={written} label={`${tree.length} books · ${chapters} chapters`} />
+          <p class="el-figlink">
+            <a class="link" href="/elementa/map">The whole work as a graph →</a><br />
+            <a class="link" href="/elementa/figures">Every figure, with permalinks →</a>
+          </p>
+        </div>
       </div>
+
+      {/* The lede runs to 68ch and the header was otherwise half empty at any
+          desktop width. The plate fills it with the subject of Book I. */}
+      <div class="el-head-plate"><NetworkPlate /></div>
     </header>
 
     <LesionRule />
@@ -187,6 +194,20 @@ const total = {
   }
   .el-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
   .el-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1.6rem; }
+
+  /* Two columns above 1080px only. The lede is a long paragraph and the plate
+     needs real width; squeezing both into a laptop viewport makes each worse
+     than it is alone, so below that the plate follows the text. */
+  .el-head-plate { margin-top: 2rem; max-width: 34rem; }
+  @media (min-width: 1080px) {
+    .el-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+      gap: clamp(2rem, 4vw, 4rem);
+      align-items: center;
+    }
+    .el-head-plate { margin-top: 0; max-width: none; }
+  }
   .el-meta { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; align-items: end; }
   .el-figlink { font-family: var(--font-mono); font-size: var(--t-xs); margin: 0; }
 

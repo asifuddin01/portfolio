@@ -1,0 +1,225 @@
+---
+/**
+ * Elementa's plate: one forward pass, then one backward pass.
+ *
+ * It belongs on this page rather than anywhere else because it is the subject
+ * of the book — Book I is the perceptron, backpropagation and optimisation,
+ * and this is those three things happening. Signal crosses left to right and
+ * the nodes take their values; gradient returns right to left along the same
+ * wires, in a different colour, and the edges that carry the most of it are
+ * the ones that would move most under an update.
+ *
+ * Nothing is illustrated. Weights come from a seeded generator, activations
+ * are what this network computes for a fixed input, and the edge intensities
+ * on the way back are real gradients from one backward pass — all in
+ * `lib/network.ts`, evaluated at build time. The page ships numbers, not a
+ * simulation, and the animation is pure CSS.
+ */
+import { build, maxAbs } from '../../lib/network';
+
+const LAYERS = build(7);
+const W = 300;
+const H = 220;
+const PAD_X = 26;
+const PAD_Y = 22;
+
+/** Column x for a layer, row y for a node — layers are vertically centred. */
+const cx = (l: number) => PAD_X + (l * (W - PAD_X * 2)) / (LAYERS.length - 1);
+const cy = (l: number, i: number) => {
+  const n = LAYERS[l].a.length;
+  const span = H - PAD_Y * 2;
+  return n === 1 ? H / 2 : PAD_Y + (i * span) / (n - 1) + (span * (1 - (n - 1) / 5)) / 2;
+};
+
+const wMax = maxAbs(LAYERS, 'w');
+const gMax = maxAbs(LAYERS, 'g');
+
+/**
+ * Every edge, flattened, with its geometry and its length.
+ *
+ * `len` is needed per edge because the travelling pulse is a dash moving along
+ * the stroke, and a dash pattern is in user units — one shared length would
+ * make the short edges pulse fast and the long ones lag.
+ */
+const EDGES = LAYERS.flatMap((layer, l) =>
+  layer.edges.map((e) => {
+    const x1 = cx(l - 1), y1 = cy(l - 1, e.from);
+    const x2 = cx(l), y2 = cy(l, e.to);
+    return {
+      ...e,
+      layer: l,
+      x1, y1, x2, y2,
+      len: Math.hypot(x2 - x1, y2 - y1),
+      /** Relative magnitudes, for stroke weight and for which edges pulse. */
+      rw: Math.abs(e.w) / wMax,
+      rg: Math.abs(e.g) / gMax,
+    };
+  })
+);
+
+/**
+ * Only the strong edges carry a visible pulse. All 78 pulsing at once is a
+ * shimmer rather than a signal, and the strongest weights are the ones
+ * actually doing the work — which is the thing worth showing.
+ */
+const FORWARD = EDGES.filter((e) => e.rw > 0.55);
+const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
+
+---
+<figure class="np" data-reveal aria-labelledby="np-cap">
+  <svg
+    class="np-svg"
+    viewBox={`0 0 ${W} ${H}`}
+    role="img"
+    aria-label="A four-layer neural network. Signal crosses from the input layer to the output, then gradient returns along the same connections in the opposite direction."
+  >
+    {/* The wires. Width follows |weight|, so the network's shape is visible
+        before anything moves. */}
+    {EDGES.map((e) => (
+      <line
+        class="np-wire"
+        x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+        stroke-width={(0.25 + e.rw * 0.85).toFixed(2)}
+        stroke-opacity={(0.1 + e.rw * 0.3).toFixed(2)}
+      />
+    ))}
+
+    {/* Forward: a packet of signal crossing each strong wire, layer by layer. */}
+    {FORWARD.map((e) => (
+      <line
+        class="np-fwd"
+        x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+        stroke-width={(0.5 + e.rw * 1.1).toFixed(2)}
+        style={`--len:${e.len.toFixed(1)}; --l:${e.layer}`}
+      />
+    ))}
+
+    {/* Backward: the same wires, the other way, scaled by |dLoss/dw|. */}
+    {BACKWARD.map((e) => (
+      <line
+        class="np-bwd"
+        x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1}
+        stroke-width={(0.5 + e.rg * 1.3).toFixed(2)}
+        style={`--len:${e.len.toFixed(1)}; --l:${LAYERS.length - e.layer}`}
+      />
+    ))}
+
+    {/* The units. The ring is the neuron; the fill is what it computed. */}
+    {LAYERS.map((layer, l) =>
+      layer.a.map((a, i) => (
+        <g class="np-node" style={`--l:${l}`}>
+          <circle class="np-ring" cx={cx(l)} cy={cy(l, i)} r="5.4" />
+          <circle
+            class="np-fill"
+            cx={cx(l)} cy={cy(l, i)}
+            r={(1.6 + Math.abs(a) * 3.4).toFixed(2)}
+            data-sign={a >= 0 ? 'pos' : 'neg'}
+          />
+        </g>
+      ))
+    )}
+  </svg>
+
+  <figcaption class="np-cap" id="np-cap">
+    <span class="np-cap-n">Plate</span>
+    <span class="np-cap-t">One forward pass, one backward pass</span>
+    <span class="np-cap-d">
+      Signal crosses; the units take their values. Gradient returns along the
+      same wires, and the bright ones are where the loss is most sensitive —
+      which is to say, where an update would move things.
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 7600ms; }
+  .np-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .np-wire { stroke: var(--brass); }
+  .np-ring { fill: none; stroke: var(--brass); stroke-opacity: 0.5; stroke-width: 0.7; }
+  .np-fill { fill: var(--brass-text); }
+  /* A negative activation is not a smaller positive one. */
+  .np-fill[data-sign='neg'] { fill: var(--verdigris); }
+
+  /* Resting state: both passes invisible, so with motion disabled the plate is
+     the network itself — wires, units and their values — and nothing flickers. */
+  .np-fwd, .np-bwd { stroke-linecap: round; opacity: 0; }
+  .np-fwd { stroke: var(--fundus); }
+  .np-bwd { stroke: var(--oxblood-text); }
+
+  .np-cap { display: grid; gap: 0.25rem; max-width: 26rem; }
+  .np-cap-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .np-cap-t {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink);
+  }
+  .np-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* The wires and units draw themselves once, outward from the input. */
+    :global(.js) .np-node { opacity: 0; transition: opacity 500ms var(--ease-out); }
+    :global(.js) .np.is-revealed .np-node {
+      opacity: 1;
+      transition-delay: calc(var(--l) * 160ms);
+    }
+    :global(.js) .np-wire { opacity: 0; transition: opacity 700ms var(--ease-out) 240ms; }
+    :global(.js) .np.is-revealed .np-wire { opacity: 1; }
+
+    /* A packet is a short dash travelling the length of its own wire. The
+       pattern is `dash, len`, so exactly one dash is ever on a wire, and the
+       offset carries it from one end to the other. */
+    :global(.js) .np.is-revealed .np-fwd {
+      stroke-dasharray: 7 var(--len);
+      animation: np-fwd var(--cycle) linear infinite;
+      /* Layer by layer, so the wave crosses rather than flashing at once. */
+      animation-delay: calc(900ms + var(--l) * 230ms);
+    }
+    :global(.js) .np.is-revealed .np-bwd {
+      stroke-dasharray: 7 var(--len);
+      animation: np-bwd var(--cycle) linear infinite;
+      animation-delay: calc(900ms + var(--l) * 230ms);
+    }
+
+    /* Forward occupies the first third; the return, the second. The gap
+       between them is deliberate — the two passes are separate events and
+       running them together would say something false about training. */
+    @keyframes np-fwd {
+      0%   { stroke-dashoffset: calc(var(--len) + 7px); opacity: 0; }
+      2%   { opacity: 1; }
+      26%  { stroke-dashoffset: 0; opacity: 1; }
+      30%  { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+    @keyframes np-bwd {
+      0%, 44% { stroke-dashoffset: calc(var(--len) + 7px); opacity: 0; }
+      47%     { opacity: 1; }
+      72%     { stroke-dashoffset: 0; opacity: 1; }
+      76%     { stroke-dashoffset: 0; opacity: 0; }
+      100%    { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    /* Each unit brightens as the wave reaches it, and again on the way back. */
+    :global(.js) .np.is-revealed .np-fill {
+      animation: np-lit var(--cycle) ease-in-out infinite;
+      animation-delay: calc(1000ms + var(--l) * 230ms);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    @keyframes np-lit {
+      0%, 8%    { transform: scale(1); }
+      16%       { transform: scale(1.5); }
+      26%       { transform: scale(1); }
+      58%       { transform: scale(1); }
+      66%       { transform: scale(1.32); }
+      76%, 100% { transform: scale(1); }
+    }
+  }
+</style>

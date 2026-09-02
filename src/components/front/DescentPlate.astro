@@ -84,7 +84,7 @@ const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
         class:list={['dp-trace', `dp-${run.id}`]}
         d={d(run.points)}
         fill="none"
-        stroke-width={run.id === 'momentum' ? 1.5 : 1.1}
+        stroke-width={run.id === 'momentum' ? 1.5 : 1.3}
         stroke-linejoin="round"
         stroke-linecap="round"
         style={`--len:${pathLength(run.points, W - PAD * 2, H - PAD * 2)}; --i:${i}`}
@@ -100,9 +100,13 @@ const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
       />
     ))}
 
-    {/* Where each run stopped. Two are the same basin; one is not. */}
+    {/* Where each run stopped, in its own colour. Two are the same basin; one
+        is not, and that is the whole plate. */}
     {ENDS.map(([x, y], i) => (
-      <circle class="dp-end" cx={sx(x)} cy={sy(y)} r="2.4" style={`--i:${i}`} />
+      <circle
+        class:list={['dp-end', `dp-${RUNS[i].id}`]}
+        cx={sx(x)} cy={sy(y)} r="2.6" style={`--i:${i}`}
+      />
     ))}
   </svg>
 
@@ -128,11 +132,16 @@ const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
 
   /* Resting state — the finished picture. Everything below animates *from*
      this, so with motion disabled the plate simply arrives drawn. */
-  .dp-plain    { stroke: var(--ink-soft); color: var(--ink-soft); }
-  .dp-momentum { stroke: var(--fundus);   color: var(--fundus); }
-  .dp-coarse   { stroke: var(--brass);    color: var(--brass); }
+  /* Three colours, not two warm ones and a grey. Plain descent was --ink-soft
+     at the thinnest width and it is also the shortest run, so it read as part
+     of the momentum line rather than as its own — the caption said three runs
+     and a viewer counted two. Verdigris is the palette's one cool colour and
+     separates it at a glance. */
+  .dp-plain    { stroke: var(--verdigris); color: var(--verdigris); }
+  .dp-momentum { stroke: var(--fundus);    color: var(--fundus); }
+  .dp-coarse   { stroke: var(--brass);     color: var(--brass); }
   .dp-head { fill: currentColor; offset-distance: 100%; offset-rotate: 0deg; }
-  .dp-end { fill: var(--brass-text); }
+  .dp-end { fill: currentColor; }
   .dp-start { opacity: 0.55; }
 
   .dp-cap { display: grid; gap: 0.25rem; max-width: 30rem; }
@@ -158,7 +167,10 @@ const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
     font-size: 0.68rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: currentColor;
+    /* No `color` here. It was `currentColor`, which is what an unset colour
+       already means — but being a later single-class rule it beat .dp-plain
+       and friends, so every key rendered in ink and the legend named the wrong
+       colour for all three runs. A redundant declaration that also lies. */
     display: inline-flex;
     align-items: center;
     gap: 0.5ch;
