@@ -49,6 +49,10 @@ const personLd = {
 <meta name="generator" content={Astro.generator} />
 
 <title>{title}</title>
+
+<!-- Feed discovery. Without this the feed exists and no reader finds it:
+     browsers and feed apps look for exactly this tag on any page of a site. -->
+<link rel="alternate" type="application/rss+xml" title={`${AUTHOR} — writing`} href={new URL('rss.xml', SITE).href} />
 <meta name="description" content={description} />
 <meta name="author" content={AUTHOR} />
 <link rel="canonical" href={canonical} />

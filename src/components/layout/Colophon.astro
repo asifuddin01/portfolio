@@ -21,6 +21,9 @@ const Colophon = entry ? (await render(entry)).Content : null;
           <a class="link" href="/vitae/cv">curriculum vitae</a>
         </li>
         <li><a class="link" href="/imagines">imagines</a></li>
+        {/* The autodiscovery tag in <head> serves feed readers; this serves
+            the person who wants to subscribe and has to find the address. */}
+        <li><a class="link" href="/rss.xml">feed</a></li>
       </ul>
     </div>
   </div>
