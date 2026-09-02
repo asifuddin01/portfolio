@@ -9,12 +9,12 @@ import { AUTHOR, LOCATION, GITHUB } from '../consts';
 /**
  * The frontispiece — the landing page.
  *
- * The codex it used to be is still there, at /home, reached by the wordmark.
+ * The Summa it used to be is still there, at /home, reached by the wordmark.
  * That page is the whole person in order and takes twenty minutes; this one
  * is the first ten seconds, and it is arranged around a single question a
  * stranger actually asks: can he build things that work.
  *
- * The measurement that produced this page: on the codex, the systems work —
+ * The measurement that produced this page: in the Summa, the systems work —
  * ResearchLens, LocalScholar, the backend — began at 19,091px, seventy-nine
  * per cent of the way down, and the first GitHub link at eighty-four. The
  * evidence was all there and almost nobody was going to reach it. Nothing
@@ -38,7 +38,7 @@ const instrumenta = (await getCollection('instrumenta'))
 
 const stack = (await getCollection('instrumentarium'))
   .sort((a, b) => a.data.order - b.data.order)
-  /* The AI/ML rows only. Languages, backend and "other" belong on the codex,
+  /* The AI/ML rows only. Languages, backend and "other" belong in the Summa,
      where the whole inventory is the point; here they dilute it. */
   .filter((r) => /deep learning|architectures|medical imaging|evaluation|causal/i.test(r.data.title));
 
@@ -166,7 +166,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <h2 class="fr-h2" id="fr-stack-h">What that takes, in practice</h2>
       <p class="fr-lede">
         Training discipline more than library familiarity. The whole inventory,
-        including what is <em>not</em> known yet, is on <a class="link" href="/home#instrumentarium">the codex</a>.
+        including what is <em>not</em> known yet, is in <a class="link" href="/home#instrumentarium">the Summa</a>.
       </p>
 
       <dl class="fr-stack" data-reveal-stagger>
@@ -205,16 +205,18 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
 
     <LesionRule />
 
-    {/* ---- Into the codex --------------------------------------------- */}
+    {/* ---- Into the Summa ---------------------------------------------- */}
     <section class="fr-into" data-reveal>
-      <h2 class="fr-h2">The long version</h2>
+      <h2 class="fr-h2">The Summa</h2>
       <p class="fr-lede">
-        This page is the case. The codex is the whole of it — the prologue, the
-        axioms each project left behind, the full inventory, a textbook being
-        written in propositions, and a commonplace book of what has been read.
+        This page is the case. The Summa is the whole of it — a scholastic
+        summa being the form that gathers everything known on a subject into
+        one ordered whole: the prologue, the axioms each project left behind,
+        the full inventory, a textbook written in propositions, and a
+        commonplace book of what has been read.
       </p>
       <a class="fr-cta fr-cta-big" href="/home" data-magnet>
-        Open the codex<span class="fr-cta-a" aria-hidden="true">→</span>
+        Open the Summa<span class="fr-cta-a" aria-hidden="true">→</span>
       </a>
     </section>
   </div>

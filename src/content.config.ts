@@ -644,7 +644,7 @@ const site = defineCollection({
     attribution: z.string().optional(),
     location: z.string().optional(),
     /**
-     * The landing page's own copy. `role` is the long scholarly line the codex
+     * The landing page's own copy. `role` is the long scholarly line the Summa
      * uses; `tagline` is the short one a visitor reads in two seconds, and it
      * leads with the engineering because that is what the page is for.
      */

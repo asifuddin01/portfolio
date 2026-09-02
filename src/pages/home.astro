@@ -4,7 +4,7 @@ import LesionRule from '../components/ornament/LesionRule.astro';
 import ArtInterleaf from '../components/art/ArtInterleaf.astro';
 import { getHomePlates } from '../lib/collections';
 
-import Frontispiece from '../components/home/Frontispiece.astro';
+import SummaHead from '../components/home/SummaHead.astro';
 import Prologue from '../components/home/Prologue.astro';
 import Axioms from '../components/home/Axioms.astro';
 import Instrumentarium from '../components/home/Instrumentarium.astro';
@@ -23,11 +23,11 @@ import { AUTHOR, ROLE, toRoman } from '../consts';
 const { numeral, bySlot } = await getHomePlates();
 ---
 <BaseLayout
-  title={`The codex — ${AUTHOR}`}
+  title={`Summa — ${AUTHOR}`}
   description={ROLE}
   folio={toRoman(2)}
 >
-  <Frontispiece />
+  <SummaHead />
 
   <div class="codex">
     <LesionRule />

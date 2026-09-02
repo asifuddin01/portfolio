@@ -39,7 +39,7 @@
   /* Above-the-fold word reveals run on an animation, not on the observer, for
      the reason given at the top of this section: an observer-driven hero holds
      at opacity 0 until the module script boots. Both landing heroes qualify —
-     `.fp` is the codex's, `.fr` the frontispiece's. Adding a hero without
+     `.fp` is the Summa's, `.fr` the frontispiece's. Adding a hero without
      adding it here leaves its epigraph invisible, which is exactly what
      happened the first time. */
   .js .fp .word,

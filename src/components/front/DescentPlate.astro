@@ -108,7 +108,7 @@ const CY = 207;
 </figure>
 
 <style>
-  .dp { margin: 0; display: grid; gap: 1rem; }
+  .dp { margin: 0; display: grid; gap: 1rem; position: relative; }
   .dp-svg {
     width: 100%;
     height: auto;
@@ -123,6 +123,50 @@ const CY = 207;
     display: grid;
     gap: 0.25rem;
     max-width: 30rem;
+  }
+
+  /* ---- The legend, set into the plate -------------------------------
+     Below ~940px the plate stacks above the hero text and there is no room
+     to overlap without crowding, so the caption stays a row beneath it. On a
+     wide screen it moves into the image, bottom-left — the quiet quadrant.
+     The descent runs top-left to bottom-right and the basin sits at roughly
+     (79%, 83%), so the legend is capped at 62% width to stay clear of the
+     minimum, which is the one part of the drawing worth not covering.
+
+     The scrim is a radial fade to the page colour rather than a panel. An
+     engraved legend has no border; it is simply the place where the burin
+     stopped. A hard edge here would read as a UI card dropped on a drawing. */
+  @media (min-width: 940px) {
+    .dp-cap {
+      position: absolute;
+      left: 0;
+      bottom: 0.2rem;
+      z-index: 1;
+      max-width: min(21rem, 58%);
+    }
+
+    /* The drawing yields to the legend rather than the legend covering the
+       drawing. A scrim was tried first and was wrong: the hero background is
+       an ink wash, so any flat fill of --paper reads as a rectangle dropped on
+       the plate — visibly a UI panel, which is the one thing this must not
+       look like.
+       Masking instead fades the strokes out exactly where the text sits and
+       lets them continue around it, which is what an engraver does when a
+       legend is set into the image. */
+    .dp-svg {
+      -webkit-mask-image: radial-gradient(
+        ellipse 52% 34% at 14% 88%,
+        transparent 24%,
+        rgba(0, 0, 0, 0.55) 62%,
+        #000 100%
+      );
+      mask-image: radial-gradient(
+        ellipse 52% 34% at 14% 88%,
+        transparent 24%,
+        rgba(0, 0, 0, 0.55) 62%,
+        #000 100%
+      );
+    }
   }
   .dp-cap-n {
     font-family: var(--font-mono);

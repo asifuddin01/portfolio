@@ -18,7 +18,11 @@ const frontN = firstPlate ? (numeral.get(firstPlate.id) ?? 1) : 1;
 <section class="fp" aria-labelledby="fp-h">
   <div class="codex fp-inner">
    <div class="fp-text">
-    <h1 class="fp-name" id="fp-h" data-intro="press">{AUTHOR}</h1>
+    {/* The page is called from the frontispiece by name, so it has to answer
+        to it here. Every other deep page on the site opens with the same
+        kicker-then-title pair. */}
+    <p class="fp-kicker" data-intro>Summa</p>
+    <h1 class="fp-name" id="fp-h" data-intro="press" style="--d:80ms">{AUTHOR}</h1>
 
     <p class="fp-role" data-intro style="--d:180ms">{role}</p>
 
@@ -69,6 +73,14 @@ const frontN = firstPlate ? (numeral.get(firstPlate.id) ?? 1) : 1;
     .fp-art { margin-top: 3rem; max-width: 26rem; }
   }
 
+  .fp-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.9rem;
+  }
   .fp-name {
     font-size: clamp(2.75rem, 9vw, 4rem);
     letter-spacing: 0.02em;

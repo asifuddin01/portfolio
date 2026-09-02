@@ -1992,7 +1992,7 @@ collections:
         extension: mdx
         format: frontmatter
         description: >-
-          The page a stranger lands on. It is arranged around one question — can he build things that work — so the copy here should answer that and nothing else. The long version lives on the codex, reached by clicking your name.
+          The page a stranger lands on. It is arranged around one question — can he build things that work — so the copy here should answer that and nothing else. The long version lives in the Summa, reached by clicking your name.
         fields:
           - { label: Heading, name: title, widget: string }
           - label: Tagline
@@ -2007,7 +2007,7 @@ collections:
             name: role
             widget: text
             hint: >-
-              The long scholarly line. Used on the codex and as a fallback if
+              The long scholarly line. Used in the Summa and as a fallback if
               the tagline is empty.
           - { label: Epigraph, name: epigraph, widget: text }
           - { label: Attributed to, name: attribution, widget: string }
@@ -2048,5 +2048,5 @@ collections:
                 name: href
                 widget: string
                 required: false
-                hint: "The page that proves it, e.g. /works/hierarchiretina. Defaults to the codex."
+                hint: "The page that proves it, e.g. /works/hierarchiretina. Defaults to the Summa."
 
