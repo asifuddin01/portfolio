@@ -5,6 +5,7 @@ import ArtInterleaf from '../components/art/ArtInterleaf.astro';
 import { getHomePlates } from '../lib/collections';
 
 import SummaHead from '../components/home/SummaHead.astro';
+import SummaRail from '../components/home/SummaRail.astro';
 import Prologue from '../components/home/Prologue.astro';
 import Axioms from '../components/home/Axioms.astro';
 import Instrumentarium from '../components/home/Instrumentarium.astro';
@@ -28,6 +29,7 @@ const { numeral, bySlot } = await getHomePlates();
   folio={toRoman(2)}
 >
   <SummaHead />
+  <SummaRail />
 
   <div class="codex">
     <LesionRule />

@@ -1,0 +1,216 @@
+---
+/**
+ * The Summa's marginal rail.
+ *
+ * That page is twenty-four thousand pixels across ten chapters with no way to
+ * move between them: a reader who wanted the Appendix had to scroll for it,
+ * and a reader who got there had no way back to the Instrumentarium except by
+ * scrolling again. This is the folio margin doing what a folio margin is for.
+ *
+ * Numerals rather than names, because the rail lives in the gutter and a
+ * gutter is narrow. The name arrives on hover and on keyboard focus, so the
+ * rail is never a row of unlabelled numbers to anyone using it seriously.
+ *
+ * It is an enhancement, not a dependency. Every target is a plain anchor to a
+ * section that exists on the page, so with no JavaScript it still navigates —
+ * only the highlighting of the current chapter stops working.
+ */
+
+/**
+ * Mirrors the order the sections are composed in `pages/home.astro`. The
+ * numerals are the ones each Chapter already prints, so the rail and the page
+ * agree; `marginalia` is the interleaf between VII and VIII and carries no
+ * numeral of its own, which is why it shows a mark instead.
+ */
+const CHAPTERS = [
+  { id: 'prologue', n: 'II', name: 'Prologue' },
+  { id: 'axioms', n: 'III', name: 'Axioms' },
+  { id: 'instrumentarium', n: 'IV', name: 'Instrumentarium' },
+  { id: 'compendium', n: 'V', name: 'Compendium' },
+  { id: 'instrumenta', n: 'VI', name: 'Instrumenta propria' },
+  { id: 'elementa', n: 'VII', name: 'Elementa' },
+  { id: 'marginalia', n: '·', name: 'Marginalia' },
+  { id: 'chronicle', n: 'VIII', name: 'Chronicle' },
+  { id: 'appendix', n: 'IX', name: 'Appendix' },
+  { id: 'correspondence', n: 'X', name: 'Correspondence' },
+];
+---
+<nav class="sr" aria-label="Chapters">
+  <ul class="sr-list">
+    {CHAPTERS.map((c) => (
+      <li>
+        <a class="sr-link" href={`#${c.id}`} data-rail={c.id} title={c.name}>
+          <span class="sr-n" aria-hidden="true">{c.n}</span>
+          <span class="sr-name">{c.name}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<script>
+  /**
+   * Mark the chapter currently being read.
+   *
+   * Computed from position on each frame rather than driven by an
+   * IntersectionObserver. The observer version was wrong in a way that only
+   * showed up under test: its callback receives the entries whose intersection
+   * *changed*, not every section in view, so after a large jump it could mark
+   * the section the reader had left rather than the one they had arrived at —
+   * measured at five of ten jumps naming the previous chapter.
+   *
+   * Reading all ten positions is O(10) on a frame that only runs while
+   * scrolling, which is cheaper than being subtly wrong.
+   */
+  const links = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLElement>('[data-rail]').forEach((a) => {
+    links.set(a.dataset.rail!, a);
+  });
+
+  const sections = [...links.keys()]
+    .map((id) => document.getElementById(id))
+    .filter((el): el is HTMLElement => Boolean(el));
+
+  if (sections.length) {
+    let current = '';
+    let raf = 0;
+
+    const update = () => {
+      /* The line sits a third down the viewport: a chapter becomes current
+         when it reaches where someone is looking, not when its first pixel
+         appears at the very top. */
+      const line = window.innerHeight * 0.33;
+      /* The last section to have started above the line is the one in view. */
+      let found = sections[0].id;
+      for (const s of sections) {
+        if (s.getBoundingClientRect().top <= line) found = s.id;
+        else break;
+      }
+      if (found === current) return;
+      links.get(current)?.removeAttribute('aria-current');
+      links.get(found)?.setAttribute('aria-current', 'true');
+      current = found;
+    };
+
+    /**
+     * Cancel-and-replace rather than a "already queued" flag.
+     *
+     * The flag version could deadlock: requestAnimationFrame is paused while a
+     * tab is hidden, so a scroll that set the flag and never got its frame left
+     * it set forever and the rail stopped updating for the rest of the session.
+     * Cancelling the outstanding frame and asking for another cannot get stuck
+     * — there is no state to leave behind.
+     */
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', schedule, { passive: true });
+    update();
+  }
+</script>
+
+<style>
+  /**
+   * Hidden below 1080px. The rail sits in the page gutter, which is
+   * `clamp(1.25rem, 5vw, 4rem)` — about 54px at 1080 and shrinking below it.
+   * A 30px rail clears the text there and does not much further down, and a
+   * navigation aid that overlaps the prose it navigates is worse than none.
+   */
+  .sr { display: none; }
+
+  @media (min-width: 1080px) {
+    .sr {
+      display: block;
+      position: fixed;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+    }
+  }
+
+  .sr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+
+  .sr-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    /* The hit area is the whole row, so the name appearing on hover does not
+       move the target out from under the pointer. */
+    padding: 0.1rem 0.2rem;
+  }
+
+  .sr-n {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    min-width: 2.1em;
+    text-align: right;
+    color: var(--brass-text);
+    opacity: 0.55;
+  }
+
+  .sr-name {
+    font-family: var(--font-body);
+    font-size: var(--t-xs);
+    white-space: nowrap;
+    opacity: 0;
+    /* Not `display: none` — a hidden name is still read by a screen reader
+       here, which is the point: the numeral alone names nothing. */
+    transform: translateX(-4px);
+    pointer-events: none;
+  }
+
+  .sr-link:hover .sr-n,
+  .sr-link:focus-visible .sr-n { opacity: 1; color: var(--fundus); }
+
+  /**
+   * The name only appears where there is room for it.
+   *
+   * Measured: the longest chapter name reaches 143px from the left edge, and
+   * the text column starts at 54px at 1080 and 73px at 1280. Revealing it
+   * below about 1410px prints "Instrumenta propria" across the prose. Above
+   * 1440 the margin is wide enough and the name is simply there on hover.
+   *
+   * Below that the `title` attribute carries it — a native tooltip, which the
+   * browser positions clear of everything, and the span itself stays in the
+   * accessibility tree either way, so the numeral is never unlabelled to a
+   * screen reader at any width.
+   */
+  @media (min-width: 1440px) {
+    .sr-link:hover .sr-name,
+    .sr-link:focus-visible .sr-name { opacity: 1; transform: none; color: var(--ink); }
+  }
+
+  /* The chapter being read. Brighter than the rest and marked with a rule, so
+     position is legible without hovering anything. */
+  .sr-link[aria-current] .sr-n {
+    opacity: 1;
+    color: var(--fundus);
+  }
+  .sr-link[aria-current] .sr-n::after {
+    content: '';
+    display: inline-block;
+    width: 0.55rem;
+    height: 0;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    border-top: 1px solid var(--fundus);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sr-n { transition: opacity 200ms var(--ease-out), color 200ms var(--ease-out); }
+    .sr-name {
+      transition:
+        opacity 200ms var(--ease-out),
+        transform 240ms var(--ease-out),
+        color 200ms var(--ease-out);
+    }
+  }
+</style>
