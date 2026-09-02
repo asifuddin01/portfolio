@@ -1,13 +1,25 @@
 ---
 /** The paper abstract, verbatim. Never truncated, never paraphrased,
-    no "read more" toggle. It is a quotation and should look like one. */
+    no "read more" toggle. It is a quotation and should look like one.
+ *
+ * Which is exactly why a placeholder must not render. Two plates carry
+ * `abstract: '[SUPPLY]'` — a note to the author that the real text is not
+ * written yet — and this component was presenting it inside quotation marks,
+ * under a heading reading "Abstract", as though the paper's abstract were the
+ * word SUPPLY. The block is omitted instead; the Status section on every
+ * in-preparation plate already says the work is unpublished, so nothing is
+ * lost by saying nothing. */
 interface Props { abstract: string }
 const { abstract } = Astro.props;
+
+const placeholder = !abstract || /^\s*\[[A-Z\s]+\]\s*$/.test(abstract);
 ---
-<figure class="ab" data-reveal>
-  <figcaption class="ab-label">Abstract</figcaption>
-  <blockquote class="ab-quote"><p>{abstract}</p></blockquote>
-</figure>
+{!placeholder && (
+  <figure class="ab" data-reveal>
+    <figcaption class="ab-label">Abstract</figcaption>
+    <blockquote class="ab-quote"><p>{abstract}</p></blockquote>
+  </figure>
+)}
 <style>
   .ab { margin: 2.5rem 0; max-width: var(--measure); }
   .ab-label {

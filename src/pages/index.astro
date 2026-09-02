@@ -26,6 +26,7 @@ const epigraph = fp?.data.epigraph ?? '';
 const highlights = fp?.data.highlights ?? [];
 const now = fp?.data.now ?? '';
 const nowLabel = fp?.data.nowLabel ?? '';
+const nowItems = fp?.data.nowItems ?? [];
 const location = fp?.data.location ?? LOCATION;
 const words = epigraph.split(' ').filter(Boolean);
 
@@ -102,6 +103,19 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
           Now{nowLabel && <span class="fr-now-d"> · {nowLabel}</span>}
         </h2>
         <p class="fr-now-t">{now}</p>
+
+        {nowItems.length > 0 && (
+          <ol class="fr-now-l" data-reveal-stagger>
+            {nowItems.map((it) => (
+              <li class="fr-now-i">
+                {it.href
+                  ? <a class="fr-now-lab link" href={it.href}>{it.label}</a>
+                  : <span class="fr-now-lab">{it.label}</span>}
+                <span class="fr-now-d2">{it.detail}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     )}
 
@@ -383,7 +397,35 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     line-height: 1.45;
     color: var(--ink);
     max-width: 44ch;
-    margin: 0;
+    margin: 0 0 1.6rem;
+  }
+
+  /* The four, one line each. Label and detail on one row above 700px so the
+     count is legible at a glance — four labels in a column is the fact being
+     communicated, and wrapping each into a paragraph would hide it. */
+  .fr-now-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; max-width: 64rem; }
+  .fr-now-i {
+    display: grid;
+    gap: 0.2rem 1.4rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    padding-top: 0.7rem;
+  }
+  @media (min-width: 700px) {
+    .fr-now-i { grid-template-columns: 11rem minmax(0, 1fr); }
+  }
+  .fr-now-lab {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  a.fr-now-lab:hover { color: var(--fundus); }
+  .fr-now-d2 {
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    max-width: var(--measure);
   }
 
   /* ---- Systems ------------------------------------------------------ */

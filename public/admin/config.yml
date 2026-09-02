@@ -2025,6 +2025,30 @@ collections:
               Two or three sentences on the current problem. This is the part of
               a portfolio that shows momentum, and the part that is almost always
               missing. Change it when the work changes.
+          - label: Now — what is running
+            name: nowItems
+            widget: list
+            required: false
+            label_singular: Project
+            summary: "{{fields.label}}"
+            hint: >-
+              One line per thing actually under way. A list rather than a longer
+              paragraph above: the count is itself the point, and four projects
+              written as prose reads as a wall.
+            fields:
+              - label: Short name
+                name: label
+                widget: string
+                hint: 'What you call it in conversation, e.g. "HCGT-PG".'
+              - label: One line
+                name: detail
+                widget: text
+                hint: "What it is and where it has got to. One sentence, two at most."
+              - label: Link
+                name: href
+                widget: string
+                required: false
+                hint: "Where to read more, e.g. /works/hcgt-pg. Optional."
           - label: Evidence — the numbers under the hero
             name: highlights
             widget: list

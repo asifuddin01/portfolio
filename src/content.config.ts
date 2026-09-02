@@ -653,6 +653,19 @@ const site = defineCollection({
     now: z.string().optional(),
     nowLabel: z.string().optional(),
     /**
+     * The things actually running, one line each. A list rather than a longer
+     * `now` paragraph: four projects in one block of display type reads as a
+     * wall, and the count is itself the point — it is the difference between
+     * "working on something" and "running four things at once".
+     */
+    nowItems: z
+      .array(z.object({
+        label: z.string(),
+        detail: z.string(),
+        href: z.string().optional(),
+      }))
+      .default([]),
+    /**
      * The evidence strip. Hand-picked rather than derived: the point is the
      * three or four facts worth a stranger's first ten seconds, and no query
      * knows which those are.

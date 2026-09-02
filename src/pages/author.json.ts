@@ -54,6 +54,19 @@ type Doc = {
 const tidy = (s: string): string => s.replace(/\s+/g, ' ').trim();
 
 /**
+ * Drop editorial placeholders.
+ *
+ * Two plates carry `abstract: '[SUPPLY]'` — a note to the author that the real
+ * abstract is not written yet. That is fine on a page nobody reads it from,
+ * and not fine here: this file is quoted verbatim by a retrieval system, and
+ * "[SUPPLY]" was being served as though it were the abstract of the work. A
+ * placeholder reaching a reader as content is the same class of failure as an
+ * invented citation, so it is filtered rather than trusted to be replaced.
+ */
+const said = (text: string | null | undefined): string =>
+  !text || /^\s*\[[A-Z\s]+\]\s*$/.test(text) ? '' : text;
+
+/**
  * Join the parts of a sentence, dropping the ones that are empty.
  *
  * `number` is in the signature because the call sites guard with
@@ -159,7 +172,7 @@ export const GET: APIRoute = async () => {
         w.data.supervisors.length && `Supervised by ${w.data.supervisors.join(' and ')}.`,
         w.data.coauthors.length && `With ${w.data.coauthors.join(', ')}.`,
         w.data.datasets.length && `Datasets: ${w.data.datasets.join(', ')}.`,
-        w.data.abstract,
+        said(w.data.abstract),
         // Embargoed plates carry no numbers. The schema forbids it; so does this.
         open && w.data.metrics.length
           ? `Results: ${w.data.metrics.map((m) => `${m.label} ${m.value}`).join(', ')}.`

@@ -1,8 +1,8 @@
 ---
 plate: 3
-title: Automated Renal Analysis
-fullTitle: Automated Renal Analysis and Report Generation from Thick-Slice Non-Contrast CT
-subtitle: Automated Renal Measurement, Kidney Stone and Cyst Segmentation, and Radiology Report Generation from Thick-Slice Non-Contrast CT
+title: Automated Renal Reporting
+fullTitle: 'Measure First, Write Second: Verified Generation of the Kidney Section of a Radiology Report from Abdominal CT'
+subtitle: The generator cannot emit a value it did not measure
 status: in-preparation
 disclosure: embargoed
 year: '2026'
@@ -10,7 +10,9 @@ supervisors:
   - Niloy Farhan
 coauthors: []
 datasets:
-  - 1,062 KUB CT studies with paired radiologist reports
+  - KiTS23 and AMOS22 — ~990 human-annotated cases for kidney segmentation
+  - KiTS23 — lesion segmentation
+  - Merlin — 787 report-derived hydronephrosis labels; patient-level split 7,466 / 2,451 / 2,504
 abstract: '[SUPPLY]'
 citation: ''
 paperUrl: ''
@@ -20,23 +22,33 @@ metrics: []
 
 ## The problem
 
-Renal measurement is a routine part of abdominal imaging, but it is difficult to automate reliably from thick-slice non-contrast CT. With slices spaced 8 mm apart, the voxels are highly anisotropic. The kidneys are also angled rather than aligned with the scanner axes, so measuring across axial slices captures a projection of the kidney rather than its true longitudinal extent.
+Every report-generation paper is challenged on the same thing: the model writes a fluent sentence containing a number nobody measured. Most answer with better metrics. An image-to-text model trained to produce radiology prose has no mechanism preventing an invented value — only a distribution that makes one less likely.
 
 ## Approach
 
-The kidneys are first segmented using a pretrained model. Renal length is then calculated from the **principal-axis extent of the kidney mask in world-millimetre coordinates**. This allows the measurement to follow the kidney's own orientation rather than the scanner's axes. The final measurement is reported in millimetres using the image affine, rather than as a number of slices.
+**Measure first, write second.** The pipeline does not predict text from images. It segments structures, computes numbers from those structures, fills the numbers into a template, and only then lets a language model rephrase. Generation happens last and cannot introduce a quantity, because every quantity is already fixed before it runs.
 
-The system is designed as a broader renal analysis pipeline, including **renal measurement, stone and cyst segmentation, and automated report generation** from thick-slice CT.
+**The verifier enforces it.** If the rephrased sentence drops a measured value, the output is rejected and the template version is used instead. Hallucination becomes structurally impossible rather than statistically unlikely — an architectural answer to the objection, not a metric.
 
-## The dataset is part of the contribution
+**The phase gate bounds the claims.** A classifier decides native against contrast. On a native study the report cannot mention enhancement, because enhancement is not assessable without contrast. On a contrast study calculus detection is suppressed, because opacified urine occupies the same attenuation range as stone. The report says what was assessable rather than answering regardless of input — the restraint a radiologist already shows.
 
-The dataset is de-identified, with each case linking a volumetric NIfTI scan to its DICOM-derived metadata and radiologist report. It includes multi-label annotations for **urolithiasis, hydronephrosis, renal cysts, pyelonephritis, cystitis, nephrocalcinosis, renal masses, and normal studies**.
+**The sinus region substitutes for annotation.** The collecting system is what dilates in hydronephrosis and where stones sit, and no public dataset segments it. So it is derived geometrically: the convex hull of the kidney minus the kidney mask isolates the sinus, then a density split separates fat from fluid. Fluid volume over kidney volume is the feature. No labels required, and no radiologist to ask for them.
 
-Radiologist reports are also used as the reference source for renal measurements and automated report generation.
+## What learns and what does not
 
-## Validation
+Three trained components — kidney segmentation, lesion segmentation, and the hydronephrosis classifier. Everything else is deterministic: measurement is geometry on masks, calculus detection is a threshold, template filling is string substitution, the verifier is a check.
 
-The validation cohort was deliberately stratified to include more cases where renal measurement is particularly challenging and clinically relevant, including **hydronephrosis, staghorn calculi, and atrophic kidneys**.
+That split is the point. A deterministic component can be inspected, debugged and explained, and it cannot drift.
+
+## Evaluation
+
+Merlin's own patient-level split is preserved to prevent leakage. Segmentation against held-out human masks by Dice. Measurement is run twice, on trusted masks and on predicted ones, which separates segmentation error from measurement error rather than reporting their sum. Findings by sensitivity, PPV and AUC; reports by BLEU and RadGraph F1 against real radiologist text, alongside the verifier's pass rate.
+
+Two ablations carry the argument: whether the derived sinus feature beats intensity thresholding for hydronephrosis, and whether the verifier measurably reduces value omission against unconstrained rephrasing.
+
+## Reproducibility
+
+Built and validated on public data, with the cohort ID list and the frozen configuration released, so the result can be reproduced from public sources alone.
 
 ## Status
 

@@ -1,11 +1,18 @@
 ---
 interface Props { citation: string | null; paperUrl: string | null; repoUrl: string | null }
 const { citation, paperUrl, repoUrl } = Astro.props;
-const hasAny = Boolean(citation) || Boolean(paperUrl) || Boolean(repoUrl);
+
+/**
+ * `[SUPPLY]` is an editorial note meaning the citation is not written yet, and
+ * it was rendering as the citation — the same failure the abstract block had.
+ * A placeholder is not content and must never reach a reader as if it were.
+ */
+const cite = citation && /^\s*\[[A-Z\s]+\]\s*$/.test(citation) ? null : citation;
+const hasAny = Boolean(cite) || Boolean(paperUrl) || Boolean(repoUrl);
 ---
 {hasAny && (
   <div class="cl" data-reveal>
-    {citation && <p class="cl-cite">{citation}</p>}
+    {cite && <p class="cl-cite">{cite}</p>}
     {(paperUrl || repoUrl) && (
       <p class="cl-links">
         {paperUrl && <a class="link" href={paperUrl}>Paper</a>}
