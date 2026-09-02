@@ -13,6 +13,7 @@ datasets:
   - KiTS23 and AMOS22 — ~990 human-annotated cases for kidney segmentation
   - KiTS23 — lesion segmentation
   - Merlin — 787 report-derived hydronephrosis labels; patient-level split 7,466 / 2,451 / 2,504
+  - 1,062 institutional KUB CT studies with paired radiologist reports — external validation only, never trained on
 abstract: '[SUPPLY]'
 citation: ''
 paperUrl: ''
@@ -46,9 +47,17 @@ Merlin's own patient-level split is preserved to prevent leakage. Segmentation a
 
 Two ablations carry the argument: whether the derived sinus feature beats intensity thresholding for hydronephrosis, and whether the verifier measurably reduces value omission against unconstrained rephrasing.
 
+## External validation
+
+Everything above is trained and tuned on public data. The system is then run, unchanged, against 1,062 institutional KUB CT studies with paired radiologist reports — de-identified, each linking a volumetric scan to its DICOM-derived metadata and the report a radiologist actually wrote, with multi-label annotations for urolithiasis, hydronephrosis, renal cysts, pyelonephritis, cystitis, nephrocalcinosis, renal masses and normal studies.
+
+The cohort is deliberately stratified toward the cases where renal measurement is hardest and matters most: hydronephrosis, staghorn calculi, and atrophic kidneys. A held-out set drawn to be easy would flatter the method rather than test it.
+
+That cohort cannot be released, and the split is what makes the restriction a design choice rather than a limitation. A reviewer is right to distrust a model trained on data nobody else can obtain — the result cannot be checked or built on. An external validation set is the opposite case: it is the part a reader least needs to hold, because the claim it supports is that a system built entirely from public sources still works on data it has never seen, from a different scanner population, graded against a different set of radiologists.
+
 ## Reproducibility
 
-Built and validated on public data, with the cohort ID list and the frozen configuration released, so the result can be reproduced from public sources alone.
+Trained and validated on public data alone, with the cohort ID list and the frozen configuration released. Every number in the main results can be reproduced from public sources; the institutional cohort adds a second, external check that cannot be reproduced and is reported separately for that reason.
 
 ## Status
 
