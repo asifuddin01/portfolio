@@ -1,0 +1,7 @@
+Keeps this directory in the repository while it is empty.
+
+Git does not track empty directories, so without this the folder exists on
+the machine where the collection was added and nowhere else — which is
+exactly how it failed: `npm run verify` passed locally and check-cms.mjs
+refused the build in CI, correctly, with "folder src/content/library does
+not exist". The glob loader reads **/*.mdx, so this file is not an entry.
