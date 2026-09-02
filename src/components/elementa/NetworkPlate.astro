@@ -102,12 +102,16 @@ const EDGES = LAYERS.flatMap((layer, l) =>
 );
 
 /**
- * Only the strong edges carry a visible pulse. All 78 pulsing at once is a
- * shimmer rather than a signal, and the strongest weights are the ones
- * actually doing the work — which is the thing worth showing.
+ * Which edges carry a visible packet.
+ *
+ * Not all 78: every wire lighting at once is a shimmer rather than a wave, and
+ * a weight near zero passes almost nothing, so drawing it as a bright packet
+ * would misdescribe the network. At 0.3 of the maximum, 51 of 78 carry signal
+ * forward and 39 carry gradient back — enough that the wave reads as crossing
+ * the whole layer, few enough that the strong paths still stand out.
  */
-const FORWARD = EDGES.filter((e) => e.rw > 0.55);
-const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
+const FORWARD = EDGES.filter((e) => e.rw > 0.3);
+const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
 
 ---
 <figure class="np" data-reveal aria-labelledby="np-cap">
@@ -134,7 +138,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
         class="np-fwd"
         x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
         stroke-width={(0.5 + e.rw * 1.1).toFixed(2)}
-        style={`--len:${e.len.toFixed(1)}; --l:${e.layer}`}
+        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --l:${e.layer}`}
       />
     ))}
 
@@ -144,7 +148,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
         class="np-bwd"
         x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1}
         stroke-width={(0.5 + e.rg * 1.3).toFixed(2)}
-        style={`--len:${e.len.toFixed(1)}; --l:${LAYERS.length - e.layer}`}
+        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --l:${LAYERS.length - e.layer}`}
       />
     ))}
 
@@ -281,19 +285,37 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.45);
     /* Forward occupies the first third; the return, the second. The gap
        between them is deliberate — the two passes are separate events and
        running them together would say something false about training. */
+    /* The offset runs +dash to -len, and getting this backwards is why the
+       wires looked dead.
+       `stroke-dashoffset: d` shifts the pattern backwards along the path, so
+       the dash drawn at [0, 7] in pattern space appears at [-d, 7-d]. The
+       first version animated d from len+7 down to 0 — from entirely before the
+       start to exactly at the start — so the packet never crossed the wire at
+       all. Opacity was animating the whole time, which is why a check for
+       "how many are lit" passed while nothing was visible.
+       Running d from +7 to -len carries it on at one end and off at the
+       other, which is the whole point. */
+    /* The end value is emitted by the component as `--end`, not derived here.
+       Two earlier versions failed on exactly this line. `stroke-dashoffset:
+       calc(var(--len) + 7px)` animating to 0 moved the packet from before the
+       start *to* the start, so it never crossed the wire; replacing that with
+       `calc(-1 * var(--len))` left the computed offset unresolvable and stuck
+       at 7. Both times the opacity animated correctly, so a check for "how
+       many are lit" reported success while the wires were visibly dead.
+       A plain custom property has nothing left to get wrong. */
     @keyframes np-fwd {
-      0%   { stroke-dashoffset: calc(var(--len) + 7px); opacity: 0; }
-      2%   { opacity: 1; }
-      26%  { stroke-dashoffset: 0; opacity: 1; }
-      30%  { stroke-dashoffset: 0; opacity: 0; }
-      100% { stroke-dashoffset: 0; opacity: 0; }
+      0%   { stroke-dashoffset: 7; opacity: 0; }
+      3%   { opacity: 1; }
+      27%  { opacity: 1; }
+      30%  { stroke-dashoffset: var(--end); opacity: 0; }
+      100% { stroke-dashoffset: var(--end); opacity: 0; }
     }
     @keyframes np-bwd {
-      0%, 44% { stroke-dashoffset: calc(var(--len) + 7px); opacity: 0; }
+      0%, 44% { stroke-dashoffset: 7; opacity: 0; }
       47%     { opacity: 1; }
-      72%     { stroke-dashoffset: 0; opacity: 1; }
-      76%     { stroke-dashoffset: 0; opacity: 0; }
-      100%    { stroke-dashoffset: 0; opacity: 0; }
+      73%     { opacity: 1; }
+      76%     { stroke-dashoffset: var(--end); opacity: 0; }
+      100%    { stroke-dashoffset: var(--end); opacity: 0; }
     }
 
     /* One formula per loop, six loops to a rotation.

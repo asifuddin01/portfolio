@@ -199,10 +199,18 @@ const total = {
      needs real width; squeezing both into a laptop viewport makes each worse
      than it is alone, so below that the plate follows the text. */
   .el-head-plate { margin-top: 2rem; max-width: 34rem; }
-  @media (min-width: 1080px) {
+
+  /* The plate takes the space rather than the type giving it up.
+     The lede keeps its size and simply wraps to a narrower column — measured,
+     the text sits at roughly 53ch here against the 68ch it would otherwise
+     take, which is still inside the comfortable band and buys the drawing
+     about a quarter more width.
+     1180px, not 1080: at the lower breakpoint the same split left the text at
+     42ch, which is too narrow to read a long paragraph in. */
+  @media (min-width: 1180px) {
     .el-head {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+      grid-template-columns: minmax(0, 1fr) minmax(0, clamp(22rem, 32vw, 30rem));
       gap: clamp(2rem, 4vw, 4rem);
       align-items: center;
     }
