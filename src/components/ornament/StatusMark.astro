@@ -3,12 +3,21 @@
  * What makes an absent metrics table read as embargo rather than as
  * absence. Appears on every plate, including Plate I.
  */
-interface Props { status: 'deposited' | 'in-preparation' | 'proposal-accepted' }
+/**
+ * The union is duplicated from the content schema rather than imported, which
+ * is why adding `under-review` there broke the build here — correctly. The
+ * alternative was a widened type that would have rendered an empty badge for
+ * a status nobody had written a label for.
+ */
+interface Props {
+  status: 'deposited' | 'in-preparation' | 'under-review' | 'proposal-accepted';
+}
 const { status } = Astro.props;
 
 const LABELS: Record<Props['status'], string> = {
   'deposited': 'Deposited',
   'in-preparation': 'In preparation',
+  'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
 };
 ---

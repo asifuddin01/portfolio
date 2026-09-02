@@ -24,6 +24,7 @@ const STATE = {
 const PLATE_STATUS = {
   deposited: 'Deposited',
   'in-preparation': 'In preparation',
+  'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
 };
 

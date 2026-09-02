@@ -1,173 +1,141 @@
 ---
 /**
- * The frontispiece plate: gradient descent on a non-convex surface.
+ * The frontispiece plate: three optimisers on one non-convex surface.
  *
- * Chosen over the obvious alternatives — a particle field, a rotating globe,
- * a neural-net graph — because it is the one picture that is both ornamental
+ * Chosen over a particle field or a rotating globe because it is ornamental
  * enough to sit where a Raphael used to and *true* of the work. Contour lines
  * are also what an engraver would have drawn, so it belongs to the rest of the
  * site rather than arriving from a different century.
  *
- * The motion is the argument: the path does not glide to the minimum. It
- * overshoots a ridge, doubles back, and settles — which is what training
- * actually looks like and what a smooth animation would misrepresent.
+ * Nothing here is illustrated. The surface is a function, the contours come
+ * from a marching-squares pass over it, and the three traces are what plain
+ * descent, momentum and a larger step actually did — all computed at build
+ * time in `lib/descent.ts`, so the page ships finished geometry and the
+ * animation costs no scripting at all.
  *
- * Mechanically it reuses `fig-draw` from motion.css: `data-draw` strokes
- * reveal by stroke-dashoffset, `data-fade` elements fade after them. Under
- * `prefers-reduced-motion` that file already resolves both to their finished
- * state, so this arrives drawn rather than not at all.
+ * The argument is the divergence. Two of the runs start from the same point
+ * with the same step size and differ only in momentum, and they do not finish
+ * in the same basin: plain descent settles at a loss of -0.652 while the
+ * deeper minimum, three tenths away, is at -0.950. A single smooth curve into
+ * a single minimum would be a diagram of something that does not happen.
  */
+import { RUNS, contours, pathLength } from '../../lib/descent';
 
-/** Contours of a warped bowl: an ellipse family, rotated and drifting. */
-const CONTOURS = [
-  { rx: 150, ry: 108, rot: -14, o: 0.16 },
-  { rx: 124, ry: 88, rot: -11, o: 0.2 },
-  { rx: 99, ry: 70, rot: -8, o: 0.24 },
-  { rx: 76, ry: 53, rot: -5, o: 0.3 },
-  { rx: 55, ry: 38, rot: -2, o: 0.36 },
-  { rx: 36, ry: 25, rot: 0, o: 0.44 },
-  { rx: 20, ry: 14, rot: 0, o: 0.56 },
-];
+/* The plate is wider than tall, so the surface is stretched to fill it. */
+const W = 320;
+const H = 260;
+const PAD = 6;
+const sx = (x: number) => PAD + x * (W - PAD * 2);
+const sy = (y: number) => PAD + y * (H - PAD * 2);
+const d = (pts: [number, number][]) =>
+  pts.map(([x, y], i) => `${i ? 'L' : 'M'}${sx(x).toFixed(1)} ${sy(y).toFixed(1)}`).join('');
 
 /**
- * The descent. Hand-placed rather than simulated: a real optimiser on a real
- * surface produces a path that reads as noise at this size, and the point is
- * legibility — a long first step, a ridge overshot, a correction, then small
- * steps into the basin.
+ * Levels spaced tighter near the floor, where the structure is. Evenly spaced
+ * levels put most of the ink on the flat outer bowl, which has nothing to say.
  */
-const STEPS = [
-  [58, 44], [104, 96], [163, 74], [196, 132], [151, 158],
-  [199, 186], [232, 168], [246, 197], [228, 208], [243, 203], [236, 212],
-];
-const PATH = STEPS.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`).join(' ');
-const CX = 238;
-const CY = 207;
+const LEVELS = [-0.88, -0.78, -0.64, -0.5, -0.36, -0.22, -0.08, 0.06, 0.2];
+const RINGS = contours(LEVELS);
+
+/* Where each run stopped, taken from the runs rather than asserted separately. */
+const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
 ---
-<figure class="dp fig-draw" data-reveal aria-labelledby="dp-cap">
+<figure class="dp" data-reveal aria-labelledby="dp-cap">
   <svg
     class="dp-svg"
-    viewBox="0 0 300 250"
+    viewBox={`0 0 ${W} ${H}`}
     role="img"
-    aria-label="Contour map of a loss surface with a gradient-descent path descending into the minimum."
+    aria-label="Contour map of a two-basin loss surface. Three gradient-descent trajectories cross it; two begin at the same point and finish in different basins."
   >
     <defs>
-      <radialGradient id="dp-glow" cx="50%" cy="50%">
-        <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28" />
-        <stop offset="100%" stop-color="var(--brass)" stop-opacity="0" />
+      <radialGradient id="dp-deep">
+        <stop offset="0%" stop-color="var(--fundus)" stop-opacity="0.22" />
+        <stop offset="100%" stop-color="var(--fundus)" stop-opacity="0" />
       </radialGradient>
     </defs>
 
-    <circle cx={CX} cy={CY} r="66" fill="url(#dp-glow)" data-fade />
+    {/* The deeper basin, lit faintly, so the eye knows where the answer was. */}
+    <circle class="dp-glow" cx={sx(0.68)} cy={sy(0.62)} r="52" fill="url(#dp-deep)" />
 
-    {CONTOURS.map((c, i) => (
-      <ellipse
-        class="dp-contour"
-        cx={CX}
-        cy={CY}
-        rx={c.rx}
-        ry={c.ry}
-        transform={`rotate(${c.rot} ${CX} ${CY})`}
-        stroke="var(--brass)"
-        stroke-opacity={c.o}
+    <g class="dp-rings">
+      {RINGS.map((ring, li) =>
+        ring.lines.map((line) => (
+          <path
+            class="dp-ring"
+            d={d(line)}
+            fill="none"
+            stroke="var(--brass)"
+            stroke-opacity={0.18 + li * 0.042}
+            stroke-width="0.55"
+            style={`--len:${pathLength(line, W - PAD * 2, H - PAD * 2)}; --i:${li}`}
+          />
+        ))
+      )}
+    </g>
+
+    {/* Where the runs began. The first two share a mark, because they share it. */}
+    <g class="dp-start">
+      <circle cx={sx(0.13)} cy={sy(0.16)} r="2.6" fill="none" stroke="var(--ink-soft)" stroke-width="0.7" />
+      <circle cx={sx(0.88)} cy={sy(0.14)} r="2.6" fill="none" stroke="var(--ink-soft)" stroke-width="0.7" />
+    </g>
+
+    {RUNS.map((run, i) => (
+      <path
+        class:list={['dp-trace', `dp-${run.id}`]}
+        d={d(run.points)}
         fill="none"
-        data-draw
-        style={`--len:${Math.round(Math.PI * (3 * (c.rx + c.ry) - Math.sqrt((3 * c.rx + c.ry) * (c.rx + 3 * c.ry))))}; --i:${i}`}
+        stroke-width={run.id === 'momentum' ? 1.5 : 1.1}
+        stroke-linejoin="round"
+        stroke-linecap="round"
+        style={`--len:${pathLength(run.points, W - PAD * 2, H - PAD * 2)}; --i:${i}`}
       />
     ))}
 
-    {/* The steps, as an engraver would mark a survey: a tick at each. */}
-    {STEPS.map(([x, y], i) => (
-      <circle class="dp-step" cx={x} cy={y} r="1.6" fill="var(--brass-text)" data-fade style={`--i:${i}`} />
+    {/* Each run's head, travelling its own path. */}
+    {RUNS.map((run, i) => (
+      <circle
+        class:list={['dp-head', `dp-${run.id}`]}
+        r={run.id === 'momentum' ? 2.6 : 2}
+        style={`offset-path: path('${d(run.points)}'); --i:${i}`}
+      />
     ))}
 
-    <path
-      class="dp-path"
-      d={PATH}
-      fill="none"
-      stroke="var(--fundus)"
-      stroke-width="1.4"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-      data-draw
-      style="--len:640"
-    />
-
-    {/* Where it stopped. Not the true minimum — nothing ever lands there. */}
-    <circle class="dp-min" cx={CX} cy={CY} r="3.4" fill="var(--fundus)" data-fade />
-    <circle class="dp-halo" cx={CX} cy={CY} r="3.4" fill="none" stroke="var(--fundus)" data-fade />
+    {/* Where each run stopped. Two are the same basin; one is not. */}
+    {ENDS.map(([x, y], i) => (
+      <circle class="dp-end" cx={sx(x)} cy={sy(y)} r="2.4" style={`--i:${i}`} />
+    ))}
   </svg>
 
   <figcaption class="dp-cap" id="dp-cap">
     <span class="dp-cap-n">Plate I</span>
-    <span class="dp-cap-t">Descent on a non-convex surface</span>
+    <span class="dp-cap-t">Three runs, one surface</span>
     <span class="dp-cap-d">
-      The path overshoots a ridge and doubles back. Training looks like this;
-      the smooth version is a diagram of something else.
+      Two start together and differ only in momentum. They do not finish in the
+      same basin, and nothing inside a run tells it that a better minimum lies
+      three tenths away.
+    </span>
+    <span class="dp-key">
+      {RUNS.map((r) => (
+        <span class:list={['dp-key-i', `dp-${r.id}`]}>{r.label}</span>
+      ))}
     </span>
   </figcaption>
 </figure>
 
 <style>
-  .dp { margin: 0; display: grid; gap: 1rem; position: relative; }
-  .dp-svg {
-    width: 100%;
-    height: auto;
-    display: block;
-    overflow: visible;
-  }
+  .dp { margin: 0; display: grid; gap: 1rem; position: relative; --cycle: 9000ms; }
+  .dp-svg { width: 100%; height: auto; display: block; overflow: visible; }
 
-  /* Contours draw outward-in, so the surface appears before the basin. */
-  .dp-contour { stroke-width: 0.6; }
+  /* Resting state — the finished picture. Everything below animates *from*
+     this, so with motion disabled the plate simply arrives drawn. */
+  .dp-plain    { stroke: var(--ink-soft); color: var(--ink-soft); }
+  .dp-momentum { stroke: var(--fundus);   color: var(--fundus); }
+  .dp-coarse   { stroke: var(--brass);    color: var(--brass); }
+  .dp-head { fill: currentColor; offset-distance: 100%; offset-rotate: 0deg; }
+  .dp-end { fill: var(--brass-text); }
+  .dp-start { opacity: 0.55; }
 
-  .dp-cap {
-    display: grid;
-    gap: 0.25rem;
-    max-width: 30rem;
-  }
-
-  /* ---- The legend, set into the plate -------------------------------
-     Below ~940px the plate stacks above the hero text and there is no room
-     to overlap without crowding, so the caption stays a row beneath it. On a
-     wide screen it moves into the image, bottom-left — the quiet quadrant.
-     The descent runs top-left to bottom-right and the basin sits at roughly
-     (79%, 83%), so the legend is capped at 62% width to stay clear of the
-     minimum, which is the one part of the drawing worth not covering.
-
-     The scrim is a radial fade to the page colour rather than a panel. An
-     engraved legend has no border; it is simply the place where the burin
-     stopped. A hard edge here would read as a UI card dropped on a drawing. */
-  @media (min-width: 940px) {
-    .dp-cap {
-      position: absolute;
-      left: 0;
-      bottom: 0.2rem;
-      z-index: 1;
-      max-width: min(21rem, 58%);
-    }
-
-    /* The drawing yields to the legend rather than the legend covering the
-       drawing. A scrim was tried first and was wrong: the hero background is
-       an ink wash, so any flat fill of --paper reads as a rectangle dropped on
-       the plate — visibly a UI panel, which is the one thing this must not
-       look like.
-       Masking instead fades the strokes out exactly where the text sits and
-       lets them continue around it, which is what an engraver does when a
-       legend is set into the image. */
-    .dp-svg {
-      -webkit-mask-image: radial-gradient(
-        ellipse 52% 34% at 14% 88%,
-        transparent 24%,
-        rgba(0, 0, 0, 0.55) 62%,
-        #000 100%
-      );
-      mask-image: radial-gradient(
-        ellipse 52% 34% at 14% 88%,
-        transparent 24%,
-        rgba(0, 0, 0, 0.55) 62%,
-        #000 100%
-      );
-    }
-  }
+  .dp-cap { display: grid; gap: 0.25rem; max-width: 30rem; }
   .dp-cap-n {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -181,42 +149,119 @@ const CY = 207;
     font-size: var(--t-sm);
     color: var(--ink);
   }
-  .dp-cap-d {
-    font-size: var(--t-xs);
-    line-height: 1.65;
-    color: var(--ink-soft);
+  .dp-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
+
+  /* The key doubles as the legend for the three strokes. */
+  .dp-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin-top: 0.4rem; }
+  .dp-key-i {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: currentColor;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+  }
+  .dp-key-i::before {
+    content: '';
+    width: 1.1rem;
+    height: 0;
+    border-top: 1.5px solid currentColor;
+  }
+
+  /* ---- The legend, set into the plate -------------------------------
+     Below ~940px the plate stacks above the hero text and there is no room to
+     overlap without crowding, so the caption stays a row beneath it. */
+  @media (min-width: 940px) {
+    .dp-cap {
+      position: absolute;
+      left: 0;
+      bottom: 0.2rem;
+      z-index: 1;
+      max-width: min(21rem, 58%);
+    }
+    /* The drawing yields to the legend rather than the legend covering it. A
+       scrim was tried first and was wrong: the hero background is an ink wash,
+       so a flat fill of --paper reads as a rectangle dropped on the plate. */
+    .dp-svg {
+      -webkit-mask-image: radial-gradient(ellipse 52% 34% at 14% 88%, transparent 24%, rgba(0,0,0,0.55) 62%, #000 100%);
+      mask-image: radial-gradient(ellipse 52% 34% at 14% 88%, transparent 24%, rgba(0,0,0,0.55) 62%, #000 100%);
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    /* Contours stagger from the outside in — 90ms apart, so the whole family
-       lands in under a second and the path starts while they are still
-       settling. A sequential reveal of seven rings reads as a loading bar. */
-    :global(.js) .dp-contour { transition-delay: calc(var(--i) * 90ms); }
+    /* Contours draw outside-in, so the terrain appears before the basins.
+       70ms apart: the family lands inside a second and the traces start while
+       the last rings are still settling. */
+    :global(.js) .dp-ring {
+      stroke-dasharray: var(--len);
+      stroke-dashoffset: var(--len);
+      transition: stroke-dashoffset 1100ms var(--ease-ink);
+      transition-delay: calc(var(--i) * 70ms);
+    }
+    :global(.js) .dp.is-revealed .dp-ring { stroke-dashoffset: 0; }
 
-    /* The path waits for the surface it descends. */
-    :global(.js) .dp-path {
-      transition-duration: 1700ms;
-      transition-delay: 620ms;
+    :global(.js) .dp-glow,
+    :global(.js) .dp-start {
+      opacity: 0;
+      transition: opacity 600ms var(--ease-out);
+    }
+    :global(.js) .dp.is-revealed .dp-glow { opacity: 1; transition-delay: 700ms; }
+    :global(.js) .dp.is-revealed .dp-start { opacity: 0.55; transition-delay: 900ms; }
+
+    /* The three traces, on a loop. Animation rather than transition because it
+       repeats: the runs draw, rest long enough to be read, fade, and go again —
+       which is what a sweep over hyperparameters actually looks like. */
+    :global(.js) .dp-trace {
+      stroke-dasharray: var(--len);
+      stroke-dashoffset: var(--len);
+    }
+    :global(.js) .dp-head,
+    :global(.js) .dp-end { opacity: 0; }
+
+    /* 520ms apart, not 260. The three runs share a cycle, so they finish
+       together however long each actually took — plain needs 24 steps and
+       momentum 58, and equal wall-clock time flattens that. A wider stagger
+       restores the order of arrival, which is the part worth seeing: the grey
+       run stops first, and stops short. Making the draw genuinely
+       proportional would need one keyframe set per trace and would drift out
+       of sync on the loop, which costs more than it buys here. */
+    :global(.js) .dp.is-revealed .dp-trace {
+      animation: dp-draw var(--cycle) linear infinite;
+      animation-delay: calc(900ms + var(--i) * 520ms);
+    }
+    :global(.js) .dp.is-revealed .dp-head {
+      animation: dp-run var(--cycle) linear infinite;
+      animation-delay: calc(900ms + var(--i) * 520ms);
+    }
+    :global(.js) .dp.is-revealed .dp-end {
+      animation: dp-land var(--cycle) linear infinite;
+      animation-delay: calc(900ms + var(--i) * 520ms);
     }
 
-    /* Step ticks appear in order, timed to trail the path drawing over it. */
-    :global(.js) .dp-step {
-      transition: opacity 260ms var(--ease-out);
-      transition-delay: calc(760ms + var(--i) * 140ms);
+    /* 0–38% draw, 38–78% hold, 78–88% fade, dark until the loop turns. */
+    @keyframes dp-draw {
+      0%   { stroke-dashoffset: var(--len); opacity: 0; }
+      3%   { opacity: 1; }
+      38%  { stroke-dashoffset: 0; opacity: 1; }
+      78%  { stroke-dashoffset: 0; opacity: 1; }
+      88%  { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: var(--len); opacity: 0; }
     }
-
-    :global(.js) .dp-min { transition-delay: 2300ms; }
-
-    /* One slow pulse at the minimum, started only once the run has landed.
-       A loop that runs from page load would be decoration; this reads as the
-       thing having converged. */
-    :global(.js) .fig-draw.is-revealed .dp-halo {
-      animation: dp-settle 3.4s var(--ease-out) 2.5s infinite;
+    @keyframes dp-run {
+      0%   { offset-distance: 0%; opacity: 0; }
+      3%   { opacity: 1; }
+      38%  { offset-distance: 100%; opacity: 1; }
+      78%  { offset-distance: 100%; opacity: 1; }
+      88%  { offset-distance: 100%; opacity: 0; }
+      100% { offset-distance: 100%; opacity: 0; }
     }
-    @keyframes dp-settle {
-      0%   { r: 3.4; opacity: 0.8; }
-      70%  { r: 22;  opacity: 0; }
-      100% { r: 22;  opacity: 0; }
+    /* The resting marks appear only once their run has arrived. */
+    @keyframes dp-land {
+      0%, 36%   { opacity: 0; }
+      44%, 78%  { opacity: 1; }
+      88%, 100% { opacity: 0; }
     }
   }
 </style>

@@ -1285,6 +1285,7 @@ collections:
         default: in-preparation
         options:
           - { label: "In preparation", value: in-preparation }
+          - { label: "Under review — submitted, not yet accepted", value: under-review }
           - { label: "Proposal accepted", value: proposal-accepted }
           - { label: "Deposited", value: deposited }
       - label: Disclosure

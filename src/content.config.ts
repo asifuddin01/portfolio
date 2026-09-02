@@ -55,7 +55,7 @@ const works = defineCollection({
     title: z.string(),
     fullTitle: z.string(),
     subtitle: z.string(),
-    status: z.enum(['deposited', 'in-preparation', 'proposal-accepted']),
+    status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted']),
     disclosure: z.enum(['public', 'embargoed']),
     year: z.string(),
     supervisors: z.array(z.string()),
