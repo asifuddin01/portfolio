@@ -26,7 +26,13 @@ const personLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: AUTHOR,
-  jobTitle: 'Deep learning researcher',
+  /**
+   * Both, and the engineering first — this is the field a search engine reads
+   * for a knowledge panel, and it was the last place the site still described
+   * him only as a researcher after the frontispiece, the meta tags and the
+   * title had all moved.
+   */
+  jobTitle: ['AI/ML engineer', 'Deep learning researcher'],
   description: ROLE,
   url: SITE,
   sameAs: [github, linkedin],
