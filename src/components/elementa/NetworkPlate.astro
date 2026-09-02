@@ -220,7 +220,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
   /* --hop is one layer-to-layer crossing. Three of them make the forward pass,
      and a packet does not leave a layer until the packets feeding it have
      arrived — which is the only order a network actually computes in. */
-  .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 9500ms; --hop: 760ms; }
+  .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 11000ms; --hop: 900ms; }
   .np-svg { width: 100%; height: auto; display: block; overflow: visible; }
 
   .np-wire { stroke: var(--brass); }
@@ -354,18 +354,21 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     /* A pulse now spans one hop — 8% of the cycle, 760ms — rather than the
        whole pass. Three hops staggered by the same 8% make the forward phase,
        so the packets arrive at a layer and leave it in order. */
+    /* 8.2% of an 11s cycle is 900ms — one crossing, and the same number as
+       --hop, which is what keeps a packet's travel time equal to the gap
+       before the next layer starts. Change one and the other has to move. */
     @keyframes np-fwd {
-      0%   { stroke-dashoffset: 7; opacity: 0; }
-      1%   { opacity: 1; }
-      7%   { opacity: 1; }
-      8%   { stroke-dashoffset: var(--end); opacity: 0; }
-      100% { stroke-dashoffset: var(--end); opacity: 0; }
+      0%    { stroke-dashoffset: 7; opacity: 0; }
+      1%    { opacity: 1; }
+      7.2%  { opacity: 1; }
+      8.2%  { stroke-dashoffset: var(--end); opacity: 0; }
+      100%  { stroke-dashoffset: var(--end); opacity: 0; }
     }
     @keyframes np-bwd {
       0%, 48% { stroke-dashoffset: 7; opacity: 0; }
       49%     { opacity: 1; }
-      55%     { opacity: 1; }
-      56%     { stroke-dashoffset: var(--end); opacity: 0; }
+      55.2%   { opacity: 1; }
+      56.2%   { stroke-dashoffset: var(--end); opacity: 0; }
       100%    { stroke-dashoffset: var(--end); opacity: 0; }
     }
 
@@ -413,8 +416,8 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
        per-layer delay has already placed correctly. */
     @keyframes np-lit {
       0%       { transform: scale(1); }
-      3%       { transform: scale(1.55); }
-      11%      { transform: scale(1); }
+      2.6%     { transform: scale(1.55); }
+      9.5%     { transform: scale(1); }
       100%     { transform: scale(1); }
     }
   }
