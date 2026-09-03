@@ -1,4 +1,5 @@
 ---
+import { fillFacts } from '../lib/facts.mjs';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import { getCollection, getEntry } from 'astro:content';
@@ -136,7 +137,7 @@ const { email, github, linkedin, location } = await getContact();
         {projects.map((e) => (
           <li class="cv-item">
             <h3 class="cv-item-t">{e.data.title}</h3>
-            <p class="cv-detail">{e.data.cvSummary ?? e.data.summary}</p>
+            <p class="cv-detail">{fillFacts(e.data.cvSummary ?? e.data.summary)}</p>
           </li>
         ))}
       </ol>

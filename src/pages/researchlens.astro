@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import { AUTHOR } from '../consts';
 import { getLibrary, getPropositionContexts } from '../lib/collections';
+import { RESEARCHLENS } from '../lib/facts.mjs';
 
 /**
  * ResearchLens — the public exhibit.
@@ -63,11 +64,12 @@ const API_CANDIDATES = [
    Two fields rather than one, on purpose — a query has to discriminate across
    domains, not merely within one, which is a harder and more honest test. */
 const CORPUS = {
-  papers: 101,
-  /* 9,593, not 9,540. The page said one and its own findings section below
-     said the other — the baseline-grouping fix cut 9,870 to 9,593 and the
-     header was never moved. Counted from data/bundle/chunks.jsonl. */
-  passages: 9593,
+  /* Read, not written. These said 101 and 9,540 while the findings section
+     below said 9,593, because a number typed into a page has nothing checking
+     it. `npm run facts` measures them from the running instance; see
+     src/lib/facts.ts. */
+  papers: RESEARCHLENS.papers,
+  passages: RESEARCHLENS.passages,
   field:
     'vision-language models, retrieval-augmented generation and federated ' +
     'learning on one side, single-cell genomics and causal discovery on the other',

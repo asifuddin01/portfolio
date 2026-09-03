@@ -1853,12 +1853,23 @@ collections:
     sortable_fields: [ order, title ]
     fields:
       - { label: Title, name: title, widget: string }
-      - { label: Description, name: summary, widget: text, hint: "The fuller version, shown in the Appendix." }
+      - label: Description
+        name: summary
+        widget: text
+        hint: >-
+          The fuller version, shown in the Appendix. Figures about ResearchLens
+          and LocalScholar can be written as {papers}, {passages}, {tests} or
+          {localscholar.tests} — they are filled in from the last measurement
+          rather than typed, so they cannot go stale in a sentence. Run
+          "npm run facts" to re-measure them.
       - label: Short version for the CV
         name: cvSummary
         widget: text
         required: false
-        hint: "Leave blank to reuse the description."
+        hint: >-
+          Leave blank to reuse the description. The same {papers}, {passages}
+          and {tests} placeholders work here, and the generated PDF fills them
+          in exactly as the page does.
       - { label: Order, name: order, widget: number, value_type: int, min: 1 }
       - label: Link
         name: link
@@ -2133,7 +2144,12 @@ collections:
               - label: Number
                 name: value
                 widget: string
-                hint: 'A plain number, e.g. "0.9422" or "101". Decimals are preserved exactly.'
+                hint: >-
+                  A plain number, e.g. "0.9422" — decimals are preserved
+                  exactly. Or name a measured figure instead of typing one:
+                  {papers} and {tests} fill themselves in from the last run of
+                  "npm run facts", which is how this stopped advertising 194
+                  tests when there were 293.
               - label: What it is
                 name: label
                 widget: text

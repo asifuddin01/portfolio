@@ -12,6 +12,8 @@
  * it unchanged.
  */
 
+import { fillFacts } from './facts.mjs';
+
 const byOrder = (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0);
 
 const STATE = {
@@ -124,7 +126,11 @@ export function buildCv({
       style: 'project',
       items: [...projects].sort(byOrder).map((p) => ({
         title: p.data.title ?? '',
-        detail: p.data.cvSummary ?? p.data.summary ?? '',
+        /* The CV states the same figures as the site and must resolve the
+           same tokens. Sharing the filler rather than repeating the numbers is
+           the whole point: a PDF that disagreed with the page it was generated
+           from would be the worst place for this to drift. */
+        detail: fillFacts(p.data.cvSummary ?? p.data.summary ?? ''),
       })),
     });
   }

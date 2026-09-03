@@ -78,6 +78,19 @@ for await (const file of walk('dist')) {
   if (/fonts\.googleapis|fonts\.gstatic|use\.typekit/.test(html)) {
     problems.push(`${page}  NETWORK FONT REQUEST`);
   }
+
+  /**
+   * A fact token that never got filled in.
+   *
+   * Prose in the CMS names a figure — "over {papers} indexed papers" — and
+   * src/lib/facts.mjs substitutes it. A typo in the token, or a page rendering
+   * the text without going through the filler, ships the brace to the reader.
+   * It is visible, which is why it is caught here rather than left to be
+   * noticed: visible on four hundred pages is still visible on all of them.
+   */
+  for (const m of html.matchAll(/\{(papers|passages|tests|localscholar\.tests)\}/g)) {
+    problems.push(`${page}  unresolved fact token: ${m[0]}`);
+  }
 }
 
 if (problems.length) {

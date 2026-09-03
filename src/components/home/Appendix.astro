@@ -1,4 +1,5 @@
 ---
+import { fillFacts } from '../../lib/facts.mjs';
 import Chapter from './Chapter.astro';
 import { getProjects } from '../../lib/collections';
 
@@ -19,7 +20,7 @@ const items = await getProjects();
     {items.map((it) => (
       <li class="ap-item">
         <h3 class="ap-title">{it.data.title}</h3>
-        <p class="ap-body">{it.data.summary}</p>
+        <p class="ap-body">{fillFacts(it.data.summary)}</p>
         {(it.data.link || it.data.repo) && (
           <p class="ap-go">
             {it.data.link && (
