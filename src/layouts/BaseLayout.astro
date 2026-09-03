@@ -20,6 +20,8 @@ import GrainOverlay from '../components/layout/GrainOverlay.astro';
 import InkWash from '../components/layout/InkWash.astro';
 import CursorLens from '../components/layout/CursorLens.astro';
 import FolioNumber from '../components/ornament/FolioNumber.astro';
+import { sectionFor } from '../lib/section';
+import { AUTHOR } from '../consts';
 
 interface Props {
   title: string;
@@ -34,6 +36,30 @@ interface Props {
 }
 
 const { title, description, folio, image, type, noindex } = Astro.props;
+
+/**
+ * What the search index files this page under. Derived from the path, so a new
+ * route is filed correctly without anyone remembering to say where it belongs.
+ */
+const section = sectionFor(Astro.url.pathname);
+
+/**
+ * The title a search result is listed under.
+ *
+ * Every page's `<title>` carries the author's name, which is right in a
+ * browser tab and wrong in a list of twenty results that would then all end
+ * the same way. The frontispiece is the one page whose name *is* the author's,
+ * so it keeps whatever is left rather than being stripped to nothing.
+ */
+const listedTitle =
+  title
+    /* The name is escaped before it becomes a pattern: it contains a full
+       stop, which as a regex would match any character. */
+    .replace(
+      new RegExp(`\\s*[—–-]\\s*${AUTHOR.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\s*$`),
+      '',
+    )
+    .trim() || title;
 ---
 <!doctype html>
 <html lang="en">
@@ -82,7 +108,19 @@ const { title, description, folio, image, type, noindex } = Astro.props;
 
     <Header />
 
-    <main id="main" class="page">
+    {/* `data-pagefind-body` is what the index reads: the page's own content,
+        without the nav and the colophon that repeat on all four hundred pages
+        and would otherwise match every query. It also decides what is indexed
+        at all — a document without it is skipped — which is how /admin stays
+        out of the results without a rule naming it. */}
+    <main id="main" class="page" data-pagefind-body>
+      {/* Metadata for a result: the title it is listed under, and the part of
+          the book it belongs to, which is also the filter. Empty elements,
+          because the `key:value` form takes the value from the attribute — a
+          visible label here would be a label on every page of the site. */}
+      <span hidden data-pagefind-meta={`title:${listedTitle}`}></span>
+      <span hidden data-pagefind-meta={`section:${section}`}></span>
+      <span hidden data-pagefind-filter={`section:${section}`}></span>
       <slot />
       {folio !== undefined && <FolioNumber value={folio} />}
     </main>

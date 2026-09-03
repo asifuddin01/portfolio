@@ -323,8 +323,14 @@ const FINDINGS = [
       <ol class="rl-pipe">
         {PIPELINE.map((p, i) => (
           <li class="rl-pipe-item">
-            <span class="rl-pipe-n">{String(i + 1).padStart(2, '0')}</span>
-            <span class="rl-pipe-step">{p.step}</span>
+            {/* The trailing spaces are for the search index, not the eye.
+                Astro strips whitespace between sibling elements, so the three
+                ran together into the index as one word — "04Reranka
+                cross-encoder" — and showed that way in search excerpts. A
+                space inside the span renders as nothing at the end of a grid
+                cell and gives the indexer the word boundary it needs. */}
+            <span class="rl-pipe-n">{`${String(i + 1).padStart(2, '0')} `}</span>
+            <span class="rl-pipe-step">{`${p.step} `}</span>
             <span class="rl-pipe-detail">{p.detail}</span>
           </li>
         ))}

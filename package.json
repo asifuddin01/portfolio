@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "node scripts/dev-auto.mjs",
     "build": "astro build",
+    "postbuild": "node scripts/build-search.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@sveltia/cms": "^0.193.1",
+    "pagefind": "^1.5.2",
     "typescript": "^6.0.3",
     "wrangler": "^4.124.0"
   }

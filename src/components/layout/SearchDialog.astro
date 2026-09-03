@@ -1,0 +1,496 @@
+---
+/**
+ * Site search — an index of the book, not a question answered.
+ *
+ * Deliberately not ResearchLens. That reads papers and answers in prose, with
+ * citations, and takes seconds to do it; this finds a page and takes none.
+ * A reader who remembers a phrase and wants the page it is on is not asking a
+ * question, and making them wait for a model to answer one would be the wrong
+ * tool wearing the right label.
+ *
+ * Pagefind builds the index from the built HTML after `astro build`, so it can
+ * never disagree with the site: a page that exists is in it, a page that was
+ * deleted is not, and nothing has to be kept in step by hand. The index is
+ * fetched on first open rather than on load — a search nobody performs should
+ * cost nothing, and most visits perform none.
+ *
+ * Its own markup rather than Pagefind's bundled UI, which arrives with its own
+ * CSS and would put a second visual language inside this one — the same reason
+ * the ResearchLens page calls the Space instead of embedding it.
+ */
+---
+
+<button
+  class="sq"
+  type="button"
+  id="search-open"
+  aria-haspopup="dialog"
+  aria-label="Search the site"
+>
+  {/* The glyph is a lens, drawn rather than typed: the character U+1F50D
+      renders as a colour emoji on most platforms, which is a photograph in a
+      page that has none. */}
+  <svg class="sq-i" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.2" />
+    <line x1="10.4" y1="10.4" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+  </svg>
+</button>
+
+<dialog class="sd" id="search-dialog" aria-label="Search">
+  <form class="sd-form" id="search-form" role="search" autocomplete="off">
+    <label class="sd-label" for="search-input">Search the book</label>
+    <div class="sd-row">
+      <input
+        class="sd-input"
+        id="search-input"
+        type="search"
+        name="q"
+        placeholder="A word, a name, a phrase…"
+        aria-describedby="search-status"
+        spellcheck="false"
+      />
+      <button class="sd-close" type="button" id="search-close" aria-label="Close search">Esc</button>
+    </div>
+    <p class="sd-status" id="search-status" role="status" aria-live="polite"></p>
+  </form>
+
+  {/* Filled from the index once a search has run, so the sections offered are
+      the ones the results are actually in. */}
+  <div class="sd-filters" id="search-filters" hidden></div>
+
+  <ol class="sd-results" id="search-results"></ol>
+</dialog>
+
+<script>
+  /**
+   * The dialog's behaviour.
+   *
+   * Written against `astro:page-load` rather than `DOMContentLoaded` because
+   * the router swaps documents without a reload, and a listener bound once to
+   * the first document would be attached to elements no longer on the page.
+   */
+  type PagefindResult = {
+    id: string;
+    data: () => Promise<{
+      url: string;
+      excerpt: string;
+      meta: Record<string, string>;
+      raw_url?: string;
+    }>;
+  };
+
+  type Pagefind = {
+    search: (
+      q: string,
+      opts?: { filters?: Record<string, string[]> },
+    ) => Promise<{ results: PagefindResult[]; filters: Record<string, Record<string, number>> }>;
+    filters: () => Promise<Record<string, Record<string, number>>>;
+    options?: (o: Record<string, unknown>) => Promise<void>;
+  };
+
+  let pagefind: Pagefind | null = null;
+  let loading: Promise<Pagefind | null> | null = null;
+  /** Module state, so it survives the router's document swaps. */
+  let keysBound = false;
+
+  /**
+   * Load the index, once per document lifetime.
+   *
+   * The path is built at run time so the bundler leaves it alone: it is
+   * written by Pagefind after the build, does not exist while the site is
+   * being built, and a static import would therefore fail to resolve. In `astro
+   * dev` it does not exist at all, which is why the failure has a sentence
+   * rather than a stack trace.
+   */
+  async function load(): Promise<Pagefind | null> {
+    if (pagefind) return pagefind;
+    if (loading) return loading;
+    loading = (async () => {
+      try {
+        const url = ['', 'pagefind', 'pagefind.js'].join('/');
+        const mod = (await import(/* @vite-ignore */ url)) as unknown as Pagefind;
+        // Excerpts long enough to show why a result matched.
+        await mod.options?.({ excerptLength: 26 });
+        // The filter index is loaded lazily and separately, and until it is,
+        // `search()` returns no filter counts at all — not zero counts, the
+        // key is simply absent. So the section row rendered for nobody: the
+        // code that draws it was correct and never had anything to draw.
+        await mod.filters();
+        pagefind = mod;
+        return mod;
+      } catch {
+        return null;
+      }
+    })();
+    return loading;
+  }
+
+  function escapeAttr(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  }
+
+  function init() {
+    const dialog = document.getElementById('search-dialog') as HTMLDialogElement | null;
+    const open = document.getElementById('search-open');
+    const close = document.getElementById('search-close');
+    const input = document.getElementById('search-input') as HTMLInputElement | null;
+    const status = document.getElementById('search-status');
+    const list = document.getElementById('search-results');
+    const filterBox = document.getElementById('search-filters');
+    const form = document.getElementById('search-form');
+    if (!dialog || !open || !input || !status || !list || !filterBox || !form) return;
+
+    // `init` is called directly and again on `astro:page-load`, which fires on
+    // the first load as well as on every soft navigation — so without this the
+    // very first page bound everything twice. The flag lives on the element,
+    // which the router replaces on each navigation, so it resets exactly when
+    // the listeners it guards are thrown away with their elements.
+    if (dialog.dataset.bound) return;
+    dialog.dataset.bound = 'yes';
+
+    let active: string | null = null;
+    let token = 0;
+
+    const show = async () => {
+      if (dialog.open) return;
+      dialog.showModal();
+      input.focus();
+      // Warm the index while the reader is still typing the first letter.
+      load();
+    };
+
+    const hide = () => dialog.close();
+
+    async function run() {
+      const q = input!.value.trim();
+      const mine = ++token;
+
+      if (!q) {
+        list!.innerHTML = '';
+        filterBox!.hidden = true;
+        status!.textContent = '';
+        return;
+      }
+
+      status!.textContent = 'Searching…';
+      const pf = await load();
+      // A slower search that started earlier must not overwrite a later one.
+      if (mine !== token) return;
+
+      if (!pf) {
+        status!.textContent =
+          'The search index is built with the site, so it is not available while running locally.';
+        return;
+      }
+
+      const opts = active ? { filters: { section: [active] } } : undefined;
+      const search = await pf.search(q, opts);
+      if (mine !== token) return;
+
+      // Twenty is more than anyone reads and enough that a real match is not
+      // below the fold of the list.
+      const top = search.results.slice(0, 20);
+      const pages = await Promise.all(top.map((r) => r.data()));
+      if (mine !== token) return;
+
+      list!.innerHTML = pages
+        .map((p) => {
+          const section = p.meta.section ?? '';
+          const title = p.meta.title ?? p.url;
+          return `<li class="sd-r">
+            <a class="sd-r-a" href="${escapeAttr(p.url)}">
+              ${section ? `<span class="sd-r-s">${escapeAttr(section)}</span>` : ''}
+              <span class="sd-r-t">${escapeAttr(title)}</span>
+              <span class="sd-r-x">${p.excerpt}</span>
+            </a>
+          </li>`;
+        })
+        .join('');
+
+      const n = search.results.length;
+      status!.textContent =
+        n === 0
+          ? `Nothing for “${q}”.`
+          : `${n} ${n === 1 ? 'page' : 'pages'}${active ? ` in ${active}` : ''}.`;
+
+      // Sections are drawn from this search's own counts, so a filter is never
+      // offered that would return nothing.
+      const sections = search.filters?.section ?? {};
+      const names = Object.keys(sections).filter((k) => sections[k] > 0).sort();
+      if (names.length > 1 || active) {
+        filterBox!.hidden = false;
+        filterBox!.innerHTML = [
+          `<button type="button" class="sd-f${active ? '' : ' is-on'}" data-section="">All</button>`,
+          ...names.map(
+            (name) =>
+              `<button type="button" class="sd-f${active === name ? ' is-on' : ''}" data-section="${escapeAttr(name)}">${escapeAttr(name)} <span class="sd-f-n">${sections[name]}</span></button>`,
+          ),
+        ].join('');
+      } else {
+        filterBox!.hidden = true;
+      }
+    }
+
+    let timer: number | undefined;
+    const debounced = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(run, 140);
+    };
+
+    open.addEventListener('click', show);
+    close?.addEventListener('click', hide);
+    input.addEventListener('input', debounced);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      window.clearTimeout(timer);
+      run();
+    });
+
+    filterBox.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.sd-f') as HTMLElement | null;
+      if (!btn) return;
+      active = btn.dataset.section || null;
+      run();
+    });
+
+    // Clicking the backdrop closes it. A <dialog> reports clicks on its own
+    // padding box, so the target being the dialog itself means the pointer
+    // was outside the content.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) hide();
+    });
+
+    dialog.addEventListener('close', () => {
+      input.value = '';
+      list.innerHTML = '';
+      filterBox.hidden = true;
+      status.textContent = '';
+      active = null;
+      token++;
+    });
+
+    // "/" is the convention for search, and Cmd/Ctrl-K is the other one. Both
+    // are ignored while the reader is typing into something.
+    const onKey = (e: KeyboardEvent) => {
+      // Looked up now, not captured: after a soft navigation the dialog this
+      // closure was created with is no longer in the document.
+      const live = document.getElementById('search-dialog') as HTMLDialogElement | null;
+      if (!live) return;
+      const el = document.activeElement as HTMLElement | null;
+      const typing =
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable);
+      const openIt = () => {
+        if (live.open) return;
+        live.showModal();
+        (document.getElementById('search-input') as HTMLInputElement | null)?.focus();
+        load();
+      };
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        openIt();
+        return;
+      }
+      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        openIt();
+      }
+    };
+    // The document survives a soft navigation, so this is bound once for its
+    // lifetime rather than per page. It looks the dialog up when it fires, so
+    // it keeps working against whatever document the router has swapped in.
+    if (!keysBound) {
+      keysBound = true;
+      document.addEventListener('keydown', onKey);
+    }
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  /* ---- the button in the header ---------------------------------------- */
+
+  /* A lens and nothing else. The word "SEARCH" and a key hint beside it put
+     three more shapes into a bar whose whole character is restraint — and the
+     glyph is the one control on the site nobody needs told the name of. */
+  .sq {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    color: var(--ink-soft);
+    padding: 0.2rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  /* Sized against the nav's type rather than in pixels, so it keeps its place
+     in the row when the bar's scale changes. */
+  .sq-i { width: 1.15em; height: 1.15em; font-size: var(--t-nav); }
+  .sq:hover { color: var(--fundus); }
+  @media (prefers-reduced-motion: no-preference) {
+    .sq { transition: color 200ms var(--ease-out); }
+  }
+
+  /* ---- the dialog ------------------------------------------------------- */
+
+  .sd {
+    width: min(46rem, calc(100vw - 2rem));
+    max-height: min(38rem, calc(100vh - 6rem));
+    margin: 4.5rem auto auto;
+    padding: 0;
+    border: var(--rule) solid var(--brass);
+    background: var(--paper-raised);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  /* Only when open. A bare `display: flex` on `.sd` beats the user-agent's
+     `dialog:not([open]) { display: none }` — author styles win over the UA
+     sheet whatever the specificity — so the closed dialog rendered inline at
+     the top of every page, over the header. */
+  .sd[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .sd::backdrop {
+    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+
+  .sd-form { padding: 1.1rem 1.3rem 0.8rem; border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent); }
+  .sd-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.5rem;
+  }
+  .sd-row { display: flex; align-items: center; gap: 0.7rem; }
+  .sd-input {
+    flex: 1;
+    background: none;
+    border: 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    color: var(--ink);
+    font-family: var(--font-serif, inherit);
+    font-size: var(--t-lg, 1.25rem);
+    padding: 0.25rem 0;
+  }
+  .sd-input::placeholder { color: color-mix(in srgb, var(--ink-soft) 65%, transparent); }
+  .sd-input:focus { outline: none; border-bottom-color: var(--fundus); }
+  .sd-input::-webkit-search-cancel-button { display: none; }
+
+  .sd-close {
+    background: none;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+  }
+  .sd-close:hover { color: var(--fundus); border-color: var(--fundus); }
+
+  .sd-status {
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    color: var(--ink-soft);
+    margin: 0.6rem 0 0;
+    min-height: 1.2em;
+  }
+
+  /* ---- filters ---------------------------------------------------------- */
+
+  .sd-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.8rem 1.3rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+  /* Everything below is written through `:global`, because results and
+     filters are built with innerHTML after the page is served. Astro scopes a
+     component's CSS by stamping a data attribute onto the elements in its
+     template, and an element created at run time never receives one — so these
+     rules matched nothing and the results rendered as a wall of unstyled text.
+     The parents are in the template, so the descendant selectors stay confined
+     to this dialog. */
+  .sd-filters :global(.sd-f) {
+    background: none;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+  }
+  .sd-filters :global(.sd-f:hover) { color: var(--fundus); border-color: var(--fundus); }
+  .sd-filters :global(.sd-f.is-on) {
+    color: var(--paper);
+    background: var(--fundus);
+    border-color: var(--fundus);
+  }
+  .sd-filters :global(.sd-f-n) { opacity: 0.65; margin-left: 0.25em; }
+
+  /* ---- results ---------------------------------------------------------- */
+
+  .sd-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .sd-results :global(.sd-r + .sd-r) {
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
+  }
+  .sd-results :global(.sd-r-a) {
+    display: block;
+    padding: 0.85rem 1.3rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .sd-results :global(.sd-r-a:hover) { background: color-mix(in srgb, var(--fundus) 8%, transparent); }
+  .sd-results :global(.sd-r-s) {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text, var(--ink-soft));
+    margin-bottom: 0.15rem;
+  }
+  .sd-results :global(.sd-r-t) {
+    display: block;
+    font-family: var(--font-display, inherit);
+    font-size: 1.05rem;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+  }
+  .sd-results :global(.sd-r-x) {
+    display: block;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  /* Pagefind wraps the matched words. */
+  .sd-results :global(.sd-r-x mark) {
+    background: color-mix(in srgb, var(--fundus) 22%, transparent);
+    color: var(--ink);
+    padding: 0 0.12em;
+  }
+
+  @media (max-width: 640px) {
+    .sd { margin-top: 1.5rem; max-height: calc(100vh - 3rem); }
+    .sd-form, .sd-filters, .sd-r-a { padding-inline: 1rem; }
+  }
+</style>
