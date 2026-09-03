@@ -33,7 +33,7 @@ const words = epigraph.split(' ').filter(Boolean);
 
 const projects = await getProjects();
 /* The two that run. Everything else on the appendix is coursework beside them. */
-const systems = projects.filter((p) => /researchlens|localscholar/i.test(p.id));
+const systems = projects.filter((p) => p.data.system);
 
 const instrumenta = (await getCollection('instrumenta'))
   .sort((a, b) => a.data.order - b.data.order);
@@ -130,8 +130,11 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <h2 class="fr-h2" id="fr-sys-h">Systems that run</h2>
       <p class="fr-lede">
         Not repositories — things a stranger can open and put a question to.
-        Both ground every claim in a passage you can check, and both refuse
-        when the evidence is not there, which is the part that takes the work.
+        Each was measured against the baseline that might have beaten it, and
+        each says plainly where it did. Two of them ground every claim in a
+        passage you can check and refuse when the evidence is not there; the
+        third ranks a review's records and reports, in its own results table,
+        that a method twenty years older still ranks them better.
       </p>
 
       <ul class="fr-sys" data-reveal-stagger>

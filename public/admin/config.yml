@@ -1891,6 +1891,15 @@ collections:
           as a separate "Source" link beside the button — someone who has just
           read what a project does usually wants to read how it is written.
           Leave empty for work with nothing public to show.
+      - label: Show under "Systems that run"
+        name: system
+        widget: boolean
+        default: false
+        required: false
+        hint: >-
+          For work a stranger can open and use, not just read about. These get
+          their own section on the frontispiece, above the Appendix where every
+          project is listed.
 
   # ------------------------------------------------------------------
   - name: instrumentarium

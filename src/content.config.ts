@@ -901,6 +901,16 @@ const projects = defineCollection({
      * written, and that was a dead end on three of five projects.
      */
     repo: z.string().url().optional(),
+    /**
+     * Whether this belongs in "Systems that run" on the frontispiece.
+     *
+     * A flag rather than the regular expression over ids that used to select
+     * them, which read `/researchlens|localscholar/i` and silently answered no
+     * for anything added afterwards — including the third one, which is how
+     * this got noticed. A project that should be there now says so, and says
+     * it where the other facts about it live.
+     */
+    system: z.boolean().default(false),
   }),
 });
 
