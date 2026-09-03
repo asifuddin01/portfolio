@@ -82,7 +82,22 @@ export default defineConfig({
    * 404s is a worse outcome than a redirect nobody needs. Kept because it
    * costs one line; it can go once nothing points at it.
    */
-  redirects: { '/codex': '/home' },
+  /**
+   * Addresses people reach for that the site does not use.
+   *
+   * The CV lives under /vitae because it is part of the Vitae, but /cv is what
+   * anybody types — it is what the PDF's own folder is called, and it is what
+   * the author typed looking for the editor. A 404 there teaches nothing; the
+   * redirect costs one hop and the address keeps working.
+   *
+   * /vitae/cv/edit stays behind Cloudflare Access either way. This fixes where
+   * the door is, not who may open it.
+   */
+  redirects: {
+    '/codex': '/home',
+    '/cv': '/vitae/cv',
+    '/cv/edit': '/vitae/cv/edit',
+  },
   build: { inlineStylesheets: 'auto' },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {
