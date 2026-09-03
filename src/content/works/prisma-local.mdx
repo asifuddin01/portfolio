@@ -1,0 +1,128 @@
+---
+plate: 5
+title: PRISMA-Local
+fullTitle: >-
+  PRISMA-Local: A Local LLM Screening Assistant for Systematic and Scoping
+  Reviews — cross-topic eligibility ranking with no in-review labels
+subtitle: Ranking ten thousand abstracts on hardware you control
+status: in-preparation
+disclosure: public
+year: '2026'
+supervisors: []
+coauthors: []
+datasets:
+  - SYNERGY (ASReview) — 73 systematic reviews
+abstract: >-
+  A systematic review begins with thousands of database records that two humans
+  must screen by hand against the protocol. Recall must be near-total — a missed
+  eligible study invalidates the review — while precision can be poor and the
+  team still saves weeks. The useful output is therefore a ranking with a
+  stopping rule, not a yes/no classifier, and because records often cannot leave
+  the institution the tool has to run on local hardware. PRISMA-Local fine-tunes
+  small open models to score each title and abstract against a review protocol
+  using a single generated token, taking the raw logit(INCLUDE) − logit(EXCLUDE)
+  margin as the eligibility score. Qwen2.5-7B is trained with 4-bit QLoRA and
+  Qwen2.5-3B twice with LoRA, giving two independent screeners; vLLM serves both
+  adapters on one copy of the base weights with prefix caching over the shared
+  protocol header. Six SYNERGY reviews are held out entirely, so every number is
+  transfer to a topic the model has never seen, with no labelled examples from
+  the review being screened. Against that, both baselines a reviewer would ask
+  for are computed rather than cited: a cross-topic TF-IDF logistic regression
+  and a within-review active-learning simulation of the kind published WSS
+  figures actually come from. The fine-tuned 3B reaches WSS@95% of 0.331 against
+  0.129 for zero-shot prompting, 0.294 for the linear model on the same data, and
+  0.659 for active learning. The gap between the last two rows is the finding.
+citation: null
+paperUrl: https://asifuddin01.github.io/prisma-local/
+repoUrl: https://github.com/asifuddin01/prisma-local
+metrics:
+  - label: WSS@95%, best fine-tuned model
+    value: '0.331'
+    note: 'Zero-shot 0.129; TF-IDF cross-topic 0.294; active learning 0.659'
+  - label: AUC, LoRA 3B screener A
+    value: '0.710'
+    note: 'Mean over six held-out reviews, no in-review labels'
+  - label: Throughput, free Colab T4
+    value: '5.88 rec/s'
+    note: 'An 8,000-record review in 23 minutes'
+  - label: Prefix caching speedup
+    value: '1.40×'
+    note: '191.5 s to 137.2 s per 800 records'
+  - label: Records scored per screener
+    value: '13,665'
+---
+
+## The output is a ranking, not a decision
+
+Screening is not classification, and treating it as classification is what makes
+most LLM screening demos useless to an actual review team. One missed eligible
+study can invalidate a review; a hundred unnecessary full-text checks costs an
+afternoon. The asymmetry is total, so the deliverable is an **ordering** with a
+stopping rule — read down the list until your recall target is met, then stop.
+
+That is why the score is not the word the model generates. It is the margin
+behind it:
+
+```
+score = logit(INCLUDE) − logit(EXCLUDE)
+```
+
+A hard label gives two buckets. The margin gives an ordering over all 13,665
+records, which is what a stopping rule needs.
+
+## Three techniques, three distinct jobs
+
+**QLoRA** was the only way a 7B model fine-tuned inside 16 GB of VRAM — 4-bit NF4
+quantisation with rank-16 adapters. **LoRA** trained Qwen2.5-3B twice on disjoint
+data, giving two independent screeners: the machine analogue of dual human
+screening, and a way to measure disagreement rather than assume it away. **vLLM**
+served both adapters mounted on one copy of the base weights, with prefix caching
+over the header every record in a review shares.
+
+The pipeline ran across three machines because no single one could do all of it:
+training on a Windows RTX 4080 Super with no admin rights and therefore no WSL,
+vLLM on a free Colab T4, analysis on a laptop CPU. Only ~120 MB of adapters
+travelled between them. That portability is the practical argument for LoRA as a
+deployment format, and it is what made the split viable at all.
+
+## What the numbers actually say
+
+Six reviews are held out entirely, so this is cross-topic transfer with zero
+labels from the review being screened — the situation a team is in on day one.
+
+The fine-tuned 3B beats zero-shot prompting decisively, 0.331 against 0.129
+WSS@95%. It does **not** beat a plain TF-IDF logistic regression trained on the
+same reviews, which reaches 0.294. And within-review active learning — the
+technique practitioners already use, and where published WSS figures come from —
+reaches 0.659, roughly twice as good.
+
+Both baselines were computed rather than cited, so the gap is stated here instead
+of being discovered by a reviewer. A local fine-tuned model does not yet replace
+active learning. Saying so is the point of having measured it.
+
+## A precision bug that AUC could not see
+
+A respectable AUC of 0.708 sat next to a recall@10% of 0.229, which reads like a
+weak model. It was not. Taking the decision through a bf16 softmax collapsed
+13,665 records onto **45 distinct scores**; the same margin computed in fp32 gave
+13,619.
+
+Same adapter, same records, same prompts — only the arithmetic differs. **AUC
+moves by 0.002. Recall@10% moves by 26%**, and by 53% for the second screener.
+AUC is a rank statistic that averages tied ranks, so a mountain of ties barely
+dents it. Top-*k* selection has to break those ties, and a reviewer reading down
+the list gets whatever order the tie group happens to sit in.
+
+The metric that survived the bug is the one most screening papers lead with.
+Score resolution is now logged for every run, and a run whose resolution
+collapses is treated as broken rather than as a weak model. Only screener A has
+been rescored so far, which the results table says out loud rather than quietly
+averaging over.
+
+## Try it without installing anything
+
+The [project site](https://asifuddin01.github.io/prisma-local/) ships the
+cross-topic ranker as weights and runs it in the browser: load one of the
+held-out reviews or drop in your own CSV, and it ranks the corpus locally.
+Nothing is uploaded — which is the same property the method argues for on the
+server, demonstrated rather than claimed.
