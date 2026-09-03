@@ -15,7 +15,7 @@
     "audit": "node scripts/audit.mjs",
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
-    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check",
+    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check:links && npm run check",
     "deploy": "npm run verify && npm run check:dist && wrangler deploy",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs",
     "predev": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs",
@@ -25,6 +25,7 @@
     "facts": "node scripts/sync-facts.mjs",
     "tidy:plates": "node scripts/tidy-plates.mjs",
     "check:elementa": "node scripts/check-elementa.mjs",
+    "check:links": "node scripts/check-links.mjs",
     "check:dist": "node scripts/check-dist-fresh.mjs",
     "check:lectiones": "node scripts/check-lectiones.mjs"
   },
