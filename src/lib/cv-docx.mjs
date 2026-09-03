@@ -141,11 +141,14 @@ function item(it, style) {
   const detail = clean(it.detail);
 
   if (style === 'note') {
-    const m = detail.match(/^([^.]+\.)\s*(.*)$/s);
-    return para([
-      run(m ? m[1] + ' ' : '', { bold: true, size: 18 }),
-      run(m ? m[2] : detail, { size: 18, colour: '4A443A' }),
-    ], { space: 100 });
+    /* The label arrives as its own field. It used to be recovered from the
+       text with a regular expression that took everything up to the first full
+       stop — which is wrong the moment a label has no stop, or the prose has
+       one early. */
+    return (
+      para(run(title ? `${title}.` : '', { bold: true, size: 18 }), { space: 20 }) +
+      para(run(detail, { size: 18, colour: '4A443A' }), { space: 140 })
+    );
   }
 
   const head = [];

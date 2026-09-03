@@ -12,6 +12,8 @@ export interface CvItem {
   right?: string;
   subtitle?: string;
   detail?: string;
+  /** A prompt to type into rather than content. Excluded until ticked. */
+  blank?: boolean;
 }
 
 export type CvStyle = 'entry' | 'work' | 'paper' | 'project' | 'skill' | 'note';
@@ -45,6 +47,7 @@ export interface CvInput {
   projects?: readonly CvSource[];
   skills?: readonly CvSource[];
   referees?: readonly CvSource[];
+  blanks?: boolean;
   author?: string;
   siteUrl?: string;
   /** consts.ts values, used when the contact entry is silent. */

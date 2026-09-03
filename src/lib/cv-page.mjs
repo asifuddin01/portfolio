@@ -10,7 +10,11 @@ import { AUTHOR, SITE, EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts.ts';
 export const CV_PDF = '/cv/Md-Asif-Uddin-CV.pdf';
 export const CV_DOCX = '/cv/Md-Asif-Uddin-CV.docx';
 
-export async function loadCv() {
+/**
+ * @param {{ blanks?: boolean }} [opts] `blanks` offers empty blocks to type
+ *        into. Only /vitae/cv/edit asks for them.
+ */
+export async function loadCv(opts = {}) {
   const [site, works, papers, education, projects, skills, referees] = await Promise.all([
     getCollection('site'),
     getCollection('works'),
@@ -22,6 +26,7 @@ export async function loadCv() {
   ]);
   return buildCv({
     site, works, papers, education, projects, skills, referees,
+    blanks: opts.blanks === true,
     author: AUTHOR,
     siteUrl: SITE,
     fallback: { email: EMAIL, github: GITHUB, linkedin: LINKEDIN, location: LOCATION },

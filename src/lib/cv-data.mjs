@@ -41,6 +41,9 @@ const host = (u) => String(u ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '
 export function buildCv({
   site = [], works = [], papers = [], education = [], projects = [], skills = [],
   referees = [], author = '', siteUrl = '', fallback = {},
+  /** Offer empty blocks to type into. The editor sets this; the public page
+      does not, so a section nobody has filled in never reaches a reader. */
+  blanks = false,
 } = {}) {
   const find = (id) => site.find((e) => e.id === id)?.data ?? {};
   const cvMeta = find('cv');
@@ -164,21 +167,51 @@ export function buildCv({
         detail: [r.data.email, r.data.note].filter(Boolean).join('  ·  '),
       })),
     });
+  } else if (blanks) {
+    /**
+     * An empty References block, in the editor only.
+     *
+     * A referee is often written for one application and not for the site —
+     * and a referee's email on a page anyone can crawl is a different thing
+     * from one on a document handed to a person. So the proof sheet offers a
+     * block to type into, the typing stays in the browser, and nothing about
+     * that referee is ever published.
+     *
+     * The fields carry prompts rather than being empty, because the proof
+     * sheet drops fields with no value and an empty entry would be nothing to
+     * click. It arrives with its include switch off, so a proof nobody filled
+     * in generates a CV with no References section rather than one advertising
+     * the word "Name".
+     */
+    sections.push({
+      id: 'referees',
+      heading: 'References',
+      style: 'entry',
+      items: [{
+        blank: true,
+        title: 'Name',
+        subtitle: 'Role, institution',
+        detail: 'email  ·  how they know the work',
+      }],
+    });
   }
 
-  /* Additional is a list of notes, so a new one is a line rather than a
-     section. Each is its own item, which is what gives it its own include
-     switch on the proof sheet. */
+  /* Additional holds small titled blocks rather than one paragraph each.
+     The label is its own field, not the first sentence of the text: the proof
+     sheet then offers it as a separate box to retype, and the renderers can
+     set it in bold on its own line without parsing the prose to find where the
+     label stopped. Each is its own item, which is what gives it its own
+     include switch. */
   const notes = [
-    cvMeta.languages && `Languages. ${cvMeta.languages}`,
-    cvMeta.interests && `Reading and research interests. ${cvMeta.interests}`,
+    cvMeta.languages && { title: 'Languages', detail: cvMeta.languages },
+    cvMeta.interests && { title: 'Reading and research interests', detail: cvMeta.interests },
   ].filter(Boolean);
   if (notes.length) {
     sections.push({
       id: 'additional',
       heading: 'Additional',
       style: 'note',
-      items: notes.map((detail) => ({ detail })),
+      items: notes,
     });
   }
 

@@ -16,7 +16,9 @@ import ProofSheet from '../../../components/cv/ProofSheet.astro';
 import { loadCv, CV_PDF, CV_DOCX } from '../../../lib/cv-page.mjs';
 import { AUTHOR } from '../../../consts';
 
-const cv = await loadCv();
+/* Empty blocks to type into — a referee added for one application,
+   without publishing them on the site. */
+const cv = await loadCv({ blanks: true });
 ---
 <BaseLayout
   title={`Correcting the proof — ${AUTHOR}`}

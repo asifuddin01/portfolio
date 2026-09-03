@@ -28,7 +28,7 @@ const LABELS: Record<string, string> = {
 const FIELDS = ['title', 'right', 'subtitle', 'detail'];
 
 interface ProofField { key: string; label: string; value: string; path: string }
-interface ProofItem { path: string; fields: ProofField[] }
+interface ProofItem { path: string; fields: ProofField[]; blank: boolean }
 interface ProofBox { id: string; heading: string; items: ProofItem[] }
 
 const boxes: ProofBox[] = cv.sections.map((sec: CvSection, si: number) => ({
@@ -36,6 +36,7 @@ const boxes: ProofBox[] = cv.sections.map((sec: CvSection, si: number) => ({
   heading: sec.heading,
   items: sec.items.map((item: CvItem, ii: number) => ({
     path: `sections.${si}.items.${ii}`,
+    blank: item.blank === true,
     fields: FIELDS
       .filter((f) => (item as Record<string, string | undefined>)[f])
       .map((f) => ({
@@ -128,8 +129,11 @@ const ce = editable ? 'plaintext-only' : undefined;
           <li class="pf-item">
             {editable && (
               <label class="pf-omit">
-                <input type="checkbox" checked data-include={item.path} />
-                <span>include</span>
+                {/* A blank arrives unticked: a proof nobody filled in should
+                    generate a CV without the section, not one advertising the
+                    word "Name". */}
+                <input type="checkbox" checked={!item.blank} data-include={item.path} />
+                <span>{item.blank ? 'include once filled in' : 'include'}</span>
               </label>
             )}
             <div class="pf-grid">

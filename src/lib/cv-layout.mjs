@@ -48,7 +48,14 @@ const STYLES = {
   },
   /* A bold run-in label with the text flowing straight on from it. */
   skill: { runIn: true, size: 8.8, lead: 11.2, gap: 3 },
-  note: { detail: { size: 8.8, lead: 11.4, colour: 'soft' }, gap: 0 },
+  /* A bold label on its own line with the paragraph beneath — the shape the
+     Additional block takes, where each note is a small titled block rather
+     than a sentence that happens to start with a word in bold. */
+  note: {
+    title: { font: 'serifBold', size: 9, block: true },
+    detail: { size: 8.8, lead: 11.4, colour: 'soft' },
+    gap: 5,
+  },
 };
 
 const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
