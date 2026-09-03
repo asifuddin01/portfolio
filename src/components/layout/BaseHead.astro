@@ -1,4 +1,5 @@
 ---
+import { ogPathFor } from '../../lib/og';
 import { SITE, AUTHOR, ROLE } from '../../consts';
 import { getContact } from '../../lib/collections';
 
@@ -12,7 +13,19 @@ interface Props {
   noindex?: boolean;
 }
 
-const { title, description, image = '/og.png', type = 'website', noindex } = Astro.props;
+const { title, description, image, type = 'website', noindex } = Astro.props;
+
+/**
+ * The page's own social card.
+ *
+ * Every page shared the same one until now, so a link to a proposition and a
+ * link to the CV arrived in a chat window looking identical — and the card is
+ * the only part of the site most people see before deciding whether to open it.
+ *
+ * A route may still pass `image` to override this. The file itself is rendered
+ * after the build from the address written here; see scripts/build-og.mjs.
+ */
+const ogPath = image ?? ogPathFor(Astro.url.pathname);
 
 const { github, linkedin } = await getContact();
 // Astro's pathname keeps a trailing slash; the links and the served URL do
@@ -20,7 +33,7 @@ const { github, linkedin } = await getContact();
 // canonical pointing at a redirect.
 const path = Astro.url.pathname.replace(/(.+)\/$/, '$1');
 const canonical = new URL(path, SITE).href;
-const ogImage = new URL(image, SITE).href;
+const ogImage = new URL(ogPath, SITE).href;
 
 const personLd = {
   '@context': 'https://schema.org',

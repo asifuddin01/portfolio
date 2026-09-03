@@ -59,6 +59,10 @@ const listedTitle =
       new RegExp(`\\s*[—–-]\\s*${AUTHOR.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\s*$`),
       '',
     )
+    /* And a trailing section name, when the card and the search result are
+       already labelled with it: "Mixture of experts — Marginalia" filed under
+       MARGINALIA says it twice, and the space is better spent on the title. */
+    .replace(new RegExp(`\\s*[—–-]\\s*${section.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\s*$`, 'i'), '')
     .trim() || title;
 ---
 <!doctype html>

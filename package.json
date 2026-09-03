@@ -8,14 +8,13 @@
   "scripts": {
     "dev": "node scripts/dev-auto.mjs",
     "build": "astro build",
-    "postbuild": "node scripts/build-search.mjs",
+    "postbuild": "node scripts/build-og.mjs && node scripts/build-search.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
     "audit": "node scripts/audit.mjs",
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
-    "og": "node scripts/make-og.mjs",
     "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check",
     "deploy": "npm run verify && npm run check:dist && wrangler deploy",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs",
@@ -47,6 +46,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@resvg/resvg-js": "^2.6.2",
     "@sveltia/cms": "^0.193.1",
     "pagefind": "^1.5.2",
     "typescript": "^6.0.3",
