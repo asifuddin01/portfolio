@@ -20,12 +20,19 @@ const items = await getProjects();
       <li class="ap-item">
         <h3 class="ap-title">{it.data.title}</h3>
         <p class="ap-body">{it.data.summary}</p>
-        {it.data.link && (
+        {(it.data.link || it.data.repo) && (
           <p class="ap-go">
-            <a class="ap-btn" href={it.data.link}>
-              {it.data.linkLabel ?? 'Open'}
-              <span class="ap-arrow" aria-hidden="true">→</span>
-            </a>
+            {it.data.link && (
+              <a class="ap-btn" href={it.data.link}>
+                {it.data.linkLabel ?? 'Open'}
+                <span class="ap-arrow" aria-hidden="true">→</span>
+              </a>
+            )}
+            {/* Quieter than the button on purpose: opening the thing is the
+                first invitation, reading it is the second. */}
+            {it.data.repo && (
+              <a class="ap-src" href={it.data.repo} rel="noopener">Source</a>
+            )}
           </p>
         )}
       </li>
@@ -40,6 +47,20 @@ const items = await getProjects();
     letter-spacing: 0.05em;
     color: var(--ink-soft);
     margin-bottom: 1.6rem;
+  }
+  .ap-go { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
+  .ap-src {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding-bottom: 1px;
+  }
+  .ap-src:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
+  @media (prefers-reduced-motion: no-preference) {
+    .ap-src { transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out); }
   }
   .ap { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; max-width: 58rem; }
   .ap-item {

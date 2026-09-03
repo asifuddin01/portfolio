@@ -135,11 +135,19 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
           <li class="fr-sys-i">
             <h3 class="fr-sys-t">{p.data.title}</h3>
             <p class="fr-sys-s">{p.data.cvSummary ?? p.data.summary}</p>
-            {p.data.link && (
-              <a class="fr-cta" href={p.data.link} data-magnet>
-                {p.data.linkLabel ?? 'Open'}<span class="fr-cta-a" aria-hidden="true">→</span>
-              </a>
-            )}
+            <p class="fr-sys-go">
+              {p.data.link && (
+                <a class="fr-cta" href={p.data.link} data-magnet>
+                  {p.data.linkLabel ?? 'Open'}<span class="fr-cta-a" aria-hidden="true">→</span>
+                </a>
+              )}
+              {/* The section above promises things a stranger can open rather
+                  than repositories. This does not take that back — it is the
+                  second question, asked after the first has been answered. */}
+              {p.data.repo && (
+                <a class="fr-src" href={p.data.repo} rel="noopener">Source</a>
+              )}
+            </p>
           </li>
         ))}
       </ul>
@@ -447,6 +455,31 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
   }
   .fr-sys-t { font-size: var(--t-md); color: var(--ink); margin: 0; line-height: 1.35; }
   .fr-sys-s { font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); margin: 0; }
+
+  /* The row holding the button and the source link. `.fr-sys-i` is a grid, so
+     the button used `justify-self: start` to avoid stretching across it; now
+     that a row wraps them both, the row is the grid item and carries it. */
+  .fr-sys-go {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    justify-self: start;
+    margin: 0;
+  }
+  .fr-src {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding-bottom: 1px;
+  }
+  .fr-src:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
+  @media (prefers-reduced-motion: no-preference) {
+    .fr-src { transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out); }
+  }
 
   .fr-cta {
     justify-self: start;

@@ -1870,6 +1870,16 @@ collections:
         widget: string
         required: false
         hint: "Wording on the button. Defaults to 'Open'."
+      - label: Source code
+        name: repo
+        widget: string
+        required: false
+        pattern: ["^https?://.+", "A full address, starting http:// or https://"]
+        hint: >-
+          The repository, e.g. https://github.com/asifuddin01/researchlens. Shown
+          as a separate "Source" link beside the button — someone who has just
+          read what a project does usually wants to read how it is written.
+          Leave empty for work with nothing public to show.
 
   # ------------------------------------------------------------------
   - name: instrumentarium

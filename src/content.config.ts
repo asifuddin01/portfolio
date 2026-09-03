@@ -890,6 +890,17 @@ const projects = defineCollection({
      */
     link: z.string().optional(),
     linkLabel: z.string().optional(),
+    /**
+     * The source, separately from `link`.
+     *
+     * Two different promises, and conflating them cost the site the more
+     * useful one: `link` is somewhere to *use* the thing, and for LocalScholar
+     * — which has no hosted demo — that field held a GitHub URL, so the only
+     * project pointing at code did it through the field meaning "open this".
+     * A reader who has just read how a thing works wants to read how it is
+     * written, and that was a dead end on three of five projects.
+     */
+    repo: z.string().url().optional(),
   }),
 });
 
