@@ -2,10 +2,10 @@
 import ArtPlate from '../art/ArtPlate.astro';
 import { getEntry } from 'astro:content';
 import { getHomePlates } from '../../lib/collections';
-import { AUTHOR, LOCATION } from '../../consts';
+import { AUTHOR, LOCATION, ROLE } from '../../consts';
 
 const fp = await getEntry('site', 'frontispiece');
-const role = fp?.data.role ?? '';
+const role = fp?.data.role?.trim() || ROLE;
 const epigraph = fp?.data.epigraph ?? '';
 const attribution = fp?.data.attribution ?? 'the author';
 const location = fp?.data.location ?? LOCATION;

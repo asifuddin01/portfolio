@@ -2,8 +2,19 @@
 export const SITE = 'https://asifuddin.com';
 
 export const AUTHOR = 'Md. Asif Uddin';
+/**
+ * The fallback self-description.
+ *
+ * The one that is actually shown comes from the frontispiece entry, which is
+ * editable in /admin; this is what every page falls back to if that entry is
+ * missing. It used to be a third independent copy, and the three disagreed:
+ * two called him a researcher and one an engineer, and the two that agreed on
+ * the noun listed different fields. A reader who moved between the front page,
+ * the Summa and the page source got three answers.
+ */
 export const ROLE =
-  'Deep learning researcher — medical imaging, vision-language models, causal inference';
+  'Deep learning researcher — vision, medical imaging, vision-language models, ' +
+  'causal inference, bioinformatics and gene sequence analysis';
 export const LOCATION = 'Dhaka, Bangladesh';
 export const EMAIL = 'md.asif.uddin@g.bracu.ac.bd';
 export const GITHUB = 'https://github.com/asifuddin01';

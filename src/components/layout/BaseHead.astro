@@ -1,7 +1,7 @@
 ---
 import { ogPathFor } from '../../lib/og';
-import { SITE, AUTHOR, ROLE } from '../../consts';
-import { getContact } from '../../lib/collections';
+import { SITE, AUTHOR } from '../../consts';
+import { getContact, getRole } from '../../lib/collections';
 
 interface Props {
   title: string;
@@ -28,6 +28,7 @@ const { title, description, image, type = 'website', noindex } = Astro.props;
 const ogPath = image ?? ogPathFor(Astro.url.pathname);
 
 const { github, linkedin } = await getContact();
+const role = await getRole();
 // Astro's pathname keeps a trailing slash; the links and the served URL do
 // not. A canonical that names a different address than the one linked is a
 // canonical pointing at a redirect.
@@ -45,8 +46,10 @@ const personLd = {
    * him only as a researcher after the frontispiece, the meta tags and the
    * title had all moved.
    */
-  jobTitle: ['AI/ML engineer', 'Deep learning researcher'],
-  description: ROLE,
+  /* Both are true and both are searched for, but the order is not cosmetic:
+     the first is what he leads with, and research is the strength. */
+  jobTitle: ['Deep learning researcher', 'AI/ML engineer'],
+  description: role,
   url: SITE,
   sameAs: [github, linkedin],
   address: { '@type': 'PostalAddress', addressLocality: 'Dhaka', addressCountry: 'BD' },

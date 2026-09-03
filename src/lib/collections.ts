@@ -1,5 +1,5 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
-import { EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts';
+import { EMAIL, GITHUB, LINKEDIN, LOCATION, ROLE } from '../consts';
 import {
   APPARATUS_PARTS, TIER_RULES, COVERAGE_RULES, STRANDS,
   propositionId, type MathTier, type Strand,
@@ -505,6 +505,20 @@ export async function getAxioms(): Promise<CollectionEntry<'axioms'>[]> {
  * Contact details. Editable in /admin under Site text, with the values in
  * consts.ts as a fallback so nothing breaks if the entry is removed.
  */
+/**
+ * How the site describes its author, from the one place that is editable.
+ *
+ * Four files stated this independently and they disagreed — on the job title
+ * in two of them, and on the list of fields in the two that agreed on the
+ * title. Reading it makes the frontispiece entry the source, so it can be
+ * changed in /admin and every page follows, which is the same reason the
+ * contact block below is read rather than repeated.
+ */
+export async function getRole(): Promise<string> {
+  const e = await getEntry('site', 'frontispiece');
+  return e?.data.role?.trim() || ROLE;
+}
+
 export async function getContact(): Promise<{
   email: string;
   github: string;
