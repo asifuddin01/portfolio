@@ -156,6 +156,28 @@ export function buildCv({
     });
   }
 
+  /* Additional holds small titled blocks rather than one paragraph each.
+     The label is its own field, not the first sentence of the text: the proof
+     sheet then offers it as a separate box to retype, and the renderers can
+     set it in bold on its own line without parsing the prose to find where the
+     label stopped. Each is its own item, which is what gives it its own
+     include switch. */
+  const notes = [
+    cvMeta.languages && { title: 'Languages', detail: cvMeta.languages },
+    cvMeta.interests && { title: 'Reading and research interests', detail: cvMeta.interests },
+  ].filter(Boolean);
+  if (notes.length) {
+    sections.push({
+      id: 'additional',
+      heading: 'Additional',
+      style: 'note',
+      items: notes,
+    });
+  }
+
+  /* Last on the page, after everything it might vouch for. A referee is the
+     closing line of a CV, not a section somebody reads on the way to the
+     languages. */
   if (referees.length) {
     sections.push({
       id: 'referees',
@@ -193,25 +215,6 @@ export function buildCv({
         subtitle: 'Role, institution',
         detail: 'email  ·  how they know the work',
       }],
-    });
-  }
-
-  /* Additional holds small titled blocks rather than one paragraph each.
-     The label is its own field, not the first sentence of the text: the proof
-     sheet then offers it as a separate box to retype, and the renderers can
-     set it in bold on its own line without parsing the prose to find where the
-     label stopped. Each is its own item, which is what gives it its own
-     include switch. */
-  const notes = [
-    cvMeta.languages && { title: 'Languages', detail: cvMeta.languages },
-    cvMeta.interests && { title: 'Reading and research interests', detail: cvMeta.interests },
-  ].filter(Boolean);
-  if (notes.length) {
-    sections.push({
-      id: 'additional',
-      heading: 'Additional',
-      style: 'note',
-      items: notes,
     });
   }
 
