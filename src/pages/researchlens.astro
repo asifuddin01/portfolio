@@ -89,10 +89,15 @@ const PROPOSITIONS = (await getPropositionContexts()).length;
  *
  * The corpus above is fixed at deploy time; these are the ones uploaded
  * through /admin, which the retrieval system fetches and indexes at run time.
- * Added to the paper count here so the figure is right before the page has
- * heard from the live instance — the passage count cannot be, because how many
- * passages a PDF becomes is something only the parser knows. `#rl-stats` is
- * replaced from /health as soon as that answers, and that number counts both.
+ * Not added to the count above, and that was a bug for exactly one afternoon.
+ * `CORPUS` is now measured from the running instance, which indexes the
+ * library — so the total already includes these, and adding them again would
+ * report 105 papers for a corpus of 103. It read as correct only while the
+ * measurement predated the library existing.
+ *
+ * What it is still for: the sentence below, which says the last papers in the
+ * list arrived after the index was built and are searchable anyway. That is a
+ * fact about the library specifically, and the site is what knows it.
  */
 const ADDED = (await getLibrary()).length;
 
@@ -208,7 +213,7 @@ const FINDINGS = [
         time I changed anything here.
       </p>
       <p class="rl-sub" id="rl-stats">
-        {CORPUS.papers + ADDED} papers · {CORPUS.passages.toLocaleString('en')} passages —
+        {CORPUS.papers} papers · {CORPUS.passages.toLocaleString('en')} passages —
         {' '}{CORPUS.field}.
       </p>
       <p class="rl-sub rl-sub-2">

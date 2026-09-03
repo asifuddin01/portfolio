@@ -55,35 +55,65 @@ async function pytestCount(dir) {
   }
 }
 
+const SPACE = 'https://asifuddin01-researchlens.hf.space/gradio_api/call/corpus_stats';
+
+/** One call to the Space's stats endpoint. */
+async function askSpace() {
+  const started = await fetch(SPACE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: [] }),
+    signal: AbortSignal.timeout(90_000),
+  });
+  const { event_id } = await started.json();
+  const stream = await fetch(`${SPACE}/${event_id}`, {
+    signal: AbortSignal.timeout(180_000),
+  });
+  const text = await stream.text();
+  const line = text.split('\n').find((l) => l.startsWith('data: '));
+  const [stats] = JSON.parse(line.slice(6));
+  return { papers: stats.papers, passages: stats.passages, added: stats.added ?? 0 };
+}
+
 /**
- * The corpus, from the running instance rather than from the bundle on disk.
+ * The corpus, from the running instance — asked until it stops changing.
  *
- * The live figure is the one the site's own header shows a reader, and since
- * papers can now be added through the CMS it moves without either repository
- * changing. Asking the thing itself is the only way to be right about it.
+ * Asking once is not enough, and the reason is the design of the thing being
+ * asked. The Space indexes the CMS library on a background thread and answers
+ * immediately with whatever is indexed *now*, so that a reader's question is
+ * never held up by a download. The first answer after the container wakes is
+ * therefore the bundled corpus alone — which is exactly what happened: two
+ * papers had been added, the Space had them minutes later, and this recorded
+ * 101 because it asked once, at the wrong moment, and believed the answer.
+ *
+ * So it asks until two consecutive answers agree. That is the only signal
+ * available from outside that the background work has finished.
  */
 async function corpusFromSpace() {
-  const url =
-    'https://asifuddin01-researchlens.hf.space/gradio_api/call/corpus_stats';
-  try {
-    const started = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: [] }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    const { event_id } = await started.json();
-    const stream = await fetch(`${url}/${event_id}`, {
-      signal: AbortSignal.timeout(120_000),
-    });
-    const text = await stream.text();
-    const line = text.split('\n').find((l) => l.startsWith('data: '));
-    const [stats] = JSON.parse(line.slice(6));
-    return { papers: stats.papers, passages: stats.passages };
-  } catch (e) {
-    notes.push(`researchlens: the Space did not answer (${e.name ?? e.message})`);
-    return null;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let previous = null;
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    let now;
+    try {
+      now = await askSpace();
+    } catch (e) {
+      notes.push(`researchlens: the Space did not answer (${e.name ?? e.message})`);
+      return previous;
+    }
+    if (previous && previous.papers === now.papers && previous.passages === now.passages) {
+      if (attempt > 2) console.log(`  (the Space settled after ${attempt} reads)`);
+      return now;
+    }
+    previous = now;
+    /* Long enough for a download and a parse of a few papers, short enough
+       that a command somebody typed still feels like it is doing something. */
+    if (attempt < 8) await wait(15_000);
   }
+  notes.push(
+    'researchlens: the Space was still indexing after eight reads — ' +
+      'run this again in a few minutes',
+  );
+  return previous;
 }
 
 const before = JSON.parse(await readFile(FILE, 'utf8'));

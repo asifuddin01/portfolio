@@ -2,8 +2,8 @@
   "_comment": "Numbers about work that lives in other repositories. Refreshed by `npm run facts` — do not edit by hand, and see src/lib/facts.ts for why this file exists at all.",
   "checkedAt": "2026-09-03",
   "researchlens": {
-    "papers": 101,
-    "passages": 9593,
+    "papers": 103,
+    "passages": 9743,
     "tests": 293
   },
   "localscholar": {
