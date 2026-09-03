@@ -30,29 +30,52 @@ const REPOS = {
 const notes = [];
 
 /**
- * How many tests a Python repository has.
+ * How many tests a Python repository has that pass.
  *
- * Collected rather than counted with grep: `def test_` misses every
+ * The suite is run rather than collected, and the difference is not cosmetic.
+ * `--collect-only` counts every test that exists — for LocalScholar that is
+ * 102, two of which are marked slow and deselected by default. Running it
+ * reports 100 passed, 2 deselected, and 100 is the number a reader gets when
+ * they run the command the README gives them. The site should claim the
+ * figure somebody can reproduce, not the larger one.
+ *
+ * Counting with grep was never an option either way: `def test_` misses every
  * parametrised case, and parametrisation is where most of the count lives.
- * `--collect-only -q` prints one line per collected test plus a summary.
+ *
+ * A suite with failures returns null rather than a number, because a count of
+ * passing tests is only worth stating when they all do.
  */
 async function pytestCount(dir) {
   const python = path.join(dir, '.venv', 'bin', 'python');
+  let stdout;
   try {
-    const { stdout } = await run(python, ['-m', 'pytest', '--collect-only', '-q'], {
+    ({ stdout } = await run(python, ['-m', 'pytest', '-q'], {
       cwd: dir,
-      timeout: 5 * 60 * 1000,
-      maxBuffer: 16 * 1024 * 1024,
-    });
-    const m = stdout.match(/(\d+)\s+tests?\s+collected/);
-    if (m) return Number(m[1]);
-    // Older pytest prints only the per-test lines and a bare count.
-    const lines = stdout.split('\n').filter((l) => l.includes('::'));
-    return lines.length || null;
+      timeout: 15 * 60 * 1000,
+      maxBuffer: 32 * 1024 * 1024,
+    }));
   } catch (e) {
-    notes.push(`${path.basename(dir)}: could not collect tests (${e.code ?? e.message})`);
+    const out = `${e.stdout ?? ''}`;
+    const failed = out.match(/(\d+)\s+failed/);
+    notes.push(
+      failed
+        ? `${path.basename(dir)}: ${failed[1]} test(s) failing — not recording a count`
+        : `${path.basename(dir)}: could not run the suite (${e.code ?? e.message})`,
+    );
     return null;
   }
+  const m = stdout.match(/(\d+)\s+passed/);
+  if (!m) {
+    notes.push(`${path.basename(dir)}: could not read a count out of pytest`);
+    return null;
+  }
+  const deselected = stdout.match(/(\d+)\s+deselected/);
+  if (deselected) {
+    console.log(
+      `  (${path.basename(dir)}: ${deselected[1]} deselected by default, not counted)`,
+    );
+  }
+  return Number(m[1]);
 }
 
 const SPACE = 'https://asifuddin01-researchlens.hf.space/gradio_api/call/corpus_stats';
