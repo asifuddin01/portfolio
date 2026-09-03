@@ -73,6 +73,19 @@ export const GET: APIRoute = async () => {
     site: SITE,
     items: items.slice(0, 60),
     customData: '<language>en-gb</language>',
+    /**
+     * What a browser shows when somebody clicks "feed".
+     *
+     * Without it the browser prints its own warning — "This XML file does not
+     * appear to have any style information associated with it" — above a
+     * syntax-highlighted document tree. Nothing is wrong: it is a file meant
+     * for a program, opened by a person. But it reads as a fault, and the
+     * person who clicked wanted to subscribe.
+     *
+     * Feed readers ignore the stylesheet and parse the XML exactly as before,
+     * so this changes how the feed looks and nothing about what it is.
+     */
+    stylesheet: '/rss.xsl',
     /* Absolute, because a feed reader has no page to resolve against. */
     trailingSlash: false,
   });
