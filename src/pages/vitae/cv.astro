@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProofSheet from '../../components/cv/ProofSheet.astro';
-import { loadCv, CV_PDF } from '../../lib/cv-page.mjs';
+import { loadCv, CV_PDF, CV_DOCX } from '../../lib/cv-page.mjs';
 import { AUTHOR } from '../../consts';
 
 const cv = await loadCv();
@@ -12,7 +12,7 @@ const cv = await loadCv();
   folio="V.i"
 >
   <div class="codex pf">
-    <ProofSheet cv={cv} pdfHref={CV_PDF} />
+    <ProofSheet cv={cv} pdfHref={CV_PDF} docxHref={CV_DOCX} />
   </div>
 </BaseLayout>
 

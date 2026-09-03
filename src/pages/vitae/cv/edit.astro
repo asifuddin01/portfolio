@@ -13,7 +13,7 @@
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProofSheet from '../../../components/cv/ProofSheet.astro';
-import { loadCv, CV_PDF } from '../../../lib/cv-page.mjs';
+import { loadCv, CV_PDF, CV_DOCX } from '../../../lib/cv-page.mjs';
 import { AUTHOR } from '../../../consts';
 
 const cv = await loadCv();
@@ -25,7 +25,7 @@ const cv = await loadCv();
   noindex
 >
   <div class="codex pf">
-    <ProofSheet cv={cv} pdfHref={CV_PDF} editable />
+    <ProofSheet cv={cv} pdfHref={CV_PDF} docxHref={CV_DOCX} editable />
   </div>
 </BaseLayout>
 
@@ -100,8 +100,13 @@ const cv = await loadCv();
       }, 350);
     }
 
-    /* ---- generate ---- */
-    document.querySelector('[data-generate]')?.addEventListener('click', async (e) => {
+    /* ---- generate ----
+       One handler for both formats. The document is assembled once — edits
+       applied, excluded entries dropped — and only the renderer differs, so a
+       PDF and a Word file made from the same proof cannot disagree. */
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-generate]')) {
+      btn.addEventListener('click', async (e) => {
+      const format = (e.currentTarget as HTMLButtonElement).dataset.generate === 'docx' ? 'docx' : 'pdf';
       const btn = e.currentTarget as HTMLButtonElement;
       btn.disabled = true;
       say('setting the type…');
@@ -121,25 +126,40 @@ const cv = await loadCv();
         }
         data.sections = data.sections.filter((s: any) => s.items.length);
 
-        const { renderCv } = await import('../../../lib/cv-layout.mjs');
-        const { bytes, pages } = await renderCv(data);
-        const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
+        let bytes: Uint8Array;
+        let type: string;
+        let note: string;
+        if (format === 'docx') {
+          const { renderCvDocx } = await import('../../../lib/cv-docx.mjs');
+          bytes = renderCvDocx(data);
+          type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          note = `${(bytes.length / 1024).toFixed(0)} KB Word document`;
+        } else {
+          const { renderCv } = await import('../../../lib/cv-layout.mjs');
+          const out = await renderCv(data);
+          bytes = out.bytes;
+          type = 'application/pdf';
+          note = `${out.pages} page${out.pages === 1 ? '' : 's'}`;
+        }
+
+        const blob = new Blob([bytes as BlobPart], { type });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${String(data.author).replace(/[^\w]+/g, '-')}-CV.pdf`;
+        a.download = `${String(data.author).replace(/[^\w]+/g, '-')}-CV.${format}`;
         document.body.appendChild(a);
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
-        say(`${pages} page${pages === 1 ? '' : 's'} — downloaded`);
+        say(`${note} — downloaded`);
       } catch (err) {
         console.error(err);
-        say('could not generate the PDF — see the console');
+        say(`could not generate the ${format === 'docx' ? 'Word document' : 'PDF'} — see the console`);
       } finally {
         btn.disabled = false;
       }
-    });
+      });
+    }
 
     /* ---- reset ---- */
     document.querySelector('[data-reset]')?.addEventListener('click', () => {

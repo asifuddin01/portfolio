@@ -40,7 +40,7 @@ const host = (u) => String(u ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '
  */
 export function buildCv({
   site = [], works = [], papers = [], education = [], projects = [], skills = [],
-  author = '', siteUrl = '', fallback = {},
+  referees = [], author = '', siteUrl = '', fallback = {},
 } = {}) {
   const find = (id) => site.find((e) => e.id === id)?.data ?? {};
   const cvMeta = find('cv');
@@ -107,6 +107,40 @@ export function buildCv({
     });
   }
 
+  /**
+   * Engineering, split in two.
+   *
+   * One "Engineering" heading put a retrieval system that answers from 103
+   * indexed papers next to a university marketplace assignment, and a reader
+   * skimming the section had to work out which was which from the prose. The
+   * systems are the argument; the coursework is evidence of range. They are
+   * different claims and now they are different headings, in that order.
+   *
+   * The split is the `system` flag the frontispiece already uses to decide
+   * what appears under "Systems that run" — one property, two consumers,
+   * rather than a second list to keep in step.
+   */
+  const projectSection = (id, heading, list) =>
+    list.length && {
+      id,
+      heading,
+      style: 'project',
+      items: list.map((p) => ({
+        title: p.data.title ?? '',
+        /* The CV states the same figures as the site and must resolve the
+           same tokens. Sharing the filler rather than repeating the numbers is
+           the whole point: a PDF that disagreed with the page it was generated
+           from would be the worst place for this to drift. */
+        detail: fillFacts(p.data.cvSummary ?? p.data.summary ?? ''),
+      })),
+    };
+
+  const ordered = [...projects].sort(byOrder);
+  const built = projectSection('systems', 'AI systems', ordered.filter((p) => p.data.system));
+  const other = projectSection('projects', 'Other projects', ordered.filter((p) => !p.data.system));
+  if (built) sections.push(built);
+  if (other) sections.push(other);
+
   if (skills.length) {
     sections.push({
       id: 'technical',
@@ -119,28 +153,32 @@ export function buildCv({
     });
   }
 
-  if (projects.length) {
+  if (referees.length) {
     sections.push({
-      id: 'engineering',
-      heading: 'Engineering',
-      style: 'project',
-      items: [...projects].sort(byOrder).map((p) => ({
-        title: p.data.title ?? '',
-        /* The CV states the same figures as the site and must resolve the
-           same tokens. Sharing the filler rather than repeating the numbers is
-           the whole point: a PDF that disagreed with the page it was generated
-           from would be the worst place for this to drift. */
-        detail: fillFacts(p.data.cvSummary ?? p.data.summary ?? ''),
+      id: 'referees',
+      heading: 'References',
+      style: 'entry',
+      items: [...referees].sort(byOrder).map((r) => ({
+        title: r.data.name ?? '',
+        subtitle: [r.data.role, r.data.affiliation].filter(Boolean).join(', '),
+        detail: [r.data.email, r.data.note].filter(Boolean).join('  ·  '),
       })),
     });
   }
 
-  if (cvMeta.languages) {
+  /* Additional is a list of notes, so a new one is a line rather than a
+     section. Each is its own item, which is what gives it its own include
+     switch on the proof sheet. */
+  const notes = [
+    cvMeta.languages && `Languages. ${cvMeta.languages}`,
+    cvMeta.interests && `Reading and research interests. ${cvMeta.interests}`,
+  ].filter(Boolean);
+  if (notes.length) {
     sections.push({
       id: 'additional',
       heading: 'Additional',
       style: 'note',
-      items: [{ detail: `Languages. ${cvMeta.languages}` }],
+      items: notes.map((detail) => ({ detail })),
     });
   }
 

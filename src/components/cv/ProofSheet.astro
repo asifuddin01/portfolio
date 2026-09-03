@@ -18,8 +18,9 @@ interface Props {
   editable?: boolean;
   /** The published PDF, offered on both routes. */
   pdfHref: string;
+  docxHref: string;
 }
-const { cv, editable = false, pdfHref } = Astro.props;
+const { cv, editable = false, pdfHref, docxHref } = Astro.props;
 
 const LABELS: Record<string, string> = {
   title: 'Title', right: 'Date', subtitle: 'What it does', detail: 'Detail',
@@ -58,15 +59,19 @@ const ce = editable ? 'plaintext-only' : undefined;
   </h1>
   <p class="pf-lede codex-measure" data-reveal>
     {editable
-      ? 'Retype anything, or drop an entry with its include switch, then generate the PDF. Changes stay in this browser.'
-      : 'Every section of the CV as it will be set, drawn from the same content as the rest of this site. The PDF below is generated from exactly this.'}
+      ? 'Retype anything, or drop an entry with its include switch, then generate it as a PDF or as a Word document. Changes stay in this browser.'
+      : 'Every section of the CV as it will be set, drawn from the same content as the rest of this site. Both downloads below are generated from exactly this.'}
   </p>
 
   <div class="pf-actions" data-reveal>
     <a class="pf-btn" href={pdfHref} download>Download the PDF</a>
+    {/* The same document as Word, for whoever will paste it into their own
+        template or feed it to a system that reads a PDF badly. */}
+    <a class="pf-btn pf-quiet" href={docxHref} download>Download for Word</a>
     {editable && (
       <>
-        <button class="pf-btn" type="button" data-generate>Generate PDF from this proof</button>
+        <button class="pf-btn" type="button" data-generate="pdf">Generate PDF from this proof</button>
+        <button class="pf-btn" type="button" data-generate="docx">Generate Word from this proof</button>
         <button class="pf-btn pf-quiet" type="button" data-reset>Reset to the site</button>
         <a class="pf-btn pf-quiet" href="/vitae/cv">Stop editing</a>
         <span class="pf-state" data-state></span>

@@ -1811,6 +1811,38 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: referees
+    label: References
+    label_singular: Referee
+    description: >-
+      People who will vouch for the work. They appear as a References section
+      on the CV, and each one has its own include switch on /vitae/cv/edit — so
+      a particular copy of the CV can leave one off without deleting anything.
+      No section is printed while this is empty.
+    folder: src/content/referees
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: name
+    slug: "{{slug}}"
+    summary: "{{order}} · {{name}}"
+    sortable_fields: [ order, name ]
+    fields:
+      - { label: Name, name: name, widget: string }
+      - { label: Role, name: role, widget: string, required: false, hint: "e.g. Associate Professor, Thesis supervisor." }
+      - { label: Affiliation, name: affiliation, widget: string, required: false }
+      - label: Email
+        name: email
+        widget: string
+        required: false
+        hint: >-
+          Ask them first. The generated PDF is served from a public address, so
+          anything here is public — and it is not yours to publish. No phone
+          numbers for the same reason.
+      - { label: Note, name: note, widget: string, required: false, hint: "One short line, e.g. how they know the work." }
+      - { label: Order, name: order, widget: number, value_type: int, min: 1, default: 1 }
+
+  # ------------------------------------------------------------------
   - name: education
     label: Education
     label_singular: Entry
@@ -2020,7 +2052,18 @@ collections:
             name: summary
             widget: text
             hint: "The opening paragraph of the downloadable CV."
-          - { label: Languages, name: languages, widget: text }
+          - label: Languages
+            name: languages
+            widget: text
+            hint: "One line, on the CV under Additional."
+          - label: Reading and research interests
+            name: interests
+            widget: text
+            required: false
+            hint: >-
+              What you read and work on, as a paragraph — it appears on the CV
+              under Additional, beside Languages. Leave empty and the line is
+              omitted rather than printed blank.
       - name: contact
         label: Contact details
         file: src/content/site/contact.mdx

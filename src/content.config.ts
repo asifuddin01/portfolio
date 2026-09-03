@@ -693,6 +693,8 @@ const site = defineCollection({
     // CV singleton.
     summary: z.string().optional(),
     languages: z.string().optional(),
+    /** Reading and research interests, one paragraph. Shown under Additional. */
+    interests: z.string().optional(),
   }),
 });
 
@@ -743,6 +745,30 @@ const instrumentarium = defineCollection({
     title: z.string(),
     note: z.string(),
     items: z.string(),
+  }),
+});
+
+/**
+ * Referees.
+ *
+ * A collection rather than a field on the CV entry, because the proof sheet
+ * gives every *item* its own include switch — so one referee can be left off a
+ * particular copy of the CV without editing anything, which is the whole
+ * reason for asking. A paragraph would have been one switch for all of them.
+ *
+ * No phone numbers. The generated PDF is served from a public URL, and a
+ * referee's number on a public page is a different exposure from one on a
+ * document handed to a person — and it is not the author's to publish.
+ */
+const referees = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/referees' }),
+  schema: z.object({
+    order: z.number().int().min(1).default(1),
+    name: z.string(),
+    role: z.string().optional(),
+    affiliation: z.string().optional(),
+    email: z.string().optional(),
+    note: z.string().optional(),
   }),
 });
 
@@ -945,6 +971,7 @@ const axioms = defineCollection({
 
 export const collections = {
   works, elementa, marginalia, lectiones, bibliotheca, reviews, library, site, art, books, instrumentarium,
+  referees,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

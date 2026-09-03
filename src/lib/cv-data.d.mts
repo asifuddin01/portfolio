@@ -44,6 +44,7 @@ export interface CvInput {
   education?: readonly CvSource[];
   projects?: readonly CvSource[];
   skills?: readonly CvSource[];
+  referees?: readonly CvSource[];
   author?: string;
   siteUrl?: string;
   /** consts.ts values, used when the contact entry is silent. */

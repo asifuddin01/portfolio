@@ -15,6 +15,7 @@ import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { buildCv } from '../src/lib/cv-data.mjs';
+import { renderCvDocx } from '../src/lib/cv-docx.mjs';
 import { renderCv } from '../src/lib/cv-layout.mjs';
 
 async function readCollection(dir) {
@@ -38,17 +39,18 @@ async function readCollection(dir) {
 const consts = await readFile('src/consts.ts', 'utf8');
 const constOf = (key) => (consts.match(new RegExp(`${key} = '([^']*)'`)) ?? [])[1] ?? '';
 
-const [site, works, papers, education, projects, skills] = await Promise.all([
+const [site, works, papers, education, projects, skills, referees] = await Promise.all([
   readCollection('site'),
   readCollection('works'),
   readCollection('papers'),
   readCollection('education'),
   readCollection('projects'),
   readCollection('instrumentarium'),
+  readCollection('referees'),
 ]);
 
 const cv = buildCv({
-  site, works, papers, education, projects, skills,
+  site, works, papers, education, projects, skills, referees,
   author: constOf('AUTHOR'),
   siteUrl: constOf('SITE'),
   fallback: {
@@ -68,7 +70,16 @@ const { bytes, pages } = await renderCv(cv);
 await mkdir('public/cv', { recursive: true });
 await writeFile('public/cv/Md-Asif-Uddin-CV.pdf', bytes);
 
+/* The same document as Word, from the same object. Some places will not read a
+   PDF — an applicant-tracking system usually can, but not always well, and a
+   person building their own template wants text they can move. Generated here
+   rather than only in the editor so it exists for anyone who lands on the CV
+   page without a login. */
+const docx = renderCvDocx(cv);
+await writeFile('public/cv/Md-Asif-Uddin-CV.docx', docx);
+
 console.log(
-  `✓ CV generated — ${pages} page(s), ${(bytes.length / 1024).toFixed(0)} KB, ` +
+  `✓ CV generated — ${pages} page(s), ${(bytes.length / 1024).toFixed(0)} KB PDF, ` +
+  `${(docx.length / 1024).toFixed(0)} KB docx, ` +
   `${cv.sections.length} sections, no phone number`
 );
