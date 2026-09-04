@@ -286,7 +286,12 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
        sitting empty under a network with no explanation. */
     .np-eq { min-height: 5rem; align-content: center; gap: 0.35rem; }
     .np-eq-i { position: static; opacity: 1; }
-    .np-eq-f:not(:first-of-type), .np-eq-b:not(:first-of-type) { display: none; }
+    /* `:first-of-type` counts element types, and all six equations are
+       spans — so only the very first span was ever "first of type", which
+       kept forward equation 1 and silently hid every backward one. The
+       sibling combinator says what was meant: hide any forward equation
+       that follows a forward equation, and likewise for backward. */
+    .np-eq-f ~ .np-eq-f, .np-eq-b ~ .np-eq-b { display: none; }
   }
 
   @media all {
