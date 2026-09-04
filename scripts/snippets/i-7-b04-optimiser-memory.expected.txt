@@ -1,0 +1,35 @@
+method                  state  copies  bytes/param  note
+SGD                         0       2            8  nothing kept between steps
+SGD + momentum              1       3           12  one velocity per parameter
+RMSProp                     1       3           12  one second moment per parameter
+Adam / AdamW                2       4           16  first and second moment
+Adam, fp32 master           4       6           24  moments plus an fp32 copy of fp16 weights
+
+-- 124M (GPT-2 small): N = 124,000,000 --
+   SGD                        0.99 GB
+   SGD + momentum             1.49 GB
+   RMSProp                    1.49 GB
+   Adam / AdamW               1.98 GB
+
+-- 1.5B (GPT-2 XL): N = 1,500,000,000 --
+   SGD                       12.00 GB
+   SGD + momentum            18.00 GB
+   RMSProp                   18.00 GB
+   Adam / AdamW              24.00 GB
+
+-- 7B: N = 7,000,000,000 --
+   SGD                       56.00 GB
+   SGD + momentum            84.00 GB
+   RMSProp                   84.00 GB
+   Adam / AdamW             112.00 GB
+
+what the optimiser alone costs, as a share of the whole
+  SGD                    state is   0.0% of the four-way total
+  SGD + momentum         state is  33.3% of the four-way total
+  RMSProp                state is  33.3% of the four-way total
+  Adam / AdamW           state is  50.0% of the four-way total
+
+the swap worth knowing
+  Adam            24.00 GB
+  SGD + momentum  18.00 GB
+  saved           6.00 GB  (1.33x)

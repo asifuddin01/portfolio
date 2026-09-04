@@ -1,0 +1,86 @@
+---
+id: "I.7.X10"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Why a minibatch gradient is the right one on average"
+depends:
+  - "I.7.P02"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Prove that the minibatch gradient is an unbiased estimator of the full-batch
+gradient, and derive its variance. State precisely which property of the
+sampling each half of the result requires, so it is clear what breaks when the
+sampling is wrong.
+
+<Hint>
+Linearity of expectation gives the first half and needs almost nothing.
+Independence is what the second half needs, and it is a strictly stronger
+assumption.
+</Hint>
+
+<SolutionToggle>
+
+**Setup.** The full objective is the mean over $N$ examples,
+$\mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\ell_i(\theta)$, so
+$\nabla\mathcal{L} = \frac{1}{N}\sum_i \nabla\ell_i$. A batch is $B$ indices
+$i_1, \dots, i_B$ drawn uniformly at random with replacement, and
+
+$$
+\hat{g}_B = \frac{1}{B}\sum_{j=1}^{B}\nabla\ell_{i_j}
+$$
+
+**Unbiasedness.** For a single uniformly drawn index,
+
+$$
+\mathbb{E}[\nabla\ell_{i}] = \sum_{k=1}^{N}\frac{1}{N}\nabla\ell_k = \nabla\mathcal{L}
+$$
+
+By linearity of expectation — which requires no independence at all —
+
+$$
+\mathbb{E}[\hat{g}_B] = \frac{1}{B}\sum_{j=1}^{B}\mathbb{E}[\nabla\ell_{i_j}] = \nabla\mathcal{L}
+$$
+
+The only property used is that each index is *marginally* uniform. This is why
+unbiasedness survives sampling without replacement, and why it fails under the
+sorted batches of I.7.X05 — there the marginal distribution of an index within
+batch 1 is uniform over class 0 only.
+
+**Variance.** Write $\Sigma = \operatorname{Var}[\nabla\ell_i]$ for the
+per-example covariance. Now independence is needed: for independent draws the
+variance of a sum is the sum of the variances, so
+
+$$
+\operatorname{Var}[\hat{g}_B] = \frac{1}{B^2}\sum_{j=1}^{B}\Sigma = \frac{\Sigma}{B}
+$$
+
+which is (I.7.2). The standard error is $\sigma/\sqrt{B}$.
+
+**What each half needs.** Unbiasedness needs marginal uniformity. Variance
+needs independence between the draws. The gap between them is the whole reason
+correlated batches are dangerous: a batch of near-duplicate examples can still
+be unbiased while having a variance far above $\Sigma/B$, so the $1/B$
+accounting overstates how much noise the batch removed. Deduplication is a
+variance intervention, not only a data-hygiene one.
+
+**Sampling without replacement.** Real training shuffles and takes disjoint
+batches, which is sampling without replacement. Unbiasedness is unaffected. The
+variance gains a finite-population correction $\frac{N-B}{N-1}$, which is
+negligible while $B \ll N$ and becomes decisive as $B \to N$ — at $B = N$ the
+variance is zero, because the batch *is* the dataset. The $1/B$ law is the
+large-$N$ limit, and full-batch descent is its other end.
+
+**The consequence for practice.** Halving the noise costs four times the
+arithmetic, so the returns are square-root. That single fact is why batch size
+is a trade rather than a setting to maximise, and why the critical batch size of
+McCandlish and colleagues exists: past the point where the gradient is already
+accurate, additional examples buy accuracy nobody needed.
+
+</SolutionToggle>

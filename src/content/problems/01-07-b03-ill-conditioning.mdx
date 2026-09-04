@@ -1,0 +1,165 @@
+---
+id: "I.7.B03"
+kind: problem
+chapter: "I.7"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "A problem no learning rate solves"
+depends:
+  - "I.7.P01"
+reachesBack: []
+rounding: "Six decimal places on multipliers; step counts exact."
+hasSolution: true
+verified: true
+snippet: "i-7-b03-ill-conditioning.py"
+status: published
+---
+
+<Statement>
+Exhibit a quadratic on which *every* learning rate fails — not one badly chosen
+rate, but the whole stable range — and identify what is responsible. Then show
+that remembering the previous step fixes it, and by how much.
+</Statement>
+
+<Given>
+$\mat{H} = \mathrm{diag}(100,\ 0.01)$, so $\kappa = 10^4$. Start at
+$\vec{\theta}_0 = (1, 1)$; the target is an error norm below $10^{-3}$.
+</Given>
+
+<Find>
+The stability limit; the step count for every $\eta$ across the stable range;
+the count at the optimal $\eta^*$; and the same for heavy-ball momentum at its
+own optimum, with the speed-up.
+</Find>
+
+<Strategy>
+The two directions decouple, as in I.7.B02, so the difficulty can be stated
+before anything is run: the steep direction demands $\eta < 0.02$, and at any
+such $\eta$ the flat direction's multiplier is $1 - 0.01\eta \ge 0.9998$. One
+rate cannot serve both. Sweeping confirms there is no exception rather than
+merely no obvious one.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the bind, stated in advance.** Stability requires
+$\eta < 2/\lambda_{\max} = 0.02$. At the largest permissible rate the flat
+direction is multiplied by
+
+$$
+1 - \eta\lambda_{\min} > 1 - 0.02(0.01) = 0.9998
+$$
+
+so it loses at most two parts in ten thousand per step, however $\eta$ is
+chosen. That is the counterexample in one line; the sweep is the demonstration.
+
+**Step 2 — the sweep.**
+
+| $\eta$ | steep multiplier | flat multiplier | steps to $10^{-3}$ |
+|---|---|---|---|
+| $0.020000$ | $1.000000$ | $0.999800$ | diverges |
+| $0.010000$ | $0.000000$ | $0.999900$ | $69\,075$ |
+| $0.019800$ | $0.980000$ | $0.999802$ | $34\,885$ |
+| $0.019801$ | $0.980100$ | $0.999802$ | $34\,883$ |
+| $0.019900$ | $0.990000$ | $0.999801$ | $34\,709$ |
+| $0.020010$ | $1.001000$ | $0.999800$ | diverges |
+| $0.050000$ | $4.000000$ | $0.999500$ | diverges |
+
+Nothing in the stable range does better than about $34\,700$ steps for a
+thousandfold reduction on a two-dimensional problem with an exactly known
+Hessian.
+
+**Step 3 — the most instructive row.** At $\eta = 0.01$ the steep multiplier is
+*exactly zero*: $1 - 0.01(100) = 0$. That direction is solved perfectly, in one
+step, and the run still takes $69\,075$ steps — twice as many as the rates that
+solve it imperfectly. Perfect handling of the direction that constrains
+stability buys nothing, because the cost is entirely in the other direction.
+This is why "tune the learning rate" is not a complete answer to slow training.
+
+**Step 4 — the optimum, and its transient.** $\eta^* = 0.0199980$ gives
+$\rho = 0.99980002$ and $36\,272$ steps — slightly *worse* than $\eta = 0.0199$
+at $34\,709$. As in I.7.B01, $\eta^*$ minimises the asymptotic rate while the run
+is measured over a finite budget. The gap is small here because $\kappa$ is
+large enough that the asymptote arrives early.
+
+**Step 5 — momentum.** Heavy ball keeps a running average of gradients, so the
+recurrence is second-order and its rate depends on $\sqrt{\kappa}$. At the
+classical optimum
+
+$$
+\beta = \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}\right)^2 = 0.96078816,
+\qquad
+\eta = \frac{4}{(\sqrt{\lambda_{\max}} + \sqrt{\lambda_{\min}})^2} = 0.03921184
+$$
+
+with $\rho = (\sqrt{\kappa} - 1)/(\sqrt{\kappa} + 1) = 0.98019802$ and **708
+steps**, against $36\,272$: a speed-up of $51.2\times$.
+
+**Step 6 — why it works.** Momentum does not make the steep direction stable at
+a larger rate; note that $\eta = 0.0392$ is *above* the plain-descent threshold
+of $0.02$. It works because the steep direction's gradient alternates in sign
+when overshooting, so consecutive contributions to the moving average partly
+cancel, while the flat direction's gradient keeps the same sign and accumulates.
+The average suppresses oscillation and amplifies drift, which is exactly the
+asymmetry the problem needs.
+
+</Solution>
+
+<Answer>
+
+Stability requires $\eta < 0.02$, and every rate in that range needs at least
+about $34\,700$ steps; $\eta^* = 0.0199980$ takes $36\,272$. The obstruction is
+$\kappa = 10^4$ itself, not the choice of rate.
+
+Heavy-ball momentum at $\beta = 0.96078816$, $\eta = 0.03921184$ reaches the same
+target in **708 steps**, a $51.2\times$ speed-up.
+
+</Answer>
+
+<CheckSanity>
+**The measured momentum rate matches the theory.**
+$\rho = 0.98019802 = 99/101 = (\sqrt{\kappa} - 1)/(\sqrt{\kappa} + 1)$ for
+$\sqrt{\kappa} = 100$, exactly. And it equals the *plain-descent* rate for a
+problem of condition number 100 — momentum turns $\kappa = 10^4$ into an
+effective $10^2$, which is what "the square root" means concretely.
+
+**The speed-up is $51\times$, not the $100\times$ the rates suggest.** Both
+methods are measured to a fixed target from a fixed start, so both pay a
+transient the asymptotic rates ignore, and momentum's is proportionally larger
+because it needs several steps before its average carries information. Quoting
+$\sqrt{\kappa}$ as the speed-up would be quoting a limit as a measurement.
+
+**Divergence appears immediately above $0.02$.** $\eta = 0.02001$ gives a steep
+multiplier of $1.001$ and diverges; $\eta = 0.0199$ gives $0.99$ and converges.
+Five parts in ten thousand separate them, which is the sharp edge of I.7.B01 in
+a stiffer problem.
+</CheckSanity>
+
+<Breaks>
+The momentum parameters here were computed from $\lambda_{\max}$ and
+$\lambda_{\min}$, which nobody has for a real network. In practice $\beta$ is
+set to $0.9$ and left there, which is optimal for $\kappa \approx 361$ and
+merely serviceable elsewhere — the tuned value above is $0.96$, and using $0.9$
+on this problem gives up much of the advantage. The theory says what is
+available; it does not hand over the setting.
+
+Momentum also does not help with the part of the difficulty that is noise.
+Averaging gradients reduces variance, but the accelerated rate of I.7.T2 assumes
+exact gradients, and with minibatch noise the improvement degrades towards the
+noise floor. On a stochastic problem momentum is worth having and the factor is
+smaller than $\sqrt{\kappa}$.
+
+Finally, this is a fixed quadratic and a neural network is not. Its curvature
+changes as training proceeds, so the tuned $(\eta, \beta)$ for step 1 is wrong
+by step 10 000 — which is one honest reading of why schedules exist, and why
+adaptive methods that estimate curvature per coordinate as they go, rather than
+being told it once, are the ones that ended up in use.
+</Breaks>
+
+<Variation>
+Set $\beta = 0.9$ — the default nobody tunes — and keep $\eta$ at its value
+above. Predict whether the run gets faster or slower before measuring, then find
+the $\kappa$ for which $\beta = 0.9$ *is* optimal. That number explains where the
+default came from.
+</Variation>

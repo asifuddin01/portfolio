@@ -1,0 +1,73 @@
+---
+id: "I.7.X07"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "One bad gradient, and every step after it"
+depends:
+  - "I.7.P01"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+A single batch produces an infinite gradient in one coordinate. Trace what Adam
+does on that step and on every subsequent one, and explain why the loss goes to
+NaN several steps *after* the batch responsible. Then say why skipping the bad
+step is not sufficient.
+
+<Hint>
+Follow the value through (I.7.6), and remember that $m$ and $v$ persist between
+steps while the gradient does not.
+</Hint>
+
+<SolutionToggle>
+
+**The step itself.** With $g = \infty$ in one coordinate:
+
+$$
+m \leftarrow \beta_1 m + (1-\beta_1)\infty = \infty,
+\qquad
+v \leftarrow \beta_2 v + (1-\beta_2)\infty^2 = \infty
+$$
+
+The update is $\hat{m}/(\sqrt{\hat{v}} + \varepsilon) = \infty/\infty = $ NaN,
+and that coordinate's parameter becomes NaN.
+
+**Why it spreads.** A NaN parameter makes every activation downstream of it NaN,
+so the next forward pass produces a NaN loss and the next backward pass NaN
+gradients *everywhere*. On the following step every $m$ and $v$ in the model
+becomes NaN, and every parameter follows. One coordinate at step $t$ is the whole
+model by step $t + 2$.
+
+**Why the timing misleads.** The observable is the loss, and the loss is a scalar
+computed from the forward pass. At step $t$ the gradient is infinite but the
+parameters are still finite, so the loss printed for step $t$ looks ordinary. The
+NaN appears in the loss at step $t + 1$ or later, and the batch on screen when it
+appears is not the batch responsible. People go looking for corrupt data in the
+wrong file.
+
+**Why skipping is not sufficient.** The natural fix — detect a non-finite
+gradient and skip the update — leaves $m$ and $v$ untouched only if the skip
+happens before they are written. If the moments have already been updated, they
+are non-finite and persist: the next step divides by a NaN $\sqrt{\hat{v}}$ even
+though its gradient is perfectly good. The optimiser state must be repaired or
+reset, not merely the step abandoned. This is the sense in which the failure
+outlives its cause, and it is what distinguishes this from an ordinary bad batch.
+
+**What actually protects against it.** Gradient clipping bounds the magnitude
+before it reaches the moments, which is the cheap general defence. In mixed
+precision a loss scaler both provokes and manages the problem: it multiplies the
+loss to keep fp16 gradients out of the underflow range, detects the resulting
+overflows, skips the step, *and lowers the scale* — the last part being the
+piece that makes it a control loop rather than a filter.
+
+**The assumption this tests.** The chapter assumes the gradient is finite along
+the path taken. That is not a mathematical nicety: it is the condition under
+which the optimiser's state remains a summary of past gradients rather than an
+absorbing state that no future gradient can leave.
+
+</SolutionToggle>

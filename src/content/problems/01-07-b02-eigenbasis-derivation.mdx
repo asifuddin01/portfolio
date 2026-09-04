@@ -1,0 +1,177 @@
+---
+id: "I.7.B02"
+kind: problem
+chapter: "I.7"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Deriving the threshold and the optimal rate"
+depends:
+  - "I.7.P01"
+reachesBack: []
+rounding: "Symbolic throughout."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Derive, from the update rule alone, the exact condition under which gradient
+descent converges on a quadratic, the learning rate that converges fastest, and
+the rate it achieves. The numbers of I.7.B01 should fall out as one instance.
+</Statement>
+
+<Given>
+$\mathcal{L}(\vec{\theta}) = \tfrac{1}{2}(\vec{\theta} - \vec{\theta}^*)^{\mathsf{T}}\mat{H}(\vec{\theta} - \vec{\theta}^*)$
+with $\mat{H}$ symmetric positive definite, eigenvalues
+$0 < \lambda_{\min} = \lambda_1 \le \dots \le \lambda_n = \lambda_{\max}$.
+</Given>
+
+<Find>
+The error recurrence; the condition on $\eta$ for convergence; the $\eta$
+minimising the worst-case per-step contraction; and that contraction in terms of
+$\kappa = \lambda_{\max}/\lambda_{\min}$.
+</Find>
+
+<Strategy>
+Change coordinates so the problem falls apart. $\mat{H}$ is symmetric, so it has
+an orthonormal eigenbasis; written in that basis the update decouples into $n$
+independent scalar recurrences, and a scalar geometric sequence is something
+whose convergence can simply be read off.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the error recurrence.** The gradient is
+$\nabla\mathcal{L} = \mat{H}(\vec{\theta} - \vec{\theta}^*)$. Writing
+$\vec{e}_t = \vec{\theta}_t - \vec{\theta}^*$ and substituting into (I.7.1):
+
+$$
+\vec{e}_{t+1} = \vec{e}_t - \eta\mat{H}\vec{e}_t = (\mat{I} - \eta\mat{H})\vec{e}_t
+$$
+
+so after $t$ steps $\vec{e}_t = (\mat{I} - \eta\mat{H})^t \vec{e}_0$. The whole
+trajectory is one matrix raised to a power.
+
+**Step 2 — decouple.** $\mat{H} = \mat{Q}\Lambda\mat{Q}^{\mathsf{T}}$ with
+$\mat{Q}$ orthogonal. Since $\mat{I} - \eta\mat{H} = \mat{Q}(\mat{I} - \eta\Lambda)\mat{Q}^{\mathsf{T}}$
+and $\mat{Q}^{\mathsf{T}}\mat{Q} = \mat{I}$, powers pass straight through:
+
+$$
+(\mat{I} - \eta\mat{H})^t = \mat{Q}(\mat{I} - \eta\Lambda)^t\mat{Q}^{\mathsf{T}}
+$$
+
+In the rotated coordinates $\tilde{\vec{e}} = \mat{Q}^{\mathsf{T}}\vec{e}$ the
+recurrence is $n$ separate scalar ones:
+
+$$
+\tilde{e}_{i,t} = (1 - \eta\lambda_i)^t\,\tilde{e}_{i,0}
+$$
+
+The directions do not interact. This is why one badly served direction cannot be
+rescued by another going well.
+
+**Step 3 — convergence.** $(1 - \eta\lambda_i)^t \to 0$ exactly when
+$|1 - \eta\lambda_i| < 1$, that is $0 < \eta < 2/\lambda_i$. Every direction must
+converge, so the smallest of those bounds binds:
+
+$$
+0 < \eta < \frac{2}{\lambda_{\max}}
+$$
+
+The condition is necessary as well as sufficient — above it the component along
+$\vec{q}_{\max}$ grows geometrically, and no other direction can offset that.
+
+**Step 4 — the fastest rate.** Asymptotically the slowest-decaying component
+dominates, so the quantity to minimise is
+
+$$
+\rho(\eta) = \max_i |1 - \eta\lambda_i|
+$$
+
+Each $|1 - \eta\lambda_i|$ is a V-shaped function of $\eta$ with its minimum at
+$1/\lambda_i$. The maximum over $i$ is attained at one of the two extreme
+eigenvalues: for small $\eta$ by $1 - \eta\lambda_{\min}$, which decreases, and
+for large $\eta$ by $\eta\lambda_{\max} - 1$, which increases. The minimum of the
+maximum is where they cross:
+
+$$
+1 - \eta\lambda_{\min} = \eta\lambda_{\max} - 1
+\quad\Longrightarrow\quad
+\eta^* = \frac{2}{\lambda_{\max} + \lambda_{\min}}
+$$
+
+**Step 5 — the rate.** Substituting back:
+
+$$
+\rho(\eta^*) = 1 - \frac{2\lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}
+= \frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}
+= \frac{\kappa - 1}{\kappa + 1}
+$$
+
+which is (I.7.4). Dividing through by $\lambda_{\min}$ is what turns two
+eigenvalues into one ratio: only the *shape* of the problem matters, not its
+scale.
+
+**Step 6 — check against I.7.B01.** With $\lambda = (20, 0.2)$:
+$\eta^* = 2/20.2 = 0.0990099$ and $\rho = 99/101 = 0.980198$, matching the
+measured values exactly.
+
+</Solution>
+
+<Answer>
+
+$$
+\vec{e}_{t} = (\mat{I} - \eta\mat{H})^{t}\vec{e}_0,
+\qquad \text{converges} \iff 0 < \eta < \frac{2}{\lambda_{\max}}
+$$
+
+$$
+\eta^* = \frac{2}{\lambda_{\max} + \lambda_{\min}},
+\qquad \rho(\eta^*) = \frac{\kappa - 1}{\kappa + 1}
+$$
+
+</Answer>
+
+<CheckSanity>
+**$\kappa = 1$ gives $\rho = 0$.** A perfectly conditioned quadratic is solved in
+a single step, and the formula says so: $\eta^* = 1/\lambda$ lands exactly on the
+optimum. Any correct derivation must reproduce this.
+
+**$\kappa \to \infty$ gives $\rho \to 1$.** Progress per step vanishes as the
+problem stiffens, which is the behaviour to expect and the reason the ratio
+rather than either eigenvalue is the quantity of interest.
+
+**$\eta^*$ lies strictly inside the stability interval.**
+$2/(\lambda_{\max} + \lambda_{\min}) < 2/\lambda_{\max}$ since
+$\lambda_{\min} > 0$. The optimum is never on the boundary, which is worth
+knowing: a rate tuned to the edge of stability is not the fast one.
+</CheckSanity>
+
+<Breaks>
+Every step used symmetry and positive definiteness. A real loss Hessian is
+symmetric but is *not* positive definite away from a minimum: at a saddle it has
+negative eigenvalues, and for $\lambda_i < 0$ the multiplier $1 - \eta\lambda_i$
+exceeds one for every positive $\eta$. Gradient descent moves *away* from a
+saddle along those directions, which is the behaviour wanted, but it means the
+analysis above describes only the neighbourhood of a minimum and says nothing
+about the journey there.
+
+The asymptotic framing hides something practical too. $\rho$ governs the
+long-run rate, and training runs are not long-run: they are stopped after a
+budget. The transient matters, which is why $\eta^*$ was beaten at 100 steps by
+a smaller rate in I.7.B01 despite being optimal in the limit.
+
+Momentum breaks the derivation rather than extending it. Its update depends on
+two previous iterates, so the recurrence is second-order and the analysis needs
+the roots of a quadratic characteristic polynomial rather than a single
+multiplier. That is what produces $\sqrt{\kappa}$ in place of $\kappa$ — I.7.T2,
+and the subject of I.7.B03.
+</Breaks>
+
+<Variation>
+Repeat Step 4 for the *transient* rather than the asymptote: which $\eta$
+minimises $\|\vec{e}_T\|$ for a fixed budget $T$ and a given $\vec{e}_0$? Show
+that it depends on $\vec{e}_0$, and say what that implies about tuning a
+learning rate on a short run.
+</Variation>

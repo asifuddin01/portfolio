@@ -1,0 +1,150 @@
+---
+id: "I.7.B04"
+kind: problem
+chapter: "I.7"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "The memory an optimiser costs before any activation is stored"
+depends:
+  - "I.7.P01"
+reachesBack: []
+rounding: "GB to two decimals, at 4 bytes per fp32 value."
+hasSolution: true
+verified: true
+snippet: "i-7-b04-optimiser-memory.py"
+status: published
+---
+
+<Statement>
+Count the copies of the parameter vector each optimiser holds, price them for
+three model sizes, and identify the size at which the choice of optimiser stops
+being a convergence question and becomes a hardware one.
+</Statement>
+
+<Given>
+A model with $N$ parameters in fp32. Every method holds the weights and the
+gradient; they differ in what else persists between steps. Sizes: 124M, 1.5B
+and 7B.
+</Given>
+
+<Find>
+State per parameter and total copies for SGD, SGD with momentum, RMSProp and
+Adam; total memory at each size; the optimiser state as a share of the total;
+and what swapping Adam for SGD with momentum saves at 1.5B.
+</Find>
+
+<Strategy>
+Count in copies of $\vec{\theta}$ rather than in bytes, because the ratio is
+what transfers between precisions and model sizes. Weights and gradients are
+common to all four, so the whole difference is the third term.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the state each method keeps.**
+
+| method | state | copies | bytes/param |
+|---|---|---|---|
+| SGD | 0 | 2 | 8 |
+| SGD + momentum | 1 | 3 | 12 |
+| RMSProp | 1 | 3 | 12 |
+| Adam / AdamW | 2 | 4 | 16 |
+| Adam, fp32 master | 4 | 6 | 24 |
+
+Adam keeps both moments of (I.7.6): $m$ for direction and $v$ for scale. That is
+two extra copies, and with mixed precision an fp32 master copy of fp16 weights
+pushes it to six.
+
+**Step 2 — priced.**
+
+| method | 124M | 1.5B | 7B |
+|---|---|---|---|
+| SGD | $0.99$ GB | $12.00$ GB | $56.00$ GB |
+| SGD + momentum | $1.49$ GB | $18.00$ GB | $84.00$ GB |
+| RMSProp | $1.49$ GB | $18.00$ GB | $84.00$ GB |
+| Adam / AdamW | $1.98$ GB | $24.00$ GB | $112.00$ GB |
+
+**Step 3 — where it stops being a preference.** At 7B, Adam's four copies come
+to $112$ GB. The largest single accelerator commonly available holds $80$ GB, so
+the model cannot be trained on one device with Adam *before a single activation
+is stored* — and activations are the larger term at any useful batch, by I.6.B05.
+SGD with momentum brings it to $84$ GB, which is still over. The decision has
+moved from "which converges better" to "which fits", and no amount of gradient
+checkpointing addresses it, because checkpointing trades activation memory and
+this is not activation memory.
+
+**Step 4 — the share.**
+
+$$
+\text{SGD } 0\%, \qquad \text{momentum } 33.3\%, \qquad \text{Adam } 50.0\%
+$$
+
+Half of Adam's four-way footprint is state that exists only to choose a step
+size per coordinate.
+
+**Step 5 — the swap.** At 1.5B:
+
+$$
+24.00\ \text{GB} \longrightarrow 18.00\ \text{GB}, \qquad 6.00\ \text{GB saved},\ 1.33\times
+$$
+
+A third of the optimiser footprint, for one moment estimate. Whether that is a
+good trade depends on whether the per-coordinate scaling is buying convergence
+on the model in question — which is an empirical matter, and is exactly the
+question the framing of Adam as a default discourages anyone from asking.
+
+</Solution>
+
+<Answer>
+
+Copies: SGD 2, momentum 3, RMSProp 3, Adam 4, Adam with an fp32 master 6.
+
+At 1.5B: SGD $12.00$ GB, momentum $18.00$ GB, Adam $24.00$ GB. At 7B, Adam needs
+$112.00$ GB — over a single 80 GB device before any activation.
+
+Adam's state is $50\%$ of its own footprint. Swapping to SGD with momentum at
+1.5B saves $6.00$ GB, a factor of $1.33$.
+
+</Answer>
+
+<CheckSanity>
+**The ratios are precision-independent.** Counting in copies means fp16 halves
+every number in the table and changes none of the ratios. That is why the copy
+count is the quantity to remember and the GB figures are an illustration.
+
+**Adam is exactly twice SGD.** Four copies against two, at every size. A useful
+sanity check on any memory estimate: if switching from SGD to Adam does not
+roughly double the parameter-side footprint, something else is being counted.
+
+**The 124M row is unremarkable and that is the point.** $1.98$ GB against
+$0.99$ GB — a gigabyte, on hardware with tens. The choice genuinely does not
+matter at that scale, which is why the habit of reaching for Adam forms on small
+models and then goes unexamined on large ones.
+</CheckSanity>
+
+<Breaks>
+This counts the optimiser and nothing else. Activations are usually the larger
+term — I.6.B05 measured $3.22$ GB of them for a 48-layer model at batch
+$32 \times 512$, against $0.20$ GB of parameters — and they scale with batch
+while this table does not. A memory plan built from this table alone will be
+wrong in the direction that matters.
+
+The fp32-master row also understates modern practice. A production mixed-precision
+setup may hold fp16 weights, fp16 gradients, an fp32 master copy, and fp32
+moments, and sharded training distributes those copies across devices so that
+the per-device figure is smaller than any row here while the total is larger.
+ZeRO-style sharding exists precisely because this table is the binding
+constraint at scale.
+
+Finally, the memory saved by dropping to SGD is not free. Adam's per-coordinate
+scaling is what makes one learning rate serviceable across parameters whose
+gradients differ by orders of magnitude, and removing it usually means tuning a
+schedule that Adam absorbed. The trade is real in both directions.
+</Breaks>
+
+<Variation>
+Recompute the 7B row in bf16 for weights and gradients with fp32 moments — the
+common mixed-precision arrangement. Does Adam fit on an 80 GB device then? State
+what you had to assume about the master copy to get your answer.
+</Variation>

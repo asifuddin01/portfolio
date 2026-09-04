@@ -1,0 +1,163 @@
+---
+id: "I.7.B05"
+kind: problem
+chapter: "I.7"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "Adam's state, shape by shape, and what its division buys"
+depends:
+  - "I.7.P01"
+reachesBack: []
+rounding: "Exact shapes; algebra exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Give the shape of every tensor Adam holds for a concrete model, then establish
+the property those shapes exist to provide: that the step taken in each
+coordinate is unchanged when the loss is multiplied by a constant.
+</Statement>
+
+<Given>
+The network of I.5.B03 — widths $(784, 512, 256, 128, 10)$, four affine layers,
+$567\,434$ parameters. Adam as in (I.7.6), with $\beta_1 = 0.9$,
+$\beta_2 = 0.999$, $\varepsilon = 10^{-8}$.
+</Given>
+
+<Find>
+The shape of $m$ and $v$ for each parameter tensor and the totals; then, for a
+loss rescaled to $c\mathcal{L}$, the effect on $g$, $m$, $v$ and the update.
+</Find>
+
+<Strategy>
+Every moment estimate is an average of things with the shape of the gradient,
+and a gradient has the shape of its parameter — so the shapes follow without
+any new argument. The scale question is answered by tracking a factor of $c$
+through (I.7.6) and seeing where it cancels.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the shapes.** $m$ and $v$ are elementwise running averages of $g$ and
+$g^2$, so each has exactly the shape of the parameter it belongs to:
+
+| tensor | shape | entries | $m$ | $v$ |
+|---|---|---|---|---|
+| $\mat{W}^{(1)}$ | $784 \times 512$ | $401\,408$ | same | same |
+| $\vec{b}^{(1)}$ | $1 \times 512$ | $512$ | same | same |
+| $\mat{W}^{(2)}$ | $512 \times 256$ | $131\,072$ | same | same |
+| $\vec{b}^{(2)}$ | $1 \times 256$ | $256$ | same | same |
+| $\mat{W}^{(3)}$ | $256 \times 128$ | $32\,768$ | same | same |
+| $\vec{b}^{(3)}$ | $1 \times 128$ | $128$ | same | same |
+| $\mat{W}^{(4)}$ | $128 \times 10$ | $1\,280$ | same | same |
+| $\vec{b}^{(4)}$ | $1 \times 10$ | $10$ | same | same |
+| **total** | | $567\,434$ | $567\,434$ | $567\,434$ |
+
+Two extra copies, $1\,134\,868$ values, $4.54$ MB in fp32 against the model's
+own $2.27$ MB — the $2\times$ of I.7.B04, on a concrete model.
+
+Nothing is per-layer or per-tensor: the state is *per scalar parameter*. That is
+what "adaptive" means here, and it is the whole reason the state is this large.
+
+**Step 2 — rescale the loss.** Replace $\mathcal{L}$ by $c\mathcal{L}$ for a
+constant $c > 0$. Gradients are linear, so every $g_t$ becomes $cg_t$. Both
+moments are linear in their inputs:
+
+$$
+m_t = \beta_1 m_{t-1} + (1-\beta_1)cg_t \Longrightarrow cm_t,
+\qquad
+v_t = \beta_2 v_{t-1} + (1-\beta_2)c^2g_t^2 \Longrightarrow c^2v_t
+$$
+
+The first moment picks up $c$ and the second picks up $c^2$, because one
+averages the gradient and the other its square.
+
+**Step 3 — the cancellation.** Bias correction divides both by constants, so the
+factors survive it: $\hat{m}_t \to c\hat{m}_t$ and $\hat{v}_t \to c^2\hat{v}_t$.
+The step is
+
+$$
+\frac{c\,\hat{m}_t}{\sqrt{c^2\hat{v}_t} + \varepsilon}
+= \frac{c\,\hat{m}_t}{c\sqrt{\hat{v}_t} + \varepsilon}
+$$
+
+For $\varepsilon$ negligible against $c\sqrt{\hat{v}_t}$ the $c$ cancels and the
+update is unchanged. **Adam's step is invariant to rescaling the loss**, and by
+the same argument to rescaling any individual coordinate's gradient.
+
+**Step 4 — what plain descent does instead.** Its update is $-\eta cg_t$, which
+scales with $c$ directly. Doubling the loss doubles every step, so a rate tuned
+for one loss scale is wrong for another — and since a sum over a batch and a
+mean over a batch differ by a factor of $B$, that is not a hypothetical.
+
+**Step 5 — where the invariance fails.** $\varepsilon$ is an additive constant
+and does not scale, so the cancellation is approximate. When $c$ is small enough
+that $c\sqrt{\hat{v}} \lesssim \varepsilon$, the denominator is dominated by
+$\varepsilon$ and the step becomes $\approx c\hat{m}/\varepsilon$ — linear in
+$c$ again, like plain descent. So the invariance holds over a wide range and
+breaks at the bottom of it, which is one reason $\varepsilon$ is a number worth
+knowing rather than a formality: it sets where the adaptive behaviour stops.
+
+</Solution>
+
+<Answer>
+
+$m$ and $v$ each have the shape of the parameters, tensor for tensor:
+$567\,434$ entries apiece, $1\,134\,868$ values of state, $4.54$ MB in fp32
+against $2.27$ MB of weights.
+
+Under $\mathcal{L} \to c\mathcal{L}$: $g \to cg$, $m \to cm$, $v \to c^2v$, and
+the update $\hat{m}/(\sqrt{\hat{v}} + \varepsilon)$ is unchanged while
+$c\sqrt{\hat{v}} \gg \varepsilon$. Plain descent's update scales with $c$.
+
+</Answer>
+
+<CheckSanity>
+**The state has no shape of its own.** Every entry of $m$ and $v$ corresponds to
+exactly one scalar parameter, so a memory estimate that treats optimiser state
+as a per-layer overhead is wrong by orders of magnitude.
+
+**The exponents on $c$ are 1 and 2.** They must be: $m$ averages $g$ and $v$
+averages $g^2$. Getting $c$ and $c$ would mean the square had been dropped, and
+the cancellation would then leave a stray factor rather than none.
+
+**The step's magnitude is about $\eta$.** With $\hat{m} \approx \sqrt{\hat{v}}$
+for a steady gradient, the ratio is near 1 and each coordinate moves by roughly
+$\eta$ per step regardless of its gradient's size. That is the property that
+makes a single $\eta$ serviceable across parameters of very different scales,
+and it is also why Adam's $\eta$ is typically $10^{-3}$ where SGD's might be
+$10^{-1}$ — they are measured in different things.
+</CheckSanity>
+
+<Breaks>
+Scale invariance is a property of the *step*, not of training. Rescaling the loss
+leaves Adam's trajectory unchanged but not anything coupled to the loss value:
+gradient clipping by norm triggers at different points, a fixed convergence
+threshold on the loss means something different, and in mixed precision the
+gradient scaler exists precisely because the raw magnitude decides whether fp16
+overflows or flushes to zero. "Adam does not care about the loss scale" is true
+of one equation and false of the system around it.
+
+The invariance is also per-coordinate, which is a double-edged property. A
+parameter whose gradient is genuinely tiny because it barely matters is stepped
+just as far as one whose gradient is large, since only the ratio survives. That
+is the intended behaviour and it is also why Adam can keep moving parameters
+that plain descent would leave alone — sometimes usefully, sometimes as an
+argument for decoupled weight decay, which I.7.X04 takes up.
+
+Finally, $\varepsilon$ sits *outside* the square root in (I.7.6) and some
+implementations place it inside. The two differ, and the difference shows up
+exactly in the small-gradient regime where the invariance is already breaking
+down. It is not a detail worth arguing about often, but it is a real difference
+between two things both called Adam.
+</Breaks>
+
+<Variation>
+Work out what happens under a rescaling of the *parameters* rather than the loss
+— replace $\theta$ by $a\theta$ with the model reparameterised to compensate. Is
+Adam invariant to that too? The answer is different from Step 3's, and it is the
+reason normalisation layers still matter when Adam is in use.
+</Variation>

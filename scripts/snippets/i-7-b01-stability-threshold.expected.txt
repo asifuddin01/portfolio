@@ -1,0 +1,21 @@
+eigenvalues        20.0  0.2
+lambda_max         20.0
+stability limit    2/lambda_max = 0.1
+condition number   kappa = 100.0
+
+error norm, by step
+    eta           t=1          t=5         t=10         t=50          t=100
+ 0.0100    1.2791e+00   1.0429e+00   9.8604e-01   9.0475e-01     8.1857e-01
+ 0.0900    1.2666e+00   9.7019e-01   8.4079e-01   4.0325e-01     1.6261e-01
+ 0.0990    1.3862e+00   1.2796e+00   1.1579e+00   5.2024e-01     1.9138e-01
+ 0.1100    1.5481e+00   2.6443e+00   6.2433e+00   9.1004e+03     8.2818e+07
+ 0.2000    3.1499e+00   2.4300e+02   5.9049e+04   7.1790e+23     5.1538e+47
+
+the per-step multiplier in each eigendirection, |1 - eta*lambda|
+  eta = 0.09   steep 0.8000   flat 0.9820   converges
+  eta = 0.11   steep 1.2000   flat 0.9780   diverges
+
+the best a single scalar rate can do
+  eta* = 2/(lam_max+lam_min) = 0.0990099
+  contraction per step       = 0.980198
+  steps to shrink error 1000x = 346

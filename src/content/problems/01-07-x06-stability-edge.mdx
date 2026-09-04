@@ -1,0 +1,68 @@
+---
+id: "I.7.X06"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "What happens exactly at the stability threshold"
+depends:
+  - "I.7.P01"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+Take the recurrence $e_{t+1} = (1 - \eta\lambda)e_t$ and examine the three
+boundary cases: $\eta\lambda = 1$, $\eta\lambda = 2$, and $\eta\lambda \to 2^-$.
+Say what the iteration does in each, and what the third implies about tuning a
+learning rate by trying larger values until something breaks.
+
+<Hint>
+The multiplier is $1 - \eta\lambda$. Evaluate it, and remember it is a signed
+quantity — the sign carries information the magnitude does not.
+</Hint>
+
+<SolutionToggle>
+
+**$\eta\lambda = 1$: exact, in one step.** The multiplier is $0$, so
+$e_1 = 0$ regardless of $e_0$. This is Newton's method for a quadratic: the step
+$\eta = 1/\lambda$ lands on the optimum exactly. It is also the reason a
+perfectly conditioned problem is trivial — with all eigenvalues equal, one
+$\eta$ solves every direction at once.
+
+**$\eta\lambda = 2$: perpetual oscillation.** The multiplier is $-1$, so
+$e_t = (-1)^t e_0$. The error alternates in sign and *never changes magnitude*.
+The iterate bounces between two points forever: the loss is constant, the
+gradient is non-zero, and nothing is converging or diverging. Neither the loss
+curve nor the gradient norm reveals progress, because there is none.
+
+**$\eta\lambda \to 2^-$: convergence at an arbitrarily slow rate.** The
+multiplier approaches $-1$ from inside, so the error still contracts — but by a
+factor approaching $1$. Steps to reach a target grow without bound as the
+threshold is approached, while the iteration remains formally convergent
+throughout.
+
+**What that implies about tuning.** The common procedure is to raise $\eta$ until
+training becomes unstable and then back off. This limit says the procedure has a
+trap: just below the threshold the run is *stable and useless*, contracting so
+slowly that it is indistinguishable from a plateau over any finite budget. It
+looks like a learning-rate problem of the opposite kind — too small — and the
+natural response of raising $\eta$ further crosses into divergence.
+
+The sign is the tell. Below $\eta\lambda = 1$ the multiplier is positive and the
+error decays monotonically. Above it the multiplier is negative and the error
+alternates, so the parameter oscillates around the optimum while approaching it.
+A trajectory that zigzags is already past $1/\lambda$ in that direction and is
+in the upper half of the stable band — which is visible in a parameter trace and
+invisible in a loss curve.
+
+**Why the loss hides it.** For a quadratic the loss is $\tfrac{1}{2}\lambda e^2$,
+which is even in $e$. Both signs give the same loss, so the alternation that
+distinguishes the two regimes is exactly what the loss discards. This is a small
+instance of a general point: a scalar summary of a high-dimensional trajectory
+loses the information needed to diagnose it, and monitoring only the loss is
+monitoring the one quantity engineered to be flat.
+
+</SolutionToggle>

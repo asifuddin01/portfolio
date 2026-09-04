@@ -1,0 +1,76 @@
+---
+id: "I.7.X09"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "Measuring the 1/B law instead of assuming it"
+depends:
+  - "I.7.P02"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-7-x09-gradient-variance.py"
+status: published
+---
+
+Build a population of per-example gradients with known mean and variance, draw
+four thousand minibatches at each of six sizes, and compare the measured
+variance of the batch mean against $\sigma^2/B$. Check unbiasedness at the same
+time, and say why the population was given a deliberately non-normal shape.
+
+<Hint>
+Two claims are being tested, and they need different evidence: that the mean of
+the batch means sits at $\mu$, and that their spread falls as $1/B$.
+</Hint>
+
+<SolutionToggle>
+
+**The population.** $N = 10\,000$ values with $\mu = -0.000960$ and
+$\sigma^2 = 7.859247$. The shape is a sawtooth with occasional large spikes —
+deliberately not a bell curve, so that agreement cannot be an artefact of the
+per-example gradients happening to be normal. Real per-example gradients are not
+normal either; they are heavy-tailed, with a few examples contributing far more
+than the rest.
+
+**The measurements.** 4000 batches at each size:
+
+| $B$ | measured $\operatorname{Var}$ | $\sigma^2/B$ | ratio | mean of means |
+|---|---|---|---|---|
+| 1 | $7.845540$ | $7.859247$ | $0.998$ | $0.087900$ |
+| 2 | $4.076844$ | $3.929624$ | $1.037$ | $0.017487$ |
+| 8 | $0.998829$ | $0.982406$ | $1.017$ | $-0.012431$ |
+| 32 | $0.248467$ | $0.245601$ | $1.012$ | $0.020018$ |
+| 128 | $0.061120$ | $0.061400$ | $0.995$ | $0.007109$ |
+| 512 | $0.014889$ | $0.015350$ | $0.970$ | $0.002993$ |
+
+**Unbiasedness.** Every "mean of means" sits near $\mu = -0.000960$, and the
+agreement tightens as $B$ grows — not because the estimator becomes less biased,
+which it never was, but because the estimate of its mean becomes more precise.
+Unbiasedness is a property at every $B$; only our ability to see it improves.
+
+**The $1/B$ law.** Ratios between $0.970$ and $1.037$ across three orders of
+magnitude in $B$. The variance falls by a factor of $512$ from $B{=}1$ to
+$B{=}512$, matching the prediction to within four percent at the worst point.
+
+**Where the residual error comes from.** The ratios wander by a few percent
+because 4000 trials estimate a variance with a standard error of roughly
+$\sqrt{2/(4000-1)} \approx 2.2\%$ — so the observed spread is what sampling
+noise alone predicts. Measuring a variance is itself a noisy business, and
+quoting three decimal places on the ratio would be quoting the noise.
+
+**Why the non-normal shape matters.** The derivation in I.7.X10 uses only
+linearity of expectation and independence — nothing about the distribution's
+shape. A demonstration on Gaussian data would be consistent with a much weaker
+claim that happened to need normality. Using a spiky population tests the
+theorem that was actually proved.
+
+**What this does not establish.** The law assumes independent draws. Sorted
+batches (I.7.X05), duplicated examples, or any correlation within a batch break
+the variance half while leaving the unbiasedness half intact — and no measurement
+of this kind detects that, because the sampling here was constructed to be
+independent. The experiment confirms the theorem under its hypotheses; it says
+nothing about a pipeline that violates them.
+
+</SolutionToggle>

@@ -1,0 +1,79 @@
+---
+id: "I.7.X02"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "What bias correction is correcting, and for how long"
+depends:
+  - "I.7.P01"
+rounding: "Eight decimal places."
+hasSolution: true
+verified: true
+snippet: "i-7-x02-bias-correction.py"
+status: published
+---
+
+Feed Adam a constant gradient $g = 0.1$ and record $m$, $v$ and the step, with
+and without the bias correction of (I.7.6), for the first ten steps. Say by what
+factor the uncorrected first step is wrong and in which direction, then find how
+long the correction still matters.
+
+<Hint>
+Both moments start at zero, so both are biased towards zero — but one of them is
+under a square root in a denominator. Work out which way that pushes the step.
+</Hint>
+
+<SolutionToggle>
+
+**The correction works exactly.** With a constant gradient the corrected step is
+$1.000000$ at every step from the first — because $\hat{m} = g$ and
+$\hat{v} = g^2$ exactly, so the ratio is $g/|g| = 1$. That is the property the
+correction is for: the step size should not depend on how long training has been
+running.
+
+**The uncorrected step is wrong, and grows.**
+
+| $t$ | $m$ raw | $v$ raw | step raw | step corrected |
+|---|---|---|---|---|
+| 1 | $0.01000000$ | $0.0000100000$ | $3.162268$ | $1.000000$ |
+| 2 | $0.01900000$ | $0.0000199900$ | $4.249582$ | $1.000000$ |
+| 5 | $0.04095100$ | $0.0000499001$ | $5.797132$ | $1.000000$ |
+| 10 | $0.06513216$ | $0.0000995512$ | $6.527874$ | $1.000000$ |
+
+**The direction is the part worth getting right.** The uncorrected step is
+$3.1623\times$ **too large**, not too small — which is the opposite of what the
+phrase "biased towards zero" suggests at first reading.
+
+Both moments are biased towards zero, but by different amounts and in different
+places. After one step $m$ is $(1-\beta_1)g = 0.1g$, a tenth of its target, while
+$v$ is $(1-\beta_2)g^2 = 0.001g^2$, a *thousandth* of its target. The step
+divides by $\sqrt{v}$, and $\sqrt{0.001} = 0.0316$, so the denominator is
+shrunk 31.6-fold while the numerator is shrunk 10-fold. Net:
+$31.6/10 = 3.16$ times too large.
+
+**How long it matters.** The correction factors are $1 - \beta^t$:
+
+| $t$ | $1 - \beta_1^t$ | $1 - \beta_2^t$ |
+|---|---|---|
+| 1 | $0.10000000$ | $0.00100000$ |
+| 10 | $0.65132156$ | $0.00995512$ |
+| 100 | $0.99997344$ | $0.09520785$ |
+| 1000 | $1.00000000$ | $0.63230458$ |
+| 5000 | $1.00000000$ | $0.99327889$ |
+
+The first moment's correction is finished by step 100. The second's is still
+correcting by a factor of $1.6$ at step 1000 and only settles around 5000 — because
+$\beta_2 = 0.999$ has a memory of a thousand steps by I.7.X03.
+
+**Why this connects to warm-up.** Without the correction the opening steps would
+be several times too large, which is precisely the damage a warm-up exists to
+prevent. The correction removes the systematic part of that, and a warm-up is
+still used — because the *variance* of the early estimates is high even once
+their bias is gone, and an estimate built from three samples is unreliable
+whether or not it is unbiased. Bias correction and warm-up address different
+halves of the same problem, which is why doing one does not remove the need for
+the other.
+
+</SolutionToggle>

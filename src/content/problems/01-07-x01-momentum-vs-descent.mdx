@@ -1,0 +1,68 @@
+---
+id: "I.7.X01"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "More momentum is not monotonically better"
+depends:
+  - "I.7.P01"
+rounding: "Step counts exact; rates to six decimals."
+hasSolution: true
+verified: true
+snippet: "i-7-x01-momentum-vs-descent.py"
+status: published
+---
+
+On the quadratic of I.7.B01 — $\mat{H} = \mathrm{diag}(20, 0.2)$, $\kappa = 100$
+— compare plain descent with momentum at $\beta \in \{0.6694, 0.9, 0.99\}$.
+Predict the ordering before looking, then explain the one that surprises you.
+
+<Hint>
+By I.7.X03 the buffer settles at $g/(1-\beta)$ for a steady gradient. What does
+that do to the effective step size, and what does an effective step size that is
+too large do?
+</Hint>
+
+<SolutionToggle>
+
+**The measurements.** Steps to reach an error norm of $10^{-3}$:
+
+| method | $\eta$ | $\beta$ | steps |
+|---|---|---|---|
+| plain descent | $0.099010$ | $0$ | $363$ |
+| momentum, tuned | $0.165289$ | $0.6694$ | $\mathbf{58}$ |
+| momentum, default | $0.165289$ | $0.9000$ | $132$ |
+| momentum, default $\eta$ | $0.099010$ | $0.9000$ | $127$ |
+| momentum, $\beta = 0.99$ | $0.165289$ | $0.9900$ | $\mathbf{1\,214}$ |
+
+**The tuned case behaves as advertised.** $58$ steps against $363$, a factor of
+$6.3$, against the asymptotic prediction $\sqrt{\kappa} = 10$. The shortfall is
+the transient: momentum needs several steps before its average carries
+information, and 58 steps is not many multiples of that.
+
+**The surprise is the last row.** At $\beta = 0.99$ momentum takes $1\,214$
+steps — **3.3 times worse than using no momentum at all.** More memory made it
+worse, decisively.
+
+**Why.** By I.7.X03 a steady gradient drives the buffer to $g/(1-\beta)$, so the
+effective step is $\eta/(1-\beta)$. At $\beta = 0.99$ that is a hundredfold
+amplification: an $\eta$ of $0.165$ behaves like $16.5$, far past the stability
+threshold of $0.1$. The iteration does not diverge only because the oscillation
+it induces is itself damped by the averaging — so instead of blowing up, it
+lurches around the valley, and the lurching is slower than walking.
+
+**The optimum is not near the default.** For $\kappa = 100$ the tuned $\beta$ is
+$0.6694$, well below the $0.9$ everyone writes. The default is optimal for
+$\kappa \approx 361$, and the further a problem is from that, the worse it
+serves — in both directions.
+
+**What to take from this.** $\beta$ and $\eta$ are not independent knobs, and
+raising $\beta$ is a learning-rate increase wearing a different name. A
+configuration search that varies them separately is searching a space where the
+interesting direction is diagonal. It also explains a common experience: adding
+momentum to a run tuned without it makes things worse, and the fix is to lower
+$\eta$ at the same time rather than to conclude that momentum does not help.
+
+</SolutionToggle>

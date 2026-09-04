@@ -1,0 +1,15 @@
+kappa 100   sqrt(kappa) 10
+
+method                              eta     beta     steps         rho
+plain descent (beta=0)         0.099010   0.0000       363    0.980198
+momentum, tuned                0.165289   0.6694        58    0.818182
+momentum, beta=0.9 default     0.165289   0.9000       132           -
+momentum, beta=0.9, eta_gd     0.099010   0.9000       127           -
+momentum, beta=0.99            0.165289   0.9900     1,214           -
+
+tuned momentum speed-up  6.3x   (sqrt(kappa) = 10)
+
+what raising beta does to the effective step, for a steady gradient
+  beta  0.00   buffer settles at g/(1-beta) =    1.0 g
+  beta  0.90   buffer settles at g/(1-beta) =   10.0 g
+  beta  0.99   buffer settles at g/(1-beta) =  100.0 g

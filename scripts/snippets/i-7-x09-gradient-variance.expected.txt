@@ -1,0 +1,15 @@
+population N = 10,000
+  mean mu        -0.000960
+  variance s^2   7.859247
+  std   s        2.803435
+
+     B   measured Var          s^2/B    ratio   mean of means
+     1       7.845540       7.859247    0.998        0.087900
+     2       4.076844       3.929624    1.037        0.017487
+     8       0.998829       0.982406    1.017       -0.012431
+    32       0.248467       0.245601    1.012        0.020018
+   128       0.061120       0.061400    0.995        0.007109
+   512       0.014889       0.015350    0.970        0.002993
+
+unbiasedness: every 'mean of means' above sits near mu = -0.000960, for every B
+variance: the ratio is near 1, so Var falls as 1/B across three orders

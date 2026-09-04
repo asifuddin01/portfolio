@@ -1,0 +1,80 @@
+---
+id: "I.7.X04"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "Two things both called weight decay, which differ under Adam"
+depends:
+  - "I.7.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+Adding $\tfrac{\lambda}{2}\|\theta\|^2$ to the loss and subtracting
+$\eta\lambda\theta$ from each update are the same operation under plain gradient
+descent. Show they are the same, then show they are *not* the same under Adam,
+and say which coordinates the difference falls on.
+
+<Hint>
+Under Adam the penalty's gradient does not go straight into the update — it
+passes through the same division by $\sqrt{\hat{v}}$ as everything else.
+</Hint>
+
+<SolutionToggle>
+
+**Under plain descent they coincide.** The penalty contributes
+$\nabla(\tfrac{\lambda}{2}\|\theta\|^2) = \lambda\theta$, so
+
+$$
+\theta \leftarrow \theta - \eta(g + \lambda\theta) = \theta - \eta g - \eta\lambda\theta
+$$
+
+which is the update with a separate $-\eta\lambda\theta$ term. The two
+descriptions are one algorithm, which is why the names are used
+interchangeably.
+
+**Under Adam they diverge.** L2 regularisation puts $\lambda\theta$ into $g$
+*before* the moments are formed, so it is divided by $\sqrt{\hat{v}}$ along with
+everything else:
+
+$$
+\theta \leftarrow \theta - \eta\,\frac{\widehat{m[g + \lambda\theta]}}{\sqrt{\widehat{v[g + \lambda\theta]}} + \varepsilon}
+$$
+
+Decoupled decay (AdamW) applies it outside:
+
+$$
+\theta \leftarrow \theta - \eta\,\frac{\hat{m}[g]}{\sqrt{\hat{v}[g]} + \varepsilon} - \eta\lambda\theta
+$$
+
+**Which coordinates differ.** Consider a parameter whose gradient is
+persistently large, so $\sqrt{\hat{v}}$ is large. Under L2 its decay term is
+divided by that large number and is therefore *weak*. A parameter with a small
+gradient has small $\sqrt{\hat{v}}$ and its decay is *strong*.
+
+So L2-under-Adam regularises inversely to gradient magnitude: the parameters
+doing the most work are penalised least, and the ones already doing little are
+pushed towards zero hardest. That is the opposite of what a practitioner adding
+weight decay intends, and it is not a small effect — $\sqrt{\hat{v}}$ can differ
+by orders of magnitude across a network.
+
+Decoupled decay applies $\eta\lambda\theta$ uniformly, which is what the name
+describes.
+
+**Why this counts as a counterexample.** The claim being refuted is the
+reasonable one that weight decay and L2 are two names for one thing. They are,
+under any optimiser whose update is proportional to the gradient — SGD,
+momentum, Nesterov. They are not, under any optimiser that rescales the gradient
+per coordinate, and Adam is the one everybody uses. The identity fails exactly
+where it is most relied on.
+
+**The practical residue.** Loshchilov and Hutter's AdamW is the decoupled form,
+and it is now the default in most training code. A configuration ported from an
+SGD recipe by copying $\lambda$ across will not reproduce its regularisation
+under Adam, and the discrepancy is largest for the parameters that matter most.
+
+</SolutionToggle>

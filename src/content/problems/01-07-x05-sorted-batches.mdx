@@ -1,0 +1,75 @@
+---
+id: "I.7.X05"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A batch that is not a sample"
+depends:
+  - "I.7.P02"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+A dataset of 1000 examples is sorted by label — all 500 of class 0, then all 500
+of class 1 — and read in batches of 100 without shuffling. Show that the
+resulting gradient estimate is biased, that no learning rate corrects it, and
+what the loss curve looks like.
+
+<Hint>
+What is the expectation of the gradient over the batches actually presented,
+against the expectation over a random batch? Compare each individual batch, not
+the average over an epoch.
+</Hint>
+
+<SolutionToggle>
+
+**The unbiasedness that is assumed.** With $B$ examples drawn uniformly at
+random, the estimator of (I.7.2) satisfies
+$\mathbb{E}[\hat{g}_B] = \nabla\mathcal{L}$ — the batch gradient is the full
+gradient plus zero-mean noise. Every convergence argument for stochastic descent
+begins here.
+
+**What sorting does.** Batches 1 to 5 contain only class 0; batches 6 to 10 only
+class 1. Batch $k$'s gradient is
+
+$$
+\hat{g}_k = \nabla\mathcal{L}_{\text{class }0} \quad (k \le 5),
+\qquad
+\hat{g}_k = \nabla\mathcal{L}_{\text{class }1} \quad (k > 5)
+$$
+
+Each is the exact gradient of a *different* objective — the loss on one class —
+and neither equals $\nabla\mathcal{L}$. The error is not zero-mean noise around
+the right answer; it is the right answer to the wrong question, five times in a
+row.
+
+**Why no learning rate corrects it.** A scalar multiplies the direction and
+cannot change it. Every one of the first five steps moves towards the minimiser
+of the class-0 loss, which for a classifier is roughly "predict class 0 always".
+Shrinking $\eta$ makes the journey there slower, not different.
+
+**What the curve looks like.** Loss falls through batches 1–5 as the model
+learns to predict class 0, then jumps sharply at batch 6 and falls again as it
+unlearns that and predicts class 1, then jumps at the start of the next epoch. A
+sawtooth with period one epoch, its teeth aligned to the label boundary. The
+average over an epoch is unbiased — the two halves do cancel — but the parameters
+never sit at that average, and with momentum the buffer arrives at each boundary
+carrying ten steps of exactly the wrong direction.
+
+**Why it is easy to hit.** Nothing errors. The data loads, the loss decreases
+within each run of batches, and the sawtooth is easy to read as "needs a lower
+learning rate" — which makes it worse, by lengthening the time spent on each
+side. The fix is one flag, and the diagnosis is the hard part.
+
+**The general statement.** Any correlation between batch membership and the
+gradient breaks the assumption: sorting by label, by length, by acquisition date,
+by hospital site. The last is the one that matters in the medical-imaging work of
+Book VIII — batches that are accidentally single-site are not samples of the
+population the model is meant to serve, and the bias survives every learning
+rate, every optimiser and every schedule.
+
+</SolutionToggle>

@@ -1,0 +1,82 @@
+---
+id: "I.7.X08"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "Square-root returns, and where they stop being worth buying"
+depends:
+  - "I.7.P02"
+rounding: "Six decimal places on noise; costs exact."
+hasSolution: true
+verified: true
+snippet: "i-7-x08-batch-returns.py"
+status: published
+---
+
+Price what a larger batch buys. Give the noise, the arithmetic and the noise per
+unit of arithmetic across $B$ from 1 to 4096, then identify the regime in which
+raising $B$ stops being a good trade and say what the budget does and does not
+decide.
+
+<Hint>
+By (I.7.2) noise falls as $1/\sqrt{B}$ while cost rises as $B$. Form the product
+and read off which direction it moves.
+</Hint>
+
+<SolutionToggle>
+
+**The trade.**
+
+| $B$ | standard error | vs $B{=}1$ | arithmetic | error $\times$ cost |
+|---|---|---|---|---|
+| 1 | $1.000000$ | $1.0000$ | 1 | $1.00$ |
+| 4 | $0.500000$ | $0.5000$ | 4 | $2.00$ |
+| 16 | $0.250000$ | $0.2500$ | 16 | $4.00$ |
+| 64 | $0.125000$ | $0.1250$ | 64 | $8.00$ |
+| 256 | $0.062500$ | $0.0625$ | 256 | $16.00$ |
+| 1024 | $0.031250$ | $0.0312$ | 1024 | $32.00$ |
+| 4096 | $0.015625$ | $0.0156$ | 4096 | $64.00$ |
+
+Quadrupling $B$ halves the noise and costs four times the arithmetic, at every
+scale. The last column — noise per unit of compute — *doubles* each time, which
+is the trade stated in the least flattering way that is still true: measured per
+FLOP, a large batch is strictly worse at reducing noise.
+
+**Why anyone uses large batches anyway.** The table prices arithmetic, and
+arithmetic is not the binding constraint on modern hardware. A batch of 256 does
+not take 256 times as long as a batch of 1 — it takes barely longer, because the
+device was idle. The square-root law is about *statistical* efficiency; large
+batches win on *hardware* efficiency, and the two pull in opposite directions.
+
+**Where it stops.** Comparing noise against the signal it corrupts:
+
+| $B$ | noise/signal | regime |
+|---|---|---|
+| 1 | $1.000000$ | noise-dominated: more $B$ helps a lot |
+| 16 | $0.250000$ | mixed: linear scaling (I.7.7) roughly holds |
+| 256 | $0.062500$ | mixed: linear scaling roughly holds |
+| 4096 | $0.015625$ | signal-dominated: more $B$ buys little |
+| 65536 | $0.003906$ | signal-dominated: more $B$ buys little |
+
+Once the noise is small against the gradient, further averaging refines a number
+that was already accurate enough to step with. That boundary is McCandlish and
+colleagues' critical batch size, and the useful thing about it is that it is a
+property of the *problem* at a point in training, not of the hardware — it
+generally grows as training proceeds and the gradient shrinks.
+
+**What the budget does not decide.** With a fixed budget of $10^6$ example-visits:
+
+| $B$ | steps | noise per step |
+|---|---|---|
+| 32 | $31\,250$ | $0.17678$ |
+| 256 | $3\,906$ | $0.06250$ |
+| 2048 | $488$ | $0.02210$ |
+
+Same compute, three different training runs: many noisy steps or few clean ones.
+The budget constrains their product and says nothing about which is better —
+that is decided by where the problem sits relative to its critical batch, and by
+whether the noise is doing anything useful, which by I.7.P02 it sometimes is.
+
+</SolutionToggle>

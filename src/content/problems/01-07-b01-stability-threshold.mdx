@@ -1,0 +1,169 @@
+---
+id: "I.7.B01"
+kind: problem
+chapter: "I.7"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "The learning rate at which descent stops converging"
+depends:
+  - "I.7.P01"
+reachesBack: []
+rounding: "Four significant figures; the threshold is exact."
+hasSolution: true
+verified: true
+snippet: "i-7-b01-stability-threshold.py"
+status: published
+---
+
+<Statement>
+Find the exact learning rate above which gradient descent diverges on a
+quadratic, then run descent either side of it. Show that the boundary is not a
+gradual degradation but a change of sign in an exponent.
+</Statement>
+
+<Given>
+A quadratic loss with a diagonal Hessian:
+
+$$
+\mathcal{L}(\vec{\theta}) = \tfrac{1}{2}\vec{\theta}^{\mathsf{T}}\mat{H}\vec{\theta},
+\qquad \mat{H} = \mathrm{diag}(20,\ 0.2)
+$$
+
+with the optimum at the origin and the starting point $\vec{\theta}_0 = (1, 1)$.
+</Given>
+
+<Find>
+The stability threshold; the condition number; the error norm after 1, 5, 10, 50
+and 100 steps at $\eta \in \{0.01,\ 0.09,\ 0.0990,\ 0.11,\ 0.2\}$; the per-step
+multiplier in each eigendirection at $\eta = 0.09$ and $\eta = 0.11$; and the
+optimal rate with its contraction factor.
+</Find>
+
+<Strategy>
+Because the Hessian is diagonal the two coordinates never interact, so the
+iteration is two independent scalar recurrences. Each is multiplied by a fixed
+number every step, and a geometric sequence converges exactly when that number
+is below one in magnitude. The whole problem reduces to that comparison.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the recurrence.** Substituting $\nabla\mathcal{L} = \mat{H}\vec{\theta}$
+into (I.7.1):
+
+$$
+\vec{\theta}_{t+1} = \vec{\theta}_t - \eta\mat{H}\vec{\theta}_t = (\mat{I} - \eta\mat{H})\vec{\theta}_t
+$$
+
+which is (I.7.3). In the eigenbasis — here the coordinate axes — each component
+is multiplied by $1 - \eta\lambda_i$ every step.
+
+**Step 2 — the threshold.** A geometric sequence converges when
+$|1 - \eta\lambda| < 1$, that is $0 < \eta < 2/\lambda$. Every coordinate must
+converge, so the binding constraint is the largest eigenvalue:
+
+$$
+\eta < \frac{2}{\lambda_{\max}} = \frac{2}{20} = 0.1
+$$
+
+The condition number is $\kappa = 20/0.2 = 100$.
+
+**Step 3 — either side of it.** Error norms:
+
+| $\eta$ | $t=1$ | $t=5$ | $t=10$ | $t=50$ | $t=100$ |
+|---|---|---|---|---|---|
+| $0.0100$ | $1.279$ | $1.043$ | $0.9860$ | $0.9048$ | $0.8186$ |
+| $0.0900$ | $1.267$ | $0.9702$ | $0.8408$ | $0.4033$ | $0.1626$ |
+| $0.0990$ | $1.386$ | $1.280$ | $1.158$ | $0.5202$ | $0.1914$ |
+| $0.1100$ | $1.548$ | $2.644$ | $6.243$ | $9.100\times10^{3}$ | $8.282\times10^{7}$ |
+| $0.2000$ | $3.150$ | $2.430\times10^{2}$ | $5.905\times10^{4}$ | $7.179\times10^{23}$ | $5.154\times10^{47}$ |
+
+**Step 4 — why the boundary is sharp.** The multipliers:
+
+| $\eta$ | steep direction | flat direction | |
+|---|---|---|---|
+| $0.09$ | $0.8000$ | $0.9820$ | converges |
+| $0.11$ | $1.2000$ | $0.9780$ | diverges |
+
+A two-percent change in $\eta$ moves the steep multiplier from $0.8$ to $1.2$.
+Both are close to one; the difference is which side. Raised to the hundredth
+power, $0.8^{100} \approx 2 \times 10^{-10}$ and $1.2^{100} \approx 8 \times 10^{7}$
+— seventeen orders of magnitude apart, from a rate difference of two percent.
+
+Note also that the flat direction converges in *both* rows. Divergence is
+entirely the steep direction's doing, and it is invisible in the flat one.
+
+**Step 5 — the best a scalar rate can do.** Minimising
+$\max_i |1 - \eta\lambda_i|$ balances the two extremes, giving
+
+$$
+\eta^* = \frac{2}{\lambda_{\max} + \lambda_{\min}} = 0.0990099,
+\qquad \text{contraction } \frac{\kappa - 1}{\kappa + 1} = 0.980198
+$$
+
+which is (I.7.4). At that rate the error shrinks by a factor of a thousand in
+346 steps — for a two-dimensional quadratic with an exactly known Hessian. The
+slowness is not the algorithm being poorly implemented; it is $\kappa = 100$
+being charged for.
+
+</Solution>
+
+<Answer>
+
+Threshold $\eta < 2/\lambda_{\max} = 0.1$ exactly; $\kappa = 100$.
+
+At $\eta = 0.09$ the error falls to $0.1626$ by step 100; at $\eta = 0.11$ it
+reaches $8.282 \times 10^{7}$. The multipliers in the steep direction are
+$0.8000$ and $1.2000$ respectively.
+
+Optimal $\eta^* = 0.0990099$, contraction $0.980198$ per step, 346 steps for a
+thousandfold reduction.
+
+</Answer>
+
+<CheckSanity>
+**The smallest rate is not the safest choice.** At $\eta = 0.01$ the error after
+100 steps is $0.8186$ — barely moved, and worse than $\eta = 0.09$ by a factor
+of five. Stability and progress are different requirements, and satisfying the
+first with room to spare fails the second.
+
+**$\eta = 0.0990$ is worse than $\eta = 0.09$ at $t = 100$.** $0.1914$ against
+$0.1626$, even though $0.0990$ is the theoretical optimum. The optimum minimises
+the *asymptotic* rate, and at 100 steps the iteration has not reached its
+asymptote: the larger multiplier in the steep direction is still costing more
+than the smaller one in the flat direction is saving.
+
+**The threshold uses $\lambda_{\max}$ and the rate uses both.** Stability is
+decided by the steepest direction alone; speed is decided by their ratio. Two
+different eigenvalues answering two different questions, which is why quoting a
+single "curvature" for a model explains neither.
+</CheckSanity>
+
+<Breaks>
+A neural network loss is not a quadratic, and the ways it is not matter here.
+Its Hessian changes with $\vec{\theta}$, so there is no single $\lambda_{\max}$
+and no fixed threshold — the stable rate at initialisation may be unstable after
+a thousand steps, which is one reason schedules decay. Its eigenvalues span many
+orders of magnitude with a long tail, so $\kappa$ computed honestly is enormous
+and the bound above becomes vacuous rather than merely pessimistic. And it is
+non-convex, so there is no $\vec{\theta}^*$ to contract towards.
+
+What survives the move to a real network is the qualitative shape and not the
+numbers: there is an edge, crossing it diverges rather than degrades, and the
+edge is set by the largest curvature rather than the typical one. A rate that
+"nearly worked" is not near-optimal — it is on the wrong side of a boundary.
+
+The demonstration is also noiseless. With minibatch gradients the iteration is
+stochastic, the error does not contract monotonically, and a rate slightly below
+the deterministic threshold can still diverge because a single noisy gradient
+overshoots. I.7.X09 measures that noise; the interaction is what makes the
+usable band narrower in practice than this problem suggests.
+</Breaks>
+
+<Variation>
+Change $\mat{H}$ to $\mathrm{diag}(20, 20)$, so $\kappa = 1$. Predict the
+optimal rate and the contraction factor before computing them, then say how many
+steps a thousandfold reduction takes. The answer explains why preconditioning is
+worth its cost.
+</Variation>

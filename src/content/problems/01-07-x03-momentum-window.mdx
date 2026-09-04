@@ -1,0 +1,85 @@
+---
+id: "I.7.X03"
+kind: exercise
+chapter: "I.7"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "How many gradients a momentum buffer remembers"
+depends:
+  - "I.7.P01"
+rounding: "Symbolic; the window is exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+Unroll the momentum recurrence $v_t = \beta v_{t-1} + g_t$ into a sum over past
+gradients, identify the weights, and derive the effective window length. Then
+say what $\beta = 0.9$ and $\beta = 0.99$ each mean in steps, and what the
+buffer's magnitude is for a constant gradient.
+
+<Hint>
+Substitute the recurrence into itself a few times. The coefficients form a
+sequence you can recognise and sum.
+</Hint>
+
+<SolutionToggle>
+
+**Unrolling.** The recurrence is the first half of (I.7.5). With $v_0 = 0$:
+
+$$
+v_t = g_t + \beta g_{t-1} + \beta^2 g_{t-2} + \dots = \sum_{k=0}^{t-1}\beta^k g_{t-k}
+$$
+
+The buffer is a weighted sum of every gradient so far, with weights decaying
+geometrically. Nothing is forgotten exactly; contributions become negligible.
+
+**The window.** The natural measure is the mean age of a contribution, weighted
+by its coefficient:
+
+$$
+\bar{k} = \frac{\sum_k k\beta^k}{\sum_k \beta^k}
+= \frac{\beta/(1-\beta)^2}{1/(1-\beta)} = \frac{\beta}{1-\beta}
+$$
+
+so the buffer averages over roughly $1/(1-\beta)$ recent steps — the usual
+statement, differing from $\bar{k}$ by one.
+
+| $\beta$ | $1/(1-\beta)$ | $\bar{k}$ |
+|---|---|---|
+| $0.9$ | $10$ | $9$ |
+| $0.99$ | $100$ | $99$ |
+| $0.999$ | $1000$ | $999$ |
+
+Moving from $0.9$ to $0.99$ is not a small adjustment: it multiplies the memory
+by ten.
+
+**Magnitude for a constant gradient.** If $g_t = g$ for every step, the sum is
+geometric:
+
+$$
+v_t = g\sum_{k=0}^{t-1}\beta^k = g\,\frac{1 - \beta^t}{1 - \beta} \xrightarrow{t \to \infty} \frac{g}{1-\beta}
+$$
+
+The buffer settles at $g/(1-\beta)$, which is $10g$ at $\beta = 0.9$. The step is
+$\eta v$, so **momentum multiplies the effective step size by $1/(1-\beta)$ in
+any direction where the gradient is consistent.** Raising $\beta$ without
+lowering $\eta$ is a learning-rate increase in disguise, and it is a common way
+to make a stable configuration diverge while believing only the smoothing
+changed.
+
+**Why the asymmetry helps.** In a direction where the gradient oscillates in
+sign, consecutive terms cancel and $v$ stays small. In a direction where it is
+consistent, they accumulate to $g/(1-\beta)$. Momentum damps the first and
+amplifies the second, which is exactly the discrimination the ill-conditioned
+problem of I.7.B03 requires — and it is why the improvement there was a factor
+of fifty rather than a modest smoothing.
+
+**The variant worth knowing.** Some formulations use
+$v_t = \beta v_{t-1} + (1-\beta)g_t$, which normalises the weights to sum to one
+and removes the $1/(1-\beta)$ gain. PyTorch's SGD uses the first form and its
+Adam uses the second, so the same $\beta$ means a different effective step in
+the two — a fact worth checking before porting a configuration between them.
+
+</SolutionToggle>

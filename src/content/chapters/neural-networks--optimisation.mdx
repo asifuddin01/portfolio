@@ -6,16 +6,108 @@ title: "Optimisation"
 summary: "Descent is a local decision made repeatedly; optimisers differ in how much of the past they remember."
 claim: "The gradient supplies a direction and never a distance, and every optimiser is a different answer to how far to go."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "The update rule, and what it leaves unspecified"
+  - "Descent on a quadratic: the exact stability threshold"
+  - "Condition number, and why one rate cannot suit two directions"
+  - "The minibatch gradient as an estimator"
+  - "Variance, batch size, and square-root returns"
+  - "Momentum as an exponential moving average"
+  - "Per-coordinate scaling: AdaGrad to Adam"
+  - "Bias correction, and what it is correcting"
+  - "Schedules: warm-up, decay, and the budget they encode"
+  - "Weight decay, and where it belongs"
+definitions:
+  - n: 1
+    term: "Gradient descent"
+    statement: "The update θ ← θ − η∇ℒ(θ), applied repeatedly. It is a local rule: the gradient describes an infinitesimal neighbourhood of the current point and says nothing about how far the surface continues in that direction, which is the whole reason a step size has to be supplied from outside."
+    introduces:
+      - "theta"
+      - "nabla"
+  - n: 2
+    term: "Learning rate"
+    statement: "The scalar η converting a direction into a displacement. It carries the units: ∇ℒ has units of loss per parameter, so η has units of parameter squared per loss. This is why a rate that works for one parameterisation of a model need not work for another, and why the number is not transferable between architectures on its own."
+    introduces:
+      - "eta"
+  - n: 3
+    term: "Minibatch gradient"
+    statement: "The average gradient over B examples drawn from the data, used in place of the average over all of it. It is an unbiased estimator of the full-batch gradient — its expectation is exactly right — and each step descends a different sampled function rather than a noisy version of one fixed function."
+    introduces:
+      - "B"
+  - n: 4
+    term: "Batch gradient noise"
+    statement: "The variance of that estimator, σ²/B for per-example variance σ². The standard error falls as 1/√B, so quadrupling the batch halves the noise at four times the arithmetic. The returns are square-root, which is the single most important fact about choosing a batch size."
+    introduces:
+      - "Var"
+  - n: 5
+    term: "Condition number"
+    statement: "For a quadratic loss with Hessian eigenvalues λ, the ratio κ = λ_max/λ_min. It measures how much more curved the steepest direction is than the flattest, and it is the quantity that decides how badly a single scalar step size serves a problem: one rate must be small enough for λ_max and is then κ times too small for λ_min."
+    introduces: []
+  - n: 6
+    term: "Momentum"
+    statement: "The update v ← βv + ∇ℒ, θ ← θ − ηv, which replaces the current gradient with an exponential moving average of the recent ones. The average has effective length 1/(1−β) steps — β = 0.9 remembers about ten — and it cancels the oscillating component of the gradient in high-curvature directions while accumulating the consistent component in flat ones."
+    introduces:
+      - "beta"
+  - n: 7
+    term: "Adam"
+    statement: "Momentum on the gradient and on its square, used together: a first moment m for direction and a second moment v for scale, with the step m̂/(√v̂ + ε). Dividing by a per-coordinate estimate of gradient magnitude means every coordinate moves by roughly η regardless of its gradient's size, which is what makes one learning rate serviceable across parameters of very different scales."
+    introduces: []
+  - n: 8
+    term: "Bias correction"
+    statement: "The division of a moving average by 1 − βᵗ at step t. An average initialised at zero is biased towards zero, badly so at the start: after one step with β₂ = 0.999 the raw second moment is a thousandth of its target. Without the correction the first steps are enormous, which is a large part of what a warm-up otherwise has to absorb."
+    introduces: []
+  - n: 9
+    term: "Learning-rate schedule"
+    statement: "A function of step count multiplying η. The usual shape is a linear warm-up to a peak then a decay to near zero, and both halves are parameterised by the total budget — a cosine written for 100 000 steps and stopped at 50 000 leaves the model at half the peak rate, having never settled."
+    introduces: []
 beforeYouStart:
   - "I.6"
   - "0.OP.02"
   - "0.OP.03"
 conceptFigure: FigDescentStep
 problemStatement: "A gradient is not a training procedure. Step size, curvature, noise from minibatching and the schedule over time each decide whether the same gradients converge, oscillate, or diverge."
-formalResults: []
-assumptions: []
+keyEquations:
+  - id: "I.7.1"
+    formula: "θ_{t+1} = θ_t − η ∇ℒ(θ_t)"
+    gloss: "The whole method. Everything after this chapter is a different choice of what multiplies the gradient."
+  - id: "I.7.2"
+    formula: "E[ĝ_B] = ∇ℒ,   Var[ĝ_B] = σ²/B"
+    gloss: "The minibatch gradient is unbiased, and its noise falls as one over the batch."
+  - id: "I.7.3"
+    formula: "θ_{t+1} − θ* = (I − ηH)(θ_t − θ*)  ⟹  converges iff 0 < η < 2/λ_max"
+    gloss: "On a quadratic the error is multiplied each step, and the threshold is exact."
+  - id: "I.7.4"
+    formula: "rate = (κ − 1)/(κ + 1)  at  η = 2/(λ_max + λ_min),   κ = λ_max/λ_min"
+    gloss: "The best a single scalar rate can do, and it degrades as the problem stiffens."
+  - id: "I.7.5"
+    formula: "v_t = βv_{t−1} + g_t,   θ_{t+1} = θ_t − ηv_t,   effective window ≈ 1/(1−β)"
+    gloss: "Momentum averages the recent gradients, cancelling oscillation and accumulating drift."
+  - id: "I.7.6"
+    formula: "m̂_t = m_t/(1−β₁ᵗ),  v̂_t = v_t/(1−β₂ᵗ),  θ_{t+1} = θ_t − η m̂_t/(√v̂_t + ε)"
+    gloss: "Adam: direction from the first moment, scale from the second, both de-biased."
+  - id: "I.7.7"
+    formula: "η_B ≈ η_1 · B  while  B ≪ B_crit;  beyond it, more examples buy little"
+    gloss: "Linear scaling holds until the gradient is already accurate, then stops."
+formalResults:
+  - id: "I.7.T1"
+    name: "Exact convergence of gradient descent on a quadratic (Cauchy 1847)"
+    statement: "For ℒ(θ) = ½(θ − θ*)ᵀH(θ − θ*) with H symmetric positive definite, gradient descent gives θ_{t+1} − θ* = (I − ηH)(θ_t − θ*). In the eigenbasis each coordinate is multiplied by 1 − ηλ_i each step, so the iteration converges if and only if 0 < η < 2/λ_max, and the optimal rate η = 2/(λ_max + λ_min) achieves a per-step contraction of (κ − 1)/(κ + 1)."
+    doesNotPromise: "It is a statement about a quadratic, and a neural network loss is not one — it is non-convex, its Hessian changes with θ, and its eigenvalues span many orders of magnitude with a long tail. The result is a local model valid near a minimum, and the practical use of the threshold is qualitative: there is a sharp edge, crossing it diverges rather than degrades, and the edge is set by the largest curvature rather than by the typical one. It also says nothing about which minimum is reached, or whether the one reached generalises."
+  - id: "I.7.T2"
+    name: "Momentum improves the rate to its square root (Polyak 1964; Nesterov 1983)"
+    statement: "On the same quadratic, heavy-ball momentum with tuned η and β attains a per-step contraction of (√κ − 1)/(√κ + 1) against gradient descent's (κ − 1)/(κ + 1). For κ = 10⁴ that is the difference between needing about 10⁴ steps and about 10² — the acceleration is in the exponent, not the constant."
+    doesNotPromise: "The rate is attained only at the tuned β, and heavy-ball momentum can fail to converge on some strongly convex problems where Nesterov's variant does not. The bound is asymptotic and says nothing about the first few steps, which is where the moving average is least informative. And it assumes exact gradients: with minibatch noise the accelerated rate degrades towards the noise floor, so on a stochastic problem the advantage is real but smaller than the deterministic bound suggests."
+  - id: "I.7.T3"
+    name: "Adam can fail to converge (Reddi, Kale and Kumar 2018)"
+    statement: "There exist convex problems on which Adam does not converge to the optimum, for every fixed β₁, β₂ and step size. The cause is that v̂_t can decrease between steps, so the effective learning rate can grow, and the proof of convergence used in the original paper does not hold. AMSGrad restores convergence by taking a running maximum of v̂."
+    doesNotPromise: "The counterexample is a constructed convex problem, not a network, and AMSGrad has not displaced Adam in practice because the failure it fixes is rarely the binding one. What the result establishes is narrower and more useful than 'Adam is broken': the convergence guarantee people believed they had did not exist, so Adam's standing rests on evidence rather than on a theorem, and it should be argued for that way."
+assumptions:
+  - statement: "Minibatches are drawn independently of the parameters, so the gradient estimate is unbiased. Sampling without reshuffling, or ordering the data by label, breaks this and the estimator becomes biased in a way no learning rate corrects."
+    testedBy: "I.7.X05"
+  - statement: "The learning rate is below the stability threshold set by the largest curvature, which is a property of the loss at the current point rather than a fixed number for the model."
+    testedBy: "I.7.X06"
+  - statement: "The gradient is finite and the loss is differentiable along the path taken. A single non-finite value propagates to every parameter through the moment estimates and persists after the input that caused it has gone."
+    testedBy: "I.7.X07"
 owns:
   - "gradient-descent"
   - "momentum"
@@ -25,9 +117,52 @@ owns:
 borrows:
   - "backpropagation"
   - "lagrange-multipliers"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "A learning rate above 2/λ_max diverges rather than converging slowly, and the boundary is sharp. On a quadratic with λ_max = 20 the iteration converges at η = 0.09 and diverges at η = 0.11, with nothing gradual in between: below the threshold the error contracts geometrically, above it the error grows geometrically, and the loss reaches infinity in a few dozen steps. This is why a rate that 'nearly worked' is not evidence of being close — the failure is a change of sign in an exponent, not a matter of degree."
+  - "Adam's state is three times the parameters, and it is what exhausts a training device after the activations. A model with N parameters in fp32 holds 4N bytes of weights, 4N of gradients, and 8N of moment estimates: four copies, 16N bytes, before a single activation is stored. For a 1.5-billion-parameter model that is 24 GB of optimiser state alone. Switching from Adam to plain SGD with momentum halves that term, which is a real option that the framing of Adam as a default obscures."
+  - "A single non-finite gradient poisons the moment estimates and outlives its cause. One overflow makes m and v non-finite; every subsequent step divides by a non-finite v̂, so every parameter becomes non-finite, and the model produces NaN on every input thereafter. Skipping the bad step is not enough — the state must be repaired or reset, and the usual symptom is a loss that goes to NaN several steps after the batch that caused it, which sends people looking at the wrong data."
+references:
+  - title: "Méthode générale pour la résolution des systèmes d'équations simultanées"
+    authors: "Cauchy"
+    year: 1847
+    venue: "Comptes Rendus de l'Académie des Sciences 25"
+    url: https://gallica.bnf.fr/ark:/12148/bpt6k2982c/f540
+  - title: "A Stochastic Approximation Method"
+    authors: "Robbins and Monro"
+    year: 1951
+    venue: "Annals of Mathematical Statistics 22(3)"
+    url: https://doi.org/10.1214/aoms/1177729586
+  - title: "Some Methods of Speeding up the Convergence of Iteration Methods"
+    authors: "Polyak"
+    year: 1964
+    venue: "USSR Computational Mathematics and Mathematical Physics 4(5)"
+    url: https://doi.org/10.1016/0041-5553(64)90137-5
+  - title: "Adaptive Subgradient Methods for Online Learning and Stochastic Optimization"
+    authors: "Duchi, Hazan and Singer"
+    year: 2011
+    venue: "Journal of Machine Learning Research 12"
+    url: https://jmlr.org/papers/v12/duchi11a.html
+  - title: "Adam: A Method for Stochastic Optimization"
+    authors: "Kingma and Ba"
+    year: 2015
+    venue: "International Conference on Learning Representations"
+    url: https://arxiv.org/abs/1412.6980
+  - title: "On the Convergence of Adam and Beyond"
+    authors: "Reddi, Kale and Kumar"
+    year: 2018
+    venue: "International Conference on Learning Representations"
+    url: https://arxiv.org/abs/1904.09237
+  - title: "Decoupled Weight Decay Regularization"
+    authors: "Loshchilov and Hutter"
+    year: 2019
+    venue: "International Conference on Learning Representations"
+    url: https://arxiv.org/abs/1711.05101
+  - title: "An Empirical Model of Large-Batch Training"
+    authors: "McCandlish, Kaplan, Amodei and the OpenAI Dota Team"
+    year: 2018
+    venue: "arXiv:1812.06162"
+    url: https://arxiv.org/abs/1812.06162
 notation:
   - "eta"
   - "beta"
@@ -42,6 +177,5 @@ apparatus:
   - "0.OP.03"
   - "0.PR.03"
   - "0.ST.01"
-keyEquations: []
-status: review
+status: published
 ---

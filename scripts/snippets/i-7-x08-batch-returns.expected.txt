@@ -1,0 +1,28 @@
+       B      std err     vs B=1   arithmetic   error per FLOP
+       1     1.000000     1.0000            1             1.00
+       4     0.500000     0.5000            4             2.00
+      16     0.250000     0.2500           16             4.00
+      64     0.125000     0.1250           64             8.00
+     256     0.062500     0.0625          256            16.00
+    1024     0.031250     0.0312         1024            32.00
+    4096     0.015625     0.0156         4096            64.00
+
+the trade, stated twice
+  quadrupling B halves the noise and costs 4x the arithmetic
+  B=1 -> B=4     noise 1.0000 -> 0.5000  (2.0x better, 4x cost)
+  B=4 -> B=16    noise 0.5000 -> 0.2500  (2.0x better, 4x cost)
+
+critical batch: gradient noise against the gradient itself
+       B   noise/signal                             regime
+       1       1.000000 noise-dominated: more B helps a lot
+      16       0.250000 mixed: linear scaling roughly holds
+     256       0.062500 mixed: linear scaling roughly holds
+    4096       0.015625 signal-dominated: more B buys little
+   65536       0.003906 signal-dominated: more B buys little
+
+what that means for a fixed compute budget
+  budget 1,000,000 example-visits
+  B=   32     31,250 steps   noise/step 0.17678
+  B=  256      3,906 steps   noise/step 0.06250
+  B= 2048        488 steps   noise/step 0.02210
+  fewer, cleaner steps or more, noisier ones — the budget does not decide it
