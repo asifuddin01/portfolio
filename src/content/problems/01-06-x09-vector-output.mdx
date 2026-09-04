@@ -1,0 +1,69 @@
+---
+id: "I.6.X09"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What it costs when the sink is not a scalar"
+depends:
+  - "I.6.P01"
+rounding: "GFLOP to two decimals."
+hasSolution: true
+verified: true
+snippet: "i-6-x09-vector-output.py"
+status: published
+---
+
+This chapter assumes a scalar loss. Price what happens when that assumption is
+dropped: give the cost of a backward pass for a vector output of width $m$, for
+per-example gradients across a batch, and for a full Jacobian — then say why the
+assumption is not the restriction it appears to be.
+
+<Hint>
+Reverse mode fills one row of the Jacobian per traversal. How many rows does
+each of these three objects have?
+</Hint>
+
+<SolutionToggle>
+
+**The model.** $L = 48$ layers of width $1024$ at batch $32$, as in I.6.B05.
+One forward pass is $3.22$ GFLOP and one backward traversal is twice that.
+
+| sink | traversals | GFLOP | vs scalar |
+|---|---|---|---|
+| a scalar loss | 1 | $9.66$ | $1.0\times$ |
+| a 10-vector output | 10 | $67.65$ | $7.0\times$ |
+| per-example gradients, batch 32 | 32 | $209.38$ | $21.7\times$ |
+| full Jacobian of 1024 outputs | 1024 | $6600.29$ | $683.0\times$ |
+
+**The pattern.** Cost is $F + 2tF$ for $t$ traversals, so it is linear in $t$
+and the ratios approach $t$ from below — the single shared forward pass is
+amortised across them. At $t = 1024$ the ratio is $683$ rather than $1024$ for
+exactly that reason.
+
+**Per-example gradients are the same problem.** A batch of 32 losses is a
+32-vector sink, so 32 traversals. This is why the memory answer in I.6.X05 has a
+matching arithmetic answer: per-sample methods cost $B\times$ in both resources,
+and neither cost is avoidable by clever bookkeeping — the object genuinely has
+$B$ times as many numbers in it.
+
+**Why the assumption is not a restriction.** A loss is a *reduction*. Any
+vector-valued objective is summed or averaged before differentiation, and that
+reduction is one more node in the graph — the sink where $\bar{L} = 1$ starts.
+Summing 32 per-example losses costs 31 additions, which against a $3.22$ GFLOP
+forward pass is a share of $9.6 \times 10^{-9}$: free, to nine decimal places.
+
+So the scalar assumption costs nothing whenever a single number is what is
+wanted, and training is that case by construction. It bites only when the
+individual outputs are wanted *separately* — and then what is being asked for is
+a Jacobian, and the price above is the honest price of one.
+
+**The one to remember.** Multi-task learning with $k$ losses does *not* cost $k$
+traversals, as long as the tasks are combined into one weighted sum before the
+backward pass. Wanting the $k$ gradients separately — to inspect their conflict,
+to normalise their scales — is what costs $k$ traversals, and the difference
+between those two situations is a modelling decision with a large and easily
+overlooked price attached.
+
+</SolutionToggle>

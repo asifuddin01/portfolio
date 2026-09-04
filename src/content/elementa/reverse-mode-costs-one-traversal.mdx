@@ -1,0 +1,59 @@
+---
+chapter: neural-networks--backpropagation
+proposition: 3
+statement: Every partial derivative of a scalar costs one traversal, not one traversal each.
+claim: "The gradient of a loss with respect to a hundred million parameters costs a small constant times one forward pass — and the constant does not grow with the number of parameters. This is the fact the whole field rests on."
+given:
+  - the-graph-is-the-program
+figure: FigComputationalGraph
+level: mechanics
+notation:
+  - "nabla"
+  - "J"
+apparatus:
+  - "0.MC.07"
+status: published
+updated: 2026-09-02
+sources:
+  - title: "The Complexity of Partial Derivatives (Baur and Strassen)"
+    url: https://doi.org/10.1016/0304-3975(83)90110-X
+  - title: "Taylor Expansion of the Accumulated Rounding Error (Linnainmaa)"
+    url: https://doi.org/10.1007/BF01931367
+---
+
+## Demonstration
+
+Consider what the obvious method costs. To find how the loss responds to one
+parameter, nudge it and re-evaluate: two forward passes per parameter. For the
+network audited in I.5.B03 — $567\,434$ parameters — that is over a million
+forward passes for one gradient, and the answer is a finite-difference
+approximation rather than the derivative.
+
+Reverse mode returns all $567\,434$ exact partials for about four.
+
+The reason is visible in the traversal. A backward pass visits each node once
+and does work comparable to what that node did forwards; a node's adjoint is
+computed from its consumers' adjoints, which are already known. Nothing is
+recomputed and nothing is repeated per parameter — the parameters are simply
+the source nodes of the graph, and the traversal reaches all of them on its way
+through.
+
+This is the cheap gradient principle, and the constant is bounded: the gradient
+costs at most about four evaluations of the function, whatever the number of
+inputs.
+
+## Corollary
+
+The asymmetry between inputs and outputs is worth holding onto, because it
+decides which mode to use and it is not a matter of taste. Reverse mode fills
+one *row* of the Jacobian per traversal, forward mode one *column*. Training is
+one output and many inputs, so reverse mode wins by the parameter count. A
+directional derivative is one column of many, so forward mode wins by the same
+argument, and a full Jacobian is expensive in both.
+
+What reverse mode pays for the advantage is memory. It cannot start until the
+forward pass has finished, and it needs every intermediate that pass produced —
+so the tape is linear in depth and in batch. Forward mode carries one extra
+number per node and stores nothing. The trade is arithmetic against memory, and
+it is worth taking only because the parameter count is so much larger than the
+depth.

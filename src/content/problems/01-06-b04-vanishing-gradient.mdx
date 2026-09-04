@@ -1,0 +1,185 @@
+---
+id: "I.6.B04"
+kind: problem
+chapter: "I.6"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "A depth at which the first layer receives nothing"
+depends:
+  - "I.6.P01"
+reachesBack: []
+rounding: "Six significant figures; fp32's smallest normal is 1.17549435e-38."
+hasSolution: true
+verified: true
+snippet: "i-6-b04-vanishing-gradient.py"
+status: published
+---
+
+<Statement>
+Backpropagation is exact. Show that exactness is not sufficiency: exhibit a
+network on which the gradient reaching the first layer is correct to the last
+bit and numerically zero, and establish the depth at which that happens. Then
+show that the obvious remedy — larger weights — makes it worse.
+</Statement>
+
+<Given>
+A chain of scalar sigmoid units, the simplest object with the property under
+study:
+
+$$
+a^{(0)} = 0.5, \qquad z^{(\ell)} = w\,a^{(\ell-1)}, \qquad a^{(\ell)} = \sigma(z^{(\ell)})
+$$
+
+for $\ell = 1 \dots L$, with one shared weight $w$ and no biases. The adjoint
+leaving the loss is normalised to $1$.
+</Given>
+
+<Find>
+A bound on $|\partial L/\partial a^{(0)}|$ in terms of $L$ alone; the measured
+ratio at $L = 10$ and $L = 40$ for $w = 1$; the smallest $L$ at which the ratio
+falls below fp32's smallest normal number; and the effect of raising $w$.
+</Find>
+
+<Strategy>
+Apply the recurrence (I.6.3) down the chain and collect factors. Each layer
+contributes two: the weight, and the slope of the nonlinearity at the stored
+pre-activation. The second factor has a ceiling that does not depend on
+anything trainable, and a product of numbers below a ceiling is bounded by the
+ceiling raised to the depth.
+</Strategy>
+
+<Solution>
+
+**Step 1 — the bound.** For the logistic function $\sigma' = \sigma(1-\sigma)$,
+maximised where $\sigma = 1/2$:
+
+$$
+\max_z \sigma'(z) = \tfrac{1}{2}\left(1 - \tfrac{1}{2}\right) = \tfrac{1}{4}
+$$
+
+The run confirms $\sigma'(0) = 0.250000$. Now walk the chain back. Each layer
+multiplies the travelling adjoint by $w$ and by $\sigma'(z^{(\ell)})$, so
+
+$$
+\frac{\partial L}{\partial a^{(0)}} = \prod_{\ell=1}^{L} w\,\sigma'(z^{(\ell)}),
+\qquad
+\left|\frac{\partial L}{\partial a^{(0)}}\right| \le \left(\frac{|w|}{4}\right)^{L}
+$$
+
+With $w = 1$ this is $4^{-L}$, and nothing about the data, the loss or the
+training procedure can raise it. It is a property of the architecture.
+
+**Step 2 — the measurement.** Propagating the adjoint explicitly:
+
+| depth | measured ratio | bound $4^{-L}$ |
+|---|---|---|
+| 1 | $2.350037 \times 10^{-1}$ | $2.5 \times 10^{-1}$ |
+| 2 | $5.340838 \times 10^{-2}$ | $6.25 \times 10^{-2}$ |
+| 5 | $6.079863 \times 10^{-4}$ | $9.765625 \times 10^{-4}$ |
+| 10 | $3.483116 \times 10^{-7}$ | $9.536743 \times 10^{-7}$ |
+| 20 | $1.143096 \times 10^{-13}$ | $9.094947 \times 10^{-13}$ |
+| 40 | $1.231153 \times 10^{-26}$ | $8.271806 \times 10^{-25}$ |
+
+The measured values sit below the bound at every depth, as they must, and the
+gap widens because the units are not all sitting at their maximum slope.
+
+**Step 3 — the depth where it stops being a small number.** fp32's smallest
+normal value is $1.17549435 \times 10^{-38}$. The first depth at which the
+ratio falls below it is
+
+$$
+L = 59, \qquad \text{ratio } 5.901063 \times 10^{-39}
+$$
+
+At that depth the gradient of the first layer is not small. It is
+*unrepresentable*: it enters the subnormal range, where fp32 has almost no
+precision left, and one more layer flushes it to exactly zero. The parameter
+receives an update of zero and stays at its initialisation for the whole of
+training, while the last layers train perfectly well. The loss falls, then
+stalls, and nothing about the curve says which layers stopped.
+
+**Step 4 — why more weight makes it worse.** The bound $(|w|/4)^L$ suggests
+$|w| > 4$ should grow the adjoint rather than shrink it. Measured:
+
+| $w$ | depth 10 | depth 40 |
+|---|---|---|
+| 1.0 | $3.483116 \times 10^{-7}$ | $1.231153 \times 10^{-26}$ |
+| 2.0 | $2.954702 \times 10^{-6}$ | $1.227533 \times 10^{-23}$ |
+| 4.0 | $5.486035 \times 10^{-11}$ | $1.536491 \times 10^{-44}$ |
+| 4.5 | $1.449225 \times 10^{-12}$ | $3.182489 \times 10^{-51}$ |
+
+Doubling $w$ to 2 helps a little. Raising it to 4 makes the gradient at depth 40
+eighteen orders of magnitude *smaller* than at $w = 1$. The bound is not wrong;
+it is not tight, and the reason is that the two factors are not independent. A
+large $w$ drives $z$ away from zero, and a sigmoid away from zero is saturated,
+so $\sigma'(z)$ collapses. The weight enters the product linearly and takes the
+slope down exponentially with it.
+
+This is what makes the failure a counterexample rather than a difficulty. There
+is no setting of the free parameter that rescues it: small $w$ loses to the
+factor $w$, large $w$ loses to saturation, and the best case is a shallow
+optimum near $w = 2$ that still vanishes, only more slowly.
+
+</Solution>
+
+<Answer>
+
+$|\partial L/\partial a^{(0)}| \le (|w|/4)^{L}$, so with $w = 1$ the adjoint is
+bounded by $4^{-L}$ regardless of training.
+
+Measured at $w = 1$: $3.483116 \times 10^{-7}$ at depth 10, and
+$1.231153 \times 10^{-26}$ at depth 40. The ratio falls below fp32's smallest
+normal at $L = 59$, where it is $5.901063 \times 10^{-39}$.
+
+Raising $w$ does not help: at depth 40, $w = 4$ gives
+$1.536491 \times 10^{-44}$, worse than $w = 1$ by eighteen orders of magnitude,
+because a large weight saturates the sigmoid and its slope falls faster than the
+weight rises.
+
+</Answer>
+
+<CheckSanity>
+**Every measured ratio is below its bound.** $4^{-L}$ was derived from
+$\sigma' \le 1/4$ with no reference to the values, so a measurement above it
+would mean the propagation is wrong rather than that the bound is loose.
+
+**Depth 1 nearly attains the bound.** $0.235004$ against $0.25$: the first unit
+sees $z = 0.5$, close enough to zero that its slope is close to maximal. The
+later units see larger $z$, saturate more, and the product falls away from the
+bound — which is why the gap at depth 40 is two orders of magnitude.
+
+**The arithmetic of the exponent checks out.** $4^{-59} = 8.6 \times 10^{-36}$,
+and the measured $5.9 \times 10^{-39}$ is about 1500 times smaller — consistent
+with a mean slope near $0.23$ rather than $0.25$, since
+$(0.23/0.25)^{59} \approx 0.0075$.
+</CheckSanity>
+
+<Breaks>
+The chain here is one unit wide, and width changes the constant without changing
+the mechanism. In a real layer the adjoint is multiplied by
+$(\mat{W}^{(\ell)})^{\mathsf{T}}$ rather than by a scalar, so the relevant
+quantity is that matrix's largest singular value and the product is over
+matrices rather than numbers. A width-512 layer can have a spectral norm well
+above one while every individual weight is small, which is why the same
+architecture can vanish in one initialisation and explode in another.
+
+The demonstration also uses the logistic function, whose $1/4$ ceiling is what
+makes the bound so sharp. ReLU has slope exactly $1$ wherever it is active, so
+this particular argument does not apply to it at all — and the failure returns
+in a different form, as dead units whose slope is exactly $0$ rather than merely
+small. The general lesson is about products of Jacobians, and the specific
+number $1/4$ belongs to one activation function.
+
+Nothing here is an argument against depth. It is an argument that depth needs a
+route the product cannot close, which is exactly (I.6.5): a residual block
+contributes $\mat{I} + \mat{J}_F$, and the identity term keeps a path of gain
+one open however many blocks are stacked.
+</Breaks>
+
+<Variation>
+Replace $\sigma$ with $\tanh$, whose derivative is $1 - \tanh^2$ and whose
+ceiling is $1$ rather than $1/4$. Predict the new bound, then find the depth at
+which the ratio underflows fp32 and compare it with 59. Does a four-times
+better ceiling buy four times the depth?
+</Variation>

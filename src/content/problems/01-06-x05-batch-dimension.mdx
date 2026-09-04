@@ -1,0 +1,66 @@
+---
+id: "I.6.X05"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "Where the batch dimension goes, and when you want it kept"
+depends:
+  - "I.6.P01"
+rounding: "Exact shapes."
+hasSolution: true
+verified: false
+status: published
+---
+
+A layer has $\mat{W} \in \R^{256 \times 128}$ and sees a batch
+$\mat{A} \in \R^{64 \times 256}$, producing adjoints
+$\Delta \in \R^{64 \times 128}$. Give the shape of $\partial L/\partial \mat{W}$
+and say where the 64 went. Then give the shape of the object a per-sample
+gradient method needs instead, and its size in fp32.
+
+<Hint>
+A gradient has the shape of the thing it differentiates. $\mat{W}$ has no batch
+dimension, so the answer is forced — the question is only which operation
+removes it.
+</Hint>
+
+<SolutionToggle>
+
+**The shape.** $\partial L/\partial \mat{W}$ is $256 \times 128$, the shape of
+$\mat{W}$. The batch is contracted away by the product of (I.6.4):
+
+$$
+\frac{\partial L}{\partial \mat{W}} = \mat{A}^{\mathsf{T}}\Delta,
+\qquad (256 \times 64)(64 \times 128) \to 256 \times 128
+$$
+
+The 64 is the inner dimension. Nobody writes a sum over the batch because the
+matrix product already is one — it adds the 64 per-example outer products
+together as it goes.
+
+**What is lost.** The sum is not invertible. Once formed, $\mat{A}^{\mathsf{T}}\Delta$
+cannot be taken apart into the 64 contributions that made it, so any method
+needing individual examples must intervene before the contraction rather than
+after it.
+
+**The per-sample object.** That is the stack of outer products, one per example:
+
+$$
+\mat{G} \in \R^{64 \times 256 \times 128}, \qquad
+\mat{G}_n = \mat{A}_{n,:}^{\mathsf{T}} \Delta_{n,:}
+$$
+
+$64 \times 256 \times 128 = 2\,097\,152$ values, $8\,388\,608$ bytes in fp32 —
+$8.4$ MB for one layer's gradient at batch 64, against $131\,072$ bytes for the
+reduced version. Sixty-four times the memory, which is the batch size, and that
+is the whole cost of the method.
+
+**Who needs it.** Differentially private training clips each example's gradient
+to a fixed norm before averaging, which is meaningless once they are summed.
+Influence functions and per-example importance weighting want the same object.
+All of them pay the same $B\times$ memory, and the usual response is to
+recompute per-sample gradients layer by layer rather than hold them all at once.
+
+</SolutionToggle>

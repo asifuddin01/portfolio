@@ -1,0 +1,22 @@
+configuration
+  layers L         48
+  width d          1024
+  parameters       50,331,648  (0.201 GB fp32)
+
+arithmetic, per optimiser step
+  batch 32                forward       3.22 GFLOP   backward       6.44 GFLOP   total/forward 3.0x
+  batch 32 x seq 512      forward    1649.27 GFLOP   backward    3298.53 GFLOP   total/forward 3.0x
+
+memory kept for the backward pass
+  batch 32                activations    0.006 GB   parameters  0.201 GB   ratio   0.03x
+  batch 32 x seq 512      activations    3.221 GB   parameters  0.201 GB   ratio  16.00x
+
+the crossover: batch at which activations equal parameters
+  activations = parameters when batch = d = 1024
+
+checkpointing at sqrt(L) segments, by (I.6.7)
+  segments               7
+  tensors held           13  of 48
+  activation memory      3.221 GB  ->  0.872 GB
+  reduction              3.7x
+  extra arithmetic       one more forward pass, 1.33x the un-checkpointed step

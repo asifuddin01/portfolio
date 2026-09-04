@@ -1,0 +1,187 @@
+---
+id: "I.6.B01"
+kind: problem
+chapter: "I.6"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One full backward pass through a 2-2-1 network"
+depends:
+  - "I.6.P01"
+reachesBack: []
+rounding: "Eight decimal places throughout; the finite-difference check uses a step of 1e-6."
+hasSolution: true
+verified: true
+snippet: "i-6-b01-backprop-by-hand.py"
+status: published
+---
+
+<Statement>
+Run one forward pass and one backward pass through a small network by hand,
+producing every intermediate and every parameter gradient. Then check the
+result against central differences, which is the only way to know a
+hand-derived gradient is right rather than merely consistent with itself.
+</Statement>
+
+<Given>
+A network with two inputs, two sigmoid hidden units and one linear output.
+One example, so every activation is a row.
+
+$$\vec{x} = \begin{pmatrix} 1 & 2 \end{pmatrix}, \qquad y = 1$$
+
+$$
+\mat{W}^{(1)} = \begin{pmatrix} 0.1 & 0.3 \\ 0.2 & 0.4 \end{pmatrix},
+\qquad \vec{b}^{(1)} = \begin{pmatrix} 0 & 0.1 \end{pmatrix}
+$$
+
+$$
+\mat{W}^{(2)} = \begin{pmatrix} 0.5 \\ -0.6 \end{pmatrix},
+\qquad b^{(2)} = 0.2
+$$
+
+The hidden nonlinearity is $\sigma(z) = 1/(1 + e^{-z})$, the head carries none,
+and the loss is $L = \tfrac{1}{2}(\hat{y} - y)^2$.
+</Given>
+
+<Find>
+Every intermediate of the forward pass; the adjoints $\delta^{(2)}$ and
+$\delta^{(1)}$; the gradients with respect to all nine parameters; and the
+largest disagreement between those gradients and a central-difference estimate.
+</Find>
+
+<Strategy>
+Forward first, keeping everything — by Definition 3 the backward pass consumes
+the stored values, so discarding them means starting again. Then apply (I.6.2)
+from the sink: the loss adjoint is 1, and each node passes its own adjoint
+times its local Jacobian to its producers. For this architecture that is
+exactly the recurrence (I.6.3) and the outer product (I.6.4).
+</Strategy>
+
+<Solution>
+
+**Step 1 — forward.** The pre-activations are $\vec{z}^{(1)} = \vec{x}\mat{W}^{(1)} + \vec{b}^{(1)}$:
+
+$$z^{(1)}_1 = 1(0.1) + 2(0.2) + 0 = 0.5, \qquad z^{(1)}_2 = 1(0.3) + 2(0.4) + 0.1 = 1.2$$
+
+$$\vec{a}^{(1)} = \sigma(\vec{z}^{(1)}) = \begin{pmatrix} 0.62245933 & 0.76852478 \end{pmatrix}$$
+
+$$\hat{y} = z^{(2)} = 0.62245933(0.5) + 0.76852478(-0.6) + 0.2 = 0.05011480$$
+
+$$L = \tfrac{1}{2}(0.05011480 - 1)^2 = 0.45114095$$
+
+**Step 2 — the adjoint at the sink.** $\bar{L} = 1$ by definition, and the head
+is linear, so
+
+$$\delta^{(2)} = \frac{\partial L}{\partial z^{(2)}} = \hat{y} - y = -0.94988520$$
+
+The sign says the prediction is below the target, which it is.
+
+**Step 3 — the second layer's parameters.** By (I.6.4) the weight gradient is
+the outer product of what entered the layer with what came back:
+
+$$
+\frac{\partial L}{\partial \mat{W}^{(2)}} = (\vec{a}^{(1)})^{\mathsf{T}} \delta^{(2)}
+= \begin{pmatrix} -0.59126491 \\ -0.73001032 \end{pmatrix},
+\qquad \frac{\partial L}{\partial b^{(2)}} = -0.94988520
+$$
+
+The bias gradient *is* the adjoint, because a bias enters its node with
+coefficient one.
+
+**Step 4 — travel back through the layer.** By (I.6.3), multiply by
+$(\mat{W}^{(2)})^{\mathsf{T}}$ and gate by the slope of the nonlinearity:
+
+$$\delta^{(2)}(\mat{W}^{(2)})^{\mathsf{T}} = \begin{pmatrix} -0.47494260 & 0.56993112 \end{pmatrix}$$
+
+For the logistic function $\sigma' = \sigma(1 - \sigma)$, so it is read off the
+stored activations rather than recomputed:
+
+$$\sigma'(\vec{z}^{(1)}) = \begin{pmatrix} 0.23500371 & 0.17789444 \end{pmatrix}$$
+
+$$
+\delta^{(1)} = \begin{pmatrix} -0.47494260 & 0.56993112 \end{pmatrix} \odot
+\begin{pmatrix} 0.23500371 & 0.17789444 \end{pmatrix}
+= \begin{pmatrix} -0.11161327 & 0.10138758 \end{pmatrix}
+$$
+
+**Step 5 — the first layer's parameters.** The same outer product, one layer down:
+
+$$
+\frac{\partial L}{\partial \mat{W}^{(1)}} = \vec{x}^{\mathsf{T}} \delta^{(1)} =
+\begin{pmatrix} -0.11161327 & 0.10138758 \\ -0.22322655 & 0.20277516 \end{pmatrix},
+\qquad \frac{\partial L}{\partial \vec{b}^{(1)}} = \delta^{(1)}
+$$
+
+The second row is exactly twice the first, because the second input is twice the
+first. A weight's gradient carries the size of the thing that fed it.
+
+**Step 6 — the check.** Central differences with $h = 10^{-6}$, evaluating the
+loss twice per parameter and taking $(L(\theta + h) - L(\theta - h))/2h$, agree
+with all nine analytic gradients. The largest disagreement is
+$5.79 \times 10^{-11}$.
+
+That agreement is worth more than any of the individual numbers. The analytic
+gradient came from the chain rule; the numeric one came from evaluating the
+forward function eighteen times and never differentiating anything. Two
+unrelated computations landing on the same nine numbers is evidence the
+derivation is correct.
+
+</Solution>
+
+<Answer>
+
+| quantity | value |
+|---|---|
+| $\vec{z}^{(1)}$ | $0.5,\ 1.2$ |
+| $\vec{a}^{(1)}$ | $0.62245933,\ 0.76852478$ |
+| $\hat{y}$ | $0.05011480$ |
+| $L$ | $0.45114095$ |
+| $\delta^{(2)}$ | $-0.94988520$ |
+| $\delta^{(1)}$ | $-0.11161327,\ 0.10138758$ |
+| $\partial L/\partial \mat{W}^{(2)}$ | $-0.59126491,\ -0.73001032$ |
+| $\partial L/\partial \mat{W}^{(1)}$ | $(-0.11161327,\ 0.10138758;\ -0.22322655,\ 0.20277516)$ |
+| largest gradient-check gap | $5.79 \times 10^{-11}$ |
+
+</Answer>
+
+<CheckSanity>
+**The bias gradients equal the adjoints.** $\partial L/\partial b^{(2)} = \delta^{(2)}$
+and $\partial L/\partial \vec{b}^{(1)} = \delta^{(1)}$, to the last digit. A bias
+adds into its node with coefficient one, so its local Jacobian is the identity
+and (I.6.2) leaves the adjoint unchanged. Any discrepancy here is an arithmetic
+slip, not a modelling question.
+
+**The rows of $\partial L/\partial \mat{W}^{(1)}$ are in the ratio of the
+inputs.** $-0.22322655 / -0.11161327 = 2$ exactly, matching $x_2/x_1 = 2$. The
+outer product in (I.6.4) says the gradient of a weight scales with the
+activation entering it, so this ratio is forced.
+
+**The sigmoid slopes are below $1/4$.** $0.23500371$ and $0.17789444$, against
+the maximum $\sigma'(0) = 0.25$. Every layer of this kind multiplies the
+travelling adjoint by something no larger than a quarter, which is the
+observation I.6.B04 turns into a depth limit.
+</CheckSanity>
+
+<Breaks>
+The finite-difference check that validates the gradient here does not scale, and
+it is worth being precise about why. It costs two forward passes per parameter,
+so checking a model with $N$ parameters costs $2N$ evaluations — for
+$N = 567\,434$, the network audited in I.5.B03, that is over a million forward
+passes to verify one gradient that reverse mode produced in a single traversal.
+By (I.6.6) the analytic gradient cost about four forward passes. The ratio of a
+million to four *is* the cheap gradient principle, seen from the other side.
+
+The step size has its own trap. Too large and the truncation error of the
+difference dominates; too small and floating-point cancellation does, because
+$L(\theta + h)$ and $L(\theta - h)$ agree in their leading digits and
+subtracting them discards exactly those. At $h = 10^{-12}$ in fp64 this same
+check returns visible garbage. Gradient checking is a debugging tool for small
+cases, not a verification method for a real model.
+</Breaks>
+
+<Variation>
+Replace the linear head with a second sigmoid, so $\hat{y} = \sigma(z^{(2)})$,
+and keep everything else. Which of the nine gradients change, and by what
+factor? Predict the factor before recomputing — one number in Step 2 is
+responsible for all of it.
+</Variation>

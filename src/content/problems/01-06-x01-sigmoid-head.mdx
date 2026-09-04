@@ -1,0 +1,85 @@
+---
+id: "I.6.X01"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One extra local Jacobian rescales every gradient below it"
+depends:
+  - "I.6.P01"
+rounding: "Eight decimal places."
+hasSolution: true
+verified: true
+snippet: "i-6-x01-sigmoid-head.py"
+status: published
+---
+
+Take the network of I.6.B01 and replace the linear head with a sigmoid, so
+$\hat{y} = \sigma(z^{(2)})$. Everything else is unchanged. Predict which of the
+nine gradients move and in what proportion *before* recomputing, then verify.
+
+<Hint>
+The change adds exactly one node to the graph, between $z^{(2)}$ and the loss.
+By (I.6.2), what does an extra node on the path from the sink do to every
+adjoint below it?
+</Hint>
+
+<SolutionToggle>
+
+**The prediction.** A new node sits between $z^{(2)}$ and $L$. Every adjoint in
+the graph is reached through it, so every one is multiplied by the same scalar —
+gradients change, but all by a common factor. Nothing changes shape and nothing
+changes sign relative to the others.
+
+**The numbers.**
+
+| quantity | linear head | sigmoid head |
+|---|---|---|
+| $\hat{y}$ | $0.05011480$ | $0.51252608$ |
+| $L$ | $0.45114095$ | $0.11881541$ |
+| $\delta^{(2)}$ | $-0.94988520$ | $-0.12179199$ |
+| $\partial L/\partial \mat{W}^{(2)}$ | $-0.59126491,\ -0.73001032$ | $-0.07581056,\ -0.09360017$ |
+| $\delta^{(1)}$ | $-0.11161327,\ 0.10138758$ | $-0.01431079,\ 0.01299967$ |
+
+**The common factor.** Every ratio is identical to eight decimals:
+
+$$
+\frac{\delta^{(2)}_{\sigma}}{\delta^{(2)}_{\text{lin}}}
+= \frac{\partial L/\partial W^{(2)}_1|_\sigma}{\partial L/\partial W^{(2)}_1|_{\text{lin}}}
+= \frac{\partial L/\partial W^{(1)}_{11}|_\sigma}{\partial L/\partial W^{(1)}_{11}|_{\text{lin}}}
+= 0.12821759
+$$
+
+**Where it comes from.** It is not $\sigma'(z^{(2)})$ alone, because the head
+also changed the prediction and therefore the loss. Decomposing:
+
+$$
+z^{(2)} = 0.05011480, \qquad \sigma(z^{(2)}) = 0.51252608, \qquad \sigma'(z^{(2)}) = 0.24984310
+$$
+
+$$
+\frac{(\sigma(z^{(2)}) - y)\,\sigma'(z^{(2)})}{z^{(2)} - y}
+= \frac{(-0.48747392)(0.24984310)}{-0.94988520} = 0.12821759
+$$
+
+Two effects: the sigmoid moved the prediction closer to the target, shrinking
+the residual from $-0.94988520$ to $-0.48747392$, and then contributed its own
+slope of $0.24984310$. The product of the two is the factor.
+
+**Why the factor is uniform.** By (I.6.2) each adjoint is the one above it times
+a local Jacobian, and the new node is above all of them. A common factor at the
+sink propagates unchanged through every subsequent multiplication — which is
+also why scaling a loss by a constant scales every gradient by that constant,
+and why loss scaling in mixed-precision training is sound rather than a
+heuristic.
+
+**What it costs.** The slope $0.24984310$ is near the sigmoid's ceiling of
+$0.25$, because $z^{(2)}$ happens to be near zero. Had the head been confident —
+$z^{(2)} = 6$, say — the slope would be $0.0025$ and every gradient in the
+network would be four hundred times smaller. That is the saturation term of
+I.6.B04 arriving at the output layer instead of in the middle, and it is the
+reason a sigmoid head is paired with cross-entropy rather than squared error:
+I.6.X02 shows the pairing that cancels it.
+
+</SolutionToggle>

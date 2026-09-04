@@ -1,0 +1,67 @@
+---
+id: "I.6.X03"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "The vector–Jacobian product, without forming the Jacobian"
+depends:
+  - "I.6.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+For $\vec{y} = \vec{x}\mat{W}$ with $\vec{x} \in \R^{1 \times n}$ and
+$\mat{W} \in \R^{n \times m}$, write down the Jacobian
+$\partial \vec{y}/\partial \vec{x}$ explicitly, count its entries, and then show
+that the quantity backpropagation actually needs — $\bar{\vec{y}}\mat{J}$ — can
+be computed without ever building it. State the cost of each route.
+
+<Hint>
+Ask what $\partial y_j / \partial x_i$ is for this particular operation. The
+answer does not depend on $\vec{x}$ at all, which is why the product collapses.
+</Hint>
+
+<SolutionToggle>
+
+**The Jacobian.** $y_j = \sum_i x_i W_{ij}$, so
+
+$$
+\frac{\partial y_j}{\partial x_i} = W_{ij}
+$$
+
+The Jacobian *is* $\mat{W}$, with $nm$ entries. For a modest layer with
+$n = m = 1024$ that is $1\,048\,576$ numbers.
+
+**The product.** By Definition 7 the backward pass needs
+$\bar{\vec{x}} = \bar{\vec{y}}\mat{J}^{\mathsf{T}}$, and since $\mat{J} = \mat{W}$:
+
+$$
+\bar{\vec{x}} = \bar{\vec{y}}\mat{W}^{\mathsf{T}}
+$$
+
+which is one matrix–vector product of exactly the shape the forward pass
+already performed. No new object is constructed.
+
+**The costs.** Forming $\mat{J}$ and multiplying costs $O(nm)$ storage and
+$O(nm)$ arithmetic. The VJP costs $O(nm)$ arithmetic and $O(n + m)$ storage.
+The arithmetic is the same; the storage is not, and storage is what decides
+whether the layer fits.
+
+**Why this generalises.** The saving is not special to matrix products. For
+every primitive the derivative is known in closed form, and in every case the
+closed form is a rule for computing $\bar{\vec{y}}\mat{J}$ rather than a recipe
+for $\mat{J}$ — elementwise operations give a Hadamard product, a sum gives a
+broadcast, a broadcast gives a sum. A system that materialised Jacobians would
+be quadratic in width at every layer and could not train anything.
+
+**Where it stops working.** A second derivative needs the Jacobian of the
+Jacobian, and the same trick applies one level up — a Hessian–vector product is
+computable without the Hessian, by differentiating a VJP. But asking for the
+full Hessian of a model with $N$ parameters really does mean $N^2$ numbers, and
+no reformulation avoids it.
+
+</SolutionToggle>

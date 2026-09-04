@@ -1,0 +1,80 @@
+---
+id: "I.6.X04"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A tied weight that receives half its gradient"
+depends:
+  - "I.6.P01"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+A scalar weight $w$ is used twice in the same graph:
+
+$$
+u = wx, \qquad v = wu, \qquad L = \tfrac{1}{2}v^2
+$$
+
+Compute $\partial L/\partial w$ correctly. Then compute what a backward pass
+would produce if each use *assigned* into the gradient slot instead of adding to
+it, and say why the resulting number is not merely inaccurate.
+
+<Hint>
+$w$ has two consumers. (I.6.2) says its adjoint is a sum over them, and an
+assignment keeps whichever term arrives last.
+</Hint>
+
+<SolutionToggle>
+
+**Correct.** Substituting, $v = w^2x$ and $L = \tfrac{1}{2}w^4x^2$, so
+
+$$
+\frac{\partial L}{\partial w} = 2w^3x^2
+$$
+
+**By the graph.** $\bar{v} = v = w^2x$. The node $v = wu$ has two producers:
+
+$$
+\bar{w}\big|_{v} = \bar{v}u = w^2x \cdot wx = w^3x^2, \qquad \bar{u} = \bar{v}w = w^3x
+$$
+
+The node $u = wx$ then contributes
+
+$$
+\bar{w}\big|_{u} = \bar{u}x = w^3x^2
+$$
+
+By (I.6.2) the adjoint of $w$ is the sum of the contributions from its
+consumers:
+
+$$
+\bar{w} = w^3x^2 + w^3x^2 = 2w^3x^2
+$$
+
+which matches the direct computation.
+
+**With assignment instead of accumulation.** Whichever contribution is written
+last survives, and each is exactly $w^3x^2$ — half the truth. The gradient is
+not noisy, not biased in a complicated way, and not sometimes right: it is
+consistently a factor of two short.
+
+**Why that is worse than it sounds.** A gradient scaled by a constant is still
+a descent direction, so training does not diverge or produce obvious garbage.
+It converges, more slowly, and looks like a learning-rate problem. Now make the
+two uses asymmetric — an embedding matrix that is also the output projection, a
+convolutional filter applied at 4096 positions, a recurrent matrix at 512
+timesteps — and the surviving term is one of many, in a proportion that varies
+per example. That is not a rescaled gradient; it is the gradient of a different
+function, and it descends confidently to the wrong place.
+
+**Which is why frameworks accumulate.** `.grad` is added into, never assigned,
+and the mirror-image bug follows immediately: forget to zero it between steps
+and every step's gradient is the sum of all steps so far. Both errors come from
+the same line of (I.6.2), read in opposite directions.
+
+</SolutionToggle>

@@ -1,0 +1,83 @@
+---
+id: "I.6.X10"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "Why a skip connection cannot lose the gradient"
+depends:
+  - "I.6.P01"
+rounding: "Symbolic."
+hasSolution: true
+verified: false
+status: published
+---
+
+For a residual block $\vec{y} = \vec{x} + F(\vec{x})$, derive the Jacobian and
+then the adjoint recurrence for a stack of $L$ such blocks. Show that the
+product cannot vanish for want of a route, and state precisely what the identity
+term does and does not guarantee.
+
+<Hint>
+Differentiate the sum term by term. One of the two derivatives does not depend
+on $F$ at all.
+</Hint>
+
+<SolutionToggle>
+
+**The Jacobian.** Differentiating $\vec{y} = \vec{x} + F(\vec{x})$ coordinate by
+coordinate:
+
+$$
+\frac{\partial y_j}{\partial x_i} = \delta_{ij} + \frac{\partial F_j}{\partial x_i},
+\qquad \text{so} \qquad \mat{J} = \mat{I} + \mat{J}_F
+$$
+
+which is (I.6.5).
+
+**The recurrence.** By (I.6.2) the adjoint entering block $\ell$ from block
+$\ell + 1$ is
+
+$$
+\bar{\vec{x}}^{(\ell)} = \bar{\vec{x}}^{(\ell+1)}\left(\mat{I} + \mat{J}_{F_\ell}\right)^{\mathsf{T}}
+= \bar{\vec{x}}^{(\ell+1)} + \bar{\vec{x}}^{(\ell+1)}\mat{J}_{F_\ell}^{\mathsf{T}}
+$$
+
+**Across the stack.** Expanding the product over $L$ blocks:
+
+$$
+\frac{\partial L}{\partial \vec{x}^{(0)}} = \bar{\vec{x}}^{(L)}\prod_{\ell=1}^{L}\left(\mat{I} + \mat{J}_{F_\ell}\right)^{\mathsf{T}}
+$$
+
+Multiplying out gives $2^L$ terms, one for each subset of blocks whose $J_F$ is
+taken. Exactly one of those terms takes the identity from every block:
+
+$$
+\bar{\vec{x}}^{(L)}\mat{I}^L = \bar{\vec{x}}^{(L)}
+$$
+
+The adjoint that left the loss arrives at the first block undiminished, whatever
+the $F_\ell$ are and however many there are. In the plain stack of I.6.B04 every
+term carried a factor below $1/4$, so the whole product decayed; here one term
+carries no factor at all.
+
+**What this does not promise.** Three things.
+
+It is not a guarantee that the gradient is *useful*. The identity path
+transmits the adjoint of the loss with respect to the block's input, not with
+respect to its parameters — the parameter gradients still flow through
+$\mat{J}_{F_\ell}$, and a block whose $F$ is saturated still learns nothing.
+The signal reaches it; whether it can act on it is separate.
+
+It does not prevent explosion. $\mat{I} + \mat{J}_F$ has eigenvalues
+$1 + \lambda_i$, and if $\mat{J}_F$ has eigenvalues near $+1$ the product grows
+like $2^L$. Residual stacks are normally paired with normalisation for exactly
+this reason, and the pairing is not decoration.
+
+It says nothing about optimisation beyond the gradient's magnitude. A route for
+the adjoint is a necessary condition for training a deep stack, not a sufficient
+one, and the empirical fact that residual networks train at depths plain stacks
+cannot is a result rather than a corollary of this algebra.
+
+</SolutionToggle>

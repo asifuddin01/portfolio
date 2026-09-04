@@ -1,0 +1,169 @@
+---
+id: "I.6.B05"
+kind: problem
+chapter: "I.6"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What the backward pass costs, in arithmetic and in memory"
+depends:
+  - "I.6.P01"
+reachesBack: []
+rounding: "GFLOP to two decimals, GB to three, at 4 bytes per fp32 value."
+hasSolution: true
+verified: true
+snippet: "i-6-b05-cost-and-memory.py"
+status: published
+---
+
+<Statement>
+Account for both resources a backward pass consumes. Show that the arithmetic
+is a small multiple of the forward pass and that the memory is not, find the
+batch size at which stored activations overtake parameters, and quantify what
+checkpointing buys.
+</Statement>
+
+<Given>
+A stack of $L = 48$ square affine layers of width $d = 1024$, in fp32. Two
+working regimes: a batch of 32 rows, and a batch of 32 sequences of length 512,
+which presents $32 \times 512 = 16\,384$ rows to every layer.
+</Given>
+
+<Find>
+Forward and backward FLOPs and their ratio; activation memory against parameter
+memory in both regimes; the batch at which the two are equal; and the memory
+and arithmetic under $\sqrt{L}$ checkpointing.
+</Find>
+
+<Strategy>
+Count matrix products, since everything else is lower order. Forward, each
+layer does one. Backward, by (I.6.3) and (I.6.4), each layer does two — one to
+send the adjoint onward and one to form the weight gradient. For memory, count
+what the backward pass will read and cannot recompute for free.
+</Strategy>
+
+<Solution>
+
+**Step 1 — arithmetic.** A product of a $B \times d$ matrix with a
+$d \times d$ matrix costs $2Bd^2$ floating-point operations, counting a
+multiply and an add for each of the $Bd^2$ pairs. Forward:
+
+$$
+F = L \cdot 2Bd^2
+$$
+
+Backward does two such products per layer, so $2F$, and the step costs $3F$:
+
+| regime | forward | backward | total / forward |
+|---|---|---|---|
+| batch 32 | $3.22$ GFLOP | $6.44$ GFLOP | $3.0\times$ |
+| batch $32 \times 512$ | $1649.27$ GFLOP | $3298.53$ GFLOP | $3.0\times$ |
+
+The ratio is 3 in both regimes and would be 3 for any $B$, $d$ and $L$: it is a
+property of the graph, not of the size. This is the cheap gradient principle
+(I.6.T1) at work, and the constant here — three — sits comfortably inside the
+$c \le 4$ the theorem allows.
+
+**Step 2 — memory.** The parameters are $Ld^2 = 50\,331\,648$ values, $0.201$
+GB. The activations kept for the backward pass are $LBd$ by (I.6.7):
+
+| regime | activations | parameters | ratio |
+|---|---|---|---|
+| batch 32 | $0.006$ GB | $0.201$ GB | $0.03\times$ |
+| batch $32 \times 512$ | $3.221$ GB | $0.201$ GB | $16.00\times$ |
+
+The same model, the same weights, the same arithmetic per row — and the memory
+picture inverts completely. At batch 32 the parameters dominate by thirty
+times; at batch 16 384 the activations dominate by sixteen.
+
+**Step 3 — the crossover.** Setting $LBd = Ld^2$ gives
+
+$$
+B = d = 1024
+$$
+
+The layer count cancels, and so does everything else. Activations overtake
+parameters when the batch reaches the width, which for this model is 1024 rows
+— a number a single sequence of moderate length already exceeds. That is why
+the second regime is the normal one and the first is the exception.
+
+**Step 4 — checkpointing.** Keep every $\sqrt{L}$-th activation and recompute
+the rest during the backward pass. With $L = 48$, $\sqrt{48} \approx 7$: hold
+7 segment boundaries, plus the 6 tensors of whichever segment is currently
+being recomputed, so 13 tensors instead of 48.
+
+$$
+3.221\ \text{GB} \longrightarrow 0.872\ \text{GB}, \qquad 3.7\times \text{ less}
+$$
+
+The price is recomputing each segment's forward pass once, which adds one
+forward pass to a step that cost three:
+
+$$
+\frac{2F + 2F}{F + 2F} = \frac{4}{3} = 1.33\times
+$$
+
+A third more arithmetic for nearly four times less memory. On a device where
+memory is the binding constraint and arithmetic is not — which describes most
+training — that is not a close decision.
+
+</Solution>
+
+<Answer>
+
+Arithmetic: backward is exactly twice forward, so a step costs $3\times$ a
+forward pass, independent of $B$, $d$ and $L$.
+
+Memory: activations are $LBd$ and parameters $Ld^2$, so they are equal when
+$B = d = 1024$. At batch 32 activations are $0.03\times$ the parameters; at
+batch $32 \times 512$ they are $16\times$ — $3.221$ GB against $0.201$ GB.
+
+Checkpointing at 7 segments holds 13 tensors instead of 48: $3.221$ GB becomes
+$0.872$ GB, a $3.7\times$ reduction, for $1.33\times$ the arithmetic.
+
+</Answer>
+
+<CheckSanity>
+**The FLOP ratio is exactly 3 in both regimes.** It has to be — it is a count of
+matrix products per layer, one forward and two back, and no dimension enters it.
+A measured ratio far from 3 on real hardware is a statement about memory
+bandwidth and kernel efficiency, not about the arithmetic.
+
+**The crossover has no free parameters.** $LBd = Ld^2$ reduces to $B = d$ with
+$L$ cancelling, so the answer cannot depend on depth. A deeper model has more
+activations *and* more parameters, in the same proportion.
+
+**Checkpointed memory is near $2\sqrt{L}$.** $2\sqrt{48} \approx 13.9$ against
+the 13 tensors counted, and $48/13 = 3.7$ matches the measured reduction. The
+$\sqrt{L}$ of (I.6.7) is where boundary storage and segment storage balance;
+away from it, one term or the other grows.
+</CheckSanity>
+
+<Breaks>
+Every number here counts one thing each and ignores the rest of the bill. The
+gradient buffer is another copy of the parameters, and Adam adds two more, so
+the parameter side of the ledger is nearer $4 \times 0.201$ GB than $0.201$ GB
+before any activation is stored — a point I.7 makes properly. Workspace for the
+matrix kernels, fragmentation and the framework's own overhead are all real and
+none is counted.
+
+The FLOP count is also not a time. It assumes every operation costs the same,
+which on a device with a hundred times more arithmetic throughput than memory
+bandwidth is badly wrong: the backward pass touches more memory per FLOP than
+the forward pass and is routinely slower than the $2\times$ its arithmetic
+suggests. The $3\times$ is a lower bound on the time ratio and an exact
+statement about the arithmetic, and confusing the two is how a training run
+comes in over its estimate.
+
+Finally, checkpointing assumes recomputation is deterministic. A segment
+containing dropout, or any other sampling, recomputes a *different* forward
+pass unless the random state is stored and restored — and the gradient then
+belongs to neither the first forward pass nor the second.
+</Breaks>
+
+<Variation>
+Recompute the crossover for a model whose layers are not square: width $d$ in
+and $4d$ out, as a transformer's feed-forward block is. The parameter count
+gains a factor of 4 and the stored activation gains one too. Does the crossover
+move?
+</Variation>

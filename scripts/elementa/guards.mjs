@@ -503,9 +503,17 @@ export async function lintProse(data) {
    * correcting it would misquote the source — so the spelling rule skips a
    * `title:` that sits beside a `url:`, which is exactly a citation and
    * nothing else.
+   *
+   * A `venue:` is exempt for the same reason and needs no adjacency test: the
+   * field holds nothing but the name of a journal, conference or publisher,
+   * and those are proper nouns whoever spells them. The rule was written
+   * before chapters carried venues and flagged I.6 for citing *Optimization
+   * Methods and Software* — a journal that is called that.
    */
   const isCitationTitle = (lines, i) => {
-    if (!/^\s*-?\s*title:/.test(lines[i] ?? '')) return false;
+    const line = lines[i] ?? '';
+    if (/^\s*-?\s*venue:/.test(line)) return true;
+    if (!/^\s*-?\s*title:/.test(line)) return false;
     return /^\s*url:/.test(lines[i + 1] ?? '') || /^\s*-?\s*url:/.test(lines[i - 1] ?? '');
   };
 

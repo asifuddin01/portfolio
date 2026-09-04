@@ -1,0 +1,16 @@
+logits          2.00000000  1.00000000  0.10000000
+p = softmax(z)  0.65900114  0.24243297  0.09856589
+sum p           1.00000000
+
+delta = p - y   -0.34099886  +0.24243297  +0.09856589
+via Jacobian    -0.34099886  +0.24243297  +0.09856589
+largest gap     1.39e-17
+
+-- softmax with squared error instead --
+delta           -0.12176312  +0.09664897  +0.02511415
+ratio to p - y  0.35707778  0.39866263  0.25479555
+
+-- a confidently wrong prediction, true class 2 --
+p               0.99932952  0.00033524  0.00033524
+delta = p - y   +0.99932952  +0.00033524  -0.99966476
+softmax slope on the true class  3.35125324e-04

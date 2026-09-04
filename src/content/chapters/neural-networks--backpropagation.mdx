@@ -6,16 +6,107 @@ title: "Backpropagation and Computational Graphs"
 summary: "The graph is the program, and the backward pass is a second traversal that reuses the first."
 claim: "Backpropagation is the chain rule applied to a computational graph, and reverse mode returns every partial derivative of a scalar output in one traversal."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "The graph is the program"
+  - "The forward pass, and what it must keep"
+  - "The chain rule along a path"
+  - "Local Jacobians"
+  - "Reverse accumulation: one traversal, every partial"
+  - "Forward mode, and when it is the cheaper one"
+  - "Fan-out and gradient accumulation"
+  - "Vector–Jacobian products: never forming J"
+  - "The layer recurrence for an MLP"
+  - "The memory bill, and checkpointing"
+definitions:
+  - n: 1
+    term: "Computational graph"
+    statement: "A directed acyclic graph whose nodes are primitive operations and whose edges carry values from a producer to its consumers. The inputs and parameters are source nodes; a scalar loss is the single sink. It is not a picture of the model — it is the program, recorded at the granularity at which derivatives are known."
+    introduces: []
+  - n: 2
+    term: "Primitive"
+    statement: "An operation whose derivative is known in closed form and is not decomposed further: a matrix product, an addition, a rectifier, an exponential. Where the boundary falls is an implementation choice rather than a mathematical one, and it decides only how much is stored and how much is recomputed, never the answer."
+    introduces: []
+  - n: 3
+    term: "Forward pass"
+    statement: "Evaluation of every node in topological order, from sources to sink, retaining each intermediate value. The retention is the part that costs: an evaluation that discards intermediates computes the same output and leaves the backward pass with nothing to multiply."
+    introduces: []
+  - n: 4
+    term: "Local Jacobian"
+    statement: "For a node y = f(x) with x ∈ ℝ^{1×n} and y ∈ ℝ^{1×m}, the matrix J ∈ ℝ^{n×m} with J_{ij} = ∂y_j/∂x_i, evaluated at the value x took on the forward pass. It depends on that value, which is why the forward pass must keep it, and it is local: it involves one operation and nothing else in the graph."
+    introduces:
+      - "J"
+  - n: 5
+    term: "Adjoint"
+    statement: "For a node with value v and scalar sink L, the row vector v̄ = ∂L/∂v, of the same shape as v. It answers how much the loss moves per unit move of this node, holding the rest of the forward values fixed. The sink's own adjoint is L̄ = 1, which is where the backward pass starts."
+    introduces:
+      - "L_loss"
+  - n: 6
+    term: "Reverse-mode automatic differentiation"
+    statement: "Evaluation of adjoints in reverse topological order, each node receiving the adjoints of its consumers and passing v̄J to its producers. One traversal yields ∂L/∂v for every node in the graph at once, parameters included — not one traversal per parameter."
+    introduces:
+      - "nabla"
+  - n: 7
+    term: "Vector–Jacobian product"
+    statement: "The operation v̄ ↦ v̄J, implemented without ever forming J. For y = xW the Jacobian with respect to x has n·m entries, while the product v̄Wᵀ costs one matrix multiply of the size already being done forwards. Every backward rule in a working system is a VJP, and it is the reason the backward pass costs what the forward pass costs rather than the square of it."
+    introduces:
+      - "W"
+  - n: 8
+    term: "Gradient accumulation"
+    statement: "When a value feeds k consumers, its adjoint is the sum of the k contributions arriving from them, not any one of them. This is the multivariate chain rule stated as a graph operation, and the sum is what makes a weight shared across positions or timesteps receive the gradient of all its uses."
+    introduces: []
+  - n: 9
+    term: "Residual Jacobian"
+    statement: "For a block y = x + F(x), the Jacobian I + J_F. The identity term is a path along which the adjoint arrives undiminished however deep the network, so the product of Jacobians down a residual stack cannot vanish for want of a route — which is the whole mechanical content of a skip connection."
+    introduces:
+      - "I_mat"
 beforeYouStart:
   - "I.5"
   - "0.MC.03"
   - "0.MC.07"
 conceptFigure: FigComputationalGraph
 problemStatement: "An MLP has parameters and a loss but no way to connect them. Every gradient computed anywhere in Elementa is computed by the rules derived here, which is why this is the chapter the rest of the corpus borrows from most."
-formalResults: []
-assumptions: []
+keyEquations:
+  - id: "I.6.1"
+    formula: "L = f_k ∘ … ∘ f_1 (x)  ⟹  ∂L/∂x = (∂f_1/∂x)(∂f_2/∂f_1) … (∂L/∂f_k)"
+    gloss: "A chain of operations differentiates as a chain of factors, in either order."
+  - id: "I.6.2"
+    formula: "v̄ = Σ_{c ∈ consumers(v)} c̄ J_{v→c},   L̄ = 1"
+    gloss: "The whole algorithm: sum over consumers, multiply by the local Jacobian, start at one."
+  - id: "I.6.3"
+    formula: "δ⁽ᴸ⁾ = ∂L/∂z⁽ᴸ⁾,   δ⁽ˡ⁾ = (δ⁽ˡ⁺¹⁾ W⁽ˡ⁺¹⁾ᵀ) ⊙ φ′(z⁽ˡ⁾)"
+    gloss: "The MLP recurrence: transpose to travel back, gate by the nonlinearity's slope."
+  - id: "I.6.4"
+    formula: "∂L/∂W⁽ˡ⁾ = (a⁽ˡ⁻¹⁾)ᵀ δ⁽ˡ⁾,   ∂L/∂b⁽ˡ⁾ = δ⁽ˡ⁾"
+    gloss: "A weight's gradient is the outer product of what entered it and what came back."
+  - id: "I.6.5"
+    formula: "∂(x + F(x))/∂x = I + J_F"
+    gloss: "A skip connection adds an identity route the adjoint cannot lose."
+  - id: "I.6.6"
+    formula: "cost(∇f) ≤ c · cost(f),  c ≤ 4, independent of the number of inputs"
+    gloss: "Every partial derivative, for a small constant times the price of one evaluation."
+  - id: "I.6.7"
+    formula: "M_act = O(L · B · d),   M_ckpt = O(√L · B · d) at one extra forward pass"
+    gloss: "Activations dominate training memory, and √L segments trade recompute for it."
+formalResults:
+  - id: "I.6.T1"
+    name: "The cheap gradient principle (Baur and Strassen 1983; Linnainmaa 1976)"
+    statement: "For a function f: ℝⁿ → ℝ built from arithmetic primitives, the full gradient ∇f can be evaluated at cost at most a small constant times the cost of evaluating f — c ≤ 4 for the usual accounting — and that constant does not grow with n. A million parameters and a hundred parameters cost the same multiple of one forward pass."
+    doesNotPromise: "It bounds arithmetic, not memory: the constant is bought by keeping every intermediate, and that storage is linear in the depth and the batch. It says nothing about wall-clock time on real hardware, where the backward pass is often slower than the bound suggests because it is less cache-friendly and less parallel. It applies to a scalar output; for m outputs the reverse-mode cost is m times this, which is why a Jacobian is expensive and a gradient is not. And it is a statement about a fixed graph — nothing here bounds the cost of a graph that rebuilds itself each step."
+  - id: "I.6.T2"
+    name: "Mode complexity (Griewank and Walther 2008)"
+    statement: "For f: ℝⁿ → ℝᵐ, forward mode computes the Jacobian in n sweeps and reverse mode in m. Training is the case m = 1 with n in the millions, so reverse mode wins by a factor of n; a directional derivative is the case m = n with one direction, where forward mode wins by the same argument. The choice is arithmetic, not preference."
+    doesNotPromise: "The comparison counts sweeps, and a sweep is not free in memory: forward mode carries one extra value per node and needs no tape, while reverse mode needs the whole tape. For n and m both large neither mode is cheap and the honest answer is that the Jacobian is expensive. It also assumes the graph is known before differentiation; under control flow that changes per input, the tape is rebuilt each call and the constant grows."
+  - id: "I.6.T3"
+    name: "Checkpointing (Griewank 1992; Chen, Xu, Zhang and Guestrin 2016)"
+    statement: "Storing every √L-th activation and recomputing the segments between them reduces activation memory from O(L) to O(√L) at the cost of one additional forward pass. The trade is continuous: keeping k checkpoints costs O(L/k) recomputation, and √L is where the two terms balance."
+    doesNotPromise: "It trades memory for time, and on hardware where the bottleneck is bandwidth rather than arithmetic the exchange rate is worse than the counts suggest. Recomputation must be deterministic, which rules out segments containing dropout or any other sampling unless the random state is stored too — and storing it is a cost the bound does not include."
+assumptions:
+  - statement: "Every primitive is differentiable at the value it took on the forward pass. ReLU at exactly zero is not, and every framework returns a subgradient there by convention rather than by derivation — 0 in PyTorch, which is a choice, not a fact."
+    testedBy: "I.6.X06"
+  - statement: "The graph is acyclic and every stored intermediate is still the value the forward pass produced. An in-place operation that overwrites a saved tensor breaks the second half of that assumption while leaving the first intact, which is why the resulting gradient is wrong rather than absent."
+    testedBy: "I.6.X07"
+  - statement: "The loss is a scalar. Reverse mode's advantage is entirely the assumption that one number sits at the sink; a vector-valued output turns one backward traversal into one per output component."
+    testedBy: "I.6.X09"
 owns:
   - "computational-graph"
   - "backpropagation"
@@ -27,9 +118,47 @@ borrows:
   - "jacobian"
   - "matrix-product-derivative"
   - "multilayer-perceptron"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "A value reused in two places receives half its gradient when the second contribution is dropped. Tie a weight across two positions — an embedding matrix also used as the output projection, a filter applied at every location, a recurrent matrix at every timestep — and the correct adjoint is the sum over uses, by (I.6.2). Write the backward rule as an assignment rather than an addition and the answer is not noisy or slow to converge: it is a gradient for a different function, and it descends confidently to the wrong place. Frameworks accumulate into `.grad` for exactly this reason, and the mirror-image bug is forgetting to zero it between steps, which sums the gradients of every step so far."
+  - "The backward pass multiplies one Jacobian per layer, so its magnitude is a product and products of numbers below one go to zero exponentially. With sigmoid activations φ′ ≤ 1/4 everywhere, so ten layers attenuate by at most 4⁻¹⁰ ≈ 10⁻⁶ before any weight is considered; the early layers receive a gradient indistinguishable from zero and stop moving while the late layers train normally. The symptom is a loss that falls and then stalls with the first layers still near their initialisation. This is the mechanism (I.6.5) exists to defeat, and it is why Chapters I.7 and I.8 are about conditioning rather than about better optimisers."
+  - "Activation memory, not parameter memory, is what exhausts a training device. The parameters of a 12-layer model of width 768 occupy about 340 MB in fp32; the activations kept for its backward pass at batch 32 and sequence length 512 occupy several gigabytes, because they scale with depth times batch times width by (I.6.7). A model that runs at inference in a fraction of the memory may be untrainable on the same card, and the usual first response — halve the batch — halves the term that is actually large."
+references:
+  - title: "Taylor Expansion of the Accumulated Rounding Error"
+    authors: "Linnainmaa"
+    year: 1976
+    venue: "BIT Numerical Mathematics 16(2)"
+    url: https://doi.org/10.1007/BF01931367
+  - title: "The Complexity of Partial Derivatives"
+    authors: "Baur and Strassen"
+    year: 1983
+    venue: "Theoretical Computer Science 22(3)"
+    url: https://doi.org/10.1016/0304-3975(83)90110-X
+  - title: "Learning Representations by Back-propagating Errors"
+    authors: "Rumelhart, Hinton and Williams"
+    year: 1986
+    venue: "Nature 323(6088)"
+    url: https://doi.org/10.1038/323533a0
+  - title: "Achieving Logarithmic Growth of Temporal and Spatial Complexity in Reverse Automatic Differentiation"
+    authors: "Griewank"
+    year: 1992
+    venue: "Optimization Methods and Software 1(1)"
+    url: https://doi.org/10.1080/10556789208805505
+  - title: "Evaluating Derivatives: Principles and Techniques of Algorithmic Differentiation"
+    authors: "Griewank and Walther"
+    year: 2008
+    venue: "SIAM, second edition"
+    url: https://doi.org/10.1137/1.9780898717761
+  - title: "Automatic Differentiation in Machine Learning: a Survey"
+    authors: "Baydin, Pearlmutter, Radul and Siskind"
+    year: 2018
+    venue: "Journal of Machine Learning Research 18(153)"
+    url: https://jmlr.org/papers/v18/17-468.html
+  - title: "Training Deep Nets with Sublinear Memory Cost"
+    authors: "Chen, Xu, Zhang and Guestrin"
+    year: 2016
+    venue: "arXiv:1604.06174"
+    url: https://arxiv.org/abs/1604.06174
 notation:
   - "nabla"
   - "J"
@@ -44,6 +173,5 @@ apparatus:
   - "0.MC.04"
   - "0.MC.07"
   - "0.MC.08"
-keyEquations: []
-status: review
+status: published
 ---

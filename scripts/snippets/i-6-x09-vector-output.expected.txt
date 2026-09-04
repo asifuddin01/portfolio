@@ -1,0 +1,16 @@
+model: L=48, d=1024, batch=32
+one forward pass                          3.22 GFLOP
+
+sink                                traversals        GFLOP   vs scalar
+a scalar loss                                1         9.66        1.0x
+a 10-vector output                          10        67.65        7.0x
+per-example gradients, batch 32             32       209.38       21.7x
+full Jacobian of the 1024 outputs        1,024      6600.29      683.0x
+
+why a scalar is not a restriction in practice
+  a loss is a reduction: any vector objective is summed or averaged
+  before the backward pass, and the sum is one more node in the graph
+
+the reduction that makes it scalar, priced
+  summing 32 per-example losses costs 31 additions
+  as a share of one forward pass: 9.624e-09

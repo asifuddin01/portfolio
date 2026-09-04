@@ -1,0 +1,21 @@
+w = 1.0 — the slope bound is the only thing shrinking the adjoint
+ depth         |ratio|        4^-depth
+     1    2.350037e-01    2.500000e-01
+     2    5.340838e-02    6.250000e-02
+     5    6.079863e-04    9.765625e-04
+    10    3.483116e-07    9.536743e-07
+    20    1.143096e-13    9.094947e-13
+    40    1.231153e-26    8.271806e-25
+
+the largest slope any logistic unit has
+sigma'(0) = 0.250000
+
+depth at which the ratio drops below fp32's smallest normal, w = 1.0
+first depth with |ratio| < 1.175494e-38:  59
+ratio there: 5.901063e-39
+
+a larger weight delays it but does not prevent it
+w =  1.0   depth 10: 3.483116e-07   depth 40: 1.231153e-26
+w =  2.0   depth 10: 2.954702e-06   depth 40: 1.227533e-23
+w =  4.0   depth 10: 5.486035e-11   depth 40: 1.536491e-44
+w =  4.5   depth 10: 1.449225e-12   depth 40: 3.182489e-51

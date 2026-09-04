@@ -1,0 +1,71 @@
+---
+id: "I.6.X08"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "Choosing a mode is arithmetic, not preference"
+depends:
+  - "I.6.P01"
+rounding: "Sweep counts are exact; memory in values."
+hasSolution: true
+verified: true
+snippet: "i-6-x08-mode-costs.py"
+status: published
+---
+
+Reverse mode is not simply better than forward mode. For
+$f: \R^n \to \R^m$, price both, decide which wins for four different tasks, and
+say what reverse mode pays for its advantage.
+
+<Hint>
+A forward sweep propagates a derivative with respect to *one input*; a reverse
+sweep propagates the derivative *of one output*. Count how many of each you
+need to fill a Jacobian.
+</Hint>
+
+<SolutionToggle>
+
+**The rule.** Forward mode carries $\partial \cdot / \partial x_i$ for one
+input $i$ through the whole graph, so it fills one column of the Jacobian per
+sweep: $n$ sweeps. Reverse mode carries $\partial y_j / \partial \cdot$ for one
+output, filling one row per sweep: $m$ sweeps. That is I.6.T2, and everything
+else follows from it.
+
+| task | $n$ | $m$ | forward | reverse | cheaper |
+|---|---|---|---|---|---|
+| training a network | $10^8$ | 1 | $10^8$ | 1 | reverse |
+| a scalar of few inputs | 3 | 1 | 3 | 1 | reverse |
+| sensitivity of an ODE | 4 | $10^6$ | 4 | $10^6$ | forward |
+| Jacobian of a $1024^2$ layer | 1024 | 1024 | 1024 | 1024 | tie |
+| one directional derivative | $10^8$ | $10^6$ | 1 | $10^6$ | forward |
+
+**Training.** $n$ in the hundred millions, $m = 1$. Reverse mode is cheaper by a
+factor of $10^8$ — the entire parameter count. This is the case the field is
+built around, and it is why "autodiff" and "backpropagation" are used
+interchangeably even though the first is much more general than the second.
+
+**The last row is the interesting one.** Both $n$ and $m$ are enormous, yet
+forward mode wins outright, because only one *direction* is wanted rather than
+the whole Jacobian. A single forward sweep seeded with that direction returns
+$\mat{J}\vec{v}$ — a Jacobian–vector product — at the price of one evaluation.
+Reverse mode has no way to produce it in fewer than $m$ sweeps.
+
+**What reverse mode pays.** Memory. Forward mode carries one extra value
+alongside each node and never looks back, so nothing is stored:
+$32\,768$ values live at any moment for the model of I.6.B05. Reverse mode must
+keep the whole tape to have the local Jacobians on the way back:
+$1\,572\,864$ values, $48\times$ more, exactly the depth of the network.
+
+That is the trade in one line — reverse mode buys a factor of $n$ in arithmetic
+with a factor of $L$ in memory, and the exchange is worth it precisely because
+$n \gg L$.
+
+**Where neither is cheap.** The middle row: a full $1024 \times 1024$ Jacobian
+costs 1024 sweeps either way. There is no mode that produces a dense Jacobian
+cheaply, and a method that needs one — some second-order and some
+sensitivity-analysis methods — is expensive for a reason no implementation
+detail will fix.
+
+</SolutionToggle>

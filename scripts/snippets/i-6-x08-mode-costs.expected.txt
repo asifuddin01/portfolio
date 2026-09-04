@@ -1,0 +1,20 @@
+task                                  n          m     forward    reverse  cheaper
+training a network           100,000,000          1  100,000,000          1  reverse
+a scalar of few inputs                3          1           3          1  reverse
+sensitivity of an ODE                 4  1,000,000           4  1,000,000  forward
+Jacobian of a layer               1,024      1,024       1,024      1,024  tie
+one directional derivative   100,000,000  1,000,000           1  1,000,000  forward
+
+the ratio that decides training
+  n = 100,000,000   m = 1
+  reverse is cheaper by a factor of 100,000,000
+
+memory is the other half of the trade
+  reverse: a tape of every intermediate   1,572,864 values
+  forward: one extra value per node       32,768 values live at a time
+  ratio                                   48x
+
+cost of the full Jacobian of one 1024x1024 layer, in forward sweeps
+  forward sweeps  1,024
+  reverse sweeps  1,024
+  either way, 1,024 times one evaluation — a Jacobian is expensive both ways

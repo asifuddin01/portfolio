@@ -1,0 +1,99 @@
+---
+id: "I.6.X02"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "The pairing that collapses a dense Jacobian to a subtraction"
+depends:
+  - "I.6.P01"
+rounding: "Eight decimal places."
+hasSolution: true
+verified: true
+snippet: "i-6-x02-softmax-cross-entropy.py"
+status: published
+---
+
+Softmax is not elementwise, so I.6.B02's Step 1 does not apply to it: its
+Jacobian is dense. Derive $\partial L/\partial \vec{z}$ for softmax composed
+with cross-entropy, show the dense product collapses, and then show what the
+same softmax does when paired with squared error instead.
+
+<Hint>
+Write out $\partial p_j/\partial z_i = p_j(\delta_{ij} - p_i)$ and
+$\partial L/\partial p_j = -y_j/p_j$, then form the sum over $j$. Most of it
+cancels.
+</Hint>
+
+<SolutionToggle>
+
+**The two pieces.** For $\vec{p} = \mathrm{softmax}(\vec{z})$ and
+$L = -\sum_j y_j \log p_j$ with $\vec{y}$ one-hot:
+
+$$
+\frac{\partial p_j}{\partial z_i} = p_j(\delta_{ij} - p_i),
+\qquad
+\frac{\partial L}{\partial p_j} = -\frac{y_j}{p_j}
+$$
+
+The Jacobian is $d \times d$ and dense — for a 50 000-token vocabulary that is
+$2.5 \times 10^9$ entries, which is why nobody forms it.
+
+**The collapse.** By (I.6.2), summing over consumers:
+
+$$
+\frac{\partial L}{\partial z_i}
+= \sum_j \left(-\frac{y_j}{p_j}\right) p_j(\delta_{ij} - p_i)
+= -\sum_j y_j(\delta_{ij} - p_i)
+= -y_i + p_i \sum_j y_j
+$$
+
+and $\sum_j y_j = 1$ for a one-hot target, so
+
+$$
+\frac{\partial L}{\partial \vec{z}} = \vec{p} - \vec{y}
+$$
+
+The $p_j$ in the Jacobian cancels the $p_j$ in the denominator of the loss
+derivative. That cancellation is the only reason this pairing is cheap.
+
+**Verified.** With logits $(2.0,\ 1.0,\ 0.1)$ and the true class $0$:
+
+| | class 0 | class 1 | class 2 |
+|---|---|---|---|
+| $\vec{p}$ | $0.65900114$ | $0.24243297$ | $0.09856589$ |
+| $\vec{p} - \vec{y}$ | $-0.34099886$ | $+0.24243297$ | $+0.09856589$ |
+| via the Jacobian | $-0.34099886$ | $+0.24243297$ | $+0.09856589$ |
+
+Largest disagreement $1.39 \times 10^{-17}$ — machine precision. Two routes,
+one of which forms a dense matrix and one of which subtracts two vectors.
+
+**The other pairing.** Replace cross-entropy with squared error and there is no
+$1/p_j$ to cancel the $p_j$. The Jacobian survives:
+
+| | class 0 | class 1 | class 2 |
+|---|---|---|---|
+| $\delta$ | $-0.12176312$ | $+0.09664897$ | $+0.02511415$ |
+| ratio to $\vec{p} - \vec{y}$ | $0.35707778$ | $0.39866263$ | $0.25479555$ |
+
+Smaller, and by a different factor per class — not a rescaling, a distortion.
+
+**Why it matters most when the model is wrong.** Take logits $(8, 0, 0)$ with
+the true class $2$: the model is confident and wrong, $p = (0.99932952,\
+0.00033524,\ 0.00033524)$.
+
+Cross-entropy gives $\delta_2 = -0.99966476$ — a full-strength signal, near the
+largest it can be. Squared error routes through the softmax slope on the true
+class, which is $3.35125324 \times 10^{-4}$: a gradient three thousand times
+smaller, at the exact moment the model most needs correcting.
+
+**The general point.** A loss and its output nonlinearity are chosen together,
+not separately. Sigmoid with cross-entropy collapses the same way, for the same
+reason, to $\hat{y} - y$ — which is why I.6.B01's linear head with squared error
+also gave $\delta^{(2)} = \hat{y} - y$, and why frameworks expose a single fused
+`cross_entropy` that takes logits rather than a softmax the caller composes
+themselves. The fusion is not an optimisation; it is where the cancellation
+lives.
+
+</SolutionToggle>

@@ -1,0 +1,191 @@
+---
+id: "I.6.B02"
+kind: problem
+chapter: "I.6"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Deriving the layer recurrence from the graph"
+depends:
+  - "I.6.P01"
+reachesBack: []
+rounding: "Symbolic throughout; no numbers."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Derive the two equations every implementation of backpropagation contains — the
+recurrence that carries an adjoint from one layer to the previous one, and the
+outer product that turns an adjoint into a weight gradient — from the graph
+rule (I.6.2) alone. Nothing else may be assumed.
+</Statement>
+
+<Given>
+One layer of an MLP, written as three nodes so that each has a Jacobian that can
+be stated:
+
+$$
+\vec{z}^{(\ell)} = \vec{a}^{(\ell-1)}\mat{W}^{(\ell)} + \vec{b}^{(\ell)},
+\qquad
+\vec{a}^{(\ell)} = \varphi(\vec{z}^{(\ell)})
+$$
+
+with $\vec{a}^{(\ell-1)} \in \R^{1 \times d_{\ell-1}}$,
+$\mat{W}^{(\ell)} \in \R^{d_{\ell-1} \times d_\ell}$ and $\varphi$ applied
+elementwise. A scalar loss $L$ sits at the sink. Write
+$\delta^{(\ell)} = \partial L / \partial \vec{z}^{(\ell)}$.
+</Given>
+
+<Find>
+Expressions for $\partial L/\partial \mat{W}^{(\ell)}$,
+$\partial L/\partial \vec{b}^{(\ell)}$ and $\delta^{(\ell-1)}$ in terms of
+$\delta^{(\ell)}$ and quantities the forward pass already stored.
+</Find>
+
+<Strategy>
+Work one node at a time and never write down a full Jacobian. Each step asks
+the same question: given the adjoint of this node's output, what is the adjoint
+of its input? That is the vector–Jacobian product of Definition 7, and for
+these three operations it has a closed form in each case.
+</Strategy>
+
+<Solution>
+
+**Step 1 — through the nonlinearity.** $\varphi$ acts elementwise, so
+$\partial a^{(\ell)}_j / \partial z^{(\ell)}_i$ is zero unless $i = j$. The
+Jacobian is diagonal, and multiplying by a diagonal matrix is multiplying
+elementwise:
+
+$$
+\delta^{(\ell)} = \frac{\partial L}{\partial \vec{z}^{(\ell)}}
+= \frac{\partial L}{\partial \vec{a}^{(\ell)}} \odot \varphi'(\vec{z}^{(\ell)})
+$$
+
+This is the first place the forward pass is consumed: $\varphi'$ is evaluated at
+the stored $\vec{z}^{(\ell)}$, and without it there is nothing to multiply.
+
+**Step 2 — the bias.** In $\vec{z} = \vec{a}\mat{W} + \vec{b}$ the bias enters
+with coefficient one, so $\partial z_j / \partial b_i = \delta_{ij}$ and the
+local Jacobian is the identity. By (I.6.2) the adjoint passes through unchanged:
+
+$$
+\frac{\partial L}{\partial \vec{b}^{(\ell)}} = \delta^{(\ell)}
+$$
+
+**Step 3 — the weights.** Take one entry. Only the $j$-th output involves
+$W_{ij}$, and it involves it linearly with coefficient $a^{(\ell-1)}_i$:
+
+$$
+\frac{\partial z^{(\ell)}_k}{\partial W^{(\ell)}_{ij}}
+= \begin{cases} a^{(\ell-1)}_i & k = j \\ 0 & k \neq j \end{cases}
+$$
+
+So the sum over consumers in (I.6.2) collapses to a single term:
+
+$$
+\frac{\partial L}{\partial W^{(\ell)}_{ij}}
+= \sum_k \delta^{(\ell)}_k \frac{\partial z^{(\ell)}_k}{\partial W^{(\ell)}_{ij}}
+= a^{(\ell-1)}_i \delta^{(\ell)}_j
+$$
+
+Every entry is a product of one input coordinate and one output adjoint, which
+is exactly an outer product:
+
+$$
+\frac{\partial L}{\partial \mat{W}^{(\ell)}}
+= (\vec{a}^{(\ell-1)})^{\mathsf{T}} \delta^{(\ell)}
+$$
+
+The shapes confirm it: $(d_{\ell-1} \times 1)(1 \times d_\ell)$ gives
+$d_{\ell-1} \times d_\ell$, the shape of $\mat{W}^{(\ell)}$. A gradient always
+has the shape of the thing it differentiates.
+
+**Step 4 — back to the previous layer.** Now differentiate with respect to the
+*input* rather than the parameters. Coordinate $a^{(\ell-1)}_i$ feeds every
+output $z^{(\ell)}_j$, so this time the sum does not collapse:
+
+$$
+\frac{\partial L}{\partial a^{(\ell-1)}_i}
+= \sum_j \delta^{(\ell)}_j \frac{\partial z^{(\ell)}_j}{\partial a^{(\ell-1)}_i}
+= \sum_j \delta^{(\ell)}_j W^{(\ell)}_{ij}
+$$
+
+which is the $i$-th entry of $\delta^{(\ell)}(\mat{W}^{(\ell)})^{\mathsf{T}}$:
+
+$$
+\frac{\partial L}{\partial \vec{a}^{(\ell-1)}} = \delta^{(\ell)}(\mat{W}^{(\ell)})^{\mathsf{T}}
+$$
+
+The transpose is not a convention. Forwards, $\mat{W}$ maps $d_{\ell-1}$
+coordinates to $d_\ell$; backwards, the adjoint must travel from $d_\ell$ back
+to $d_{\ell-1}$, and the only way to do that with the same matrix is to use it
+the other way round.
+
+**Step 5 — combine.** Applying Step 1 at layer $\ell - 1$ to the result of Step
+4 gives the recurrence:
+
+$$
+\delta^{(\ell-1)} = \left(\delta^{(\ell)}(\mat{W}^{(\ell)})^{\mathsf{T}}\right)
+\odot \varphi'(\vec{z}^{(\ell-1)})
+$$
+
+which is (I.6.3), and Steps 2 and 3 are (I.6.4). Both came from (I.6.2) and
+three local Jacobians, and no Jacobian was ever written out in full.
+
+</Solution>
+
+<Answer>
+
+$$
+\frac{\partial L}{\partial \mat{W}^{(\ell)}} = (\vec{a}^{(\ell-1)})^{\mathsf{T}} \delta^{(\ell)},
+\qquad
+\frac{\partial L}{\partial \vec{b}^{(\ell)}} = \delta^{(\ell)}
+$$
+
+$$
+\delta^{(\ell-1)} = \left(\delta^{(\ell)}(\mat{W}^{(\ell)})^{\mathsf{T}}\right) \odot \varphi'(\vec{z}^{(\ell-1)})
+$$
+
+</Answer>
+
+<CheckSanity>
+**Every gradient has the shape of its parameter.**
+$(d_{\ell-1} \times 1)(1 \times d_\ell) = d_{\ell-1} \times d_\ell$ for the
+weights, and $\delta^{(\ell)}$ is $1 \times d_\ell$ for the bias. This is the
+cheapest check there is and it catches a transposed derivation immediately.
+
+**The recurrence terminates.** $\delta^{(L)}$ comes from the loss, and each
+application of the recurrence produces $\delta$ one layer earlier, so $L$ steps
+reach the input. Nothing in the derivation refers to a layer that has not been
+reached, which is what makes reverse topological order the right traversal.
+
+**Only stored quantities appear.** $\vec{a}^{(\ell-1)}$, $\vec{z}^{(\ell-1)}$
+and $\mat{W}^{(\ell)}$ — all present after the forward pass. No re-evaluation
+of $\varphi$ or of any matrix product is required, which is why the backward
+pass costs about what the forward pass cost rather than twice it.
+</CheckSanity>
+
+<Breaks>
+The derivation assumes $\varphi$ is elementwise, which is what makes its
+Jacobian diagonal and its VJP a Hadamard product. Softmax is not elementwise:
+its Jacobian is $\mathrm{diag}(\vec{p}) - \vec{p}^{\mathsf{T}}\vec{p}$, dense
+and of size $d \times d$, and Step 1 does not apply to it. Every layer that
+mixes coordinates — softmax, normalisation over a feature dimension, attention
+— needs its own VJP derived separately, and treating one of them as elementwise
+produces a gradient that is wrong in a way no shape check detects, because the
+shapes are unchanged.
+
+It also assumes each of $\vec{a}^{(\ell-1)}$, $\mat{W}^{(\ell)}$ and
+$\vec{b}^{(\ell)}$ has exactly one consumer. Tie a weight across two layers and
+Step 3 acquires a second term, by (I.6.2); I.6.X04 is that case, and the
+failure of forgetting it is not subtle.
+</Breaks>
+
+<Variation>
+Redo Steps 3 and 4 for a batch of $B$ examples, where
+$\mat{A}^{(\ell-1)} \in \R^{B \times d_{\ell-1}}$ and
+$\Delta^{(\ell)} \in \R^{B \times d_\ell}$. One of the two results acquires a
+sum over the batch and the other does not. Which, and why?
+</Variation>

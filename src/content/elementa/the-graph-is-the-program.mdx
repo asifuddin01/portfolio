@@ -1,0 +1,71 @@
+---
+chapter: neural-networks--backpropagation
+proposition: 2
+statement: The graph is the program, and the forward pass must keep what the backward pass will read.
+claim: "A network is not a stack of layers with an algorithm applied to it. It is a directed acyclic graph of primitive operations, and the only thing distinguishing training from inference is which intermediates are retained."
+given:
+  - backpropagation-is-the-chain-rule-over-a-graph
+figure: FigComputationalGraph
+level: mechanics
+notation:
+  - "J"
+  - "L_loss"
+apparatus:
+  - "0.MC.03"
+status: published
+updated: 2026-09-02
+sources:
+  - title: "Automatic Differentiation in Machine Learning: a Survey"
+    url: https://jmlr.org/papers/v18/17-468.html
+  - title: "Evaluating Derivatives: Principles and Techniques of Algorithmic Differentiation"
+    url: https://doi.org/10.1137/1.9780898717761
+---
+
+## Demonstration
+
+Write a composition as a chain and the chain rule reads off it directly:
+
+$$
+L = f_k \circ \dots \circ f_1(x)
+\quad \Longrightarrow \quad
+\frac{\partial L}{\partial x}
+= \frac{\partial f_1}{\partial x}\frac{\partial f_2}{\partial f_1}\cdots\frac{\partial L}{\partial f_k}
+$$
+
+which is (I.6.1). Nothing about that expression says which end to start from,
+and that freedom is the whole subject: multiply left to right and you have
+forward mode, right to left and you have reverse mode. The product is the same
+number either way, and the cost is not.
+
+A real network is not a chain, though. A value can feed several consumers, a
+weight can be used at several positions, and a skip connection routes one value
+past a block to be added on the other side. What all of these have in common is
+that the picture is a *graph*: nodes are operations, edges carry values, the
+parameters and inputs are sources, and a scalar loss is the sink.
+
+Once it is a graph rather than a chain, (I.6.1) needs restating. The
+generalisation is small and it is the only thing to remember:
+
+$$
+\bar{v} = \sum_{c \,\in\, \mathrm{consumers}(v)} \bar{c}\,\mat{J}_{v \to c},
+\qquad \bar{L} = 1
+$$
+
+Each node's adjoint is the sum, over everything it feeds, of that consumer's
+adjoint times the local Jacobian between them. The traversal starts at the sink
+with $\bar{L} = 1$ and proceeds in reverse topological order, so a node is
+visited only once every consumer has been.
+
+## Corollary
+
+The sum is not decoration. It is the multivariate chain rule, and it is what
+makes a shared weight work: an embedding matrix used both to look up tokens and
+to project logits appears twice in the graph, receives two contributions, and
+its gradient is their sum. Replace that sum with an assignment and the gradient
+is not noisy — it is the gradient of a different function.
+
+The retention requirement follows from the same equation. $\mat{J}_{v \to c}$ is
+evaluated at the value $v$ took on the forward pass, so that value must still
+exist when the backward pass arrives. This is the entire difference in memory
+between inference and training, and it is why a model that runs comfortably in
+one may not fit in the other.

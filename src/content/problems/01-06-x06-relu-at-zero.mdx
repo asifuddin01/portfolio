@@ -1,0 +1,69 @@
+---
+id: "I.6.X06"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "The one point where ReLU has no derivative"
+depends:
+  - "I.6.P01"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+$\mathrm{ReLU}(z) = \max(0, z)$ is not differentiable at $z = 0$. Compute the
+left and right limits of the difference quotient there, say what a framework
+returns instead, and explain why a chapter built on the chain rule can proceed
+anyway.
+
+<Hint>
+The chain rule requires differentiability at the point evaluated. Ask how often
+a floating-point pre-activation is exactly zero, and what happens when it is.
+</Hint>
+
+<SolutionToggle>
+
+**The limits disagree.**
+
+$$
+\lim_{h \to 0^-} \frac{\max(0, h) - 0}{h} = \lim_{h \to 0^-} \frac{0}{h} = 0,
+\qquad
+\lim_{h \to 0^+} \frac{h}{h} = 1
+$$
+
+No derivative exists at $0$. Every value in $[0, 1]$ is a subgradient, and the
+subdifferential is that whole interval.
+
+**What is returned.** PyTorch, TensorFlow and JAX all return $0$. That is a
+choice among the valid subgradients, not a derivation, and the frameworks differ
+in principle even where they agree in practice — nothing in the mathematics
+selects $0$ over $1$ or $1/2$.
+
+**Why it does not matter much.** The set of inputs producing exactly $z = 0$ has
+measure zero in the parameter space, and in floating point it is reached only by
+exact cancellation. Training touches it approximately never, and when it does
+the choice moves one coordinate of one gradient by at most the adjoint arriving
+there.
+
+**Why it is not nothing.** Three cases make it visible. A network initialised
+with all-zero weights has every pre-activation exactly zero, so the convention
+decides whether anything moves at all — with $0$ returned, nothing does, and the
+network never leaves its initialisation. A ReLU unit driven far negative has
+slope exactly $0$ everywhere it is evaluated, not merely at one point, and stops
+receiving gradient permanently: the dead-unit failure, which is a statement
+about the whole negative half-line rather than about the kink. And when a
+learning rate is large enough to jump across the kink each step, the loss can
+oscillate in a way that looks like instability but is the function being
+genuinely non-smooth.
+
+**The honest framing.** Backpropagation as derived in I.6.B02 assumes
+differentiability at the evaluated point, and ReLU violates it on a set of
+measure zero. What is computed is a subgradient, descent methods for convex
+problems have a theory for subgradients, and this problem is not convex — so
+the practice is better supported by its results than by its theorems. Saying so
+is more useful than pretending the kink is not there.
+
+</SolutionToggle>

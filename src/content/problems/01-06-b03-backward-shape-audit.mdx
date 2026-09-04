@@ -1,0 +1,171 @@
+---
+id: "I.6.B03"
+kind: problem
+chapter: "I.6"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "A shape audit of the backward pass, with a batch"
+depends:
+  - "I.6.P01"
+reachesBack: []
+rounding: "Exact shapes; no arithmetic beyond integer dimensions."
+hasSolution: true
+verified: false
+status: published
+---
+
+<Statement>
+Tabulate the shape of every tensor in both directions through a batched MLP,
+and say where the batch dimension goes. One of the two gradients in (I.6.4)
+sums over the batch and the other does not; the shapes say which, before any
+calculus is done.
+</Statement>
+
+<Given>
+The network of I.5.B03 — widths $(784, 512, 256, 128, 10)$, four affine layers,
+ReLU after the first three, no activation on the head — now run on a batch of
+$B = 32$ examples, so the input is
+$\mat{A}^{(0)} \in \R^{32 \times 784}$. The loss is a scalar: a mean over the
+batch.
+</Given>
+
+<Find>
+For every layer $\ell$: the shapes of $\mat{A}^{(\ell)}$, $\Delta^{(\ell)}$,
+$\partial L / \partial \mat{W}^{(\ell)}$ and $\partial L / \partial \vec{b}^{(\ell)}$.
+Then the total activation memory kept for the backward pass, in fp32.
+</Find>
+
+<Strategy>
+Two rules settle every row. A gradient has the shape of the thing it
+differentiates, so parameter gradients cannot carry a batch dimension — the
+parameters do not have one. An adjoint has the shape of the value it belongs
+to, so activation adjoints must carry it. Where those two rules disagree, a
+sum appears, and that is the only place a sum can appear.
+</Strategy>
+
+<Solution>
+
+**Step 1 — forward shapes.** The batch dimension is untouched by every layer:
+
+| $\ell$ | $\mat{W}^{(\ell)}$ | $\mat{Z}^{(\ell)}$ | $\mat{A}^{(\ell)}$ |
+|---|---|---|---|
+| 1 | $784 \times 512$ | $32 \times 512$ | $32 \times 512$ |
+| 2 | $512 \times 256$ | $32 \times 256$ | $32 \times 256$ |
+| 3 | $256 \times 128$ | $32 \times 128$ | $32 \times 128$ |
+| 4 | $128 \times 10$ | $32 \times 10$ | $32 \times 10$ |
+
+**Step 2 — adjoints.** $\Delta^{(\ell)} = \partial L / \partial \mat{Z}^{(\ell)}$
+has the shape of $\mat{Z}^{(\ell)}$, so it carries the batch:
+$32 \times 512$, $32 \times 256$, $32 \times 128$, $32 \times 10$.
+
+**Step 3 — the weight gradient absorbs the batch.** Per example the gradient is
+the outer product of (I.6.4). Over a batch it is the sum of those outer
+products, which is a single matrix product:
+
+$$
+\frac{\partial L}{\partial \mat{W}^{(\ell)}}
+= (\mat{A}^{(\ell-1)})^{\mathsf{T}} \Delta^{(\ell)}
+$$
+
+with shapes $(d_{\ell-1} \times 32)(32 \times d_\ell) \to d_{\ell-1} \times d_\ell$.
+The 32 is contracted away — it is the inner dimension of the product. The
+summation over the batch is not an extra step anybody writes; it is what the
+matrix product already does.
+
+| $\ell$ | $\partial L / \partial \mat{W}^{(\ell)}$ | $\partial L / \partial \vec{b}^{(\ell)}$ |
+|---|---|---|
+| 1 | $784 \times 512$ | $1 \times 512$ |
+| 2 | $512 \times 256$ | $1 \times 256$ |
+| 3 | $256 \times 128$ | $1 \times 128$ |
+| 4 | $128 \times 10$ | $1 \times 10$ |
+
+**Step 4 — the bias gradient needs an explicit sum.** Per example
+$\partial L / \partial \vec{b}^{(\ell)} = \delta^{(\ell)}$, of shape
+$1 \times d_\ell$. Over a batch there is no matrix product to hide the
+contraction in, so it is written out:
+
+$$
+\frac{\partial L}{\partial \vec{b}^{(\ell)}} = \sum_{n=1}^{B} \Delta^{(\ell)}_{n,:}
+$$
+
+This is the asymmetry the Statement promised. Both gradients sum over the
+batch; the weight gradient's sum is the inner dimension of a matrix product and
+the bias gradient's is a reduction along an axis. Forgetting the second is a
+common implementation error and it is caught immediately by a shape check —
+$32 \times 512$ where $1 \times 512$ was required.
+
+**Step 5 — what must be kept.** The backward pass consumes
+$\mat{A}^{(\ell-1)}$ for (I.6.4) and $\mat{Z}^{(\ell)}$ for $\varphi'$. For
+ReLU the mask $\mathbb{1}[\mat{Z} > 0]$ suffices, but counting stored floats:
+
+$$
+32 \times (784 + 512 + 256 + 128 + 10) = 32 \times 1690 = 54\,080
+$$
+
+At 4 bytes each that is $216\,320$ bytes, about $0.22$ MB.
+
+**Step 6 — compare with the parameters.** I.5.B03 counted $567\,434$
+parameters, $2.27$ MB in fp32. At $B = 32$ the activations are a tenth of the
+parameters. At $B = 1024$ they are $1\,730\,560$ floats, $6.92$ MB — three
+times the parameters. Activation memory is linear in the batch and parameter
+memory is constant in it, so which term dominates is a property of the batch
+size and not of the model.
+
+</Solution>
+
+<Answer>
+
+Adjoints carry the batch: $32 \times d_\ell$ at every layer. Parameter gradients
+do not: $\partial L/\partial \mat{W}^{(\ell)}$ is $d_{\ell-1} \times d_\ell$ and
+$\partial L/\partial \vec{b}^{(\ell)}$ is $1 \times d_\ell$. The weight
+gradient's batch sum is the inner dimension of
+$(\mat{A}^{(\ell-1)})^{\mathsf{T}} \Delta^{(\ell)}$; the bias gradient's is an
+explicit reduction over rows.
+
+Stored activations at $B = 32$: $54\,080$ floats, $216\,320$ bytes, $0.22$ MB —
+against $2.27$ MB of parameters. At $B = 1024$: $6.92$ MB, three times the
+parameters.
+
+</Answer>
+
+<CheckSanity>
+**No parameter gradient carries a batch dimension.** It cannot: the parameter
+does not have one, and a gradient has the shape of what it differentiates. Any
+implementation returning a $32 \times 784 \times 512$ weight gradient has
+computed per-example gradients and not yet reduced them — sometimes deliberately,
+which is what per-sample gradient methods want, but never by accident.
+
+**Every adjoint does carry it.** Different examples have different activations
+and therefore different adjoints, and they stay separate until a parameter is
+reached. The batch dimension survives exactly as far as the parameters and no
+further.
+
+**The two contractions are the same contraction.** Both gradients sum $B$ terms;
+only the notation differs. Writing the bias as a row of ones times
+$\Delta^{(\ell)}$ makes them identical in form, which is a good way to remember
+that the missing sum is missing rather than unnecessary.
+</CheckSanity>
+
+<Breaks>
+The audit counts the activations this architecture stores, and that count is a
+floor rather than an estimate. A real framework also holds the gradient buffer
+for every parameter, the optimiser state — two more copies for Adam — and
+workspace for the matrix products. It may also keep both $\mat{Z}^{(\ell)}$ and
+$\mat{A}^{(\ell)}$ where one would do, since whether $\varphi$ can be inverted
+from its output is a per-operation question the memory planner may not answer.
+
+The larger omission is that the numbers here are for an MLP, where activations
+are $B \times d$. For a convolutional network they are $B \times C \times H
+\times W$ and for a transformer the attention matrices are $B \times h \times
+T \times T$, quadratic in sequence length. The shape of the bill changes
+completely with the architecture even though the rule producing it — keep what
+the backward pass will read — does not.
+</Breaks>
+
+<Variation>
+Run the same audit with the batch dimension last, so activations are
+$d_\ell \times B$. Every shape transposes and every product reverses. Which of
+the two batch contractions is now the explicit one, and which is hidden inside
+a matrix product?
+</Variation>

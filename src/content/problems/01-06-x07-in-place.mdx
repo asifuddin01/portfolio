@@ -1,0 +1,67 @@
+---
+id: "I.6.X07"
+kind: exercise
+chapter: "I.6"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "An in-place operation that corrupts a stored intermediate"
+depends:
+  - "I.6.P01"
+rounding: "Exact."
+hasSolution: true
+verified: false
+status: published
+---
+
+Consider $u = wx$, $a = \sigma(u)$, $L = \tfrac{1}{2}(a - y)^2$, and suppose an
+implementation overwrites the buffer holding $u$ with $a$ to save memory. Give
+the gradient the backward pass then computes, compare it with the truth, and say
+why this is a different kind of error from the one in I.6.X04.
+
+<Hint>
+Which stored value does $\sigma'$ need? Write out what is read after the buffer
+has been overwritten.
+</Hint>
+
+<SolutionToggle>
+
+**The truth.** $\bar{a} = a - y$, and through the nonlinearity
+
+$$
+\bar{u} = \bar{a}\,\sigma'(u) = (a - y)\,\sigma(u)\big(1 - \sigma(u)\big),
+\qquad \frac{\partial L}{\partial w} = \bar{u}\,x
+$$
+
+**After the overwrite.** The buffer that held $u$ now holds $a = \sigma(u)$, so
+the backward pass evaluates $\sigma'$ at the wrong argument:
+
+$$
+\bar{u}_{\text{wrong}} = (a - y)\,\sigma(a)\big(1 - \sigma(a)\big)
+$$
+
+With $w = 1$, $x = 2$, $y = 1$: $u = 2$, $a = \sigma(2) = 0.880797$. The correct
+slope is $\sigma'(2) = 0.104994$; the computed one is
+$\sigma'(0.880797) = 0.207987$. The gradient is out by a factor of $1.98$ — and
+the factor depends on $u$, so it is different for every example and every step.
+
+**Why this is worse than X04.** The tied-weight bug produced a gradient that was
+consistently half the truth: wrong, but a fixed rescaling, and therefore still a
+descent direction. This one produces a *state-dependent* distortion. Examples
+with small $u$ are barely affected and examples with large $u$ are affected
+enormously, so the effective loss being descended is not the stated loss and not
+any fixed multiple of it. There is no learning rate that compensates.
+
+**Why it is hard to catch.** The shapes are unchanged, no exception is raised in
+principle, the loss still decreases, and the model still learns something. Only
+a gradient check against finite differences — I.6.B01's last step — separates
+this from a correct implementation.
+
+**What frameworks do.** PyTorch versions every tensor and raises at backward
+time if a saved tensor was modified after being stored, which converts a silent
+numerical error into a loud one. That check is why in-place operations are
+sometimes rejected with an error rather than quietly producing this. The
+assumption it protects is the one this chapter states plainly: the stored
+intermediates must still be the values the forward pass produced.
+
+</SolutionToggle>
