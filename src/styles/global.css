@@ -174,7 +174,7 @@ hr { border: 0; border-top: var(--rule) solid var(--brass); opacity: 0.6; margin
   background-size: 0% 1px;
   padding-bottom: 1px;
 }
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   .link { transition: background-size 180ms var(--ease-out); }
 }
 .link:hover,

@@ -484,7 +484,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     padding-bottom: 1px;
   }
   .fr-src:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     .fr-src { transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out); }
   }
 

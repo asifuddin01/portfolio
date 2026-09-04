@@ -289,7 +289,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     .np-eq-f:not(:first-of-type), .np-eq-b:not(:first-of-type) { display: none; }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     /* The wires and units draw themselves once, outward from the input. */
     :global(.js) .np-node { opacity: 0; transition: opacity 500ms var(--ease-out); }
     :global(.js) .np.is-revealed .np-node {

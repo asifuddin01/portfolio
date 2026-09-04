@@ -60,7 +60,7 @@ const items = await getProjects();
     padding-bottom: 1px;
   }
   .ap-src:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     .ap-src { transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out); }
   }
   .ap { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; max-width: 58rem; }

@@ -72,12 +72,25 @@ const listedTitle =
     <ClientRouter />
     <!-- No-flash theme + the `js` gate. Both must land before first paint:
          without `js`, motion.css leaves every element visible, so a broken
-         or disabled script can never blank the page. -->
+         or disabled script can never blank the page.
+
+         `js` is also the motion gate, decided here rather than in a media
+         query so it fails open on engines that do not know the feature.
+         motion.css explains why at length; this comment ships on every page,
+         so the reasoning lives there instead. -->
     <script is:inline>
       (function () {
         function apply() {
           var root = document.documentElement;
-          root.classList.add('js');
+          var still = false;
+          try {
+            still = !!(window.matchMedia &&
+                       window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+          } catch (e) {
+            still = false;
+          }
+          if (still) root.classList.remove('js');
+          else root.classList.add('js');
           try {
             var stored = localStorage.getItem('codex-theme');
             if (stored === 'nocturne' || stored === 'vellum') {

@@ -219,7 +219,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     /* Contours draw outside-in, so the terrain appears before the basins.
        70ms apart: the family lands inside a second and the traces start while
        the last rings are still settling. */

@@ -46,7 +46,7 @@ const { plate, title, subtitle, status, year, slug } = Astro.props;
   .pc-title { font-size: var(--t-lg); line-height: 1.15; color: var(--ink); }
   .pc-sub { font-size: var(--t-base); color: var(--ink-soft); margin: 0; flex: 1 1 auto; line-height: 1.5; }
   .pc-foot { margin-top: 0.5rem; }
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     .pc { transition: border-color 260ms var(--ease-out), background-color 260ms var(--ease-out); }
   }
   .pc:hover { border-color: var(--fundus); }

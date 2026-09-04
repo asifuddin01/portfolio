@@ -79,7 +79,7 @@
 .fig .anim-pulse,
 .fig .anim-fade { opacity: 1; }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   /* A kernel, window or head travelling along a track. The figure sets
      --dx/--dy for the distance and --dur for the period. */
   .fig .anim-slide {
@@ -135,7 +135,7 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   /* A raster scan: across a row, down, back across the next. */
   .fig .anim-scan {
     animation: fig-scan var(--dur, 7s) steps(1) infinite;

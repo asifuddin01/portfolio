@@ -1,9 +1,32 @@
 /* ==================================================================
    motion.css — the whole animation budget.
 
-   EVERY rule that moves is inside `prefers-reduced-motion: no-preference`.
-   Under reduced motion the page renders fully visible, untransformed,
-   with no observers attached (see BaseLayout's guard script).
+   EVERY rule that moves is gated on the `js` class, and that gate is the
+   whole point. These blocks used to sit inside `(prefers-reduced-motion:
+   no-preference)` — a query that asks the browser to confirm the reader
+   wants motion. A browser that has never heard of the feature cannot
+   confirm anything, so the query was false, every animation on the site
+   was dead, and the `reduce` block below was equally dead. The page came
+   out correct to look at and completely inert, identically in every
+   browser on the device, because the gap was in the engine rather than in
+   any one browser. That was the whole of it on older mobile WebKit and on
+   Samsung Internet.
+
+   `matchMedia` fails the other way: an unsupported query reports `false`,
+   so BaseLayout can ask "did the reader ask for less motion?" and get a
+   usable no. It sets `js` when the answer is no and withholds it when the
+   answer is yes. An unknown preference now leaves motion running instead
+   of silently imposing stillness.
+
+   The `@media all` wrappers below are deliberately vacuous. They keep each
+   block's shape and its comments intact now that the condition has moved
+   onto the class; the reduce rules at the foot of the file stay as the
+   belt-and-braces stop for anything not carrying a `js` prefix.
+
+   Without `js` the page renders fully visible, untransformed, with no
+   observers attached (see BaseLayout's guard script) — which is exactly
+   what reduced motion should look like, and also what a broken script
+   should look like.
    ================================================================== */
 
 /* Default (reduced-motion-safe) resting state: everything visible. */
@@ -13,7 +36,7 @@
   transform: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
 
   /* ---- 0. Intro: above-the-fold only ----
      These do NOT wait for the IntersectionObserver. An observer-driven
@@ -209,7 +232,7 @@
    ------------------------------------------------------------------ */
 .cursor-lens { display: none; }
 
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+@media (hover: hover) and (pointer: fine) {
   .cursor-lens {
     display: block;
     position: fixed;

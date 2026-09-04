@@ -266,7 +266,7 @@ const CHAPTERS = [
     border-top: 1px solid var(--fundus);
   }
 
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     /* Slow out, quick in: appearing should feel immediate when you reach for
        it, and leaving should not snatch itself away as the pointer drifts. */
     .sr { transition: opacity 420ms var(--ease-out); }
