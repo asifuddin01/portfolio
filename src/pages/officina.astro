@@ -912,10 +912,10 @@ _officina_out.getvalue()
                 </li>`;
             })
             .join('');
-      scope(modalBody);
           return `<section class="of-ex-group"><h3 class="of-ex-h">${esc(g)}</h3><ul class="of-ex-list">${items}</ul></section>`;
         })
         .join('') || '<p class="of-ex-none">Nothing matches that.</p>';
+      scope(modalBody);
     }
 
     document.getElementById('of-examples')!.addEventListener('click', () => {
@@ -1391,6 +1391,11 @@ _officina_out.getvalue()
 
   /* Example picker */
   .of-modal {
+    /* `showModal()` centres a dialog with the UA's `margin: auto`, which the
+       site's reset zeroes along with everything else — so the picker opened
+       flush against the top-left corner, full height, reading as a sidebar
+       rather than a dialog. */
+    margin: auto;
     width: min(46rem, 92vw);
     max-height: 82vh;
     padding: 0;
@@ -1400,7 +1405,14 @@ _officina_out.getvalue()
     color: var(--ink);
     overflow: hidden;
   }
-  .of-modal::backdrop { background: color-mix(in srgb, var(--ink) 55%, transparent); }
+  /* `--paper`, not `--ink`: the veil has to be the page's own ground colour.
+     Mixing the *text* colour washed the page pale under Nocturne, where --ink
+     is cream — it lit the background up instead of dimming it. Same treatment
+     as the search dialog, so the two behave alike. */
+  .of-modal::backdrop {
+    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
   .of-modal-head {
     display: flex;
     flex-wrap: wrap;
