@@ -35,6 +35,7 @@ export const NAV = [
   { href: '/marginalia', label: 'Marginalia' },
   { href: '/researchlens', label: 'ResearchLens' },
   { href: '/vitae', label: 'Vitae' },
+  { href: '/officina', label: 'Officina' },
 ] as const;
 
 /** Roman numerals for folio marks and chapter numbers. */

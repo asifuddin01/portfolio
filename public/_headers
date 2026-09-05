@@ -1,4 +1,15 @@
 # Cloudflare Pages headers.
+#
+# The last two on /* are cross-origin isolation, which is what lets /officina
+# hand clang a SharedArrayBuffer and compile C in the page.
+#
+# Site-wide rather than on /officina alone, for two reasons. The pages are
+# linked with a client-side router, so arriving at /officina from another page
+# loads no new document and would inherit that page's headers — the toolchain
+# would work on a reload and not on a click. And `require-corp` blocks
+# subresources from other origins, which this site has none of by rule: the
+# audit fails the build if one appears. The isolation costs nothing here
+# precisely because that rule is already kept.
 
 /*
   X-Content-Type-Options: nosniff
@@ -6,6 +17,8 @@
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
 
 # Astro fingerprints everything under /_astro/, so it can be cached forever.
 /_astro/*

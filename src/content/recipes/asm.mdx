@@ -1,0 +1,498 @@
+---
+language: asm
+label: Assembly
+order: 4
+runnable: false
+runtime: none
+extension: .s
+howToRun: "x86-64 Linux: as -o prog.o file.s && ld -o prog prog.o && ./prog ; echo $?"
+status: published
+examples:
+  - title: "Hello, world (x86-64 Linux)"
+    note: "Writing to stdout with a raw syscall."
+    group: "Basics"
+    code: |2-
+      # x86-64 Linux, AT&T syntax. Assemble and link:
+      #   as -o hello.o hello.s && ld -o hello hello.o && ./hello
+
+          .section .rodata
+      msg:
+          .ascii "Hello, world\n"
+          len = . - msg
+
+          .section .text
+          .globl _start
+      _start:
+          movq    $1, %rax          # syscall 1 = write
+          movq    $1, %rdi          # fd 1 = stdout
+          leaq    msg(%rip), %rsi   # buffer
+          movq    $len, %rdx        # length
+          syscall
+
+          movq    $60, %rax         # syscall 60 = exit
+          xorq    %rdi, %rdi        # status 0
+          syscall
+  - title: "Registers and mov"
+    note: "Moving values between registers and memory."
+    group: "Basics"
+    code: |2-
+          .section .data
+      value:
+          .quad 42
+
+          .section .text
+          .globl _start
+      _start:
+          movq    $10, %rax         # immediate into a register
+          movq    %rax, %rbx        # register to register
+          movq    value(%rip), %rcx # memory to register
+          movq    %rcx, %rdx
+
+          # 64/32/16/8-bit views of the same register
+          movq    $0x1122334455667788, %rax
+          movl    $0xAABBCCDD, %eax # writing eax zeroes the upper 32 bits
+          movw    $0x1234, %ax
+          movb    $0x56, %al
+
+          movq    $60, %rax
+          xorq    %rdi, %rdi
+          syscall
+  - title: "Exit with a status code"
+    note: "The smallest program that does something observable."
+    group: "Basics"
+    code: |2-
+      # Check the result with:  ./prog ; echo $?
+
+          .section .text
+          .globl _start
+      _start:
+          movq    $60, %rax         # exit
+          movq    $7,  %rdi         # status 7
+          syscall
+  - title: "Add, subtract, multiply"
+    note: "Integer arithmetic and where results land."
+    group: "Arithmetic"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          movq    $17, %rax
+          movq    $5,  %rbx
+
+          addq    %rbx, %rax        # rax = 22
+          subq    $2,   %rax        # rax = 20
+          imulq   $3,   %rax        # rax = 60
+
+          # Signed division: rdx:rax / operand, quotient in rax, remainder in rdx
+          movq    $60, %rax
+          cqto                      # sign-extend rax into rdx
+          movq    $7, %rcx
+          idivq   %rcx              # rax = 8, rdx = 4
+
+          movq    %rax, %rdi        # exit with the quotient
+          movq    $60, %rax
+          syscall
+  - title: "Bitwise operations"
+    note: "and, or, xor, not and shifts."
+    group: "Arithmetic"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          movq    $0b1100, %rax
+          movq    $0b1010, %rbx
+
+          movq    %rax, %rcx
+          andq    %rbx, %rcx        # 0b1000 = 8
+
+          movq    %rax, %rdx
+          orq     %rbx, %rdx        # 0b1110 = 14
+
+          movq    %rax, %rsi
+          xorq    %rbx, %rsi        # 0b0110 = 6
+
+          movq    %rax, %r8
+          notq    %r8
+
+          movq    $1, %r9
+          shlq    $4, %r9           # 16
+          shrq    $2, %r9           # 4
+
+          movq    %r9, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "The xor idiom for zero"
+    note: "Why xor beats mov for clearing a register."
+    group: "Arithmetic"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          # These three all set rax to zero.
+          movq    $0, %rax          # 7 bytes, and does not set flags
+          xorq    %rax, %rax        # 3 bytes, sets ZF, and the CPU special-cases it
+          xorl    %eax, %eax        # 2 bytes: writing eax zeroes the top half too
+
+          # The 32-bit form is what compilers emit, for the size alone.
+          movq    $60, %rax
+          xorl    %edi, %edi
+          syscall
+  - title: "Compare and jump"
+    note: "cmp sets flags; the jump reads them."
+    group: "Control flow"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          movq    $10, %rax
+          movq    $20, %rbx
+
+          cmpq    %rbx, %rax        # computes rax - rbx, discards it, keeps flags
+          jl      less              # jump if less (signed)
+          jg      greater
+          je      equal
+
+      less:
+          movq    $1, %rdi
+          jmp     done
+      greater:
+          movq    $2, %rdi
+          jmp     done
+      equal:
+          movq    $0, %rdi
+
+      done:
+          movq    $60, %rax
+          syscall
+  - title: "A counting loop"
+    note: "for (i = 0; i < 10; i++) in assembly."
+    group: "Control flow"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          xorq    %rcx, %rcx        # i = 0
+          xorq    %rax, %rax        # sum = 0
+
+      loop:
+          addq    %rcx, %rax        # sum += i
+          incq    %rcx              # i++
+          cmpq    $10, %rcx
+          jl      loop              # while i < 10
+
+          # sum of 0..9 = 45
+          movq    %rax, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "Conditional move"
+    note: "Branchless selection with cmov."
+    group: "Control flow"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          movq    $17, %rax
+          movq    $42, %rbx
+
+          # max = a > b ? a : b, without a branch
+          cmpq    %rbx, %rax
+          cmovlq  %rbx, %rax        # if rax < rbx, take rbx
+
+          # A branch would mispredict on unpredictable data; cmov never does,
+          # at the cost of always evaluating both sides.
+
+          movq    %rax, %rdi        # 42
+          movq    $60, %rax
+          syscall
+  - title: "push and pop"
+    note: "The stack grows downwards."
+    group: "Stack and functions"
+    code: |2-
+          .section .text
+          .globl _start
+      _start:
+          movq    $1, %rax
+          movq    $2, %rbx
+          movq    $3, %rcx
+
+          pushq   %rax              # rsp -= 8, then store
+          pushq   %rbx
+          pushq   %rcx
+
+          # Pop in reverse: last in, first out
+          popq    %rdx              # rdx = 3
+          popq    %rsi              # rsi = 2
+          popq    %rdi              # rdi = 1
+
+          movq    $60, %rax
+          syscall
+  - title: "Calling a function"
+    note: "call, ret, and the return address."
+    group: "Stack and functions"
+    code: |2-
+          .section .text
+          .globl _start
+
+      # int add(int a, int b) — arguments in rdi, rsi; result in rax
+      add:
+          movq    %rdi, %rax
+          addq    %rsi, %rax
+          ret                       # pops the return address into rip
+
+      _start:
+          movq    $17, %rdi
+          movq    $25, %rsi
+          call    add               # pushes the return address, jumps
+
+          movq    %rax, %rdi        # 42
+          movq    $60, %rax
+          syscall
+  - title: "A stack frame"
+    note: "Prologue, locals and epilogue."
+    group: "Stack and functions"
+    code: |2-
+          .section .text
+          .globl _start
+
+      sum_of_squares:
+          pushq   %rbp              # save the caller frame pointer
+          movq    %rsp, %rbp        # establish ours
+          subq    $16, %rsp         # 16 bytes of locals
+
+          movq    %rdi, -8(%rbp)    # a
+          movq    %rsi, -16(%rbp)   # b
+
+          movq    -8(%rbp), %rax
+          imulq   %rax, %rax
+          movq    -16(%rbp), %rcx
+          imulq   %rcx, %rcx
+          addq    %rcx, %rax
+
+          movq    %rbp, %rsp        # discard locals
+          popq    %rbp              # restore
+          ret
+
+      _start:
+          movq    $3, %rdi
+          movq    $4, %rsi
+          call    sum_of_squares    # 25
+
+          movq    %rax, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "The System V calling convention"
+    note: "Which register carries which argument."
+    group: "Stack and functions"
+    code: |2-
+      # Integer arguments, in order:  rdi rsi rdx rcx r8 r9
+      # Return value:                 rax
+      # Callee-saved (must preserve):  rbx rbp r12 r13 r14 r15
+      # Caller-saved (free to clobber): rax rcx rdx rsi rdi r8-r11
+
+          .section .text
+          .globl _start
+
+      six_args:
+          movq    %rdi, %rax
+          addq    %rsi, %rax
+          addq    %rdx, %rax
+          addq    %rcx, %rax
+          addq    %r8,  %rax
+          addq    %r9,  %rax
+          ret
+
+      _start:
+          movq    $1, %rdi
+          movq    $2, %rsi
+          movq    $3, %rdx
+          movq    $4, %rcx
+          movq    $5, %r8
+          movq    $6, %r9
+          call    six_args          # 21
+
+          movq    %rax, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "Recursion: factorial"
+    note: "Each call gets its own frame."
+    group: "Stack and functions"
+    code: |2-
+          .section .text
+          .globl _start
+
+      factorial:
+          cmpq    $1, %rdi
+          jle     base
+
+          pushq   %rdi              # save n across the recursive call
+          decq    %rdi
+          call    factorial
+          popq    %rdi
+          imulq   %rdi, %rax        # n * factorial(n-1)
+          ret
+
+      base:
+          movq    $1, %rax
+          ret
+
+      _start:
+          movq    $5, %rdi
+          call    factorial         # 120
+
+          movq    %rax, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "Addressing modes"
+    note: "The general form: offset(base, index, scale)."
+    group: "Memory"
+    code: |2-
+          .section .data
+      array:
+          .quad 10, 20, 30, 40, 50
+
+          .section .text
+          .globl _start
+      _start:
+          leaq    array(%rip), %rbx # base address
+          movq    $2, %rcx          # index
+
+          movq    (%rbx), %rax              # array[0] = 10
+          movq    8(%rbx), %rdx             # array[1] = 20, offset in bytes
+          movq    (%rbx, %rcx, 8), %rsi     # array[2] = 30, scaled by 8
+          movq    16(%rbx, %rcx, 8), %rdi   # array[4] = 50
+
+          # lea computes the address without loading from it
+          leaq    (%rbx, %rcx, 8), %r8
+
+          movq    $60, %rax
+          syscall
+  - title: "Walking an array"
+    note: "Summing elements with a scaled index."
+    group: "Memory"
+    code: |2-
+          .section .data
+      array:
+          .quad 3, 1, 4, 1, 5, 9, 2, 6
+          .set  count, 8
+
+          .section .text
+          .globl _start
+      _start:
+          leaq    array(%rip), %rbx
+          xorq    %rcx, %rcx        # i = 0
+          xorq    %rax, %rax        # sum = 0
+
+      loop:
+          addq    (%rbx, %rcx, 8), %rax
+          incq    %rcx
+          cmpq    $count, %rcx
+          jl      loop
+
+          # 3+1+4+1+5+9+2+6 = 31
+          movq    %rax, %rdi
+          movq    $60, %rax
+          syscall
+  - title: "Finding the maximum"
+    note: "A loop with a conditional update."
+    group: "Memory"
+    code: |2-
+          .section .data
+      array:
+          .quad 3, 17, 4, 42, 5, 9
+          .set  count, 6
+
+          .section .text
+          .globl _start
+      _start:
+          leaq    array(%rip), %rbx
+          movq    (%rbx), %rax      # max = array[0]
+          movq    $1, %rcx
+
+      loop:
+          movq    (%rbx, %rcx, 8), %rdx
+          cmpq    %rax, %rdx
+          cmovgq  %rdx, %rax        # branchless: if element > max, take it
+          incq    %rcx
+          cmpq    $count, %rcx
+          jl      loop
+
+          movq    %rax, %rdi        # 42
+          movq    $60, %rax
+          syscall
+  - title: "Writing a string"
+    note: "The write syscall, spelled out."
+    group: "System calls"
+    code: |2-
+          .section .rodata
+      msg:
+          .ascii "assembly is just names for bytes\n"
+          len = . - msg
+
+          .section .text
+          .globl _start
+      _start:
+          # ssize_t write(int fd, const void *buf, size_t count)
+          movq    $1, %rax          # __NR_write
+          movq    $1, %rdi          # STDOUT_FILENO
+          leaq    msg(%rip), %rsi
+          movq    $len, %rdx
+          syscall                   # return value lands in rax
+
+          movq    $60, %rax
+          xorq    %rdi, %rdi
+          syscall
+  - title: "Reading from stdin"
+    note: "read into a buffer, then echo it back."
+    group: "System calls"
+    code: |2-
+          .section .bss
+      buf:
+          .skip 128
+
+          .section .text
+          .globl _start
+      _start:
+          # ssize_t read(int fd, void *buf, size_t count)
+          xorq    %rax, %rax        # __NR_read = 0
+          xorq    %rdi, %rdi        # STDIN_FILENO
+          leaq    buf(%rip), %rsi
+          movq    $128, %rdx
+          syscall
+
+          movq    %rax, %rdx        # bytes actually read
+          movq    $1, %rax          # write
+          movq    $1, %rdi          # stdout
+          leaq    buf(%rip), %rsi
+          syscall
+
+          movq    $60, %rax
+          xorq    %rdi, %rdi
+          syscall
+  - title: "Inline assembly from C"
+    note: "The practical way to reach one instruction."
+    group: "System calls"
+    code: |2-
+      /* Compile as C, not with as:  cc -O2 -o prog file.c && ./prog */
+      #include <stdio.h>
+      #include <stdint.h>
+
+      int main(void) {
+          uint64_t a = 17, b = 25, sum;
+
+          __asm__ volatile (
+              "addq %[y], %[x]"
+              : [x] "=r" (sum)
+              : "0" (a), [y] "r" (b)
+              : "cc"
+          );
+          printf("%llu + %llu = %llu\n",
+                 (unsigned long long)a, (unsigned long long)b,
+                 (unsigned long long)sum);
+
+          /* Read the cycle counter */
+          uint32_t lo, hi;
+          __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+          printf("tsc = %llu\n", ((unsigned long long)hi << 32) | lo);
+          return 0;
+      }
+---

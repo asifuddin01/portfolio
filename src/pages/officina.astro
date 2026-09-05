@@ -1,0 +1,1281 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { getCollection } from 'astro:content';
+import { AUTHOR } from '../consts';
+
+/**
+ * Officina — a notebook that runs in the browser and nowhere else.
+ *
+ * The honest shape of this page, stated once here because every design
+ * decision below follows from it:
+ *
+ * **Python executes.** Pyodide is CPython compiled to WebAssembly, served from
+ * this origin by scripts/sync-pyodide.mjs. It is 12.9 MB and is fetched only
+ * when a reader presses Run on a Python cell — never on page load, so somebody
+ * reading the rest of the site pays nothing for it.
+ *
+ * **C and C++ execute too.** Not interpreted, and not sent anywhere: clang and
+ * wasm-ld compiled to WebAssembly compile the cell to a wasm module, which the
+ * page then runs. scripts/sync-emception.mjs serves the toolchain from this
+ * origin like everything else. It is far heavier than Pyodide, so it is
+ * fetched pack by pack, on the first Run and never on page load.
+ *
+ * **Assembly does not.** It is specific to a processor the browser is not, and
+ * there is no assembler here to make it one. It gets the editor, the examples
+ * and export, and the page says how to assemble the file instead. Which
+ * languages run, and on what, lives in the content schema so this page cannot
+ * claim otherwise by accident.
+ *
+ * Everything is per-reader: cells live in localStorage, files never leave the
+ * browser, and there is no server to send them to.
+ */
+const recipes = (await getCollection('recipes'))
+  .filter((r) => import.meta.env.DEV || r.data.status !== 'draft')
+  .sort((a, b) => a.data.order - b.data.order);
+
+const LANGS = recipes.map((r) => ({
+  id: r.data.language,
+  label: r.data.label,
+  runnable: r.data.runnable,
+  runtime: r.data.runtime,
+  extension: r.data.extension,
+  howToRun: r.data.howToRun,
+  examples: r.data.examples,
+}));
+
+const totalExamples = LANGS.reduce((n, l) => n + l.examples.length, 0);
+const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
+---
+<BaseLayout
+  title={`Officina — ${AUTHOR}`}
+  description="A notebook in the browser: write Python, C, C++ and assembly in cells, run the Python, and take the files with you."
+  folio="O"
+>
+  <div class="codex of">
+    <header class="of-head">
+      <p class="of-kicker" data-reveal>Officina</p>
+      <h1 class="of-h1" data-press>The workshop</h1>
+      <p class="of-lede codex-measure" data-reveal>
+        A notebook that runs in your browser. Add code and prose cells, pick a
+        language, and start from one of {totalExamples} worked examples. Nothing
+        is uploaded anywhere — there is no server behind this page, so the code
+        and any file you open stay on your machine.
+      </p>
+      <p class="of-sub" data-reveal>
+        {totalExamples} examples · {LANGS.length} languages ·
+        {runnable.join(' and ')} runs here
+      </p>
+    </header>
+
+    <LesionRule />
+
+    {/* The language row. Selecting one changes the examples, the file
+        extension, and whether a Run button exists at all. */}
+    <div class="of-langs" role="tablist" aria-label="Language">
+      {LANGS.map((l, i) => (
+        <button
+          class="of-lang"
+          type="button"
+          role="tab"
+          data-lang={l.id}
+          aria-selected={i === 0 ? 'true' : 'false'}
+        >
+          <span class="of-lang-name">{l.label}</span>
+          <span class="of-lang-tag">{l.runnable ? 'runs here' : 'export'}</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="of-howto" id="of-howto"></p>
+
+    {/* Toolbar. Kept to one row of plain buttons — a notebook people cannot
+        drive without reading a manual has failed at the only thing it is for. */}
+    <div class="of-bar">
+      <button class="of-btn" type="button" id="of-add-code">+ Code</button>
+      <button class="of-btn" type="button" id="of-add-md">+ Text</button>
+      <button class="of-btn of-btn-go" type="button" id="of-run-all">Run all</button>
+      <button class="of-btn" type="button" id="of-clear">Clear output</button>
+      <span class="of-bar-gap"></span>
+      <button class="of-btn" type="button" id="of-examples">Examples</button>
+      <button class="of-btn" type="button" id="of-open">Open file</button>
+      <button class="of-btn" type="button" id="of-save">Download</button>
+      <button class="of-btn of-btn-warn" type="button" id="of-reset">Reset</button>
+      <input type="file" id="of-file" accept=".ipynb,.py,.c,.cpp,.cc,.h,.hpp,.s,.asm,.txt,.md,.json,.csv" hidden />
+    </div>
+
+    <p class="of-status" id="of-status"></p>
+
+    <div class="of-cells" id="of-cells"></div>
+
+    <p class="of-add-end">
+      <button class="of-btn" type="button" id="of-add-end">+ Add a code cell at the end</button>
+      <button class="of-btn" type="button" id="of-add-end-md">+ Add a text cell at the end</button>
+    </p>
+
+    <LesionRule />
+
+    <section class="of-about codex-measure">
+      <h2 class="of-h2">What this is, and what it is not</h2>
+      <p>
+        Python runs here for real. The interpreter is CPython compiled to
+        WebAssembly — the whole standard library, arbitrary-precision integers,
+        exceptions and all — fetched the first time you press Run and cached by
+        the browser after that. It is 12.9 MB, which is why it is not fetched
+        until you ask for it.
+      </p>
+      <p>
+        C and C++ are compiled, not interpreted and not sent anywhere. Pressing
+        Run hands your cell to clang, links the object with wasm-ld and executes
+        the module it produces — the same three steps you would run at a
+        terminal, with the same compiler, reporting the same errors down to the
+        line and column. The toolchain is heavier than Python's, so it arrives
+        in pieces on your first Run and is cached from then on.
+      </p>
+      <p>
+        Assembly does not run here, and I would rather say so than give you a
+        button that fails: it is written for a processor the browser is not, and
+        there is no assembler on this page to make it one. It gets the editor,
+        the examples and a download with the exact command to build it.
+      </p>
+      <p>
+        Nothing here reaches a server. There is none: the site is static files,
+        your cells are saved in this browser's local storage, and a file you
+        open is read by the page rather than uploaded. Close the tab and the
+        work is still here; clear your browser data and it is gone.
+      </p>
+    </section>
+  </div>
+
+  {/* Download formats. A dialog rather than a prompt(): the formats have
+      names and consequences, and a list of numbers to type is neither. */}
+  <dialog class="of-modal" id="of-save-modal">
+    <div class="of-modal-head">
+      <h2 class="of-modal-title">Download</h2>
+      <button class="of-btn" type="button" id="of-save-close">Close</button>
+    </div>
+    <div class="of-modal-body">
+      <ul class="of-ex-list" id="of-save-list"></ul>
+    </div>
+  </dialog>
+
+  {/* The example picker, rendered as a dialog so Escape closes it. */}
+  <dialog class="of-modal" id="of-modal">
+    <div class="of-modal-head">
+      <h2 class="of-modal-title" id="of-modal-title">Examples</h2>
+      <input class="of-search" type="search" id="of-search" placeholder="Filter by name or topic…" />
+      <button class="of-btn" type="button" id="of-modal-close">Close</button>
+    </div>
+    <div class="of-modal-body" id="of-modal-body"></div>
+  </dialog>
+
+  <script type="application/json" id="of-data" set:html={JSON.stringify(LANGS)} is:inline />
+</BaseLayout>
+
+<script>
+  // ── Data and state ────────────────────────────────────────────────────
+  type Example = { title: string; note: string; group: string; code: string };
+  type Lang = {
+    id: string; label: string; runnable: boolean;
+    runtime: 'pyodide' | 'emception' | 'none';
+    extension: string; howToRun: string; examples: Example[];
+  };
+  type Cell = {
+    id: string;
+    type: 'code' | 'markdown';
+    source: string;
+    output: string;   // what the cell printed
+    error: string;    // the traceback that ended it, if any
+    failed: boolean;
+  };
+
+  const LANGS: Lang[] = JSON.parse(
+    document.getElementById('of-data')?.textContent || '[]'
+  );
+  if (LANGS.length) {
+    const STORE = 'officina.v1';
+    const cellsEl = document.getElementById('of-cells')!;
+    const statusEl = document.getElementById('of-status')!;
+    const howtoEl = document.getElementById('of-howto')!;
+
+    /**
+     * Astro scopes this page's CSS with a `data-astro-cid-*` attribute that
+     * only server-rendered elements carry. Cells, the examples list and the
+     * how-to line are built with innerHTML, so nothing inside them matches a
+     * scoped rule unless the attribute is stamped on by hand. Without this the
+     * notebook body inherits the page serif and the editor collapses to its
+     * intrinsic width — 19px Garamond in a 179px box inside a 1120px cell.
+     */
+    const CID =
+      [...cellsEl.attributes]
+        .map((a) => a.name)
+        .find((n) => n.startsWith('data-astro-cid-')) ?? '';
+    const scope = (root: Element) => {
+      if (!CID) return;
+      for (const el of root.querySelectorAll('*')) el.setAttribute(CID, '');
+    };
+
+    let lang: Lang = LANGS[0];
+    let cells: Cell[] = [];
+
+    const uid = () => Math.random().toString(36).slice(2, 10);
+
+    /**
+     * Grow an editor to fit its program. A cell that scrolls internally hides
+     * the code being read, which is the one thing this page exists to show, so
+     * the box is as tall as what is in it. `height: auto` first, or a box that
+     * has already grown can never shrink back: scrollHeight would keep
+     * reporting the stretched height rather than the content's.
+     */
+    const grow = (t: HTMLTextAreaElement) => {
+      if (t.hidden) return;                     // a collapsed text cell measures 0
+      t.style.height = 'auto';
+      t.style.height = `${t.scrollHeight}px`;
+    };
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function save() {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({ lang: lang.id, cells }));
+      } catch {
+        // A private window, or storage disabled. The notebook still works for
+        // this session; it simply will not survive a reload.
+      }
+    }
+
+    function load(): boolean {
+      try {
+        const raw = localStorage.getItem(STORE);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        const found = LANGS.find((l) => l.id === data.lang);
+        if (found) lang = found;
+        if (Array.isArray(data.cells) && data.cells.length) {
+          // `error` was added after the first release; a notebook saved before
+          // that has no such key, and an undefined one would render as "undefined".
+          cells = data.cells.map((c: Partial<Cell>) => ({ ...c, error: c.error ?? '' }) as Cell);
+          return true;
+        }
+      } catch { /* corrupt or unreadable: fall through to the default */ }
+      return false;
+    }
+
+    function status(text: string, kind: 'idle' | 'busy' | 'error' = 'idle') {
+      statusEl.textContent = text;
+      statusEl.dataset.kind = kind;
+    }
+
+    // ── Markdown, minimally ─────────────────────────────────────────────
+    // Headings, bold, italic, inline code, links, lists and paragraphs. A
+    // full parser is a dependency; this covers what a notebook comment needs
+    // and every input is escaped before any of it runs.
+    function markdown(src: string): string {
+      const lines = esc(src).split('\n');
+      const out: string[] = [];
+      let inList = false;
+      const inline = (s: string) =>
+        s
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/(^|\W)\*([^*]+)\*/g, '$1<em>$2</em>')
+          .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a class="link" href="$2">$1</a>');
+      for (const line of lines) {
+        const h = line.match(/^(#{1,4})\s+(.*)$/);
+        const li = line.match(/^[-*]\s+(.*)$/);
+        if (li) {
+          if (!inList) { out.push('<ul>'); inList = true; }
+          out.push(`<li>${inline(li[1])}</li>`);
+          continue;
+        }
+        if (inList) { out.push('</ul>'); inList = false; }
+        if (h) out.push(`<h${h[1].length + 2}>${inline(h[2])}</h${h[1].length + 2}>`);
+        else if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+      }
+      if (inList) out.push('</ul>');
+      return out.join('') || '<p class="of-md-empty">Empty text cell — click to write.</p>';
+    }
+
+    // ── Rendering ───────────────────────────────────────────────────────
+    function render() {
+      // `howToRun` reads "<how it runs here>. Outside it: <command>" for a
+      // runnable language and a bare command otherwise, so the sentence around
+      // it differs but the fact itself always comes from the content.
+      const [here, outside] = lang.howToRun.split(/\s*Outside it:\s*/);
+      howtoEl.innerHTML = lang.runnable
+        ? `${esc(here)}${outside ? ` Outside it: <code>${esc(outside)}</code>` : ''}`
+        : `${esc(lang.label)} does not run in a browser. Download the cell and: <code>${esc(lang.howToRun)}</code>`;
+      scope(howtoEl);
+
+      document.querySelectorAll<HTMLButtonElement>('.of-lang').forEach((b) => {
+        b.setAttribute('aria-selected', String(b.dataset.lang === lang.id));
+      });
+      document.getElementById('of-run-all')!.hidden = !lang.runnable;
+
+      // A strip sits at every boundary — above the first cell, between each
+      // pair, below the last — so a cell can be added anywhere rather than
+      // only appended and then walked up with the arrows.
+      const strip = (at: number) => `
+        <div class="of-ins">
+          <button class="of-ins-btn" data-act="ins-code" data-i="${at}"
+                  title="Insert a code cell here">+ Code</button>
+          <button class="of-ins-btn" data-act="ins-md" data-i="${at}"
+                  title="Insert a text cell here">+ Text</button>
+        </div>`;
+
+      cellsEl.innerHTML = cells
+        .map((c, i) => {
+          const runBtn =
+            c.type === 'code' && lang.runnable
+              ? `<button class="of-cell-btn of-run" data-act="run" data-i="${i}">Run</button>`
+              : '';
+          const body =
+            c.type === 'code'
+              ? `<textarea class="of-src of-code" data-i="${i}" rows="${Math.max(3, c.source.split('\n').length)}" spellcheck="false">${esc(c.source)}</textarea>`
+              : `<textarea class="of-src of-md-src" data-i="${i}" rows="${Math.max(2, c.source.split('\n').length)}" hidden>${esc(c.source)}</textarea>
+                 <div class="of-md" data-act="edit" data-i="${i}">${markdown(c.source)}</div>`;
+          // Printed output and the traceback are separate elements: the
+          // failure is red, and everything the cell managed to print is not.
+          const out = c.output !== '' ? `<pre class="of-out">${esc(c.output)}</pre>` : '';
+          const err = c.error ? `<pre class="of-out is-error">${esc(c.error)}</pre>` : '';
+          return `
+            <article class="of-cell" data-type="${c.type}">
+              <div class="of-cell-bar">
+                <span class="of-cell-n">[${i + 1}] ${c.type === 'code' ? lang.label : 'Text'}</span>
+                ${runBtn}
+                <button class="of-cell-btn" data-act="up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
+                <button class="of-cell-btn" data-act="down" data-i="${i}" ${i === cells.length - 1 ? 'disabled' : ''}>↓</button>
+                <button class="of-cell-btn" data-act="dup" data-i="${i}">Copy</button>
+                <button class="of-cell-btn" data-act="del" data-i="${i}">Delete</button>
+              </div>
+              ${body}
+              ${out}
+              ${err}
+            </article>`;
+        })
+        .map((html, i) => strip(i) + html)
+        .join('') + strip(cells.length);
+      scope(cellsEl);
+      cellsEl.querySelectorAll<HTMLTextAreaElement>('textarea.of-src').forEach(grow);
+      save();
+    }
+
+    // ── Python, via Pyodide ─────────────────────────────────────────────
+    // Loaded from this origin, and only on the first Run. `pyodideReady` is
+    // the promise rather than the interpreter so that pressing Run twice
+    // quickly does not start two downloads.
+    let pyodideReady: Promise<any> | null = null;
+
+    function loadPyodide(): Promise<any> {
+      if (pyodideReady) return pyodideReady;
+      status('Fetching the Python runtime — 12.9 MB, once per browser…', 'busy');
+      // A <script> tag rather than import(). Vite refuses to serve a dynamic
+      // import of anything under public/ — it answers with an error page
+      // saying the file "will be copied as-is during build without going
+      // through the plugin transforms" — and @vite-ignore does not help,
+      // because the browser still asks the dev server for it as a module.
+      // The classic build sets globalThis.loadPyodide and involves no
+      // bundler at all, in dev and in production alike.
+      pyodideReady = new Promise<void>((resolve, reject) => {
+        if ((globalThis as any).loadPyodide) return resolve();
+        const tag = document.createElement('script');
+        tag.src = '/pyodide/pyodide.js';
+        tag.onload = () => resolve();
+        tag.onerror = () => reject(new Error('could not fetch /pyodide/pyodide.js'));
+        document.head.appendChild(tag);
+      })
+        .then(() => (globalThis as any).loadPyodide({ indexURL: '/pyodide/' }))
+        .then((py: any) => {
+          status(`Python ${py.version} ready.`);
+          return py;
+        })
+        .catch((err: unknown) => {
+          pyodideReady = null;              // let a later Run try again
+          status(`The Python runtime did not load: ${String(err)}`, 'error');
+          throw err;
+        });
+      return pyodideReady;
+    }
+
+    const TRACEBACK_HEAD = 'Traceback (most recent call last):';
+
+    /**
+     * Separate what the cell printed from the traceback that ended it, and
+     * drop the frames belonging to the runtime rather than to the reader.
+     *
+     * Pyodide prints the traceback to `sys.stderr`, which this page redirects,
+     * so it arrives glued to whatever the cell printed before it failed — it
+     * does not come through the thrown error. (`String(err)` is the single
+     * word "PythonError"; the text lives on `err.message`.) Every traceback
+     * opens with two frames inside /lib/python314.zip/_pyodide/_base.py, the
+     * runtime's own eval machinery, before reaching `File "<exec>"` — the
+     * first line the reader actually wrote. Those frames are noise in every
+     * traceback, and leaving them in teaches people to skip the top of an
+     * error, which is a bad habit to build on a page meant for learning.
+     *
+     * The two come back separately so that only the failure is shown in red.
+     * Output printed before a crash is still output; colouring it as an error
+     * misreports which line went wrong.
+     */
+    function splitOutput(raw: string): { out: string; err: string } {
+      const lines = raw.split('\n');
+      const head = lines.findIndex((l) => l.startsWith(TRACEBACK_HEAD));
+      if (head === -1) return { out: raw.trimEnd(), err: '' };
+
+      const mine = lines.findIndex((k, n) => n > head && k.includes('File "<exec>"'));
+      const trace = mine === -1 ? lines.slice(head) : [lines[head], ...lines.slice(mine)];
+      return {
+        out: lines.slice(0, head).join('\n').trimEnd(),
+        err: trace
+          .join('\n')
+          .replace(/File "<exec>", line (\d+)/g, 'your code, line $1')
+          .trimEnd(),
+      };
+    }
+
+    /**
+     * The C/C++ toolchain, booted once and kept.
+     *
+     * Heavier than Pyodide by a wide margin — clang alone is a 21 MB pack — so
+     * nothing here is touched until a reader presses Run on a C or C++ cell.
+     * The packs arrive individually and are cached in IndexedDB by the loader,
+     * so the wait is paid once per browser rather than once per run.
+     */
+    let emceptionReady: Promise<any> | null = null;
+    function loadEmception() {
+      if (emceptionReady) return emceptionReady;
+      status('Fetching the C/C++ toolchain — clang and lld, once per browser…', 'busy');
+      emceptionReady = import('@gameguild/emception-browser')
+        .then(async (mod: any) => {
+          const api = await mod.createEmception({
+            // Self-hosted. The adapter's default points at a public CDN, and
+            // this site loads nothing from another origin.
+            manifestUrl: '/emception/manifest.json',
+            tty: 'none',
+          });
+          status('Toolchain ready.');
+          return { mod, api };
+        })
+        .catch((err: unknown) => {
+          emceptionReady = null;                  // let a later Run try again
+          status(`The C/C++ toolchain did not load: ${String(err)}`, 'error');
+          throw err;
+        });
+      return emceptionReady;
+    }
+
+    /** Run a Python cell on Pyodide. Returns the text the reader should see. */
+    async function runOnPyodide(source: string) {
+      const py = await loadPyodide();
+      // Capture stdout and stderr for this cell only, and restore them
+      // afterwards so one cell's redirection cannot outlive it.
+      py.runPython(`
+import sys, io
+_officina_out = io.StringIO()
+_officina_saved = (sys.stdout, sys.stderr)
+sys.stdout = sys.stderr = _officina_out
+`);
+      let failed = false;
+      let trace = '';
+      try {
+        await py.runPythonAsync(source);
+      } catch (err: unknown) {
+        failed = true;
+        // The redirected stderr almost always has the traceback already, so
+        // this is the fallback for the case where it does not — kept raw here
+        // and tidied once, below, with everything else.
+        trace = String((err as { message?: string } | null)?.message ?? err);
+      }
+      const captured = py.runPython(`
+sys.stdout, sys.stderr = _officina_saved
+_officina_out.getvalue()
+`);
+      const raw = String(captured).includes(TRACEBACK_HEAD)
+        ? String(captured)                        // stderr already has it
+        : [captured, trace].filter(Boolean).join('\n');
+      return { ...splitOutput(raw), failed };
+    }
+
+    /**
+     * Make a compiler diagnostic readable in a page rather than a terminal.
+     *
+     * clang colours its errors with ANSI escapes, which a <pre> renders as
+     * literal `\u001b[0;1;31m` noise wrapped around every word — worse than no
+     * colour at all. The escapes come off, and the absolute path of the
+     * scratch file becomes "your code", for the same reason the Python
+     * tracebacks say it: `/home/user/main.cpp` is an artefact of how this page
+     * works and tells the reader nothing about their program.
+     */
+    function tidyDiagnostics(raw: string): string {
+      return raw
+        // CSI sequences: ESC [ … final-byte. Colour is the only one clang
+        // emits, but matching the whole family costs nothing.
+        .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '')
+        // `c|cpp` would match the `c` of `main.cpp` and leave a stray "pp".
+        .replace(/\/home\/user\/main\.c(?:pp)?/g, 'your code')
+        .trimEnd();
+    }
+
+    /**
+     * Decode one chunk of a program's output.
+     *
+     * The sink is handed raw bytes, not text — `[65, 100, 97]` for "Ada" — so
+     * a chunk that splits a multi-byte character must be decoded with the
+     * stream flag or the character comes back as a replacement glyph.
+     */
+    function makeSink(onText: (t: string) => void) {
+      const dec = new TextDecoder();
+      return (chunk: unknown) => {
+        if (typeof chunk === 'string') return onText(chunk);
+        const bytes =
+          chunk instanceof Uint8Array
+            ? chunk
+            : new Uint8Array(Object.values(chunk as Record<string, number>));
+        onText(dec.decode(bytes, { stream: true }));
+      };
+    }
+
+    /**
+     * Compile a C or C++ cell with clang, link it with wasm-ld, and run the
+     * result.
+     *
+     * The three phases are driven here rather than through the adapter's own
+     * `compileAndRun`, for two reasons that both show up as wrong output.
+     *
+     * First, that helper forwards `onStdout`/`onStderr`, but a run takes
+     * `stdout`/`stderr` — the names do not match, so the callbacks never fire
+     * and the only output left is `ToolResult.stdout`.
+     *
+     * Second, `ToolResult.stdout` is `chunks.join('\n')`, which inserts a
+     * newline between every chunk the TTY happened to emit. A program printing
+     * "Ada\nBo\n" comes back as "Ada\n\n\n\nBo\n", because `<<` writes
+     * the text and the newline separately and the empty flushes between them
+     * each earn a newline of their own. Reading the byte chunks and
+     * concatenating them gives back exactly what the program wrote.
+     *
+     * One thing is still lost: Emscripten's TTY flushes on newline, so output
+     * never terminated by one is discarded when the process exits. A cell
+     * ending in `printf("done")` with no `\n` prints nothing — the same as it
+     * would on a terminal that is closed mid-line.
+     *
+     * Paths must be absolute. The helper's defaults are a bare `main.cpp`,
+     * written relative to the workspace root while clang runs elsewhere, and
+     * the compile then fails with "error reading 'main.cpp': No such file or
+     * directory" for a file that was just written.
+     */
+    async function runOnEmception(source: string, id: string) {
+      const { mod, api } = await loadEmception();
+      const preset = mod.TOOLCHAIN_PRESETS[id === 'c' ? 'c' : 'cpp'];
+      const ext = id === 'c' ? 'c' : 'cpp';
+      const paths = {
+        sourcePath: `/home/user/main.${ext}`,
+        objectPath: '/home/user/main.o',
+        wasmPath: '/home/user/main.wasm',
+      };
+      const opts = { cwd: '/home/user' };
+
+      await api.workspace.writeFile(paths.sourcePath, source);
+
+      status('Compiling…', 'busy');
+      const compiled = await api.run(preset.compileTool, preset.compileArgv(paths), opts);
+      if (compiled.exitCode !== 0) {
+        return { out: '', err: tidyDiagnostics(String(compiled.stderr || 'The compile failed.')), failed: true };
+      }
+
+      status('Linking…', 'busy');
+      const linked = await api.run(preset.linkTool, preset.linkArgv(paths), opts);
+      if (linked.exitCode !== 0) {
+        return { out: '', err: tidyDiagnostics(String(linked.stderr || 'The link failed.')), failed: true };
+      }
+
+      status('Running…', 'busy');
+      let out = '';
+      let err = '';
+      const ran = await api.run('wasi-run', ['wasi-run', paths.wasmPath], {
+        ...opts,
+        stdout: makeSink((t) => { out += t; }),
+        stderr: makeSink((t) => { err += t; }),
+      });
+
+      const failed = ran.exitCode !== 0;
+      return {
+        out: out.replace(/\n+$/, ''),
+        // A non-zero exit with nothing on stderr still needs saying, or the
+        // cell looks as though it succeeded quietly.
+        err: [tidyDiagnostics(err), failed && !err ? `Exited with status ${ran.exitCode}.` : '']
+          .filter(Boolean)
+          .join('\n'),
+        failed,
+      };
+    }
+
+    async function runCell(i: number) {
+      const cell = cells[i];
+      if (!cell || cell.type !== 'code' || !lang.runnable) return;
+
+      cell.output = 'Running…';
+      cell.error = '';
+      cell.failed = false;
+      render();
+
+      try {
+        const { out, err, failed } =
+          lang.runtime === 'emception'
+            ? await runOnEmception(cell.source, lang.id)
+            : await runOnPyodide(cell.source);
+
+        cell.output = out || (err ? '' : '(no output — the cell ran and printed nothing)');
+        cell.error = err;
+        cell.failed = failed;
+        status(failed ? 'The cell did not finish.' : 'Done.', failed ? 'error' : 'idle');
+      } catch (err: unknown) {
+        cell.output = '';
+        cell.error =
+          `Could not run: the ${lang.label} runtime is unavailable. ${String(err)}`.trim();
+        cell.failed = true;
+      }
+      render();
+    }
+
+    async function runAll() {
+      for (let i = 0; i < cells.length; i++) {
+        if (cells[i].type === 'code') await runCell(i);
+      }
+    }
+
+    // ── Cell operations ─────────────────────────────────────────────────
+    const addCell = (type: 'code' | 'markdown', source = '', at = cells.length) => {
+      cells.splice(at, 0, { id: uid(), type, source, output: '', error: '', failed: false });
+      render();
+    };
+
+    cellsEl.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+      if (!t) return;
+      const i = Number(t.dataset.i);
+      switch (t.dataset.act) {
+        case 'run': runCell(i); break;
+        case 'ins-code': addCell('code', '', i); break;
+        case 'ins-md': addCell('markdown', '', i); break;
+        case 'del': cells.splice(i, 1); render(); break;
+        case 'dup': addCell(cells[i].type, cells[i].source, i + 1); break;
+        case 'up': if (i > 0) { [cells[i - 1], cells[i]] = [cells[i], cells[i - 1]]; render(); } break;
+        case 'down': if (i < cells.length - 1) { [cells[i], cells[i + 1]] = [cells[i + 1], cells[i]]; render(); } break;
+        case 'edit': {
+          // A rendered text cell becomes editable on click, and re-renders on blur.
+          const src = cellsEl.querySelector<HTMLTextAreaElement>(`.of-md-src[data-i="${i}"]`);
+          if (src) { src.hidden = false; t.hidden = true; src.focus(); }
+          break;
+        }
+      }
+    });
+
+    cellsEl.addEventListener('input', (e) => {
+      const t = e.target as HTMLTextAreaElement;
+      if (!t.classList.contains('of-src')) return;
+      cells[Number(t.dataset.i)].source = t.value;
+      grow(t);
+      save();
+    });
+
+    cellsEl.addEventListener('focusout', (e) => {
+      const t = e.target as HTMLTextAreaElement;
+      if (t.classList.contains('of-md-src')) render();
+    });
+
+    // Ctrl/Cmd+Enter runs the cell the cursor is in — the one keyboard
+    // shortcut every notebook shares, so it should not need looking up.
+    cellsEl.addEventListener('keydown', (e) => {
+      const ke = e as KeyboardEvent;
+      if (!(ke.key === 'Enter' && (ke.ctrlKey || ke.metaKey))) return;
+      const t = ke.target as HTMLTextAreaElement;
+      if (!t.classList.contains('of-src')) return;
+      ke.preventDefault();
+      const i = Number(t.dataset.i);
+      if (cells[i].type === 'code') runCell(i);
+      else render();
+    });
+
+    // ── Examples ────────────────────────────────────────────────────────
+    const modal = document.getElementById('of-modal') as HTMLDialogElement;
+    const modalBody = document.getElementById('of-modal-body')!;
+    const search = document.getElementById('of-search') as HTMLInputElement;
+
+    function renderExamples(filter = '') {
+      const q = filter.trim().toLowerCase();
+      const matches = lang.examples.filter(
+        (x) =>
+          !q ||
+          x.title.toLowerCase().includes(q) ||
+          x.note.toLowerCase().includes(q) ||
+          x.group.toLowerCase().includes(q)
+      );
+      document.getElementById('of-modal-title')!.textContent =
+        `${lang.label} — ${matches.length} of ${lang.examples.length} examples`;
+
+      const groups = [...new Set(matches.map((x) => x.group))];
+      modalBody.innerHTML = groups
+        .map((g) => {
+          const items = matches
+            .filter((x) => x.group === g)
+            .map((x) => {
+              const idx = lang.examples.indexOf(x);
+              return `
+                <li class="of-ex">
+                  <button class="of-ex-btn" type="button" data-ex="${idx}">
+                    <span class="of-ex-t">${esc(x.title)}</span>
+                    <span class="of-ex-n">${esc(x.note)}</span>
+                  </button>
+                </li>`;
+            })
+            .join('');
+      scope(modalBody);
+          return `<section class="of-ex-group"><h3 class="of-ex-h">${esc(g)}</h3><ul class="of-ex-list">${items}</ul></section>`;
+        })
+        .join('') || '<p class="of-ex-none">Nothing matches that.</p>';
+    }
+
+    document.getElementById('of-examples')!.addEventListener('click', () => {
+      search.value = '';
+      renderExamples();
+      modal.showModal();
+    });
+    document.getElementById('of-modal-close')!.addEventListener('click', () => modal.close());
+    search.addEventListener('input', () => renderExamples(search.value));
+    modalBody.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-ex]');
+      if (!b) return;
+      const ex = lang.examples[Number(b.dataset.ex)];
+      addCell('code', ex.code);
+      modal.close();
+      status(`Added “${ex.title}”.`);
+      cellsEl.lastElementChild?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+
+    // ── Files ───────────────────────────────────────────────────────────
+    const fileInput = document.getElementById('of-file') as HTMLInputElement;
+    document.getElementById('of-open')!.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      fileInput.value = '';
+
+      if (file.name.endsWith('.ipynb')) {
+        // A Jupyter notebook. Cell sources are arrays of lines that already
+        // carry their newlines, which is why they are joined with '' not '\n'.
+        try {
+          const nb = JSON.parse(text);
+          const imported: Cell[] = (nb.cells ?? []).map((c: any) => ({
+            id: uid(),
+            type: c.cell_type === 'markdown' ? 'markdown' : 'code',
+            source: Array.isArray(c.source) ? c.source.join('') : String(c.source ?? ''),
+            output: '',
+            error: '',
+            failed: false,
+          }));
+          if (!imported.length) throw new Error('the notebook has no cells');
+          cells = imported;
+          render();
+          status(`Opened ${file.name} — ${imported.length} cells.`);
+        } catch (err) {
+          status(`${file.name} is not a notebook this page can read: ${String(err)}`, 'error');
+        }
+        return;
+      }
+
+      // Any other text file becomes one cell, code or prose by extension.
+      const isProse = /\.(md|txt)$/i.test(file.name);
+      addCell(isProse ? 'markdown' : 'code', text);
+      status(`Opened ${file.name} into a new cell.`);
+    });
+
+    function download(name: string, text: string, mime = 'text/plain') {
+      const url = URL.createObjectURL(new Blob([text], { type: mime }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /** Every cell's code, in order, as one file. */
+    const sourceOnly = () =>
+      cells.filter((c) => c.type === 'code').map((c) => c.source).join('\n\n');
+
+    /** The notebook as a Jupyter document. */
+    function notebook() {
+      // nbformat 4 wants source as a list of lines each ending in a newline
+      // except the last, which is what this does when the separator is kept.
+      const asLines = (t: string) =>
+        t.split('\n').map((l, i, a) => (i === a.length - 1 ? l : l + '\n'));
+      return {
+        cells: cells.map((c) => ({
+          cell_type: c.type,
+          metadata: {},
+          source: asLines(c.source),
+          ...(c.type === 'code'
+            ? {
+                execution_count: null,
+                outputs: [
+                  ...(c.output ? [{ output_type: 'stream', name: 'stdout', text: asLines(c.output) }] : []),
+                  ...(c.error ? [{ output_type: 'stream', name: 'stderr', text: asLines(c.error) }] : []),
+                ],
+              }
+            : {}),
+        })),
+        metadata: {
+          kernelspec: { display_name: lang.label, language: lang.id, name: lang.id },
+          language_info: { name: lang.id, file_extension: lang.extension },
+        },
+        nbformat: 4,
+        nbformat_minor: 5,
+      };
+    }
+
+    /**
+     * The formats a notebook can leave in. Each says what it is for, because
+     * "json" and "ipynb" are both JSON and the difference is the point: one
+     * opens in Jupyter, the other is this page's own state.
+     */
+    const FORMATS: {
+      name: () => string; what: () => string; why: string; type?: string; body: () => string;
+    }[] = [
+      {
+        name: () => 'officina.ipynb',
+        what: () => 'Notebook',
+        why: 'Every cell and its output. Opens in Jupyter, Colab or VS Code.',
+        type: 'application/json',
+        body: () => JSON.stringify(notebook(), null, 1),
+      },
+      {
+        name: () => `officina${lang.extension}`,
+        // A function, not a string: this list is built once and the language
+        // changes under it, which had the C++ tab offering "Source (.py)".
+        what: () => `Source (${lang.extension})`,
+        why: 'The code cells only, joined in order — a file you can compile or run.',
+        body: () => {
+          const header = lang.runnable ? '' : `/* Build with: ${lang.howToRun} */\n\n`;
+          return header + sourceOnly();
+        },
+      },
+      {
+        name: () => 'officina.md',
+        what: () => 'Markdown',
+        why: 'Prose, code fences and output — the whole notebook as a document.',
+        type: 'text/markdown',
+        body: () =>
+          cells
+            .map((c) =>
+              c.type === 'markdown'
+                ? c.source
+                : '```' + lang.id + '\n' + c.source + '\n```' +
+                  (c.output ? '\n\nOutput:\n\n```\n' + c.output + '\n```' : '') +
+                  (c.error ? '\n\nError:\n\n```\n' + c.error + '\n```' : '')
+            )
+            .join('\n\n'),
+      },
+      {
+        name: () => 'officina.json',
+        what: () => 'JSON',
+        why: "This page's own state — language and cells, exactly as it saves them.",
+        type: 'application/json',
+        body: () => JSON.stringify({ lang: lang.id, cells }, null, 2),
+      },
+      {
+        name: () => 'officina.txt',
+        what: () => 'Plain text',
+        why: 'Everything as text, with each cell labelled. For pasting anywhere.',
+        type: 'text/plain',
+        body: () =>
+          cells
+            .map((c, i) =>
+              `── [${i + 1}] ${c.type === 'code' ? lang.label : 'Text'} ──\n${c.source}` +
+              (c.output ? `\n\nOutput:\n${c.output}` : '') +
+              (c.error ? `\n\nError:\n${c.error}` : '')
+            )
+            .join('\n\n'),
+      },
+    ];
+
+    const saveModal = document.getElementById('of-save-modal') as HTMLDialogElement;
+    const saveList = document.getElementById('of-save-list')!;
+
+    function renderFormats() {
+      saveList.innerHTML = FORMATS
+        .map(
+          (f, i) => `
+            <li>
+              <button class="of-ex-btn" data-fmt="${i}">
+                <span class="of-ex-t">${esc(f.what())} — <code>${esc(f.name())}</code></span>
+                <span class="of-ex-n">${esc(f.why)}</span>
+              </button>
+            </li>`
+        )
+        .join('');
+      scope(saveList);
+    }
+
+    document.getElementById('of-save')!.addEventListener('click', () => {
+      renderFormats();
+      saveModal.showModal();
+    });
+    document.getElementById('of-save-close')!.addEventListener('click', () => saveModal.close());
+    saveList.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-fmt]');
+      if (!btn) return;
+      const f = FORMATS[Number(btn.dataset.fmt)];
+      download(f.name(), f.body(), f.type);
+      saveModal.close();
+      status(`Downloaded ${f.name()}`);
+    });
+
+    // ── Toolbar ─────────────────────────────────────────────────────────
+    document.getElementById('of-add-code')!.addEventListener('click', () => addCell('code'));
+    document.getElementById('of-add-md')!.addEventListener('click', () => addCell('markdown'));
+    document.getElementById('of-add-end')!.addEventListener('click', () => addCell('code'));
+    document.getElementById('of-add-end-md')!.addEventListener('click', () => addCell('markdown'));
+    document.getElementById('of-run-all')!.addEventListener('click', runAll);
+    document.getElementById('of-clear')!.addEventListener('click', () => {
+      cells.forEach((c) => { c.output = ''; c.error = ''; c.failed = false; });
+      render();
+      status('Output cleared.');
+    });
+    document.getElementById('of-reset')!.addEventListener('click', () => {
+      if (!window.confirm('Delete every cell and start again? This cannot be undone.')) return;
+      cells = [];
+      seed();
+      status('Reset.');
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.of-lang').forEach((b) => {
+      b.addEventListener('click', () => {
+        const found = LANGS.find((l) => l.id === b.dataset.lang);
+        if (!found) return;
+        lang = found;
+        render();
+        status(`${lang.label}. ${lang.examples.length} examples available.`);
+      });
+    });
+
+    // ── Start ───────────────────────────────────────────────────────────
+    function seed() {
+      const first = lang.examples[0];
+      cells = [
+        {
+          id: uid(),
+          type: 'markdown',
+          source:
+            '# A notebook in your browser\n\n' +
+            'Edit this text, add cells, and press **Run** on a Python cell — or ' +
+            '**Ctrl+Enter** inside one. Open **Examples** for ' +
+            `${LANGS.reduce((n, l) => n + l.examples.length, 0)} worked programs.`,
+          output: '',
+          error: '',
+          failed: false,
+        },
+        {
+          id: uid(),
+          type: 'code',
+          source: first ? first.code : 'print("Hello, world")',
+          output: '',
+          error: '',
+          failed: false,
+        },
+      ];
+      render();
+    }
+
+    if (!load()) seed();
+    else render();
+    status(
+      lang.runnable
+        ? `Ready. The ${lang.label} runtime is fetched on your first Run.`
+        : `${lang.label} is edit-and-export here.`
+    );
+  }
+</script>
+
+<style>
+  .of { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .of-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .of-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .of-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .of-sub {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.8rem 0 0;
+  }
+
+  /* Language row */
+  .of-langs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+  .of-lang {
+    display: grid;
+    gap: 0.15rem;
+    text-align: left;
+    padding: 0.5rem 0.9rem;
+    background: none;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .of-lang-name { font-family: var(--font-display); font-size: var(--t-md); }
+  .of-lang-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .of-lang[aria-selected='true'] {
+    border-color: var(--fundus);
+    background: color-mix(in srgb, var(--fundus) 10%, transparent);
+  }
+  .of-lang[aria-selected='true'] .of-lang-name { color: var(--ink); }
+  .of-lang:hover { border-color: var(--brass); }
+
+  .of-howto {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0 0 1.2rem;
+    line-height: 1.7;
+  }
+  .of-howto code { color: var(--ink); }
+
+  /* Toolbar */
+  .of-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    padding-bottom: 0.7rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+  .of-bar-gap { flex: 1 1 auto; }
+  .of-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    background: none;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    border-radius: 3px;
+    padding: 0.35em 0.7em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .of-btn:hover { border-color: var(--fundus); color: var(--ink); }
+  .of-btn-go { color: var(--fundus); border-color: color-mix(in srgb, var(--fundus) 50%, transparent); }
+  .of-btn-warn:hover { border-color: var(--oxblood-text); color: var(--oxblood-text); }
+
+  .of-status {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.7rem 0 0;
+    min-height: 1.4em;
+  }
+  .of-status[data-kind='busy'] { color: var(--brass-text); }
+  .of-status[data-kind='error'] { color: var(--oxblood-text); }
+
+  /* Cells */
+  .of-cells { display: grid; gap: 1rem; margin: 1rem 0 1.4rem; }
+  .of-cell {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
+    border-radius: 3px;
+    background: var(--paper-raised);
+    overflow: hidden;
+  }
+  .of-cell[data-type='markdown'] { background: none; }
+  .of-cell-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.6rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent);
+  }
+  .of-cell-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    margin-right: auto;
+  }
+  .of-cell-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    background: none;
+    border: var(--rule) solid transparent;
+    border-radius: 2px;
+    padding: 0.15em 0.45em;
+    cursor: pointer;
+  }
+  .of-cell-btn:hover:not(:disabled) { border-color: var(--brass); color: var(--ink); }
+  .of-cell-btn:disabled { opacity: 0.3; cursor: default; }
+  .of-run { color: var(--fundus); border-color: color-mix(in srgb, var(--fundus) 40%, transparent); }
+
+  .of-src {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    resize: vertical;
+    background: none;
+    color: var(--ink);
+    padding: 0.7rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    tab-size: 4;
+    min-height: 6rem;
+    overflow-y: hidden;                 /* the box grows instead of scrolling */
+  }
+  .of-src:focus { outline: 2px solid color-mix(in srgb, var(--brass) 55%, transparent); outline-offset: -2px; }
+  .of-md { padding: 0.5rem 0.8rem; cursor: text; }
+  .of-md > :first-child { margin-top: 0; }
+  .of-md h3, .of-md h4, .of-md h5, .of-md h6 {
+    font-family: var(--font-display);
+    font-size: var(--t-lg);
+    margin: 0.7em 0 0.3em;
+  }
+  .of-md p { font-size: var(--t-sm); line-height: 1.75; margin: 0 0 0.6em; }
+  .of-md ul { font-size: var(--t-sm); line-height: 1.75; margin: 0 0 0.6em 1.1rem; padding: 0; }
+  .of-md code { font-family: var(--font-mono); font-size: 0.92em; color: var(--brass-text); }
+  .of-md-empty { color: var(--ink-soft); font-style: italic; }
+
+  .of-out {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent);
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .of-out.is-error { color: var(--oxblood-text); }
+
+  .of-add-end { margin: 0 0 1.4rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  /* The between-cells insert strip. Always visible rather than revealed on
+     hover: a touch screen has no hover, and a control you cannot discover is
+     the same as one that is not there. */
+  .of-ins {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 1.5rem;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+  }
+  .of-ins:hover, .of-ins:focus-within { opacity: 1; }
+  .of-ins::before, .of-ins::after {
+    content: '';
+    flex: 1;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .of-ins-btn {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.5rem;
+    background: var(--page);
+    color: var(--ink-soft);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .of-ins-btn:hover { color: var(--ink); border-color: var(--brass); }
+
+  .of-about { font-size: var(--t-sm); line-height: 1.8; color: var(--ink-soft); }
+  .of-h2 { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); margin: 0 0 0.6em; }
+  .of-about p { margin: 0 0 1em; }
+
+  /* Example picker */
+  .of-modal {
+    width: min(46rem, 92vw);
+    max-height: 82vh;
+    padding: 0;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    border-radius: 4px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .of-modal::backdrop { background: color-mix(in srgb, var(--ink) 55%, transparent); }
+  .of-modal-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+  }
+  .of-modal-title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0;
+    flex: 1 1 auto;
+  }
+  .of-search {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    padding: 0.3em 0.6em;
+    background: var(--paper);
+    color: var(--ink);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    border-radius: 3px;
+    min-width: 0;
+    flex: 1 1 12rem;
+  }
+  .of-modal-body { overflow-y: auto; max-height: calc(82vh - 4rem); padding: 0.6rem 1rem 1rem; }
+  .of-ex-group { margin-bottom: 1rem; }
+  .of-ex-h {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0.8rem 0 0.4rem;
+  }
+  .of-ex-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+  .of-ex-btn {
+    display: grid;
+    gap: 0.1rem;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: var(--rule) solid transparent;
+    border-radius: 3px;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .of-ex-btn:hover { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 8%, transparent); }
+  .of-ex-t { font-size: var(--t-sm); }
+  .of-ex-n { font-size: var(--t-xs); color: var(--ink-soft); line-height: 1.5; }
+  .of-ex-none { color: var(--ink-soft); font-size: var(--t-sm); }
+
+  @media (max-width: 560px) {
+    .of-bar-gap { display: none; }
+    .of-bar { gap: 0.3rem; }
+  }
+</style>

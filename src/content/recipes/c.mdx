@@ -1,0 +1,476 @@
+---
+language: c
+label: C
+order: 2
+runnable: true
+runtime: emception
+extension: .c
+howToRun: "Compiles and runs here with clang. Outside it: cc -std=c17 -Wall -Wextra -o prog file.c && ./prog"
+status: published
+examples:
+  - title: "Hello, world"
+    note: "The smallest complete C program."
+    group: "Basics"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          printf("Hello, world\n");
+          return 0;
+      }
+  - title: "Types and sizes"
+    note: "What each type actually costs on this machine."
+    group: "Basics"
+    code: |2-
+      #include <stdio.h>
+      #include <limits.h>
+
+      int main(void) {
+          printf("char   %zu bytes  [%d, %d]\n", sizeof(char), CHAR_MIN, CHAR_MAX);
+          printf("int    %zu bytes  [%d, %d]\n", sizeof(int), INT_MIN, INT_MAX);
+          printf("long   %zu bytes\n", sizeof(long));
+          printf("float  %zu bytes\n", sizeof(float));
+          printf("double %zu bytes\n", sizeof(double));
+          printf("void*  %zu bytes\n", sizeof(void *));
+          return 0;
+      }
+  - title: "printf and scanf"
+    note: "Formatted input and output."
+    group: "Basics"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          int n = 42;
+          double x = 3.14159;
+          char s[] = "text";
+
+          printf("%d  %5d  %-5d|\n", n, n, n);
+          printf("%f  %.2f  %e  %g\n", x, x, x, x);
+          printf("%s  %c  %p\n", s, s[0], (void *)s);
+          printf("%x  %o  %%\n", 255, 8);
+
+          int got;
+          if (scanf("%d", &got) == 1) printf("read %d\n", got);
+          else printf("nothing to read\n");
+          return 0;
+      }
+  - title: "Operators"
+    note: "Arithmetic, bitwise and the ternary."
+    group: "Basics"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          int a = 17, b = 5;
+          printf("%d %d %d %d %d\n", a+b, a-b, a*b, a/b, a%b);
+          printf("bitwise: %d %d %d %d %d\n", a&b, a|b, a^b, ~a, a<<1);
+          printf("shifts:  %d %d\n", a << 2, a >> 2);
+          printf("compare: %d %d %d\n", a > b, a == b, a != b);
+          printf("ternary: %d\n", a > b ? a : b);
+
+          int i = 5;
+          printf("post %d then %d\n", i++, i);
+          printf("pre  %d\n", ++i);
+          return 0;
+      }
+  - title: "if, switch and loops"
+    note: "Every branching construct in one file."
+    group: "Control flow"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          for (int n = 1; n <= 5; n++) {
+              if (n % 2 == 0) printf("%d even\n", n);
+              else            printf("%d odd\n", n);
+          }
+
+          int grade = 2;
+          switch (grade) {
+              case 1:  printf("first\n");  break;
+              case 2:  printf("second\n"); break;
+              default: printf("other\n");
+          }
+
+          int i = 0;
+          while (i < 3) printf("while %d\n", i++);
+
+          do { printf("do %d\n", i); } while (--i > 3);
+          return 0;
+      }
+  - title: "FizzBuzz"
+    note: "The interview classic, in C."
+    group: "Control flow"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          for (int i = 1; i <= 20; i++) {
+              if      (i % 15 == 0) printf("FizzBuzz\n");
+              else if (i % 3 == 0)  printf("Fizz\n");
+              else if (i % 5 == 0)  printf("Buzz\n");
+              else                  printf("%d\n", i);
+          }
+          return 0;
+      }
+  - title: "Arrays"
+    note: "Declaration, iteration and the size trick."
+    group: "Arrays and strings"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          int xs[] = {3, 1, 4, 1, 5, 9, 2, 6};
+          size_t n = sizeof xs / sizeof xs[0];
+
+          int sum = 0, max = xs[0];
+          for (size_t i = 0; i < n; i++) {
+              sum += xs[i];
+              if (xs[i] > max) max = xs[i];
+          }
+          printf("n=%zu sum=%d max=%d mean=%.3f\n", n, sum, max, (double)sum / n);
+
+          int grid[2][3] = {{1,2,3},{4,5,6}};
+          for (int r = 0; r < 2; r++) {
+              for (int c = 0; c < 3; c++) printf("%d ", grid[r][c]);
+              printf("\n");
+          }
+          return 0;
+      }
+  - title: "Strings and string.h"
+    note: "C strings are arrays with a terminator."
+    group: "Arrays and strings"
+    code: |2-
+      #include <stdio.h>
+      #include <string.h>
+
+      int main(void) {
+          char a[64] = "Backpropagation";
+          char b[] = " and graphs";
+
+          printf("length  %zu\n", strlen(a));
+          strcat(a, b);
+          printf("joined  %s\n", a);
+          printf("compare %d\n", strcmp("abc", "abd"));
+          printf("find    %s\n", strstr(a, "graphs"));
+
+          char copy[64];
+          strcpy(copy, a);
+          copy[15] = 0;                 /* truncate by writing the terminator */
+          printf("cut     %s\n", copy);
+
+          for (char *p = copy; *p; p++) if (*p == ' ') *p = '_';
+          printf("subbed  %s\n", copy);
+          return 0;
+      }
+  - title: "Reverse a string in place"
+    note: "Two indices walking towards each other."
+    group: "Arrays and strings"
+    code: |2-
+      #include <stdio.h>
+      #include <string.h>
+
+      void reverse(char *s) {
+          size_t i = 0, j = strlen(s);
+          if (j == 0) return;
+          for (j--; i < j; i++, j--) {
+              char t = s[i];
+              s[i] = s[j];
+              s[j] = t;
+          }
+      }
+
+      int main(void) {
+          char s[] = "computational graph";
+          printf("before %s\n", s);
+          reverse(s);
+          printf("after  %s\n", s);
+          return 0;
+      }
+  - title: "Pointers and addresses"
+    note: "What a pointer holds and what dereferencing does."
+    group: "Pointers"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          int n = 42;
+          int *p = &n;
+
+          printf("n      = %d\n", n);
+          printf("&n     = %p\n", (void *)&n);
+          printf("p      = %p\n", (void *)p);
+          printf("*p     = %d\n", *p);
+
+          *p = 99;
+          printf("n now  = %d\n", n);
+
+          int **pp = &p;
+          printf("**pp   = %d\n", **pp);
+
+          int xs[] = {10, 20, 30};
+          int *q = xs;
+          printf("%d %d %d\n", *q, *(q + 1), q[2]);
+          return 0;
+      }
+  - title: "Pass by value against by pointer"
+    note: "Why swap needs addresses."
+    group: "Pointers"
+    code: |2-
+      #include <stdio.h>
+
+      void swap_broken(int a, int b) { int t = a; a = b; b = t; }
+      void swap_works(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+
+      int main(void) {
+          int x = 1, y = 2;
+
+          swap_broken(x, y);
+          printf("after swap_broken: %d %d\n", x, y);
+
+          swap_works(&x, &y);
+          printf("after swap_works:  %d %d\n", x, y);
+          return 0;
+      }
+  - title: "malloc and free"
+    note: "Heap allocation, and giving it back."
+    group: "Pointers"
+    code: |2-
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(void) {
+          size_t n = 10;
+          int *xs = malloc(n * sizeof *xs);
+          if (!xs) { perror("malloc"); return 1; }
+
+          for (size_t i = 0; i < n; i++) xs[i] = (int)(i * i);
+          for (size_t i = 0; i < n; i++) printf("%d ", xs[i]);
+          printf("\n");
+
+          n = 15;
+          int *bigger = realloc(xs, n * sizeof *xs);
+          if (!bigger) { free(xs); return 1; }
+          xs = bigger;
+          for (size_t i = 10; i < n; i++) xs[i] = -1;
+
+          for (size_t i = 0; i < n; i++) printf("%d ", xs[i]);
+          printf("\n");
+
+          free(xs);          /* every malloc needs exactly one free */
+          return 0;
+      }
+  - title: "Functions and prototypes"
+    note: "Declaration before use, and recursion."
+    group: "Functions"
+    code: |2-
+      #include <stdio.h>
+
+      long factorial(int n);           /* prototype */
+      int  gcd(int a, int b);
+
+      int main(void) {
+          for (int n = 0; n <= 10; n++) printf("%d! = %ld\n", n, factorial(n));
+          printf("gcd(48, 18) = %d\n", gcd(48, 18));
+          return 0;
+      }
+
+      long factorial(int n) { return n < 2 ? 1 : n * factorial(n - 1); }
+
+      int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }
+  - title: "Function pointers"
+    note: "Passing behaviour as an argument."
+    group: "Functions"
+    code: |2-
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int ascending(const void *a, const void *b)  { return *(int *)a - *(int *)b; }
+      int descending(const void *a, const void *b) { return *(int *)b - *(int *)a; }
+
+      void show(const char *label, int *xs, size_t n) {
+          printf("%-11s", label);
+          for (size_t i = 0; i < n; i++) printf("%d ", xs[i]);
+          printf("\n");
+      }
+
+      int main(void) {
+          int xs[] = {5, 2, 9, 1, 7};
+          size_t n = sizeof xs / sizeof xs[0];
+
+          show("original", xs, n);
+          qsort(xs, n, sizeof xs[0], ascending);
+          show("ascending", xs, n);
+          qsort(xs, n, sizeof xs[0], descending);
+          show("descending", xs, n);
+          return 0;
+      }
+  - title: "struct"
+    note: "Grouping related fields."
+    group: "Structures"
+    code: |2-
+      #include <stdio.h>
+      #include <string.h>
+
+      typedef struct {
+          char   title[64];
+          int    year;
+          double score;
+      } Paper;
+
+      void show(const Paper *p) {
+          printf("%-20s %d  %.4f\n", p->title, p->year, p->score);
+      }
+
+      int main(void) {
+          Paper a = {"Adam", 2015, 0.9422};
+          Paper b;
+          strcpy(b.title, "Backpropagation");
+          b.year = 1986;
+          b.score = 0.8533;
+
+          show(&a);
+          show(&b);
+          printf("sizeof(Paper) = %zu\n", sizeof(Paper));
+          return 0;
+      }
+  - title: "Linked list"
+    note: "Building and walking a chain of nodes."
+    group: "Structures"
+    code: |2-
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      typedef struct Node { int value; struct Node *next; } Node;
+
+      Node *push(Node *head, int v) {
+          Node *n = malloc(sizeof *n);
+          n->value = v;
+          n->next = head;
+          return n;
+      }
+
+      void show(Node *head) {
+          for (Node *p = head; p; p = p->next) printf("%d -> ", p->value);
+          printf("NULL\n");
+      }
+
+      void destroy(Node *head) {
+          while (head) { Node *next = head->next; free(head); head = next; }
+      }
+
+      int main(void) {
+          Node *list = NULL;
+          for (int i = 1; i <= 5; i++) list = push(list, i * 10);
+          show(list);
+          destroy(list);
+          return 0;
+      }
+  - title: "Bubble sort and binary search"
+    note: "Two classics written out in full."
+    group: "Algorithms"
+    code: |2-
+      #include <stdio.h>
+
+      void bubble(int *xs, int n) {
+          for (int i = 0; i < n - 1; i++)
+              for (int j = 0; j < n - 1 - i; j++)
+                  if (xs[j] > xs[j+1]) { int t = xs[j]; xs[j] = xs[j+1]; xs[j+1] = t; }
+      }
+
+      int search(const int *xs, int n, int target) {
+          int lo = 0, hi = n - 1;
+          while (lo <= hi) {
+              int mid = lo + (hi - lo) / 2;      /* avoids overflow */
+              if (xs[mid] == target) return mid;
+              if (xs[mid] <  target) lo = mid + 1;
+              else                   hi = mid - 1;
+          }
+          return -1;
+      }
+
+      int main(void) {
+          int xs[] = {9, 3, 7, 1, 8, 2};
+          int n = sizeof xs / sizeof xs[0];
+
+          bubble(xs, n);
+          for (int i = 0; i < n; i++) printf("%d ", xs[i]);
+          printf("\n");
+
+          for (int t = 1; t <= 4; t++) printf("search %d -> %d\n", t, search(xs, n, t));
+          return 0;
+      }
+  - title: "Primes with a sieve"
+    note: "Eratosthenes, the fast way to many primes."
+    group: "Algorithms"
+    code: |2-
+      #include <stdio.h>
+      #include <stdlib.h>
+      #include <string.h>
+
+      int main(void) {
+          int limit = 100;
+          char *composite = calloc(limit + 1, 1);
+
+          for (int p = 2; (long)p * p <= limit; p++)
+              if (!composite[p])
+                  for (int m = p * p; m <= limit; m += p) composite[m] = 1;
+
+          int count = 0;
+          for (int n = 2; n <= limit; n++)
+              if (!composite[n]) { printf("%3d", n); if (++count % 10 == 0) printf("\n"); }
+
+          printf("\n%d primes below %d\n", count, limit);
+          free(composite);
+          return 0;
+      }
+  - title: "Reading and writing a file"
+    note: "fopen, fprintf, fgets and fclose."
+    group: "Files"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          FILE *f = fopen("data.txt", "w");
+          if (!f) { perror("fopen"); return 1; }
+          for (int i = 1; i <= 5; i++) fprintf(f, "line %d\n", i);
+          fclose(f);
+
+          f = fopen("data.txt", "r");
+          if (!f) { perror("fopen"); return 1; }
+
+          char buf[128];
+          int n = 0;
+          while (fgets(buf, sizeof buf, f)) printf("%d: %s", ++n, buf);
+          fclose(f);
+
+          printf("read %d lines\n", n);
+          return 0;
+      }
+  - title: "Command-line arguments"
+    note: "argc and argv, and converting them."
+    group: "Files"
+    code: |2-
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(int argc, char **argv) {
+          printf("program: %s\n", argv[0]);
+          printf("argc:    %d\n", argc);
+
+          if (argc < 2) {
+              printf("usage: %s <number> [number ...]\n", argv[0]);
+              return 1;
+          }
+
+          long sum = 0;
+          for (int i = 1; i < argc; i++) {
+              long v = strtol(argv[i], NULL, 10);
+              printf("  arg %d = %s -> %ld\n", i, argv[i], v);
+              sum += v;
+          }
+          printf("sum: %ld\n", sum);
+          return 0;
+      }
+---

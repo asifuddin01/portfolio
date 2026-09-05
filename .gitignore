@@ -29,3 +29,7 @@ public/admin/sveltia-cms.js
 # CV, regenerated from content on every build
 public/cv/
 .env.local
+
+# Pyodide runtime, copied out of node_modules by scripts/sync-pyodide.mjs
+public/pyodide/
+public/emception/

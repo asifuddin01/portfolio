@@ -969,8 +969,77 @@ const axioms = defineCollection({
   }),
 });
 
+/**
+ * Officina — the code workshop's example library.
+ *
+ * One entry per language, each holding a list of examples. A list rather than
+ * one file per example because a hundred separate files is a hundred separate
+ * things to open in /admin, and the examples are only ever read as a set.
+ */
+const recipes = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/recipes' }),
+  schema: z.object({
+    /** Must match a language the workshop knows: python, c, cpp, asm. */
+    language: z.enum(['python', 'c', 'cpp', 'asm']),
+    label: z.string(),
+    /** Sets the order of the language tabs. */
+    order: z.number().int().min(1),
+    /**
+     * Whether this language executes in the browser, and on what.
+     *
+     * Python runs on Pyodide, C and C++ on a clang/wasm-ld toolchain that is
+     * fetched only when a cell is actually run — the packs are tens of
+     * megabytes, so nobody who does not compile ever pays for them. Assembly
+     * is architecture-specific and has no assembler here, so it is written and
+     * exported rather than run.
+     *
+     * Both facts live in the data so the page cannot claim otherwise by
+     * accident: `runnable: false` and a runtime are contradictory, and the
+     * refinement below rejects that pairing at build time.
+     */
+    runnable: z.boolean().default(false),
+    runtime: z.enum(['pyodide', 'emception', 'none']).default('none'),
+    /** File extension for a downloaded cell. */
+    extension: z.string(),
+    /** How to run it outside the browser, shown where a Run button is not. */
+    howToRun: z.string(),
+    examples: z
+      .array(
+        z.object({
+          title: z.string(),
+          /** One line on what it demonstrates. */
+          note: z.string(),
+          /** Grouping in the picker: basics, control, data, and so on. */
+          group: z.string(),
+          code: z.string(),
+        })
+      )
+      .min(1),
+    status: shipStatus.default('published'),
+  })
+  .superRefine((r, ctx) => {
+    // A language that says it runs must say what runs it, and one that says it
+    // does not must not name a runtime. Either mismatch would show the reader
+    // a Run button that cannot work, or hide one that could.
+    if (r.runnable && r.runtime === 'none') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['runtime'],
+        message: `${r.language} is marked runnable but names no runtime.`,
+      });
+    }
+    if (!r.runnable && r.runtime !== 'none') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['runnable'],
+        message: `${r.language} names the ${r.runtime} runtime but is not marked runnable.`,
+      });
+    }
+  }),
+});
+
 export const collections = {
-  works, elementa, marginalia, lectiones, bibliotheca, reviews, library, site, art, books, instrumentarium,
+  works, elementa, marginalia, lectiones, bibliotheca, recipes, reviews, library, site, art, books, instrumentarium,
   referees,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,

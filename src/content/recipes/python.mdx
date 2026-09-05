@@ -1,0 +1,888 @@
+---
+language: python
+label: Python
+order: 1
+runnable: true
+runtime: pyodide
+extension: .py
+howToRun: "Runs here in the browser. Outside it: python3 file.py"
+status: published
+examples:
+  - title: "Hello, world"
+    note: "The smallest complete program."
+    group: "Basics"
+    code: |2-
+      print("Hello, world")
+  - title: "Variables and types"
+    note: "Dynamic typing, and how to inspect it."
+    group: "Basics"
+    code: |2-
+      n = 42
+      pi = 3.14159
+      name = "Asif"
+      ok = True
+
+      for v in (n, pi, name, ok):
+          print(f"{v!r:<12} {type(v).__name__}")
+  - title: "Arithmetic and integer division"
+    note: "Where / and // differ, and why."
+    group: "Basics"
+    code: |2-
+      a, b = 17, 5
+      print("a + b  ", a + b)
+      print("a - b  ", a - b)
+      print("a * b  ", a * b)
+      print("a / b  ", a / b)      # always float
+      print("a // b ", a // b)     # floor division
+      print("a % b  ", a % b)
+      print("a ** b ", a ** b)
+      print("divmod ", divmod(a, b))
+  - title: "Strings and f-strings"
+    note: "Formatting, slicing and the common methods."
+    group: "Basics"
+    code: |2-
+      s = "  Backpropagation  "
+      print(repr(s.strip()))
+      print(s.strip().lower())
+      print(s.strip()[:5], s.strip()[-4:])
+      print("-".join(["a", "b", "c"]))
+
+      x, n = 3.14159, 7
+      print(f"{x:.2f}  {n:04d}  {n:>6}  {x:e}")
+  - title: "Input with a default"
+    note: "Reading input without hanging when there is none."
+    group: "Basics"
+    code: |2-
+      import sys
+
+      raw = sys.stdin.readline().strip() if not sys.stdin.isatty() else ""
+      name = raw or "world"
+      print(f"Hello, {name}")
+  - title: "if / elif / else"
+    note: "Branching, and the truthiness rules."
+    group: "Control flow"
+    code: |2-
+      for n in (-3, 0, 7, 100):
+          if n < 0:
+              kind = "negative"
+          elif n == 0:
+              kind = "zero"
+          elif n < 10:
+              kind = "small"
+          else:
+              kind = "large"
+          print(f"{n:>4}  {kind}")
+
+      # Falsy values, all at once
+      print([bool(v) for v in (0, 0.0, "", [], {}, None, "0")])
+  - title: "for, range and enumerate"
+    note: "Iterating over indices and items together."
+    group: "Control flow"
+    code: |2-
+      items = ["alpha", "beta", "gamma"]
+
+      for i in range(len(items)):
+          print(i, items[i])
+
+      print("--")
+      for i, item in enumerate(items, start=1):
+          print(i, item)
+
+      print("--")
+      for a, b in zip(items, [1, 2, 3]):
+          print(a, b)
+  - title: "while, break and continue"
+    note: "Loop control, and the else clause nobody uses."
+    group: "Control flow"
+    code: |2-
+      n = 0
+      while True:
+          n += 1
+          if n % 2 == 0:
+              continue
+          if n > 9:
+              break
+          print("odd:", n)
+
+      # for/else: else runs only if no break happened
+      for x in [1, 3, 5]:
+          if x % 2 == 0:
+              print("found an even")
+              break
+      else:
+          print("no even number in the list")
+  - title: "match statement"
+    note: "Structural pattern matching, Python 3.10 and later."
+    group: "Control flow"
+    code: |2-
+      def describe(value):
+          match value:
+              case 0:
+                  return "zero"
+              case int() | float() if value < 0:
+                  return "negative number"
+              case int():
+                  return "positive integer"
+              case [x]:
+                  return f"one-element list holding {x}"
+              case [_, _, *rest]:
+                  return f"list with {len(rest) + 2} elements"
+              case {"name": name}:
+                  return f"mapping for {name}"
+              case _:
+                  return "something else"
+
+      for v in (0, -4, 9, [7], [1, 2, 3], {"name": "Asif"}, "text"):
+          print(f"{str(v):<16} {describe(v)}")
+  - title: "Exceptions"
+    note: "try / except / else / finally, and raising your own."
+    group: "Control flow"
+    code: |2-
+      class TooBig(ValueError):
+          pass
+
+      def check(n):
+          if n > 100:
+              raise TooBig(f"{n} exceeds 100")
+          return n
+
+      for n in (5, 500, "x"):
+          try:
+              value = check(n)
+          except TooBig as e:
+              print("too big:", e)
+          except TypeError as e:
+              print("wrong type:", e)
+          else:
+              print("fine:", value)
+          finally:
+              print("  checked", repr(n))
+  - title: "Lists"
+    note: "Creating, slicing and mutating."
+    group: "Data structures"
+    code: |2-
+      xs = [3, 1, 4, 1, 5, 9, 2, 6]
+      print("original ", xs)
+      print("sorted   ", sorted(xs))
+      print("reversed ", xs[::-1])
+      print("every 2nd", xs[::2])
+      print("slice 2:5", xs[2:5])
+
+      xs.append(5)
+      xs.insert(0, 0)
+      xs.remove(1)
+      print("mutated  ", xs)
+      print("popped   ", xs.pop(), xs)
+  - title: "Dictionaries"
+    note: "Lookup, defaults, iteration and merging."
+    group: "Data structures"
+    code: |2-
+      counts = {"a": 3, "b": 1}
+      counts["c"] = 7
+
+      print(counts.get("z", 0))          # default rather than KeyError
+      counts.setdefault("d", 0)
+
+      for k, v in sorted(counts.items(), key=lambda kv: -kv[1]):
+          print(f"{k}: {v}")
+
+      print({**counts, "a": 99})          # merge, right wins
+      print(counts | {"e": 5})           # 3.9+ union operator
+  - title: "Sets"
+    note: "Membership and the four set operations."
+    group: "Data structures"
+    code: |2-
+      a = {1, 2, 3, 4}
+      b = {3, 4, 5, 6}
+
+      print("union       ", a | b)
+      print("intersection", a & b)
+      print("difference  ", a - b)
+      print("symmetric   ", a ^ b)
+      print("subset?     ", {1, 2} <= a)
+
+      # The usual reason to reach for one
+      words = ["the", "cat", "the", "hat", "cat"]
+      print("unique      ", sorted(set(words)))
+  - title: "Tuples and unpacking"
+    note: "Immutability, and starred unpacking."
+    group: "Data structures"
+    code: |2-
+      point = (3, 4)
+      x, y = point
+      print(x, y)
+
+      first, *middle, last = [1, 2, 3, 4, 5]
+      print(first, middle, last)
+
+      # Swap without a temporary
+      a, b = 1, 2
+      a, b = b, a
+      print(a, b)
+
+      # A tuple is hashable, so it can key a dict
+      grid = {(0, 0): "origin", (1, 2): "somewhere"}
+      print(grid[(1, 2)])
+  - title: "Comprehensions"
+    note: "List, dict, set and generator forms."
+    group: "Data structures"
+    code: |2-
+      squares = [n * n for n in range(10)]
+      evens = [n for n in range(20) if n % 2 == 0]
+      pairs = [(a, b) for a in "ab" for b in (1, 2)]
+
+      print(squares)
+      print(evens)
+      print(pairs)
+
+      print({w: len(w) for w in ["alpha", "be", "gamma"]})
+      print({c for c in "mississippi"})
+
+      gen = (n * n for n in range(5))    # lazy: nothing computed yet
+      print(type(gen).__name__, sum(gen))
+  - title: "collections: Counter and defaultdict"
+    note: "The two that remove the most boilerplate."
+    group: "Data structures"
+    code: |2-
+      from collections import Counter, defaultdict, deque
+
+      text = "the quick brown fox jumps over the lazy dog the end"
+      c = Counter(text.split())
+      print(c.most_common(3))
+
+      by_letter = defaultdict(list)
+      for word in text.split():
+          by_letter[word[0]].append(word)
+      print(dict(sorted(by_letter.items()))["t"])
+
+      q = deque([1, 2, 3])
+      q.appendleft(0); q.append(4)
+      print(q, q.popleft())
+  - title: "Defining functions"
+    note: "Arguments, defaults, *args and **kwargs."
+    group: "Functions"
+    code: |2-
+      def greet(name, greeting="Hello", *extras, punctuation="!", **info):
+          line = f"{greeting}, {name}{punctuation}"
+          if extras:
+              line += "  extras=" + str(extras)
+          if info:
+              line += "  info=" + str(info)
+          return line
+
+      print(greet("Asif"))
+      print(greet("Asif", "Hi"))
+      print(greet("Asif", "Hi", 1, 2, punctuation="?", role="researcher"))
+  - title: "The mutable default argument trap"
+    note: "The most common Python bug, shown and fixed."
+    group: "Functions"
+    code: |2-
+      def broken(item, into=[]):        # evaluated ONCE, at definition time
+          into.append(item)
+          return into
+
+      print(broken(1))
+      print(broken(2))                 # the list survived between calls
+      print(broken(3))
+
+      def fixed(item, into=None):
+          if into is None:
+              into = []
+          into.append(item)
+          return into
+
+      print(fixed(1), fixed(2), fixed(3))
+  - title: "Lambdas, map, filter, reduce"
+    note: "Small functions, and when a comprehension is clearer."
+    group: "Functions"
+    code: |2-
+      from functools import reduce
+
+      xs = [1, 2, 3, 4, 5]
+      print(list(map(lambda n: n * n, xs)))
+      print(list(filter(lambda n: n % 2, xs)))
+      print(reduce(lambda a, b: a * b, xs))
+
+      # Usually clearer as comprehensions
+      print([n * n for n in xs])
+      print([n for n in xs if n % 2])
+
+      # Where lambda genuinely earns its place: a sort key
+      people = [("Ada", 36), ("Alan", 41), ("Grace", 45)]
+      print(sorted(people, key=lambda p: -p[1]))
+  - title: "Decorators"
+    note: "Wrapping a function, with functools.wraps."
+    group: "Functions"
+    code: |2-
+      import functools, time
+
+      def timed(fn):
+          @functools.wraps(fn)
+          def wrapper(*args, **kwargs):
+              t = time.perf_counter()
+              result = fn(*args, **kwargs)
+              print(f"{fn.__name__} took {(time.perf_counter()-t)*1000:.3f} ms")
+              return result
+          return wrapper
+
+      @timed
+      def slow_sum(n):
+          """Adds the first n integers the slow way."""
+          return sum(range(n))
+
+      print(slow_sum(200_000))
+      print(slow_sum.__name__, "|", slow_sum.__doc__)
+  - title: "Generators and yield"
+    note: "Producing values lazily, and why it matters."
+    group: "Functions"
+    code: |2-
+      def fibonacci():
+          a, b = 0, 1
+          while True:
+              yield a
+              a, b = b, a + b
+
+      import itertools
+      print(list(itertools.islice(fibonacci(), 10)))
+
+      def read_in_chunks(text, size):
+          for i in range(0, len(text), size):
+              yield text[i:i + size]
+
+      for chunk in read_in_chunks("abcdefghij", 3):
+          print(repr(chunk))
+
+      # A generator holds one value at a time, not the whole sequence
+      big = (n * n for n in range(10_000_000))
+      print("sum of first five:", sum(itertools.islice(big, 5)))
+  - title: "Recursion, with and without memoisation"
+    note: "The cost of recomputation, measured."
+    group: "Functions"
+    code: |2-
+      import functools, time
+
+      def fib_slow(n):
+          return n if n < 2 else fib_slow(n-1) + fib_slow(n-2)
+
+      @functools.lru_cache(maxsize=None)
+      def fib_fast(n):
+          return n if n < 2 else fib_fast(n-1) + fib_fast(n-2)
+
+      t = time.perf_counter(); fib_slow(28); slow = time.perf_counter() - t
+      t = time.perf_counter(); fib_fast(28); fast = time.perf_counter() - t
+
+      print(f"naive      {slow*1000:8.2f} ms")
+      print(f"memoised   {fast*1000:8.2f} ms")
+      print(f"speed-up   {slow/fast:8.0f}x")
+      print("fib(100)  ", fib_fast(100))
+  - title: "A class with methods"
+    note: "State, behaviour and __init__."
+    group: "Classes"
+    code: |2-
+      class Counter:
+          def __init__(self, start=0):
+              self.value = start
+              self._history = [start]
+
+          def add(self, n):
+              self.value += n
+              self._history.append(self.value)
+              return self          # chaining
+
+          def history(self):
+              return list(self._history)
+
+      c = Counter(10)
+      c.add(5).add(-3).add(8)
+      print(c.value)
+      print(c.history())
+  - title: "Dunder methods"
+    note: "Making an object behave like a built-in."
+    group: "Classes"
+    code: |2-
+      class Vector:
+          def __init__(self, x, y):
+              self.x, self.y = x, y
+
+          def __repr__(self):
+              return f"Vector({self.x}, {self.y})"
+
+          def __add__(self, other):
+              return Vector(self.x + other.x, self.y + other.y)
+
+          def __mul__(self, k):
+              return Vector(self.x * k, self.y * k)
+
+          def __eq__(self, other):
+              return (self.x, self.y) == (other.x, other.y)
+
+          def __abs__(self):
+              return (self.x**2 + self.y**2) ** 0.5
+
+          def __len__(self):
+              return 2
+
+      a, b = Vector(1, 2), Vector(3, 4)
+      print(a + b, a * 3, abs(b), a == Vector(1, 2), len(a))
+  - title: "Inheritance and super()"
+    note: "Extending a base class properly."
+    group: "Classes"
+    code: |2-
+      class Shape:
+          def __init__(self, name):
+              self.name = name
+
+          def area(self):
+              raise NotImplementedError
+
+          def __repr__(self):
+              return f"{self.name} of area {self.area():.3f}"
+
+      class Circle(Shape):
+          def __init__(self, r):
+              super().__init__("circle")
+              self.r = r
+
+          def area(self):
+              return 3.141592653589793 * self.r ** 2
+
+      class Rect(Shape):
+          def __init__(self, w, h):
+              super().__init__("rectangle")
+              self.w, self.h = w, h
+
+          def area(self):
+              return self.w * self.h
+
+      for s in (Circle(1), Rect(3, 4)):
+          print(s)
+  - title: "dataclasses"
+    note: "Structure without the boilerplate."
+    group: "Classes"
+    code: |2-
+      from dataclasses import dataclass, field
+
+      @dataclass(order=True)
+      class Paper:
+          year: int
+          title: str
+          authors: list = field(default_factory=list)
+          cited: int = 0
+
+          def cite(self):
+              self.cited += 1
+
+      p = Paper(2015, "Adam", ["Kingma", "Ba"])
+      q = Paper(1986, "Backpropagation", ["Rumelhart", "Hinton", "Williams"])
+
+      print(p)                        # __repr__ for free
+      print(p == Paper(2015, "Adam", ["Kingma", "Ba"]))   # __eq__ for free
+      print(sorted([p, q])[0].title)  # ordering by field order
+      p.cite(); print(p.cited)
+  - title: "Properties and validation"
+    note: "Computed attributes that look like plain ones."
+    group: "Classes"
+    code: |2-
+      class Temperature:
+          def __init__(self, celsius=0.0):
+              self.celsius = celsius       # goes through the setter
+
+          @property
+          def celsius(self):
+              return self._c
+
+          @celsius.setter
+          def celsius(self, value):
+              if value < -273.15:
+                  raise ValueError(f"{value} is below absolute zero")
+              self._c = float(value)
+
+          @property
+          def fahrenheit(self):
+              return self._c * 9 / 5 + 32
+
+      t = Temperature(25)
+      print(t.celsius, t.fahrenheit)
+      t.celsius = 100
+      print(t.celsius, t.fahrenheit)
+      try:
+          t.celsius = -300
+      except ValueError as e:
+          print("rejected:", e)
+  - title: "Reading and writing a text file"
+    note: "Context managers, and why they matter."
+    group: "Files and data"
+    code: |2-
+      path = "notes.txt"
+
+      with open(path, "w") as f:
+          f.write("first line\n")
+          f.writelines([f"line {i}\n" for i in range(2, 5)])
+
+      with open(path) as f:
+          print(f.read())
+
+      with open(path) as f:
+          for i, line in enumerate(f, 1):
+              print(i, line.rstrip())
+
+      # The file is closed on leaving the block, even if an exception is raised.
+  - title: "JSON"
+    note: "Serialising and parsing structured data."
+    group: "Files and data"
+    code: |2-
+      import json
+
+      record = {
+          "model": "HierarchiRetina",
+          "stages": 3,
+          "metrics": {"macro_auc": 0.9422, "qwk": 0.8533},
+          "datasets": ["EyePACS", "DDR", "APTOS"],
+      }
+
+      text = json.dumps(record, indent=2)
+      print(text)
+
+      back = json.loads(text)
+      print(back["metrics"]["macro_auc"], type(back["stages"]).__name__)
+
+      with open("record.json", "w") as f:
+          json.dump(record, f)
+      with open("record.json") as f:
+          print(json.load(f)["datasets"])
+  - title: "CSV"
+    note: "Reading rows as lists and as dictionaries."
+    group: "Files and data"
+    code: |2-
+      import csv, io
+
+      data = "name,year,cited\nAdam,2015,180000\nBackprop,1986,40000\nResNet,2016,200000\n"
+
+      for row in csv.reader(io.StringIO(data)):
+          print(row)
+
+      print("--")
+      for row in csv.DictReader(io.StringIO(data)):
+          print(f'{row["name"]:<10} {int(row["cited"]):>7,}')
+
+      out = io.StringIO()
+      w = csv.writer(out)
+      w.writerow(["a", "b"]); w.writerow([1, 2])
+      print(repr(out.getvalue()))
+  - title: "Regular expressions"
+    note: "Search, match, groups and substitution."
+    group: "Files and data"
+    code: |2-
+      import re
+
+      text = "Adam (2015), ResNet (2016), and Backprop (1986) are cited here."
+
+      print(re.findall(r"\((\d{4})\)", text))
+      print(re.findall(r"(\w+) \((\d{4})\)", text))
+
+      m = re.search(r"(?P<name>\w+) \((?P<year>\d{4})\)", text)
+      print(m.group("name"), m.group("year"), m.span())
+
+      print(re.sub(r"\((\d{4})\)", r"[\1]", text))
+      print(re.split(r",\s*", "a, b,c ,  d"))
+  - title: "pathlib"
+    note: "Paths as objects rather than strings."
+    group: "Files and data"
+    code: |2-
+      from pathlib import Path
+
+      p = Path("data") / "runs" / "log.txt"
+      print(p)
+      print("suffix   ", p.suffix)
+      print("stem     ", p.stem)
+      print("parent   ", p.parent)
+      print("parts    ", p.parts)
+
+      p.parent.mkdir(parents=True, exist_ok=True)
+      p.write_text("loss 0.45\nloss 0.31\n")
+
+      print(p.exists(), p.stat().st_size, "bytes")
+      print(p.read_text().splitlines())
+      print([str(f) for f in Path("data").rglob("*.txt")])
+  - title: "Sorting with a key"
+    note: "Custom orders, and stability."
+    group: "Algorithms"
+    code: |2-
+      people = [("Ada", 36, "maths"), ("Alan", 41, "logic"), ("Grace", 45, "maths")]
+
+      print(sorted(people, key=lambda p: p[1]))
+      print(sorted(people, key=lambda p: -p[1]))
+      print(sorted(people, key=lambda p: (p[2], p[1])))
+
+      from operator import itemgetter
+      print(sorted(people, key=itemgetter(2, 1)))
+
+      # Python's sort is stable: equal keys keep their original order
+      xs = [("b", 1), ("a", 1), ("c", 0)]
+      print(sorted(xs, key=itemgetter(1)))
+  - title: "Binary search"
+    note: "The classic, written out and then from the stdlib."
+    group: "Algorithms"
+    code: |2-
+      def bisect_left(xs, target):
+          lo, hi = 0, len(xs)
+          while lo < hi:
+              mid = (lo + hi) // 2
+              if xs[mid] < target:
+                  lo = mid + 1
+              else:
+                  hi = mid
+          return lo
+
+      xs = [1, 3, 5, 7, 9, 11]
+      for t in (5, 6, 0, 20):
+          i = bisect_left(xs, t)
+          print(f"{t:>3} -> index {i}  found={i < len(xs) and xs[i] == t}")
+
+      import bisect
+      print([bisect.bisect_left(xs, t) for t in (5, 6, 0, 20)])
+  - title: "Two sums with a hash map"
+    note: "Turning a quadratic scan into a linear one."
+    group: "Algorithms"
+    code: |2-
+      def two_sum(xs, target):
+          seen = {}
+          for i, x in enumerate(xs):
+              if target - x in seen:
+                  return seen[target - x], i
+              seen[x] = i
+          return None
+
+      xs = [2, 7, 11, 15, 3]
+      for t in (9, 18, 100):
+          print(t, two_sum(xs, t))
+
+      # The quadratic version, for comparison
+      def two_sum_slow(xs, target):
+          for i in range(len(xs)):
+              for j in range(i + 1, len(xs)):
+                  if xs[i] + xs[j] == target:
+                      return i, j
+          return None
+      print(two_sum_slow(xs, 9))
+  - title: "Breadth-first search"
+    note: "Shortest path on an unweighted graph."
+    group: "Algorithms"
+    code: |2-
+      from collections import deque
+
+      graph = {
+          "a": ["b", "c"], "b": ["d"], "c": ["d", "e"],
+          "d": ["f"], "e": ["f"], "f": [],
+      }
+
+      def bfs(start, goal):
+          queue = deque([[start]])
+          seen = {start}
+          while queue:
+              path = queue.popleft()
+              node = path[-1]
+              if node == goal:
+                  return path
+              for nxt in graph[node]:
+                  if nxt not in seen:
+                      seen.add(nxt)
+                      queue.append(path + [nxt])
+          return None
+
+      print(bfs("a", "f"))
+      print(bfs("b", "e"))
+  - title: "Dynamic programming"
+    note: "Memoised top-down and iterative bottom-up."
+    group: "Algorithms"
+    code: |2-
+      def coins_topdown(amount, coins, memo=None):
+          memo = {} if memo is None else memo
+          if amount == 0:
+              return 0
+          if amount < 0:
+              return float("inf")
+          if amount in memo:
+              return memo[amount]
+          memo[amount] = min(
+              (1 + coins_topdown(amount - c, coins, memo) for c in coins),
+              default=float("inf"),
+          )
+          return memo[amount]
+
+      def coins_bottomup(amount, coins):
+          best = [0] + [float("inf")] * amount
+          for a in range(1, amount + 1):
+              for c in coins:
+                  if c <= a:
+                      best[a] = min(best[a], best[a - c] + 1)
+          return best[amount]
+
+      coins = [1, 5, 12, 19]
+      for amt in (23, 30, 47):
+          print(amt, coins_topdown(amt, coins), coins_bottomup(amt, coins))
+  - title: "Mean, variance and standard deviation"
+    note: "Written out, then from statistics."
+    group: "Numerics"
+    code: |2-
+      import statistics
+
+      xs = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+
+      mean = sum(xs) / len(xs)
+      var_pop = sum((x - mean) ** 2 for x in xs) / len(xs)
+      var_sample = sum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
+
+      print(f"mean            {mean:.6f}")
+      print(f"population var  {var_pop:.6f}   sd {var_pop ** 0.5:.6f}")
+      print(f"sample var      {var_sample:.6f}   sd {var_sample ** 0.5:.6f}")
+      print()
+      print("statistics module:", statistics.mean(xs), statistics.pstdev(xs), round(statistics.stdev(xs), 6))
+      print("median            ", statistics.median(xs))
+  - title: "Floating point is not decimal"
+    note: "Why 0.1 + 0.2 != 0.3, and what to do."
+    group: "Numerics"
+    code: |2-
+      from decimal import Decimal
+      import math
+
+      print(0.1 + 0.2)
+      print(0.1 + 0.2 == 0.3)
+      print(f"{0.1 + 0.2:.20f}")
+
+      print("close enough?", math.isclose(0.1 + 0.2, 0.3))
+      print("exact decimal:", Decimal("0.1") + Decimal("0.2"))
+
+      # The same problem, accumulated
+      total = sum([0.1] * 10)
+      print(total, total == 1.0, math.fsum([0.1] * 10) == 1.0)
+  - title: "Matrix multiply by hand"
+    note: "Three nested loops, and the shape rule."
+    group: "Numerics"
+    code: |2-
+      def matmul(A, B):
+          n, k, m = len(A), len(B), len(B[0])
+          assert len(A[0]) == k, f"inner dimensions {len(A[0])} and {k} disagree"
+          C = [[0.0] * m for _ in range(n)]
+          for i in range(n):
+              for j in range(m):
+                  C[i][j] = sum(A[i][p] * B[p][j] for p in range(k))
+          return C
+
+      A = [[1, 2, 3], [4, 5, 6]]           # 2 x 3
+      B = [[7, 8], [9, 10], [11, 12]]      # 3 x 2
+
+      for row in matmul(A, B):
+          print(row)
+
+      print("shape", len(A), "x", len(A[0]), "times", len(B), "x", len(B[0]))
+  - title: "Gradient descent on a quadratic"
+    note: "The update rule of Elementa I.7.1, in ten lines."
+    group: "Numerics"
+    code: |2-
+      # Minimise f(x) = (x - 3)^2 + 2, whose minimum is at x = 3
+      def f(x):      return (x - 3) ** 2 + 2
+      def grad(x):   return 2 * (x - 3)
+
+      x, eta = 10.0, 0.1
+      print(f"{'step':>5} {'x':>12} {'f(x)':>12} {'grad':>12}")
+      for step in range(0, 41):
+          if step % 5 == 0:
+              print(f"{step:5d} {x:12.6f} {f(x):12.6f} {grad(x):12.6f}")
+          x -= eta * grad(x)
+
+      print(f"\nconverged to {x:.8f}, true minimum 3")
+      print(f"stability limit for this problem: eta < 2/2 = 1.0")
+  - title: "Random numbers, reproducibly"
+    note: "Seeding, sampling and shuffling."
+    group: "Numerics"
+    code: |2-
+      import random
+
+      random.seed(42)
+      print([random.randint(1, 6) for _ in range(10)])
+      print(f"{random.random():.6f}")
+      print(f"{random.gauss(0, 1):.6f}")
+
+      deck = list(range(1, 11))
+      random.shuffle(deck)
+      print(deck)
+      print(random.sample(range(100), 5))
+      print(random.choice(["a", "b", "c"]))
+
+      random.seed(42)          # same seed, same sequence
+      print([random.randint(1, 6) for _ in range(10)])
+  - title: "itertools"
+    note: "Combinations, products and grouping."
+    group: "Standard library"
+    code: |2-
+      import itertools as it
+
+      print(list(it.combinations("abcd", 2)))
+      print(list(it.permutations("abc", 2)))
+      print(list(it.product([0, 1], repeat=3)))
+      print(list(it.accumulate([1, 2, 3, 4, 5])))
+      print(list(it.chain([1, 2], "ab", (3,))))
+
+      data = [("a", 1), ("a", 2), ("b", 3)]
+      for key, group in it.groupby(data, key=lambda p: p[0]):
+          print(key, [g[1] for g in group])
+
+      print(list(it.islice(it.count(10, 5), 4)))
+  - title: "datetime"
+    note: "Now, arithmetic, parsing and formatting."
+    group: "Standard library"
+    code: |2-
+      from datetime import datetime, date, timedelta
+
+      now = datetime(2026, 9, 4, 14, 30, 0)     # fixed, so the output is stable
+      print(now)
+      print(now.strftime("%Y-%m-%d %H:%M"))
+      print(now.strftime("%A %d %B %Y"))
+
+      print(now + timedelta(days=30, hours=6))
+      print((date(2026, 12, 25) - now.date()).days, "days to Christmas")
+
+      parsed = datetime.strptime("2015-12-22", "%Y-%m-%d")
+      print(parsed, parsed.year, parsed.isoformat())
+  - title: "Type hints"
+    note: "Annotations, and what they do and do not do."
+    group: "Standard library"
+    code: |2-
+      from typing import Optional, Iterable
+
+      def total(values: Iterable[float], scale: float = 1.0) -> float:
+          return sum(values) * scale
+
+      def find(items: list[str], target: str) -> Optional[int]:
+          return items.index(target) if target in items else None
+
+      print(total([1, 2, 3]), total([1, 2, 3], scale=2))
+      print(find(["a", "b"], "b"), find(["a", "b"], "z"))
+
+      # Hints are not enforced at runtime — this runs without complaint
+      print(total("not numbers at all" == "" and [] or [1, 2]))
+      print(total.__annotations__)
+  - title: "Testing with assert"
+    note: "The cheapest way to be sure something works."
+    group: "Standard library"
+    code: |2-
+      def normalise(xs):
+          """Scale a list to sum to 1."""
+          total = sum(xs)
+          if total == 0:
+              raise ValueError("cannot normalise a list summing to zero")
+          return [x / total for x in xs]
+
+      # Tests, run on import
+      assert normalise([1, 1]) == [0.5, 0.5]
+      assert normalise([2, 3, 5]) == [0.2, 0.3, 0.5]
+      assert abs(sum(normalise([7, 11, 13])) - 1.0) < 1e-12
+
+      try:
+          normalise([0, 0])
+      except ValueError as e:
+          print("raised as expected:", e)
+
+      print("all assertions passed")
+---

@@ -1,0 +1,524 @@
+---
+language: cpp
+label: C++
+order: 3
+runnable: true
+runtime: emception
+extension: .cpp
+howToRun: "Compiles and runs here with clang. Outside it: c++ -std=c++20 -Wall -Wextra -o prog file.cpp && ./prog"
+status: published
+examples:
+  - title: "Hello, world"
+    note: "Streams rather than printf."
+    group: "Basics"
+    code: |2-
+      #include <iostream>
+
+      int main() {
+          std::cout << "Hello, world" << std::endl;
+          return 0;
+      }
+  - title: "auto, and range-based for"
+    note: "Type inference and the modern loop."
+    group: "Basics"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <string>
+
+      int main() {
+          std::vector<int> xs{3, 1, 4, 1, 5};
+          auto total = 0;
+          for (auto x : xs) total += x;
+          std::cout << "sum " << total << "\n";
+
+          std::vector<std::string> names{"Ada", "Alan", "Grace"};
+          for (const auto& n : names) std::cout << n << " has " << n.size() << " letters\n";
+
+          for (auto& x : xs) x *= 2;        // by reference: mutates
+          for (auto x : xs) std::cout << x << " ";
+          std::cout << "\n";
+          return 0;
+      }
+  - title: "Input and output formatting"
+    note: "iomanip, and reading with cin."
+    group: "Basics"
+    code: |2-
+      #include <iostream>
+      #include <iomanip>
+      #include <string>
+
+      int main() {
+          double x = 3.14159265;
+          std::cout << std::fixed << std::setprecision(3) << x << "\n";
+          std::cout << std::setw(12) << std::right << "right" << "|\n";
+          std::cout << std::setw(12) << std::left  << "left"  << "|\n";
+          std::cout << std::scientific << x << "\n";
+
+          std::string line;
+          if (std::getline(std::cin, line) && !line.empty())
+              std::cout << "read: " << line << "\n";
+          else
+              std::cout << "no input\n";
+          return 0;
+      }
+  - title: "vector"
+    note: "The default container, and why."
+    group: "Containers"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <algorithm>
+
+      int main() {
+          std::vector<int> v{5, 3, 8, 1};
+          v.push_back(9);
+          v.insert(v.begin(), 0);
+
+          std::cout << "size " << v.size() << " capacity " << v.capacity() << "\n";
+
+          std::sort(v.begin(), v.end());
+          for (auto x : v) std::cout << x << " ";
+          std::cout << "\n";
+
+          auto it = std::find(v.begin(), v.end(), 8);
+          if (it != v.end()) std::cout << "found at index " << (it - v.begin()) << "\n";
+
+          v.erase(v.begin());
+          std::cout << "front " << v.front() << " back " << v.back() << "\n";
+          return 0;
+      }
+  - title: "map and unordered_map"
+    note: "Ordered and hashed lookup."
+    group: "Containers"
+    code: |2-
+      #include <iostream>
+      #include <map>
+      #include <unordered_map>
+      #include <string>
+
+      int main() {
+          std::map<std::string, int> counts{{"b", 2}, {"a", 1}};
+          counts["c"] = 3;
+          counts["a"] += 10;
+
+          for (const auto& [key, value] : counts)      // sorted by key
+              std::cout << key << " = " << value << "\n";
+
+          std::cout << "contains b: " << counts.count("b") << "\n";
+
+          if (auto it = counts.find("z"); it == counts.end())
+              std::cout << "z is absent\n";
+
+          std::unordered_map<std::string, int> fast{{"x", 1}};   // hashed, unordered
+          std::cout << "unordered size " << fast.size() << "\n";
+          return 0;
+      }
+  - title: "set, and algorithms over it"
+    note: "Uniqueness, kept sorted."
+    group: "Containers"
+    code: |2-
+      #include <iostream>
+      #include <set>
+      #include <vector>
+      #include <algorithm>
+      #include <iterator>
+
+      int main() {
+          std::set<int> a{1, 2, 3, 4}, b{3, 4, 5, 6};
+
+          std::vector<int> out;
+          std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(out));
+          std::cout << "intersection: ";
+          for (auto x : out) std::cout << x << " ";
+          std::cout << "\n";
+
+          out.clear();
+          std::set_union(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(out));
+          std::cout << "union:        ";
+          for (auto x : out) std::cout << x << " ";
+          std::cout << "\n";
+
+          a.insert(2);                       // already present, ignored
+          std::cout << "size still " << a.size() << "\n";
+          return 0;
+      }
+  - title: "string"
+    note: "std::string against a char array."
+    group: "Containers"
+    code: |2-
+      #include <iostream>
+      #include <string>
+      #include <algorithm>
+
+      int main() {
+          std::string s = "Backpropagation";
+
+          std::cout << s.size() << " " << s.substr(0, 4) << " " << s.find("prop") << "\n";
+
+          s += " and graphs";
+          std::cout << s << "\n";
+
+          std::string upper = s;
+          std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+          std::cout << upper << "\n";
+
+          std::cout << std::string(20, '-') << "\n";
+          std::cout << "starts with Back: " << (s.rfind("Back", 0) == 0) << "\n";
+          std::cout << "as number: " << std::stoi("42") + 1 << "\n";
+          return 0;
+      }
+  - title: "A class with a constructor"
+    note: "Encapsulation, and the member initialiser list."
+    group: "Classes"
+    code: |2-
+      #include <iostream>
+      #include <string>
+
+      class Rectangle {
+      public:
+          Rectangle(double w, double h) : width_(w), height_(h) {}
+
+          double area() const      { return width_ * height_; }
+          double perimeter() const { return 2 * (width_ + height_); }
+          void scale(double k)     { width_ *= k; height_ *= k; }
+
+      private:
+          double width_, height_;
+      };
+
+      int main() {
+          Rectangle r(3.0, 4.0);
+          std::cout << r.area() << " " << r.perimeter() << "\n";
+          r.scale(2);
+          std::cout << r.area() << " " << r.perimeter() << "\n";
+          return 0;
+      }
+  - title: "Inheritance and virtual functions"
+    note: "Polymorphism through a base pointer."
+    group: "Classes"
+    code: |2-
+      #include <iostream>
+      #include <memory>
+      #include <vector>
+
+      class Shape {
+      public:
+          virtual ~Shape() = default;
+          virtual double area() const = 0;          // pure virtual
+          virtual const char* name() const = 0;
+      };
+
+      class Circle : public Shape {
+          double r_;
+      public:
+          explicit Circle(double r) : r_(r) {}
+          double area() const override      { return 3.141592653589793 * r_ * r_; }
+          const char* name() const override { return "circle"; }
+      };
+
+      class Square : public Shape {
+          double s_;
+      public:
+          explicit Square(double s) : s_(s) {}
+          double area() const override      { return s_ * s_; }
+          const char* name() const override { return "square"; }
+      };
+
+      int main() {
+          std::vector<std::unique_ptr<Shape>> shapes;
+          shapes.push_back(std::make_unique<Circle>(1.0));
+          shapes.push_back(std::make_unique<Square>(2.0));
+
+          for (const auto& s : shapes)
+              std::cout << s->name() << " " << s->area() << "\n";
+          return 0;
+      }
+  - title: "Operator overloading"
+    note: "Making a type behave arithmetically."
+    group: "Classes"
+    code: |2-
+      #include <iostream>
+
+      struct Vec2 {
+          double x{}, y{};
+
+          Vec2 operator+(const Vec2& o) const { return {x + o.x, y + o.y}; }
+          Vec2 operator*(double k)      const { return {x * k, y * k}; }
+          bool operator==(const Vec2& o) const { return x == o.x && y == o.y; }
+      };
+
+      std::ostream& operator<<(std::ostream& os, const Vec2& v) {
+          return os << "(" << v.x << ", " << v.y << ")";
+      }
+
+      int main() {
+          Vec2 a{1, 2}, b{3, 4};
+          std::cout << a + b << "  " << a * 3 << "  " << (a == Vec2{1, 2}) << "\n";
+          return 0;
+      }
+  - title: "Smart pointers"
+    note: "Ownership without manual delete."
+    group: "Modern C++"
+    code: |2-
+      #include <iostream>
+      #include <memory>
+
+      struct Resource {
+          int id;
+          explicit Resource(int i) : id(i) { std::cout << "acquired " << id << "\n"; }
+          ~Resource()                      { std::cout << "released " << id << "\n"; }
+      };
+
+      int main() {
+          {
+              auto a = std::make_unique<Resource>(1);   // sole owner
+              std::cout << "using " << a->id << "\n";
+          }                                             // freed here, automatically
+
+          auto shared = std::make_shared<Resource>(2);
+          {
+              auto second = shared;                     // reference count 2
+              std::cout << "count " << shared.use_count() << "\n";
+          }
+          std::cout << "count " << shared.use_count() << "\n";
+          return 0;
+      }
+  - title: "Lambdas and captures"
+    note: "Anonymous functions, by value and by reference."
+    group: "Modern C++"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <algorithm>
+      #include <numeric>
+
+      int main() {
+          std::vector<int> xs{5, 2, 9, 1, 7};
+
+          std::sort(xs.begin(), xs.end(), [](int a, int b) { return a > b; });
+          for (auto x : xs) std::cout << x << " ";
+          std::cout << "\n";
+
+          int threshold = 4;
+          auto count = std::count_if(xs.begin(), xs.end(),
+                                     [threshold](int x) { return x > threshold; });
+          std::cout << "above " << threshold << ": " << count << "\n";
+
+          int running = 0;
+          std::for_each(xs.begin(), xs.end(), [&running](int x) { running += x; });
+          std::cout << "sum " << running << "\n";
+          std::cout << "accumulate " << std::accumulate(xs.begin(), xs.end(), 0) << "\n";
+          return 0;
+      }
+  - title: "Templates"
+    note: "One function, many types."
+    group: "Modern C++"
+    code: |2-
+      #include <iostream>
+      #include <string>
+      #include <vector>
+
+      template <typename T>
+      T largest(const std::vector<T>& xs) {
+          T best = xs.at(0);
+          for (const auto& x : xs) if (best < x) best = x;
+          return best;
+      }
+
+      template <typename T>
+      void show(const char* label, const T& value) {
+          std::cout << label << ": " << value << "\n";
+      }
+
+      int main() {
+          show("ints",    largest<int>({3, 9, 2}));
+          show("doubles", largest<double>({1.5, 0.5, 2.25}));
+          show("strings", largest<std::string>({"apple", "pear", "fig"}));
+          return 0;
+      }
+  - title: "optional and structured bindings"
+    note: "Expressing absence without sentinels."
+    group: "Modern C++"
+    code: |2-
+      #include <iostream>
+      #include <optional>
+      #include <string>
+      #include <map>
+
+      std::optional<int> parse(const std::string& s) {
+          try { return std::stoi(s); }
+          catch (...) { return std::nullopt; }
+      }
+
+      int main() {
+          for (const auto& s : {"42", "not a number", "-7"}) {
+              if (auto v = parse(s)) std::cout << s << " -> " << *v << "\n";
+              else                   std::cout << s << " -> no value\n";
+          }
+
+          std::map<std::string, int> m{{"a", 1}, {"b", 2}};
+          for (const auto& [key, value] : m)
+              std::cout << key << "=" << value << " ";
+          std::cout << "\n";
+          return 0;
+      }
+  - title: "Exceptions"
+    note: "Throwing, catching, and RAII cleanup."
+    group: "Modern C++"
+    code: |2-
+      #include <iostream>
+      #include <stdexcept>
+      #include <vector>
+
+      double divide(double a, double b) {
+          if (b == 0) throw std::domain_error("division by zero");
+          return a / b;
+      }
+
+      int main() {
+          for (double d : {2.0, 0.0}) {
+              try {
+                  std::cout << "10/" << d << " = " << divide(10, d) << "\n";
+              } catch (const std::domain_error& e) {
+                  std::cout << "error: " << e.what() << "\n";
+              }
+          }
+
+          std::vector<int> v{1, 2, 3};
+          try { v.at(10); }
+          catch (const std::out_of_range& e) { std::cout << "out of range: " << e.what() << "\n"; }
+          return 0;
+      }
+  - title: "Sorting with a custom comparator"
+    note: "Sorting structs several ways."
+    group: "Algorithms"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <algorithm>
+      #include <string>
+
+      struct Person { std::string name; int age; };
+
+      int main() {
+          std::vector<Person> ps{{"Ada", 36}, {"Alan", 41}, {"Grace", 45}, {"Ada", 20}};
+
+          std::sort(ps.begin(), ps.end(), [](const Person& a, const Person& b) {
+              return a.age < b.age;
+          });
+          for (const auto& p : ps) std::cout << p.name << " " << p.age << "\n";
+
+          std::cout << "--\n";
+          std::stable_sort(ps.begin(), ps.end(), [](const Person& a, const Person& b) {
+              return a.name < b.name;
+          });
+          for (const auto& p : ps) std::cout << p.name << " " << p.age << "\n";
+          return 0;
+      }
+  - title: "STL algorithms"
+    note: "transform, accumulate, any_of and the rest."
+    group: "Algorithms"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <algorithm>
+      #include <numeric>
+
+      int main() {
+          std::vector<int> xs(10);
+          std::iota(xs.begin(), xs.end(), 1);          // 1..10
+
+          std::vector<int> squares(xs.size());
+          std::transform(xs.begin(), xs.end(), squares.begin(), [](int n) { return n * n; });
+
+          for (auto x : squares) std::cout << x << " ";
+          std::cout << "\n";
+
+          std::cout << "sum       " << std::accumulate(xs.begin(), xs.end(), 0) << "\n";
+          std::cout << "product   " << std::accumulate(xs.begin(), xs.end(), 1L, std::multiplies<long>()) << "\n";
+          std::cout << "any > 9   " << std::any_of(xs.begin(), xs.end(), [](int n){ return n > 9; }) << "\n";
+          std::cout << "all > 0   " << std::all_of(xs.begin(), xs.end(), [](int n){ return n > 0; }) << "\n";
+          std::cout << "max       " << *std::max_element(xs.begin(), xs.end()) << "\n";
+          return 0;
+      }
+  - title: "Matrix multiply"
+    note: "Nested vectors, and the shape assertion."
+    group: "Algorithms"
+    code: |2-
+      #include <iostream>
+      #include <vector>
+      #include <cassert>
+
+      using Matrix = std::vector<std::vector<double>>;
+
+      Matrix matmul(const Matrix& A, const Matrix& B) {
+          assert(!A.empty() && !B.empty() && A[0].size() == B.size());
+          size_t n = A.size(), k = B.size(), m = B[0].size();
+          Matrix C(n, std::vector<double>(m, 0.0));
+          for (size_t i = 0; i < n; i++)
+              for (size_t p = 0; p < k; p++)
+                  for (size_t j = 0; j < m; j++)
+                      C[i][j] += A[i][p] * B[p][j];
+          return C;
+      }
+
+      int main() {
+          Matrix A{{1, 2, 3}, {4, 5, 6}};
+          Matrix B{{7, 8}, {9, 10}, {11, 12}};
+          for (const auto& row : matmul(A, B)) {
+              for (double v : row) std::cout << v << " ";
+              std::cout << "\n";
+          }
+          return 0;
+      }
+  - title: "File input and output"
+    note: "ifstream and ofstream."
+    group: "Files"
+    code: |2-
+      #include <iostream>
+      #include <fstream>
+      #include <string>
+      #include <vector>
+
+      int main() {
+          {
+              std::ofstream out("notes.txt");
+              out << "first\n" << "second\n" << "third\n";
+          }                                        // closed on scope exit
+
+          std::ifstream in("notes.txt");
+          if (!in) { std::cerr << "cannot open\n"; return 1; }
+
+          std::vector<std::string> lines;
+          for (std::string line; std::getline(in, line); ) lines.push_back(line);
+
+          std::cout << "read " << lines.size() << " lines\n";
+          for (size_t i = 0; i < lines.size(); i++)
+              std::cout << i + 1 << ": " << lines[i] << "\n";
+          return 0;
+      }
+  - title: "chrono, for timing"
+    note: "Measuring how long something took."
+    group: "Files"
+    code: |2-
+      #include <iostream>
+      #include <chrono>
+      #include <vector>
+      #include <numeric>
+
+      int main() {
+          using clock = std::chrono::steady_clock;
+
+          auto t0 = clock::now();
+          std::vector<long> xs(1'000'000);
+          std::iota(xs.begin(), xs.end(), 1);
+          long total = std::accumulate(xs.begin(), xs.end(), 0L);
+          auto t1 = clock::now();
+
+          auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+          std::cout << "sum   " << total << "\n";
+          std::cout << "took  " << us << " us (" << us / 1000.0 << " ms)\n";
+          return 0;
+      }
+---

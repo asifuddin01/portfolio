@@ -116,7 +116,42 @@ export default defineConfig({
     }),
   },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      /**
+       * The C/C++ toolchain in /officina runs clang as WebAssembly across a
+       * worker, which needs SharedArrayBuffer, which browsers only hand to a
+       * cross-origin-isolated page. `require-corp` is safe to apply site-wide
+       * here for the same reason the audit exists: every subresource this
+       * site loads is already same-origin, so there is nothing left to block.
+       * The deployed Worker sets the same pair on its own responses.
+       *
+       * `vite.server.headers` is ignored under `astro dev`, so the isolation
+       * headers go on as middleware instead. Without them SharedArrayBuffer
+       * is undefined and the toolchain refuses to start — in dev only; the
+       * deployed Worker sets the same pair on its own responses.
+       */
+      {
+        name: 'officina-cross-origin-isolation',
+        configureServer(server) {
+          server.middlewares.use((_req, res, next) => {
+            res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+            res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+            next();
+          });
+        },
+      },
+    ],
+    /**
+     * The toolchain adapter imports its Python shim as `./subprocess_shim.py?raw`.
+     * `?raw` is a Vite source-graph feature; the dependency pre-bundler runs
+     * rolldown, which cannot resolve it and fails the whole optimize pass with
+     * "No such file or directory" for a file that is right there. Serving these
+     * two as source skips the pre-bundler and lets Vite handle `?raw` itself.
+     */
+    optimizeDeps: {
+      exclude: ['@gameguild/emception-browser', 'emception'],
+    },
   },
   integrations: [
     /**

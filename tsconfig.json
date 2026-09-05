@@ -7,6 +7,11 @@
     // The vendored CMS bundle is 1.9MB of minified JS. Parsing it exhausts
     // the heap and it is not our source in any case.
     "public/admin/sveltia-cms.js",
+    // Pyodide's Emscripten glue is the same problem: 1.6MB of generated JS,
+    // copied out of node_modules by scripts/sync-pyodide.mjs and no more our
+    // source than the CMS bundle above. Type-checking it exhausts the heap.
+    "public/pyodide",
+    "public/emception",
     // The Worker is a separate runtime with its own globals.
     "worker"
   ]
