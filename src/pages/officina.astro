@@ -41,6 +41,17 @@ const recipes = (await getCollection('recipes'))
   .filter((r) => import.meta.env.DEV || r.data.status !== 'draft')
   .sort((a, b) => a.data.order - b.data.order);
 
+/**
+ * "Python, C, C++ and Java run here" — an Oxford-comma-free list with the verb
+ * agreeing with however many languages happen to be runnable. Joining on
+ * " and " gave "Python and C and C++ and Java runs here", which is neither
+ * English nor, with four of them, short.
+ */
+function sentenceList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
 const LANGS = recipes.map((r) => ({
   id: r.data.language,
   label: r.data.label,
@@ -53,6 +64,7 @@ const LANGS = recipes.map((r) => ({
 
 const totalExamples = LANGS.reduce((n, l) => n + l.examples.length, 0);
 const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
+const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : 'run'} here`;
 ---
 <BaseLayout
   title={`Officina — ${AUTHOR}`}
@@ -70,8 +82,7 @@ const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
         and any file you open stay on your machine.
       </p>
       <p class="of-sub" data-reveal>
-        {totalExamples} examples · {LANGS.length} languages ·
-        {runnable.join(' and ')} runs here
+        {totalExamples} examples · {LANGS.length} languages · {runsHere}
       </p>
     </header>
 
