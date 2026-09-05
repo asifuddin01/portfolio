@@ -17,6 +17,26 @@ const SITE_ORIGIN = (
   await readFile('src/consts.ts', 'utf8')
 ).match(/SITE = '([^']*)'/)?.[1] ?? '';
 
+/**
+ * The one thing on this site that is loaded from somewhere else.
+ *
+ * /officina runs Java, and running Java in a browser means a JVM. CheerpJ is
+ * the only working one, and its Community Licence — the free tier, which is
+ * what an individual gets — permits use *only* from the vendor's own domain:
+ * self-hosting the runtime requires a commercial licence. So Java is either
+ * this exception or nothing, and it was chosen deliberately over nothing.
+ *
+ * Scoped to the page that needs it and to that vendor's origin, so the rule
+ * still holds everywhere else and this stays one visible, arguable decision
+ * rather than a hole. The page carries the attribution the licence asks for.
+ */
+const ALLOWED_EXTERNAL = [
+  { origin: 'https://cjrtnc.leaningtech.com/', page: '/officina' },
+];
+
+const isAllowed = (page, url) =>
+  ALLOWED_EXTERNAL.some((a) => page === a.page && url.startsWith(a.origin));
+
 let fail = 0;
 const problems = [];
 
@@ -71,6 +91,7 @@ for await (const file of walk('dist')) {
       // rel=canonical/alternate/sitemap point at our own site by design
       if (/rel="(?:canonical|alternate|sitemap)"/i.test(m[0])) continue;
       if (m[1].startsWith(SITE_ORIGIN)) continue;
+      if (isAllowed(page, m[1])) continue;
       problems.push(`${page}  external subresource: ${m[1]}`);
     }
   }
@@ -98,6 +119,9 @@ if (problems.length) {
   for (const p of problems) console.log('  ✗ ' + p);
   fail = 1;
 } else {
-  console.log('✓ headings, alt text, landmarks, lang and self-hosting all clean');
+  console.log(
+    '✓ headings, alt text, landmarks, lang and self-hosting all clean ' +
+    `(${ALLOWED_EXTERNAL.length} declared exception: the Java runtime on /officina)`
+  );
 }
 process.exit(fail);

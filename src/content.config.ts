@@ -980,15 +980,16 @@ const recipes = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/recipes' }),
   schema: z.object({
     /** Must match a language the workshop knows: python, c, cpp, asm. */
-    language: z.enum(['python', 'c', 'cpp', 'asm']),
+    language: z.enum(['python', 'c', 'cpp', 'java', 'asm']),
     label: z.string(),
     /** Sets the order of the language tabs. */
     order: z.number().int().min(1),
     /**
      * Whether this language executes in the browser, and on what.
      *
-     * Python runs on Pyodide, C and C++ on a clang/wasm-ld toolchain that is
-     * fetched only when a cell is actually run — the packs are tens of
+     * Python runs on Pyodide, C and C++ on a clang/wasm-ld toolchain, and
+     * Java on a JVM plus the Eclipse batch compiler. All three are fetched
+     * only when a cell is actually run — the C/C++ packs alone are tens of
      * megabytes, so nobody who does not compile ever pays for them. Assembly
      * is architecture-specific and has no assembler here, so it is written and
      * exported rather than run.
@@ -998,7 +999,7 @@ const recipes = defineCollection({
      * refinement below rejects that pairing at build time.
      */
     runnable: z.boolean().default(false),
-    runtime: z.enum(['pyodide', 'emception', 'none']).default('none'),
+    runtime: z.enum(['pyodide', 'emception', 'cheerpj', 'none']).default('none'),
     /** File extension for a downloaded cell. */
     extension: z.string(),
     /** How to run it outside the browser, shown where a Run button is not. */

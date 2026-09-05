@@ -21,6 +21,13 @@ import { AUTHOR } from '../consts';
  * origin like everything else. It is far heavier than Pyodide, so it is
  * fetched pack by pack, on the first Run and never on page load.
  *
+ * **Java executes.** CheerpJ is a JVM in WebAssembly and ecj is the Eclipse
+ * batch compiler, so a cell is compiled and then run, as it would be at a
+ * terminal. It is the one thing here loaded from another origin: CheerpJ's
+ * free licence permits use only from the vendor's own domain, so it is that
+ * exception — declared in scripts/audit.mjs and credited on the page — or no
+ * Java at all.
+ *
  * **Assembly does not.** It is specific to a processor the browser is not, and
  * there is no assembler here to make it one. It gets the editor, the examples
  * and export, and the page says how to assemble the file instead. Which
@@ -133,6 +140,14 @@ const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
         in pieces on your first Run and is cached from then on.
       </p>
       <p>
+        Java is compiled here too, by the Eclipse batch compiler, and run on a
+        JVM built to WebAssembly by <a href="https://cheerpj.com/">CheerpJ</a>.
+        It is the single exception to a rule this site otherwise keeps
+        absolutely — that nothing loads from anywhere else — because CheerpJ's
+        free licence allows its runtime to be served only from the vendor's own
+        domain. The alternative was no Java, and this seemed the better trade.
+      </p>
+      <p>
         Assembly does not run here, and I would rather say so than give you a
         button that fails: it is written for a processor the browser is not, and
         there is no assembler on this page to make it one. It gets the editor,
@@ -177,7 +192,7 @@ const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
   type Example = { title: string; note: string; group: string; code: string };
   type Lang = {
     id: string; label: string; runnable: boolean;
-    runtime: 'pyodide' | 'emception' | 'none';
+    runtime: 'pyodide' | 'emception' | 'cheerpj' | 'none';
     extension: string; howToRun: string; examples: Example[];
   };
   type Cell = {
@@ -609,6 +624,113 @@ _officina_out.getvalue()
       };
     }
 
+    /**
+     * The Java runtime: a JVM from CheerpJ, and a compiler of our own.
+     *
+     * CheerpJ ships a JRE, not a JDK — `com.sun.tools.javac.Main` is not in
+     * it — so the compiler is ecj, the Eclipse batch compiler, a single
+     * self-contained jar served from this origin. It is the 3.26 line
+     * deliberately: later ecj releases need a Java 17 runtime to *run*, and
+     * on 17 they then refuse to start with "invalid location for system
+     * libraries" because a modular JDK has no rt.jar to read. Java 8 has one,
+     * ecj 3.26 runs on 8, and the pair works.
+     *
+     * The loader is the one thing on this site fetched from another origin.
+     * CheerpJ's free licence permits use only from the vendor's domain, so it
+     * is that or no Java; scripts/audit.mjs records the exception and the page
+     * carries the attribution the licence asks for.
+     */
+    let cheerpjReady: Promise<void> | null = null;
+    function loadCheerpj() {
+      if (cheerpjReady) return cheerpjReady;
+      status('Fetching the Java runtime — a JVM and a compiler, once per browser…', 'busy');
+      cheerpjReady = new Promise<void>((resolve, reject) => {
+        if ((globalThis as any).cheerpjInit) return resolve();
+        const tag = document.createElement('script');
+        tag.src = 'https://cjrtnc.leaningtech.com/4.2/loader.js';
+        tag.onload = () => resolve();
+        tag.onerror = () => reject(new Error('could not fetch the CheerpJ loader'));
+        document.head.appendChild(tag);
+      })
+        .then(() => (globalThis as any).cheerpjInit({ version: 8, status: 'none' }))
+        .then(() => { status('Java runtime ready.'); })
+        .catch((err: unknown) => {
+          cheerpjReady = null;                    // let a later Run try again
+          status(`The Java runtime did not load: ${String(err)}`, 'error');
+          throw err;
+        });
+      return cheerpjReady;
+    }
+
+    /**
+     * Java's entry point is a class, and the class has to be named.
+     *
+     * `public class Foo` must live in Foo.java, so the file is named after
+     * whatever the cell declares rather than always Main.java — otherwise the
+     * compiler rejects a perfectly good program for a filename the reader
+     * never chose. A cell with no class at all gets "Main", so the error it
+     * gets is the compiler's real one and not ours.
+     */
+    function javaClassName(source: string): string {
+      const pub = source.match(/\bpublic\s+(?:final\s+|abstract\s+)?class\s+([A-Za-z_$][\w$]*)/);
+      if (pub) return pub[1];
+      const any = source.match(/\bclass\s+([A-Za-z_$][\w$]*)/);
+      return any ? any[1] : 'Main';
+    }
+
+    /**
+     * Run a Java cell: compile with ecj, then run the class.
+     *
+     * CheerpJ offers no stdout option — `System.out` goes to `console.log` —
+     * so the console is borrowed for the duration of a run and given back
+     * afterwards, including when the run throws.
+     */
+    async function runOnCheerpj(source: string) {
+      await loadCheerpj();
+      const g = globalThis as any;
+      const cls = javaClassName(source);
+      const out: string[] = [];
+
+      const real = { log: console.log, error: console.error, warn: console.warn };
+      const collect = (...a: unknown[]) => { out.push(a.join(' ')); };
+      const borrowConsole = async <T,>(fn: () => Promise<T>): Promise<T> => {
+        console.log = collect; console.error = collect; console.warn = collect;
+        try { return await fn(); } finally { Object.assign(console, real); }
+      };
+
+      g.cheerpOSAddStringFile(`/str/${cls}.java`, source);
+
+      status('Compiling…', 'busy');
+      const compiled = await borrowConsole(() =>
+        g.cheerpjRunMain(
+          'org.eclipse.jdt.internal.compiler.batch.Main',
+          '/app/java/ecj.jar',
+          '-1.8', '-nowarn',
+          '-bootclasspath', '/lt/8/jre/lib/rt.jar',
+          '-d', '/files/classes',
+          `/str/${cls}.java`
+        )
+      );
+      if (compiled !== 0) {
+        return {
+          out: '',
+          err: out.join('').replace(new RegExp(`/str/${cls}\\.java`, 'g'), 'your code').trimEnd()
+            || `The compile failed (status ${compiled}).`,
+          failed: true,
+        };
+      }
+
+      out.length = 0;
+      status('Running…', 'busy');
+      const ran = await borrowConsole(() => g.cheerpjRunMain(cls, '/files/classes'));
+      const text = out.join('').replace(/\n+$/, '');
+      return {
+        out: text,
+        err: ran !== 0 ? `Exited with status ${ran}.` : '',
+        failed: ran !== 0,
+      };
+    }
+
     async function runCell(i: number) {
       const cell = cells[i];
       if (!cell || cell.type !== 'code' || !lang.runnable) return;
@@ -622,7 +744,9 @@ _officina_out.getvalue()
         const { out, err, failed } =
           lang.runtime === 'emception'
             ? await runOnEmception(cell.source, lang.id)
-            : await runOnPyodide(cell.source);
+            : lang.runtime === 'cheerpj'
+              ? await runOnCheerpj(cell.source)
+              : await runOnPyodide(cell.source);
 
         cell.output = out || (err ? '' : '(no output — the cell ran and printed nothing)');
         cell.error = err;
