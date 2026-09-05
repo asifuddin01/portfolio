@@ -626,16 +626,18 @@ _officina_out.getvalue()
      * the compile then fails with "error reading 'main.cpp': No such file or
      * directory" for a file that was just written.
      */
-    async function runOnEmception(source: string, id: string) {
+    async function runOnEmception(source: string, id: string, opts?: { quiet?: boolean; stem?: string }) {
+      const say = (m: string, k?: 'busy' | 'error' | 'idle') => { if (!opts?.quiet) status(m, k); };
+      const stem = opts?.stem ?? 'main';
       const { mod, api } = await loadEmception();
       const preset = mod.TOOLCHAIN_PRESETS[id === 'c' ? 'c' : 'cpp'];
       const ext = id === 'c' ? 'c' : 'cpp';
       const paths = {
-        sourcePath: `/home/user/main.${ext}`,
-        objectPath: '/home/user/main.o',
-        wasmPath: '/home/user/main.wasm',
+        sourcePath: `/home/user/${stem}.${ext}`,
+        objectPath: `/home/user/${stem}.o`,
+        wasmPath: `/home/user/${stem}.wasm`,
       };
-      const opts = { cwd: '/home/user' };
+      const runOpts = { cwd: '/home/user' };
 
       await api.workspace.writeFile(paths.sourcePath, source);
       await api.workspace.writeFile(C_PRELUDE_PATH, C_PRELUDE);
@@ -650,23 +652,23 @@ _officina_out.getvalue()
         '-include', C_PRELUDE_PATH
       );
 
-      status('Compiling…', 'busy');
-      const compiled = await api.run(preset.compileTool, compileArgs, opts);
+      say('Compiling…', 'busy');
+      const compiled = await api.run(preset.compileTool, compileArgs, runOpts);
       if (compiled.exitCode !== 0) {
         return { out: '', err: tidyDiagnostics(String(compiled.stderr || 'The compile failed.')), failed: true };
       }
 
-      status('Linking…', 'busy');
-      const linked = await api.run(preset.linkTool, preset.linkArgv(paths), opts);
+      say('Linking…', 'busy');
+      const linked = await api.run(preset.linkTool, preset.linkArgv(paths), runOpts);
       if (linked.exitCode !== 0) {
         return { out: '', err: tidyDiagnostics(String(linked.stderr || 'The link failed.')), failed: true };
       }
 
-      status('Running…', 'busy');
+      say('Running…', 'busy');
       let out = '';
       let err = '';
       const ran = await api.run('wasi-run', ['wasi-run', paths.wasmPath], {
-        ...opts,
+        ...runOpts,
         stdout: makeSink((t) => { out += t; }),
         stderr: makeSink((t) => { err += t; }),
       });
@@ -744,7 +746,8 @@ _officina_out.getvalue()
      * so the console is borrowed for the duration of a run and given back
      * afterwards, including when the run throws.
      */
-    async function runOnCheerpj(source: string) {
+    async function runOnCheerpj(source: string, opts?: { quiet?: boolean }) {
+      const say = (m: string, k?: 'busy' | 'error' | 'idle') => { if (!opts?.quiet) status(m, k); };
       await loadCheerpj();
       const g = globalThis as any;
       const cls = javaClassName(source);
@@ -759,7 +762,7 @@ _officina_out.getvalue()
 
       g.cheerpOSAddStringFile(`/str/${cls}.java`, source);
 
-      status('Compiling…', 'busy');
+      say('Compiling…', 'busy');
       const compiled = await borrowConsole(() =>
         g.cheerpjRunMain(
           'org.eclipse.jdt.internal.compiler.batch.Main',
@@ -780,7 +783,7 @@ _officina_out.getvalue()
       }
 
       out.length = 0;
-      status('Running…', 'busy');
+      say('Running…', 'busy');
       const ran = await borrowConsole(() => g.cheerpjRunMain(cls, '/files/classes'));
       const text = out.join('').replace(/\n+$/, '');
       return {
@@ -851,6 +854,13 @@ _officina_out.getvalue()
           break;
         }
       }
+    });
+
+    // Clicking into a code cell is the other clear statement of intent, and it
+    // covers the case a tab click does not: a notebook restored from a previous
+    // visit already has its language selected, so nothing was ever clicked.
+    cellsEl.addEventListener('focusin', (e) => {
+      if ((e.target as HTMLElement).classList?.contains('of-code')) warmRuntime();
     });
 
     cellsEl.addEventListener('input', (e) => {
@@ -1132,6 +1142,46 @@ _officina_out.getvalue()
       status('Reset.');
     });
 
+    /**
+     * Fetch a language's runtime when its tab is chosen, not when Run is
+     * pressed.
+     *
+     * Nothing is fetched on page load: most visitors read this page and never
+     * compile, and the C/C++ toolchain is tens of megabytes. But choosing the
+     * tab says plainly that somebody means to use it, and the time between
+     * choosing it and pressing Run is time spent typing. Moving the download
+     * into that gap does not make the compiler faster — it stops the reader
+     * waiting for it.
+     *
+     * For the compiled languages it warms by compiling a trivial program
+     * rather than merely starting the runtime. The packs are fetched lazily by
+     * whatever first needs them, so booting alone leaves clang, wasm-ld and
+     * the standard library still to come; a real compile pulls all of them and
+     * leaves their modules built. It runs under a different file stem so it
+     * cannot touch the cell's own artifacts, and it says nothing on failure —
+     * the same load is retried on Run, which is where an error belongs.
+     */
+    const warmed = new Set<string>();
+    function warmRuntime() {
+      const { id, runtime, label } = lang;
+      if (runtime === 'none' || warmed.has(id)) return;
+      warmed.add(id);
+
+      if (runtime === 'pyodide') {
+        loadPyodide().catch(() => {});
+        return;
+      }
+
+      const warmUp =
+        runtime === 'cheerpj'
+          ? () => runOnCheerpj('public class Warm { public static void main(String[] a) {} }', { quiet: true })
+          : () => runOnEmception('int main(void) { return 0; }', id, { quiet: true, stem: '__warm' });
+
+      warmUp()
+        .then(() => { status(`${label} is ready.`); })
+        .catch(() => { warmed.delete(id); });
+    }
+
     document.querySelectorAll<HTMLButtonElement>('.of-lang').forEach((b) => {
       b.addEventListener('click', () => {
         const found = LANGS.find((l) => l.id === b.dataset.lang);
@@ -1139,6 +1189,7 @@ _officina_out.getvalue()
         lang = found;
         render();
         status(`${lang.label}. ${lang.examples.length} examples available.`);
+        warmRuntime();
       });
     });
 
@@ -1174,7 +1225,7 @@ _officina_out.getvalue()
     else render();
     status(
       lang.runnable
-        ? `Ready. The ${lang.label} runtime is fetched on your first Run.`
+        ? `Ready. The ${lang.label} runtime is fetched the first time you use it.`
         : `${lang.label} is edit-and-export here.`
     );
   }
