@@ -562,6 +562,43 @@ _officina_out.getvalue()
     }
 
     /**
+     * Force-included ahead of every C and C++ cell, to stop the last line of
+     * output going missing.
+     *
+     * The toolchain links with `--entry=main` and no C runtime startup object,
+     * so the runner calls `main` directly and nothing runs afterwards: no
+     * `exit`, no atexit handlers, no stdio flush, no static destructors. A
+     * program whose output does not end in a newline therefore leaves that
+     * text sitting in libc's buffer and it is never written —
+     * `printf("Enter: ")` prints nothing at all.
+     *
+     * Making the streams unbuffered is the fix that needs no cooperation from
+     * the reader's code. It is not free: every `printf` becomes its own write
+     * across the worker boundary, which measured 3 ms a line — a program
+     * printing 3000 lines goes from 0.7 s to 9 s. That cost is real but it is
+     * paid only by programs with a great deal of output, and it buys back a
+     * failure that is silent, which is the worse of the two.
+     *
+     * The alternatives were tried and do not work here. There is no `_start`
+     * to link against: the triple is wasm32-unknown-emscripten, not WASI, and
+     * emscripten's crt1.o defines no such symbol, so wasm-ld fails with
+     * "entry symbol not defined". Wrapping the reader's `main` with a macro
+     * would rename every other identifier called `main` as well.
+     *
+     * `-include` does not shift line numbers, so diagnostics still point at
+     * the line the reader wrote.
+     */
+    const C_PRELUDE_PATH = '/home/user/officina-prelude.h';
+    const C_PRELUDE = [
+      '#include <stdio.h>',
+      '__attribute__((constructor)) static void __officina_unbuffer(void) {',
+      '    setvbuf(stdout, NULL, _IONBF, 0);',
+      '    setvbuf(stderr, NULL, _IONBF, 0);',
+      '}',
+      '',
+    ].join('\n');
+
+    /**
      * Compile a C or C++ cell with clang, link it with wasm-ld, and run the
      * result.
      *
@@ -601,9 +638,20 @@ _officina_out.getvalue()
       const opts = { cwd: '/home/user' };
 
       await api.workspace.writeFile(paths.sourcePath, source);
+      await api.workspace.writeFile(C_PRELUDE_PATH, C_PRELUDE);
+
+      // `-include` has to precede the input file, which the preset puts last
+      // behind `-x <lang>`.
+      const compileArgs = preset.compileArgv(paths);
+      const inputAt = compileArgs.indexOf('-x');
+      compileArgs.splice(
+        inputAt === -1 ? compileArgs.length : inputAt,
+        0,
+        '-include', C_PRELUDE_PATH
+      );
 
       status('Compiling…', 'busy');
-      const compiled = await api.run(preset.compileTool, preset.compileArgv(paths), opts);
+      const compiled = await api.run(preset.compileTool, compileArgs, opts);
       if (compiled.exitCode !== 0) {
         return { out: '', err: tidyDiagnostics(String(compiled.stderr || 'The compile failed.')), failed: true };
       }
