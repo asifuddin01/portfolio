@@ -2327,6 +2327,26 @@ collections:
               The paragraph under the title on the Tabulae page. Avoid naming a
               number of plates — you add them from Tabulae and the text would go
               stale.
+      - name: numina
+        label: Numina introduction
+        file: src/content/site/numina.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - label: Kicker
+            name: kicker
+            widget: string
+            hint: "The small line above the title, e.g. The divine presences."
+          - label: Introduction
+            name: lede
+            widget: text
+            hint: >-
+              The paragraphs under the title on the Numina page. Leave a blank
+              line between them and each becomes its own paragraph. Do not
+              write how many books or topics there are — the line under this
+              counts them itself, and a number typed here would go stale the
+              moment you add one.
       - name: frontispiece
         label: Frontispiece — the landing page
         file: src/content/site/frontispiece.mdx

@@ -1,4 +1,5 @@
 ---
+import { getEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import { getNumina } from '../../lib/collections';
@@ -18,8 +19,25 @@ import { toRoman } from '../../consts';
  * parts, and it is not finished".
  */
 const books = await getNumina();
+
+/**
+ * Every number on this page is counted from the content, never typed.
+ *
+ * Adding a book, a chapter or a topic changes these on the next build with
+ * nothing to remember — which is the only way a count on a page that fills up
+ * over time stays true. The editor's hint for the prose below says not to
+ * write a number into it for the same reason.
+ */
 const topics = books.reduce((n, b) => n + b.topics, 0);
 const chapters = books.reduce((n, b) => n + b.chapters.length, 0);
+
+/**
+ * The heading and the prose come from /admin. Paragraphs are split on blank
+ * lines rather than rendered as one block, so a second paragraph typed in the
+ * editor arrives as a second paragraph rather than as a run-on.
+ */
+const meta = await getEntry('site', 'numina');
+const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
 ---
 <BaseLayout
   title="Numina — Md. Asif Uddin"
@@ -28,20 +46,11 @@ const chapters = books.reduce((n, b) => n + b.chapters.length, 0);
 >
   <div class="codex nu">
     <header class="nu-head">
-      <p class="nu-kicker" data-reveal>The divine presences</p>
-      <h1 class="nu-h1" data-press>Numina</h1>
-      <p class="nu-lede codex-measure" data-reveal>
-        Eleven books, read as literature and as evidence. What people said the
-        world was made of before anyone could check, written down — nearly
-        always — long after they had stopped saying it, by someone with reasons
-        of their own.
-      </p>
-      <p class="nu-lede codex-measure" data-reveal>
-        I am interested in the seams: where a text contradicts itself and keeps
-        both halves, where a god is plainly two older gods pressed together,
-        where a monk writing in Latin decides what to do with a pagan king. The
-        stories are worth the time on their own. The transmission is worth more.
-      </p>
+      {meta?.data.kicker && <p class="nu-kicker" data-reveal>{meta.data.kicker}</p>}
+      <h1 class="nu-h1" data-press>{meta?.data.title ?? 'Numina'}</h1>
+      {paragraphs.map((text) => (
+        <p class="nu-lede codex-measure" data-reveal>{text}</p>
+      ))}
       <p class="nu-sub" data-reveal>
         {books.length} books · {chapters} chapters · {topics} {topics === 1 ? 'topic' : 'topics'} written
       </p>
