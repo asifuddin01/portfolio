@@ -149,9 +149,10 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
 </figure>
 
 <style>
-  .dp { margin: 0; display: grid; gap: 1rem; position: relative; --cycle: 9000ms; }
+  .dp { margin: 0; display: grid; gap: 1rem; position: relative; --cycle: 7000ms; }
   .dp-svg { width: 100%; height: auto; display: block; overflow: visible; }
   .dp-motion { display: flex; justify-content: flex-end; }
+  .dp:not([data-motion]) .dp-motion { display: none; }
 
   /* Resting state — the finished picture. Everything below animates *from*
      this, so with motion disabled the plate simply arrives drawn. */
@@ -287,28 +288,30 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
       animation-delay: var(--delay);
     }
 
-    /* 0–38% draw, 38–78% hold, 78–88% fade, dark until the loop turns. */
+    /* Keep movement unmistakable on a small screen: about 3.4s drawing, then
+       a one-second reading hold and a short reset. The previous 3.6s hold was
+       long enough to be mistaken for a still image. */
     @keyframes dp-draw {
       0%   { stroke-dashoffset: var(--len); opacity: 0; }
       3%   { opacity: 1; }
-      38%  { stroke-dashoffset: 0; opacity: 1; }
-      78%  { stroke-dashoffset: 0; opacity: 1; }
-      88%  { stroke-dashoffset: 0; opacity: 0; }
+      52%  { stroke-dashoffset: 0; opacity: 1; }
+      66%  { stroke-dashoffset: 0; opacity: 1; }
+      78%  { stroke-dashoffset: 0; opacity: 0; }
       100% { stroke-dashoffset: var(--len); opacity: 0; }
     }
     @keyframes dp-run {
       0%   { offset-distance: 0%; opacity: 0; }
       3%   { opacity: 1; }
-      38%  { offset-distance: 100%; opacity: 1; }
-      78%  { offset-distance: 100%; opacity: 1; }
-      88%  { offset-distance: 100%; opacity: 0; }
+      52%  { offset-distance: 100%; opacity: 1; }
+      66%  { offset-distance: 100%; opacity: 1; }
+      78%  { offset-distance: 100%; opacity: 0; }
       100% { offset-distance: 100%; opacity: 0; }
     }
     /* The resting marks appear only once their run has arrived. */
     @keyframes dp-land {
-      0%, 36%   { opacity: 0; }
-      44%, 78%  { opacity: 1; }
-      88%, 100% { opacity: 0; }
+      0%, 48%   { opacity: 0; }
+      56%, 66%  { opacity: 1; }
+      78%, 100% { opacity: 0; }
     }
   }
 
@@ -358,4 +361,10 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
   .dp.is-motion-restarting .dp-trace,
   .dp.is-motion-restarting .dp-head,
   .dp.is-motion-restarting .dp-end { animation: none !important; }
+
+  .dp[data-motion='running'][data-motion-visible='false'] .dp-trace,
+  .dp[data-motion='running'][data-motion-visible='false'] .dp-head,
+  .dp[data-motion='running'][data-motion-visible='false'] .dp-end {
+    animation-play-state: paused !important;
+  }
 </style>

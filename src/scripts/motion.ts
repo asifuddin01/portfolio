@@ -34,7 +34,10 @@ type FigureMotionChoice = 'on' | 'off' | null;
 
 function readFigureMotionChoice(): FigureMotionChoice {
   try {
-    const value = localStorage.getItem(FIGURE_MOTION_KEY);
+    /* A figure-level override lasts across soft navigation and reloads in this
+       tab, but not forever. A past Play click must not silently overrule a
+       reduced-motion setting in a later browsing session. */
+    const value = sessionStorage.getItem(FIGURE_MOTION_KEY);
     return value === 'on' || value === 'off' ? value : null;
   } catch {
     return null;
@@ -43,7 +46,7 @@ function readFigureMotionChoice(): FigureMotionChoice {
 
 function writeFigureMotionChoice(choice: Exclude<FigureMotionChoice, null>): void {
   try {
-    localStorage.setItem(FIGURE_MOTION_KEY, choice);
+    sessionStorage.setItem(FIGURE_MOTION_KEY, choice);
   } catch {
     /* Private mode: keep the choice for this page load only. */
   }
@@ -98,30 +101,37 @@ function initFigureMotion(): void {
   for (const button of buttons) button.addEventListener('click', onClick);
 
   /* Reset once the illustration itself—not merely the document—becomes
-     visible. The loops remain unconditional CSS, so observer failure cannot
-     freeze them; it only loses the deterministic starting point. */
+     visible, and pause it again when it leaves. Elementa contains many SVG
+     packets; there is no reason to keep painting them below the fold. The
+     loops remain unconditional CSS, so observer failure cannot freeze them. */
   let observer: IntersectionObserver | null = null;
   if (typeof IntersectionObserver !== 'undefined') {
     observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          restartFigureLoops(entry.target as HTMLElement);
-          observer?.unobserve(entry.target);
+          const figure = entry.target as HTMLElement;
+          figure.dataset.motionVisible = String(entry.isIntersecting);
+          if (entry.isIntersecting) restartFigureLoops(figure);
         }
       },
       { threshold: 0.2 }
     );
     for (const figure of figures) observer.observe(figure);
   } else {
-    for (const figure of figures) restartFigureLoops(figure);
+    for (const figure of figures) {
+      figure.dataset.motionVisible = 'true';
+      restartFigureLoops(figure);
+    }
   }
 
   const restartVisible = (): void => {
     if (document.visibilityState !== 'visible') return;
     for (const figure of figures) {
       const rect = figure.getBoundingClientRect();
-      if (rect.bottom > 0 && rect.top < window.innerHeight) restartFigureLoops(figure);
+      if (rect.bottom > 0 && rect.top < window.innerHeight) {
+        figure.dataset.motionVisible = 'true';
+        restartFigureLoops(figure);
+      }
     }
   };
   const onPageShow = (event: PageTransitionEvent): void => {
@@ -141,6 +151,7 @@ function initFigureMotion(): void {
 
   cleanups.push(() => {
     observer?.disconnect();
+    for (const figure of figures) delete figure.dataset.motionVisible;
     for (const button of buttons) button.removeEventListener('click', onClick);
     window.removeEventListener('pageshow', onPageShow);
     document.removeEventListener('visibilitychange', onVisibility);

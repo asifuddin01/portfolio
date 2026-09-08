@@ -225,6 +225,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
   .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 11000ms; }
   .np-svg { width: 100%; height: auto; display: block; overflow: visible; }
   .np-motion { display: flex; justify-content: flex-end; }
+  .np:not([data-motion]) .np-motion { display: none; }
 
   .np-wire { stroke: var(--brass); }
   .np-ring { fill: none; stroke: var(--brass); stroke-opacity: 0.5; stroke-width: 0.7; }
@@ -496,4 +497,11 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
   .np.is-motion-restarting .np-bwd,
   .np.is-motion-restarting .np-fill,
   .np.is-motion-restarting .np-eq-i { animation: none !important; }
+
+  .np[data-motion='running'][data-motion-visible='false'] .np-fwd,
+  .np[data-motion='running'][data-motion-visible='false'] .np-bwd,
+  .np[data-motion='running'][data-motion-visible='false'] .np-fill,
+  .np[data-motion='running'][data-motion-visible='false'] .np-eq-i {
+    animation-play-state: paused !important;
+  }
 </style>
