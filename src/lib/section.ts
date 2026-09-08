@@ -17,6 +17,8 @@ const SECTIONS: ReadonlyArray<readonly [string, string]> = [
   ['/marginalia', 'Marginalia'],
   ['/papers', 'Papers'],
   ['/works', 'Papers'],
+  ['/numina', 'Numina'],
+  ['/officina', 'Officina'],
   ['/tabulae', 'Tabulae'],
   ['/imagines', 'Imagines'],
   ['/vitae', 'Vitae'],
