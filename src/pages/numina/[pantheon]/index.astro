@@ -1,0 +1,153 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import { getNumina, type NuminaBook } from '../../../lib/collections';
+import { toRoman } from '../../../consts';
+
+export async function getStaticPaths() {
+  const books = await getNumina();
+  return books.map((b, i) => ({
+    params: { pantheon: b.slug },
+    props: { b, numeral: toRoman(i + 1), prev: books[i - 1] ?? null, next: books[i + 1] ?? null },
+  }));
+}
+
+interface Props { b: NuminaBook; numeral: string; prev: NuminaBook | null; next: NuminaBook | null }
+const { b, numeral, prev, next } = Astro.props;
+const d = b.entry.data;
+const { Content } = await render(b.entry);
+---
+<BaseLayout
+  title={`${d.title} — Numina — Md. Asif Uddin`}
+  description={d.gloss}
+  folio="N"
+>
+  <div class="codex np">
+    <header class="np-head">
+      <p class="np-trail" data-reveal><a href="/numina">Numina</a> · Book {numeral}</p>
+      <h1 class="np-h1" data-press>{d.title}</h1>
+      <p class="np-meta" data-reveal>{d.region} · {d.span}</p>
+    </header>
+
+    <div class="np-body codex-measure" data-reveal>
+      <Content />
+    </div>
+
+    <LesionRule />
+
+    <h2 class="np-toc-h">Contents</h2>
+    <ol class="np-toc">
+      {b.chapters.map((c, i) => (
+        <li class="np-ch">
+          <div class="np-ch-head">
+            <span class="np-ch-n">{numeral}.{i + 1}</span>
+            <span class="np-ch-body">
+              <span class="np-ch-t">{c.title}</span>
+              {c.gloss && <span class="np-ch-g">{c.gloss}</span>}
+            </span>
+            <span class="np-ch-count">
+              {c.topics.length === 0 ? '—' : `${c.topics.length}`}
+            </span>
+          </div>
+          {c.topics.length > 0 && (
+            <ul class="np-topics">
+              {c.topics.map((t) => (
+                <li>
+                  <a class="np-topic" href={`/numina/${b.slug}/${t.id}`}>
+                    <span class="np-topic-t">{t.data.title}</span>
+                    <span class="np-topic-s">{t.data.summary}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ol>
+
+    {b.topics === 0 && (
+      <p class="np-empty codex-measure">
+        The chapters are laid out; nothing is written into them yet. They stand
+        so that what is missing is obvious rather than invisible.
+      </p>
+    )}
+
+    <nav class="np-nav" aria-label="Other books">
+      {prev && <a href={`/numina/${prev.slug}`}>← {prev.entry.data.name}</a>}
+      <a class="np-all" href="/numina">All eleven</a>
+      {next && <a href={`/numina/${next.slug}`}>{next.entry.data.name} →</a>}
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .np { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .np-trail {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .np-trail a { color: inherit; }
+  .np-h1 { font-size: var(--t-2xl); margin-bottom: 0.5rem; }
+  .np-meta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0 0 1.6rem; }
+  .np-body { font-size: var(--body-size); line-height: var(--body-leading); }
+  .np-empty { color: var(--ink-soft); font-style: italic; margin: 1.4rem 0; }
+
+  .np-toc-h {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 1.6rem 0 0.4rem;
+  }
+  .np-toc { list-style: none; margin: 0; padding: 0; }
+  .np-ch { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent); padding: 1rem 0; }
+  .np-ch-head {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: baseline;
+  }
+  .np-ch-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
+  .np-ch-t { display: block; font-family: var(--font-display); font-size: var(--t-md); color: var(--ink); }
+  .np-ch-g { display: block; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.55; margin-top: 0.2rem; max-width: 52ch; }
+  .np-ch-count { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .np-topics { list-style: none; margin: 0.6rem 0 0 5rem; padding: 0; display: grid; gap: 0.2rem; }
+  .np-topic {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.4rem 0.6rem;
+    text-decoration: none;
+    color: inherit;
+    border-left: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .np-topic:hover { border-color: var(--fundus); background: color-mix(in srgb, var(--brass) 7%, transparent); }
+  .np-topic-t { font-size: var(--t-base); color: var(--ink); }
+  .np-topic-s { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.5; }
+
+  .np-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2.4rem 0 1rem;
+    padding-top: 1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+  }
+  .np-all { color: var(--ink-soft); }
+
+  @media (max-width: 40rem) {
+    .np-ch-head { grid-template-columns: 3rem minmax(0, 1fr) auto; gap: 0.6rem; }
+    .np-topics { margin-left: 3.6rem; }
+  }
+</style>

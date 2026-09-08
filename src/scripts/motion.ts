@@ -1,9 +1,9 @@
 /**
  * motion.ts — the runtime behind motion.css.
  *
- * Contract: if the user prefers reduced motion, this file attaches
- * nothing at all. No observers, no rAF loop, no listeners. The CSS
- * already leaves every element in its final, visible state.
+ * Contract: if the user prefers reduced motion, the general effects stay
+ * detached and CSS leaves every element in its final state. Figure controls
+ * still bind, so a reader can explicitly play one of the explanatory loops.
  *
  * Re-runs on `astro:page-load` so it survives view transitions.
  */
@@ -23,6 +23,130 @@ let cleanups: Cleanup[] = [];
 function teardown(): void {
   for (const fn of cleanups) fn();
   cleanups = [];
+}
+
+/* ---- Explanatory figure play / pause ---------------------------------- */
+
+const FIGURE_SELECTOR = '[data-motion-figure]';
+const FIGURE_MOTION_KEY = 'codex-figure-motion';
+
+type FigureMotionChoice = 'on' | 'off' | null;
+
+function readFigureMotionChoice(): FigureMotionChoice {
+  try {
+    const value = localStorage.getItem(FIGURE_MOTION_KEY);
+    return value === 'on' || value === 'off' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeFigureMotionChoice(choice: Exclude<FigureMotionChoice, null>): void {
+  try {
+    localStorage.setItem(FIGURE_MOTION_KEY, choice);
+  } catch {
+    /* Private mode: keep the choice for this page load only. */
+  }
+}
+
+/**
+ * Cancel the figure loops for one rendered frame. Removing the class creates
+ * fresh CSS animations, so the reader sees their beginning instead of an
+ * arbitrary quiet phase left over from document load or a frozen tab.
+ */
+function restartFigureLoops(figure: HTMLElement): void {
+  if (figure.dataset.motion !== 'running') return;
+  figure.classList.add('is-motion-restarting');
+  void figure.offsetWidth;
+  requestAnimationFrame(() => figure.classList.remove('is-motion-restarting'));
+}
+
+function syncFigureMotion(playing: boolean, restart = false): void {
+  const figures = Array.from(document.querySelectorAll<HTMLElement>(FIGURE_SELECTOR));
+  for (const figure of figures) {
+    figure.dataset.motion = playing ? 'running' : 'paused';
+    for (const button of figure.querySelectorAll<HTMLButtonElement>('[data-figure-motion-toggle]')) {
+      const action = playing ? 'Pause animation' : 'Play animation';
+      const name = button.dataset.figureMotionName ?? 'figure';
+      const label = button.querySelector<HTMLElement>('[data-figure-motion-label]');
+      if (label) label.textContent = action;
+      button.dataset.playing = String(playing);
+      button.dataset.bound = '1';
+      button.setAttribute('aria-label', `${action} for the ${name}`);
+    }
+    if (playing && restart) restartFigureLoops(figure);
+  }
+}
+
+function initFigureMotion(): void {
+  const figures = Array.from(document.querySelectorAll<HTMLElement>(FIGURE_SELECTOR));
+  if (figures.length === 0) return;
+
+  const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const explicit = readFigureMotionChoice();
+  let playing = explicit === 'on' || (explicit === null && !media.matches);
+  syncFigureMotion(playing);
+
+  const onClick = (event: Event): void => {
+    const button = event.currentTarget as HTMLButtonElement;
+    playing = button.closest<HTMLElement>(FIGURE_SELECTOR)?.dataset.motion !== 'running';
+    writeFigureMotionChoice(playing ? 'on' : 'off');
+    syncFigureMotion(playing, playing);
+  };
+
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-figure-motion-toggle]'));
+  for (const button of buttons) button.addEventListener('click', onClick);
+
+  /* Reset once the illustration itself—not merely the document—becomes
+     visible. The loops remain unconditional CSS, so observer failure cannot
+     freeze them; it only loses the deterministic starting point. */
+  let observer: IntersectionObserver | null = null;
+  if (typeof IntersectionObserver !== 'undefined') {
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          restartFigureLoops(entry.target as HTMLElement);
+          observer?.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    for (const figure of figures) observer.observe(figure);
+  } else {
+    for (const figure of figures) restartFigureLoops(figure);
+  }
+
+  const restartVisible = (): void => {
+    if (document.visibilityState !== 'visible') return;
+    for (const figure of figures) {
+      const rect = figure.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < window.innerHeight) restartFigureLoops(figure);
+    }
+  };
+  const onPageShow = (event: PageTransitionEvent): void => {
+    if (event.persisted) restartVisible();
+  };
+  const onVisibility = (): void => restartVisible();
+  const onPreference = (): void => {
+    if (readFigureMotionChoice() !== null) return;
+    playing = !media.matches;
+    syncFigureMotion(playing, playing);
+  };
+
+  window.addEventListener('pageshow', onPageShow);
+  document.addEventListener('visibilitychange', onVisibility);
+  document.addEventListener('resume', onVisibility);
+  media.addEventListener?.('change', onPreference);
+
+  cleanups.push(() => {
+    observer?.disconnect();
+    for (const button of buttons) button.removeEventListener('click', onClick);
+    window.removeEventListener('pageshow', onPageShow);
+    document.removeEventListener('visibilitychange', onVisibility);
+    document.removeEventListener('resume', onVisibility);
+    media.removeEventListener?.('change', onPreference);
+  });
 }
 
 /* ---- One-shot reveal observer ---- */
@@ -218,6 +342,7 @@ function initMagnets(): void {
 
 function boot(): void {
   teardown();
+  initFigureMotion();
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     revealAll();
     return;

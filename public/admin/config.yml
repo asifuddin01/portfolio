@@ -1811,6 +1811,214 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  # Numina — the mythology section. Two collections: the traditions, and the
+  # pieces filed under them. Adding a twelfth tradition is a new Tradition
+  # entry here; nothing in the code needs to change for it to appear.
+  - name: pantheons
+    label: "Numina · Books"
+    label_singular: Book
+    description: >-
+      One book per mythology. Each has chapters, and topics are written into
+      the chapters. Add a book here and it appears on /numina straight away,
+      with its chapters listed and waiting.
+    folder: src/content/pantheons
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: name
+    slug: "{{slug}}"
+    summary: "{{order}} · {{title}}"
+    sortable_fields: [ order, name, title ]
+    fields:
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 12
+        hint: "Where it sits on the index. Roughly oldest first, but it is only a sort key."
+      - label: Short name
+        name: name
+        widget: string
+        hint: "One word where possible — 'Norse'. Used on the card and in the trail."
+      - label: Full title
+        name: title
+        widget: string
+        hint: "'Norse Mythology'. The heading on its own page."
+      - label: Region
+        name: region
+        widget: string
+        hint: "Where it was told. Usually not a modern country — 'Scandinavia, Iceland and the Norse settlements'."
+      - label: Span
+        name: span
+        widget: string
+        hint: >-
+          When. For most of these the honest answer is when it was written
+          down, which is later than when it was believed — say so, e.g.
+          'c. 800 – 1300 CE (as written)'.
+      - label: Gloss
+        name: gloss
+        widget: text
+        hint: "One line for the shelf. What is distinctive about this one."
+      - label: Chapters
+        name: chapters
+        widget: list
+        label_singular: Chapter
+        summary: "{{title}}"
+        hint: >-
+          The parts of this book, in reading order. Drag to reorder. A topic
+          names one of these ids, so changing an id after topics are filed
+          under it will break them — rename the title freely, the id rarely.
+        fields:
+          - label: Id
+            name: id
+            widget: string
+            hint: "Lower case, no spaces — 'ragnarok'. This is what a topic refers to."
+            pattern:
+              - ^[a-z0-9-]+$
+              - Lower case letters, digits and hyphens only.
+          - { label: Title, name: title, widget: string }
+          - label: Gloss
+            name: gloss
+            widget: text
+            required: false
+            hint: "One line under the chapter title in the contents."
+      - label: Introduction
+        name: body
+        widget: markdown
+        hint: "Two or three paragraphs orienting the reader: the sources, their bias, what to watch for."
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review", value: review }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
+  - name: numina
+    label: "Numina · Topics"
+    label_singular: Topic
+    description: >-
+      A single writeup — a god, a story, a text, a creature, a place, an idea.
+      Name its book and its chapter and it files itself into the contents.
+    folder: src/content/numina
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{title}} — {{pantheon}} · {{chapter}}"
+    sortable_fields: [ title, pantheon, chapter, order ]
+    view_groups:
+      - label: Book
+        field: pantheon
+      - label: Chapter
+        field: chapter
+    # Relative to this collection's folder, so uploads land in
+    # src/assets/numina and the saved path is one Astro can optimise.
+    media_folder: "../../assets/numina"
+    public_folder: "../../assets/numina"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+      - label: Book
+        name: pantheon
+        widget: relation
+        collection: pantheons
+        search_fields: [ name, title ]
+        value_field: "{{slug}}"
+        display_fields: [ title ]
+        hint: "Which mythology this belongs to. The list comes from the Books collection."
+      - label: Chapter
+        name: chapter
+        widget: string
+        hint: >-
+          The id of a chapter in that book — open the book to see its list. A
+          chapter the book does not have stops the build with the valid ones
+          named, so a typo cannot quietly hide the topic.
+        pattern:
+          - ^[a-z0-9-]+$
+          - Lower case letters, digits and hyphens only.
+      - label: Kind
+        name: kind
+        widget: select
+        default: story
+        options:
+          - { label: "Story", value: story }
+          - { label: "God or power", value: deity }
+          - { label: "Text or source", value: text }
+          - { label: "Creature", value: creature }
+          - { label: "Place", value: place }
+          - { label: "Idea", value: idea }
+          - { label: "Rite or practice", value: rite }
+        hint: "Shown on the topic itself; the chapter is what files it."
+      - label: Summary
+        name: summary
+        widget: text
+        hint: "One or two lines. Shown under the title wherever this is listed."
+      - label: Order
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+        hint: "Position within its chapter. Ties fall back to the title."
+      - label: Image
+        name: image
+        widget: image
+        required: false
+        hint: "Optional. Uploads are optimised automatically — a large scan is fine."
+      - label: Image description
+        name: alt
+        widget: string
+        required: false
+        hint: >-
+          Required if there is an image. Describe what is in it, for a reader
+          who cannot see it. The build refuses an image without this.
+      - label: Image credit
+        name: credit
+        widget: string
+        required: false
+        hint: "Museum, collection, licence — whatever the source asks for."
+      - label: Body
+        name: body
+        widget: markdown
+        hint: "The writeup. Headings, images and links all work here."
+      - label: Sources
+        name: sources
+        widget: list
+        required: false
+        label_singular: Source
+        summary: "{{label}}"
+        fields:
+          - { label: Label, name: label, widget: string }
+          - label: Link
+            name: url
+            widget: string
+            required: false
+            pattern:
+              - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
+              - Paste the address only, e.g. https://example.com/page — not a sentence.
+      - label: Updated
+        name: updated
+        widget: datetime
+        required: false
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        picker_utc: true
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: "Draft — hidden from the live site", value: draft }
+          - { label: "In review", value: review }
+          - { label: "Published", value: published }
+
+  # ------------------------------------------------------------------
   - name: referees
     label: References
     label_singular: Referee

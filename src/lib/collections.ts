@@ -358,6 +358,66 @@ export async function getLectiones(): Promise<CollectionEntry<'lectiones'>[]> {
   return all.filter(visible).sort((a, b) => a.data.part - b.data.part);
 }
 
+/**
+ * Numina: the eleven traditions, each with the writeups filed under it.
+ *
+ * Returned as one tree rather than two lists because every page that uses it
+ * needs both halves — the index counts entries per tradition, the tradition
+ * page lists its own, and a piece needs its tradition's name for the trail.
+ *
+ * A tradition with nothing in it yet is kept, not dropped. The section is
+ * meant to fill up over time, and an index that hides the empty shelves would
+ * make it look finished when it is not.
+ */
+export type NuminaChapter = {
+  id: string;
+  title: string;
+  gloss: string;
+  topics: CollectionEntry<'numina'>[];
+};
+
+export type NuminaBook = {
+  entry: CollectionEntry<'pantheons'>;
+  slug: string;
+  chapters: NuminaChapter[];
+  topics: number;
+};
+
+export async function getNumina(): Promise<NuminaBook[]> {
+  const [books, pieces] = await Promise.all([
+    getCollection('pantheons'),
+    getCollection('numina'),
+  ]);
+
+  const shown = pieces.filter(visible);
+
+  return books
+    .filter(visible)
+    .sort((a, b) => a.data.order - b.data.order || a.data.name.localeCompare(b.data.name))
+    .map((entry) => {
+      const mine = shown.filter((n) => n.data.pantheon === entry.id);
+      const chapters = entry.data.chapters.map((c) => ({
+        ...c,
+        topics: mine
+          .filter((n) => n.data.chapter === c.id)
+          .sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title)),
+      }));
+      return { entry, slug: entry.id, chapters, topics: mine.length };
+    });
+}
+
+/** Every topic in reading order — book, then chapter, then position. */
+export async function getNuminaTopics(): Promise<
+  { topic: CollectionEntry<'numina'>; book: NuminaBook; chapter: NuminaChapter }[]
+> {
+  const books = await getNumina();
+  return books.flatMap((book) =>
+    book.chapters.flatMap((chapter) =>
+      chapter.topics.map((topic) => ({ topic, book, chapter }))
+    )
+  );
+}
+
 /** The interleaved artwork, in plate order. */
 export async function getTabulae(): Promise<CollectionEntry<'art'>[]> {
   const all = await getCollection('art');

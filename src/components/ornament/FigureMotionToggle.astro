@@ -1,0 +1,60 @@
+---
+interface Props {
+  /** Used only for the button's accessible name. */
+  figure: string;
+}
+
+const { figure } = Astro.props;
+---
+
+<button
+  class="fmt"
+  type="button"
+  data-figure-motion-toggle
+  data-figure-motion-name={figure}
+  aria-label={`Control the ${figure} animation`}
+>
+  <span class="fmt-mark" aria-hidden="true"></span>
+  <span data-figure-motion-label>Animation</span>
+</button>
+
+<style>
+  .fmt {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.48rem 0.72rem 0.42rem;
+    border: var(--rule) solid var(--brass);
+    background: color-mix(in srgb, var(--paper) 82%, transparent);
+    color: var(--brass-text);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    line-height: 1;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    cursor: pointer;
+    visibility: hidden;
+  }
+  .fmt[data-bound='1'] { visibility: visible; }
+  .fmt-mark {
+    width: 0.48rem;
+    height: 0.48rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .fmt[data-playing='true'] .fmt-mark { background: currentColor; }
+
+  @media all {
+    .fmt {
+      transition:
+        background-color 180ms var(--ease-out),
+        color 180ms var(--ease-out);
+    }
+  }
+  .fmt:hover,
+  .fmt:focus-visible {
+    background: color-mix(in srgb, var(--brass) 14%, var(--paper));
+  }
+</style>

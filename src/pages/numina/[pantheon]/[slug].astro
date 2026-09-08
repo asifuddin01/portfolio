@@ -1,0 +1,152 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LesionRule from '../../../components/ornament/LesionRule.astro';
+import { getNumina } from '../../../lib/collections';
+
+export async function getStaticPaths() {
+  const books = await getNumina();
+  return books.flatMap((b) => {
+    // Previous and next run across the whole book, not just the chapter, so
+    // reading straight through works the way it would in a printed one.
+    const flat = b.chapters.flatMap((c) => c.topics.map((t) => ({ t, c })));
+    return flat.map(({ t, c }, i) => ({
+      params: { pantheon: b.slug, slug: t.id },
+      props: {
+        entry: t,
+        bookName: b.entry.data.name,
+        bookSlug: b.slug,
+        chapterTitle: c.title,
+        prev: flat[i - 1]?.t ?? null,
+        next: flat[i + 1]?.t ?? null,
+      },
+    }));
+  });
+}
+
+interface Props {
+  entry: CollectionEntry<'numina'>;
+  bookName: string;
+  bookSlug: string;
+  chapterTitle: string;
+  prev: CollectionEntry<'numina'> | null;
+  next: CollectionEntry<'numina'> | null;
+}
+const { entry, bookName, bookSlug, chapterTitle, prev, next } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+---
+<BaseLayout
+  title={`${d.title} — ${bookName} — Md. Asif Uddin`}
+  description={d.summary}
+  folio="N"
+  type="article"
+>
+  <article class="codex nx">
+    <header class="nx-head">
+      <p class="nx-trail" data-reveal>
+        <a href="/numina">Numina</a> ·
+        <a href={`/numina/${bookSlug}`}>{bookName}</a> ·
+        {chapterTitle}
+        {d.status !== 'published' && <span class="nx-draft">{d.status}</span>}
+      </p>
+      <h1 class="nx-title" data-press>{d.title}</h1>
+      <p class="nx-summary codex-measure" data-reveal>{d.summary}</p>
+    </header>
+
+    {d.image && (
+      <figure class="nx-figure" data-reveal>
+        <Image src={d.image} alt={d.alt ?? ''} widths={[480, 900, 1400]} loading="eager" />
+        {d.credit && <figcaption class="nx-credit">{d.credit}</figcaption>}
+      </figure>
+    )}
+
+    <div class="nx-body codex-measure">
+      <Content />
+    </div>
+
+    {d.sources.length > 0 && (
+      <section class="nx-sources codex-measure">
+        <h2 class="nx-h2">Sources</h2>
+        <ul class="nx-source-list">
+          {d.sources.map((s) => (
+            <li>
+              {s.url ? <a href={s.url}>{s.label}</a> : s.label}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <LesionRule />
+
+    <nav class="nx-nav" aria-label={`Other topics in ${bookName}`}>
+      {prev && <a href={`/numina/${bookSlug}/${prev.id}`}>← {prev.data.title}</a>}
+      <a class="nx-up" href={`/numina/${bookSlug}`}>Contents of {bookName}</a>
+      {next && <a href={`/numina/${bookSlug}/${next.id}`}>{next.data.title} →</a>}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .nx { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .nx-trail {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .nx-trail a { color: inherit; }
+  .nx-draft {
+    margin-left: 0.5rem;
+    padding: 0.1em 0.5em;
+    border: var(--rule) solid var(--oxblood-text);
+    border-radius: 999px;
+    color: var(--oxblood-text);
+  }
+  .nx-title { font-size: var(--t-2xl); margin-bottom: 0.6rem; }
+  .nx-summary { font-size: var(--t-md); line-height: 1.7; color: var(--ink-soft); margin: 0 0 1.6rem; }
+
+  .nx-figure { margin: 0 0 1.8rem; }
+  .nx-figure :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    border-radius: 3px;
+  }
+  .nx-credit {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin-top: 0.5rem;
+  }
+
+  .nx-body { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .nx-sources { margin: 2rem 0 0; }
+  .nx-h2 {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.6rem;
+  }
+  .nx-source-list { margin: 0; padding-left: 1.1rem; font-size: var(--t-sm); line-height: 1.8; color: var(--ink-soft); }
+
+  .nx-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1.4rem 0 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+  }
+  .nx-up { color: var(--ink-soft); }
+</style>

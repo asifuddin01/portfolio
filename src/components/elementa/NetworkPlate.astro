@@ -21,6 +21,7 @@
  */
 import katex from 'katex';
 import { build, maxAbs } from '../../lib/network';
+import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
 /* KaTeX's stylesheet. Imported here rather than relied on from the page, so
    the plate carries what it needs wherever it is placed. Astro dedupes it
    against the Elementa routes that already import the same file. */
@@ -127,7 +128,7 @@ const FORWARD = EDGES.filter((e) => e.rw > 0.3);
 const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
 
 ---
-<figure class="np" data-reveal aria-labelledby="np-cap">
+<figure class="np" data-reveal data-motion-figure aria-labelledby="np-cap">
   <svg
     class="np-svg"
     viewBox={`0 0 ${W} ${H}`}
@@ -151,7 +152,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
         class="np-fwd"
         x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
         stroke-width={(0.5 + e.rw * 1.1).toFixed(2)}
-        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --delay:${900 + (e.layer - 1) * 900}ms`}
+        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --delay:${160 + (e.layer - 1) * 900}ms`}
       />
     ))}
 
@@ -161,14 +162,14 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
         class="np-bwd"
         x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1}
         stroke-width={(0.5 + e.rg * 1.3).toFixed(2)}
-        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --delay:${900 + (LAYERS.length - e.layer - 1) * 900}ms`}
+        style={`--len:${e.len.toFixed(1)}; --end:${(-e.len).toFixed(1)}; --delay:${160 + (LAYERS.length - e.layer - 1) * 900}ms`}
       />
     ))}
 
     {/* The units. The ring is the neuron; the fill is what it computed. */}
     {LAYERS.map((layer, l) =>
       layer.a.map((a, i) => (
-        <g class="np-node" style={`--node-delay:${l * 160}ms; --lit-delay:${900 + l * 900}ms`}>
+        <g class="np-node" style={`--node-delay:${l * 160}ms; --lit-delay:${160 + l * 900}ms`}>
           <circle class="np-ring" cx={cx(l)} cy={cy(l, i)} r="5.4" />
           <circle
             class="np-fill"
@@ -187,17 +188,21 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
       time, with its height reserved so the caption below never jogs. */}
   <div class="np-eq" aria-hidden="true">
     {FWD_EQ.map((f, i) => (
-      <span class="np-eq-i np-eq-f" style={`--delay:${900 + i * 11000}ms`}>
+      <span class="np-eq-i np-eq-f" style={`--delay:${160 + i * 11000}ms`}>
         <span class="np-eq-l">{f.label}</span>
         <span class="np-eq-m" set:html={f.html} />
       </span>
     ))}
     {BWD_EQ.map((f, i) => (
-      <span class="np-eq-i np-eq-b" style={`--delay:${900 + i * 11000}ms`}>
+      <span class="np-eq-i np-eq-b" style={`--delay:${160 + i * 11000}ms`}>
         <span class="np-eq-l">{f.label}</span>
         <span class="np-eq-m" set:html={f.html} />
       </span>
     ))}
+  </div>
+
+  <div class="np-motion">
+    <FigureMotionToggle figure="network figure" />
   </div>
 
   <figcaption class="np-cap" id="np-cap">
@@ -219,6 +224,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
      read `z = \sum w_i x_i + b`. */
   .np { margin: 0; display: grid; gap: 0.9rem; --cycle: 11000ms; }
   .np-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .np-motion { display: flex; justify-content: flex-end; }
 
   .np-wire { stroke: var(--brass); }
   .np-ring { fill: none; stroke: var(--brass); stroke-opacity: 0.5; stroke-width: 0.7; }
@@ -258,7 +264,14 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     text-transform: uppercase;
     color: var(--brass-text);
   }
-  .np-eq-m { color: var(--ink); }
+  .np-eq-m {
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    color: var(--ink);
+  }
 
   .np-cap { display: grid; gap: 0.25rem; max-width: 26rem; }
   .np-cap-n {
@@ -275,21 +288,6 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     color: var(--ink);
   }
   .np-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
-
-  /* With motion disabled nothing cycles, so the first equation stands rather
-     than the slot sitting empty under a network with no explanation. */
-  @media (prefers-reduced-motion: reduce) {
-    /* Nothing cycles, so one from each phase stands rather than the slot
-       sitting empty under a network with no explanation. */
-    .np-eq { min-height: 5rem; align-content: center; gap: 0.35rem; }
-    .np-eq-i { position: static; opacity: 1; }
-    /* `:first-of-type` counts element types, and all six equations are
-       spans — so only the very first span was ever "first of type", which
-       kept forward equation 1 and silently hid every backward one. The
-       sibling combinator says what was meant: hide any forward equation
-       that follows a forward equation, and likewise for backward. */
-    .np-eq-f ~ .np-eq-f, .np-eq-b ~ .np-eq-b { display: none; }
-  }
 
   @media all {
     /* The wires and units draw themselves once, outward from the input. */
@@ -328,7 +326,7 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
          30–46%  what the forward pass just computed
          48–70%  gradient returns
          76–97%  the loss, and the update it implies
-       Everything shares one 900ms origin, and the gaps are sized against the
+       Everything shares one 160ms origin, and the gaps are sized against the
        *staggered* end of each pass rather than its nominal one. That is what
        went wrong first: layers are offset from each other, so the last
        packet lands well after the keyframe percentage suggests, and the
@@ -424,15 +422,78 @@ const BACKWARD = EDGES.filter((e) => e.rg > 0.3);
     }
   }
 
-  /* The loop fails open when a browser lacks the media feature, but never
-     ignores an explicit reduced-motion preference. */
-  @media (prefers-reduced-motion: reduce) {
-    .np-fwd,
-    .np-bwd,
-    .np-fill,
-    .np-eq-i { animation: none !important; }
-    .np-fwd,
-    .np-bwd { opacity: 0; }
-    .np-fill { transform: none; }
+  /* Pausing leaves one forward and one backward equation as two real grid
+     rows. Keeping `grid-area: 1 / 1` here was the overlap visible in Chrome:
+     both fallback equations occupied the same cell. */
+  .np[data-motion='paused'] .np-fwd,
+  .np[data-motion='paused'] .np-bwd,
+  .np[data-motion='paused'] .np-fill,
+  .np[data-motion='paused'] .np-eq-i { animation: none !important; }
+  .np[data-motion='paused'] .np-fwd,
+  .np[data-motion='paused'] .np-bwd { opacity: 0; }
+  .np[data-motion='paused'] .np-fill { transform: none; }
+  .np[data-motion='paused'] .np-eq {
+    min-height: 0;
+    align-content: start;
+    gap: 0.75rem;
   }
+  .np[data-motion='paused'] .np-eq-i {
+    grid-area: auto;
+    position: static;
+    opacity: 1;
+  }
+  .np[data-motion='paused'] .np-eq-f ~ .np-eq-f,
+  .np[data-motion='paused'] .np-eq-b ~ .np-eq-b { display: none; }
+
+  /* The loop fails open when a browser lacks the media feature. Reduced
+     motion remains the default, while Play is an explicit figure-only opt-in. */
+  @media (prefers-reduced-motion: reduce) {
+    .np:not([data-motion='running']) .np-fwd,
+    .np:not([data-motion='running']) .np-bwd,
+    .np:not([data-motion='running']) .np-fill,
+    .np:not([data-motion='running']) .np-eq-i { animation: none !important; }
+    .np:not([data-motion='running']) .np-fwd,
+    .np:not([data-motion='running']) .np-bwd { opacity: 0; }
+    .np:not([data-motion='running']) .np-fill { transform: none; }
+    .np:not([data-motion='running']) .np-eq {
+      min-height: 0;
+      align-content: start;
+      gap: 0.75rem;
+    }
+    .np:not([data-motion='running']) .np-eq-i {
+      grid-area: auto;
+      position: static;
+      opacity: 1;
+    }
+    .np:not([data-motion='running']) .np-eq-f ~ .np-eq-f,
+    .np:not([data-motion='running']) .np-eq-b ~ .np-eq-b { display: none; }
+
+    .np[data-motion='running'] .np-fwd {
+      animation: np-fwd var(--cycle) linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+    .np[data-motion='running'] .np-bwd {
+      animation: np-bwd var(--cycle) linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+    .np[data-motion='running'] .np-fill {
+      animation: np-lit var(--cycle) ease-in-out infinite !important;
+      animation-delay: var(--lit-delay) !important;
+    }
+    .np[data-motion='running'] .np-eq-f {
+      animation: np-eq-f 44000ms linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+    .np[data-motion='running'] .np-eq-b {
+      animation: np-eq-b 22000ms linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+  }
+
+  /* One-frame cancellation gives the loop a deterministic beginning whenever
+     the figure enters view or the reader presses Play. */
+  .np.is-motion-restarting .np-fwd,
+  .np.is-motion-restarting .np-bwd,
+  .np.is-motion-restarting .np-fill,
+  .np.is-motion-restarting .np-eq-i { animation: none !important; }
 </style>

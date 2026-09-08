@@ -33,6 +33,7 @@ export const NAV = [
   { href: '/papers', label: 'Papers' },
   { href: '/tabulae', label: 'Tabulae' },
   { href: '/marginalia', label: 'Marginalia' },
+  { href: '/numina', label: 'Numina' },
   { href: '/researchlens', label: 'ResearchLens' },
   { href: '/vitae', label: 'Vitae' },
   { href: '/officina', label: 'Officina' },

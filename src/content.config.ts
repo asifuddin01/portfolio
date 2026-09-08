@@ -630,6 +630,116 @@ const bibliotheca = defineCollection({
 });
 
 /**
+ * The eleven traditions of Numina — one file each, and the only place the list
+ * lives. Adding a twelfth means adding a file from /admin, not editing a page.
+ */
+const pantheons = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/pantheons' }),
+  schema: z.object({
+    /** Position in the index. Ties break on name. */
+    order: z.number().int().min(1),
+    /** Short form, used in the nav trail and on cards: "Norse". */
+    name: z.string(),
+    /** Full form, used as the page heading: "Norse Mythology". */
+    title: z.string(),
+    /** Where it was told. Not a modern country, usually. */
+    region: z.string(),
+    /**
+     * When — and for most of these, when it was *written down*, which is a
+     * different and later thing than when it was believed. Free text because
+     * the honest answer is often a range with a caveat attached.
+     */
+    span: z.string(),
+    /** One line for the shelf. */
+    gloss: z.string(),
+    /**
+     * The book's chapters, in the order they are read.
+     *
+     * Held here rather than in a collection of their own because a chapter has
+     * no body of its own — it is a heading with topics under it, and the book
+     * is the thing you edit when you decide what its parts are. Adding one is
+     * a row in this list from /admin.
+     */
+    chapters: z
+      .array(
+        z.object({
+          /** Referred to by a topic's `chapter:`. Lower case, no spaces. */
+          id: z.string(),
+          title: z.string(),
+          gloss: z.string().default(''),
+        })
+      )
+      .default([]),
+    status: shipStatus.default('published'),
+  }),
+});
+
+/**
+ * A single writeup: a god, a story, a text, a creature, a place, an idea.
+ *
+ * `pantheon` is the file name of the tradition it belongs to rather than an
+ * enum, so a new tradition needs no schema change — but a typo would file the
+ * piece nowhere, which is why scripts/check-numina.mjs fails the build on a
+ * name that matches no pantheon.
+ */
+const numina = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/numina' }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      /** Slug of the book file this belongs to, e.g. "norse". */
+      pantheon: z.string(),
+      /**
+       * Which of that book's chapters it sits in. A plain string rather than an
+       * enum for the same reason `pantheon` is: chapters are content, and a
+       * schema that had to be edited to add one would defeat the point.
+       * scripts/check-numina.mjs rejects a chapter the book does not have, and
+       * prints the ones it does.
+       */
+      chapter: z.string(),
+      /** What sort of thing is being written about. Groups the tradition page. */
+      kind: z
+        .enum(['deity', 'story', 'text', 'creature', 'place', 'idea', 'rite'])
+        .default('story'),
+      /** One or two lines. Shown under the title wherever it is listed. */
+      summary: z.string(),
+      /** Position within its tradition. Ties break on title. */
+      order: z.number().int().min(1).default(1),
+      /**
+       * Optional. Uploaded through /admin into src/assets/numina, so Astro
+       * optimises it rather than serving a 4 MB scan.
+       */
+      image: image().optional(),
+      /**
+       * Required whenever there is an image: the audit rejects a page with an
+       * <img> and no alt, and it is the reader who pays for a missing one.
+       * Enforced below rather than by making the field required, so a piece
+       * without a picture needs no empty string.
+       */
+      alt: z.string().optional(),
+      credit: z.string().optional(),
+      /** Where this came from, for anyone who wants to go further. */
+      sources: z
+        .array(z.object({ label: z.string(), url: optionalUrl }))
+        .default([]),
+      updated: z.coerce.date().optional(),
+      status: shipStatus.default('published'),
+    })
+    .superRefine((r, ctx) => {
+      if (r.image && !r.alt?.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['alt'],
+          message:
+            `"${r.title}" has an image but no alt text. Describe what is in it — ` +
+            `a page with an unlabelled image fails the audit and tells a screen ` +
+            `reader nothing.`,
+        });
+      }
+    }),
+});
+
+/**
  * Editable page prose. These exist as content rather than as JSX so they can
  * be changed from /admin without touching the codebase.
  */
@@ -1041,6 +1151,7 @@ const recipes = defineCollection({
 
 export const collections = {
   works, elementa, marginalia, lectiones, bibliotheca, recipes, reviews, library, site, art, books, instrumentarium,
+  pantheons, numina,
   referees,
   instrumenta, papers, education, projects, images, axioms, chapters,
   problems, apparatus, notation,

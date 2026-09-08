@@ -20,6 +20,7 @@
  * a single minimum would be a diagram of something that does not happen.
  */
 import { RUNS, contours, pathLength } from '../../lib/descent';
+import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
 
 /* The plate is wider than tall, so the surface is stretched to fill it. */
 const W = 320;
@@ -56,7 +57,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
   (a, b) => b.points.length - a.points.length
 );
 ---
-<figure class="dp" data-reveal aria-labelledby="dp-cap">
+<figure class="dp" data-reveal data-motion-figure aria-labelledby="dp-cap">
   <svg
     class="dp-svg"
     viewBox={`0 0 ${W} ${H}`}
@@ -103,7 +104,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
         stroke-width={run.id === 'momentum' ? 1.5 : 1.3}
         stroke-linejoin="round"
         stroke-linecap="round"
-        style={`--len:${pathLength(run.points, W - PAD * 2, H - PAD * 2)}; --delay:${900 + run.i * 520}ms`}
+        style={`--len:${pathLength(run.points, W - PAD * 2, H - PAD * 2)}; --delay:${160 + run.i * 520}ms`}
       />
     ))}
 
@@ -112,7 +113,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
       <circle
         class:list={['dp-head', `dp-${run.id}`]}
         r={run.id === 'momentum' ? 2.6 : 2.2}
-        style={`offset-path: path('${d(run.points)}'); --delay:${900 + run.i * 520}ms`}
+        style={`offset-path: path('${d(run.points)}'); --delay:${160 + run.i * 520}ms`}
       />
     ))}
 
@@ -122,10 +123,14 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
       <circle
         class:list={['dp-end', `dp-${run.id}`]}
         cx={sx(ENDS[run.i][0])} cy={sy(ENDS[run.i][1])} r="2.8"
-        style={`--delay:${900 + run.i * 520}ms`}
+        style={`--delay:${160 + run.i * 520}ms`}
       />
     ))}
   </svg>
+
+  <div class="dp-motion">
+    <FigureMotionToggle figure="descent figure" />
+  </div>
 
   <figcaption class="dp-cap" id="dp-cap">
     <span class="dp-cap-n">Figura I</span>
@@ -146,6 +151,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
 <style>
   .dp { margin: 0; display: grid; gap: 1rem; position: relative; --cycle: 9000ms; }
   .dp-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .dp-motion { display: flex; justify-content: flex-end; }
 
   /* Resting state — the finished picture. Everything below animates *from*
      this, so with motion disabled the plate simply arrives drawn. */
@@ -217,6 +223,12 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
       -webkit-mask-image: radial-gradient(ellipse 52% 34% at 14% 88%, transparent 24%, rgba(0,0,0,0.55) 62%, #000 100%);
       mask-image: radial-gradient(ellipse 52% 34% at 14% 88%, transparent 24%, rgba(0,0,0,0.55) 62%, #000 100%);
     }
+    .dp-motion {
+      position: absolute;
+      right: 0;
+      bottom: 0.2rem;
+      z-index: 2;
+    }
   }
 
   @media all {
@@ -254,7 +266,8 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     .dp-head,
     .dp-end { opacity: 0; }
 
-    /* 520ms apart, not 260. The three runs share a cycle, so they finish
+    /* The first run starts 160ms after a viewport restart, then the runs are
+       520ms apart, not 260. The three share a cycle, so they finish
        together however long each actually took — plain needs 24 steps and
        momentum 58, and equal wall-clock time flattens that. A wider stagger
        restores the order of arrival, which is the part worth seeing: the grey
@@ -299,14 +312,50 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     }
   }
 
-  /* An explicit final override keeps the fail-open mobile fallback above from
-     bypassing the reader's accessibility preference. */
-  @media (prefers-reduced-motion: reduce) {
-    .dp-trace,
-    .dp-head,
-    .dp-end { animation: none !important; }
-    .dp-trace { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
-    .dp-head { offset-distance: 100%; opacity: 1; }
-    .dp-end { opacity: 1; }
+  /* A manual pause uses the same truthful resting frame as reduced motion. */
+  .dp[data-motion='paused'] .dp-trace,
+  .dp[data-motion='paused'] .dp-head,
+  .dp[data-motion='paused'] .dp-end { animation: none !important; }
+  .dp[data-motion='paused'] .dp-trace {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
+  .dp[data-motion='paused'] .dp-head { offset-distance: 100%; opacity: 1; }
+  .dp[data-motion='paused'] .dp-end { opacity: 1; }
+
+  /* Respect the device preference until the reader explicitly presses Play.
+     The stronger running rules are an intentional, figure-only opt-in; they
+     do not switch the site's other motion back on. */
+  @media (prefers-reduced-motion: reduce) {
+    .dp:not([data-motion='running']) .dp-trace,
+    .dp:not([data-motion='running']) .dp-head,
+    .dp:not([data-motion='running']) .dp-end { animation: none !important; }
+    .dp:not([data-motion='running']) .dp-trace {
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+    .dp:not([data-motion='running']) .dp-head { offset-distance: 100%; opacity: 1; }
+    .dp:not([data-motion='running']) .dp-end { opacity: 1; }
+
+    .dp[data-motion='running'] .dp-trace {
+      animation: dp-draw var(--cycle) linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+    .dp[data-motion='running'] .dp-head {
+      animation: dp-run var(--cycle) linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+    .dp[data-motion='running'] .dp-end {
+      animation: dp-land var(--cycle) linear infinite !important;
+      animation-delay: var(--delay) !important;
+    }
+  }
+
+  /* Toggling this class cancels the CSS loops for one frame. Removing it
+     creates fresh animations at the beginning of their timeline. */
+  .dp.is-motion-restarting .dp-trace,
+  .dp.is-motion-restarting .dp-head,
+  .dp.is-motion-restarting .dp-end { animation: none !important; }
 </style>
