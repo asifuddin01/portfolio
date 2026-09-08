@@ -1,0 +1,11 @@
+Uploads for Numina topics land here, put in place by /admin.
+
+This file exists so the directory does. Git does not track empty directories,
+and public/admin/config.yml points the Topics collection's media_folder at
+this path — scripts/check-cms.mjs resolves that path and fails when it is
+missing, which is what broke the first Numina deploy: verify passed on a
+machine where the folder had been created by hand and failed in CI, where the
+clone had never seen it.
+
+Delete this once there is a real upload beside it, or leave it; it costs
+nothing.
