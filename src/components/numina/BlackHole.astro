@@ -17,9 +17,6 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
       <span class="bh-fallback-ring"></span>
     </div>
     <canvas class="bh-canvas" data-black-hole-canvas aria-hidden="true"></canvas>
-    <span class="bh-reticle bh-reticle-a" aria-hidden="true"></span>
-    <span class="bh-reticle bh-reticle-b" aria-hidden="true"></span>
-    <span class="bh-index" aria-hidden="true">N · 00</span>
   </div>
 
   <div class="bh-meta">
@@ -49,10 +46,8 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
     aspect-ratio: 6 / 5;
     overflow: hidden;
     background:
-      radial-gradient(circle at 52% 52%, color-mix(in srgb, var(--ink) 12%, transparent), transparent 43%),
-      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--verdigris) 8%, transparent), transparent 68%);
-    -webkit-mask-image: radial-gradient(ellipse 88% 88% at 52% 50%, black 58%, transparent 100%);
-    mask-image: radial-gradient(ellipse 88% 88% at 52% 50%, black 58%, transparent 100%);
+      radial-gradient(circle at 52% 50%, color-mix(in srgb, var(--verdigris) 10%, transparent), transparent 54%),
+      radial-gradient(ellipse 90% 86% at 50% 50%, color-mix(in srgb, var(--ink) 10%, transparent), transparent 76%);
   }
 
   .bh-canvas,
@@ -66,7 +61,6 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   .bh-canvas {
     display: block;
     opacity: 0;
-    filter: saturate(1.08) contrast(1.03);
   }
 
   .bh[data-renderer='webgl'] .bh-canvas { opacity: 1; }
@@ -81,67 +75,78 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   .bh-fallback::before {
     content: '';
     position: absolute;
-    width: 76%;
-    aspect-ratio: 2.8 / 1;
+    width: 108%;
+    aspect-ratio: 3.15 / 1;
     border-radius: 50%;
     background:
+      radial-gradient(ellipse at center, transparent 0 18%, color-mix(in srgb, var(--paper) 92%, var(--brass)) 25%, color-mix(in srgb, var(--fundus) 74%, transparent) 32%, transparent 61%),
       repeating-radial-gradient(
         ellipse at center,
-        transparent 0 8%,
-        color-mix(in srgb, var(--fundus) 38%, transparent) 8.5% 9%,
-        transparent 9.5% 13%
+        transparent 0 4.5%,
+        color-mix(in srgb, var(--fundus) 48%, transparent) 5% 5.8%,
+        transparent 6.2% 8.4%
       );
     box-shadow:
-      0 0 2.2rem color-mix(in srgb, var(--brass) 20%, transparent),
-      0 0 5rem color-mix(in srgb, var(--verdigris) 12%, transparent);
-    transform: rotate(-9deg);
+      0 0 2.8rem color-mix(in srgb, var(--brass) 48%, transparent),
+      0 0 7rem color-mix(in srgb, var(--fundus) 30%, transparent);
+    transform: rotate(-7deg) scale(1.02);
+    transform-origin: 50% 50%;
+  }
+
+  .bh-fallback::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    width: 48%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: clamp(0.42rem, 1.6vw, 0.85rem) solid color-mix(in srgb, var(--paper) 78%, var(--brass));
+    border-bottom-color: color-mix(in srgb, var(--fundus) 68%, transparent);
+    box-shadow:
+      inset 0 0 1.4rem color-mix(in srgb, var(--brass) 66%, transparent),
+      0 -0.7rem 2.7rem color-mix(in srgb, var(--paper) 38%, transparent),
+      0 0 5rem color-mix(in srgb, var(--fundus) 52%, transparent);
+    transform: translateY(-8%);
   }
 
   .bh-fallback-ring {
+    z-index: 2;
     position: relative;
     display: block;
-    width: 35%;
+    width: 39%;
     aspect-ratio: 1;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--paper) 12%, var(--ink));
-    border: 2px solid color-mix(in srgb, var(--brass) 80%, var(--ink));
+    background: color-mix(in srgb, var(--ink) 94%, #000);
+    border: 1px solid color-mix(in srgb, var(--paper) 74%, var(--brass));
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--fundus) 34%, transparent),
-      0 0 1.6rem color-mix(in srgb, var(--brass) 75%, transparent),
-      0 0 4.8rem color-mix(in srgb, var(--fundus) 25%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--fundus) 52%, transparent),
+      0 0 1.9rem color-mix(in srgb, var(--brass) 82%, transparent),
+      0 0 5.6rem color-mix(in srgb, var(--fundus) 35%, transparent);
   }
 
-  .bh-reticle {
-    position: absolute;
-    width: 1.5rem;
-    height: 1.5rem;
-    pointer-events: none;
-    opacity: 0.48;
-  }
-
-  .bh-reticle::before,
-  .bh-reticle::after {
+  .bh-fallback-ring::after {
     content: '';
     position: absolute;
-    background: var(--brass);
+    z-index: 3;
+    width: 270%;
+    height: 22%;
+    left: 50%;
+    top: 64%;
+    border-radius: 50%;
+    background: linear-gradient(90deg, transparent 3%, color-mix(in srgb, var(--fundus) 74%, transparent) 27%, color-mix(in srgb, var(--paper) 96%, var(--brass)) 58%, color-mix(in srgb, var(--fundus) 84%, transparent) 77%, transparent 98%);
+    box-shadow: 0 0 1.4rem color-mix(in srgb, var(--brass) 82%, transparent);
+    transform: translate(-50%, -50%) rotate(-7deg);
+    transform-origin: 50% 50%;
   }
 
-  .bh-reticle::before { width: 100%; height: var(--rule); top: 0; left: 0; }
-  .bh-reticle::after { width: var(--rule); height: 100%; top: 0; left: 0; }
-  .bh-reticle-a { top: 8%; right: 7%; }
-  .bh-reticle-b { bottom: 9%; left: 5%; transform: rotate(180deg); }
-
-  .bh-index {
-    position: absolute;
-    top: 7.5%;
-    left: 7%;
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    line-height: 1;
-    letter-spacing: 0.17em;
-    color: var(--brass-text);
-    opacity: 0.62;
-    pointer-events: none;
+  .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::before {
+    animation: bh-disc-turn 15s linear infinite;
+  }
+  .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::after {
+    animation: bh-crown-breathe 4.8s ease-in-out infinite alternate;
+  }
+  .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback-ring::after {
+    animation: bh-sweep-flow 5.6s ease-in-out infinite alternate;
   }
 
   .bh-meta {
@@ -179,12 +184,36 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
       width: min(100%, 38rem);
       margin-inline: auto;
     }
-    .bh-stage { aspect-ratio: 1 / 1; }
+    .bh-stage { aspect-ratio: 4 / 5; }
   }
 
   @media (max-width: 30rem) {
     .bh-stage { width: calc(100% + 1.5rem); margin-left: -0.75rem; }
     .bh-meta { padding-inline: 0; }
     .bh-caption-copy { max-width: 16rem; }
+  }
+
+  @keyframes bh-disc-turn {
+    to { transform: rotate(353deg) scale(1.04); }
+  }
+
+  @keyframes bh-crown-breathe {
+    to { transform: translateY(-8%) scale(1.045); opacity: 0.84; }
+  }
+
+  @keyframes bh-sweep-flow {
+    to { transform: translate(-49%, -48%) rotate(-5deg) scaleX(1.035); opacity: 0.82; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::before {
+      animation: bh-disc-turn 15s linear infinite !important;
+    }
+    .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::after {
+      animation: bh-crown-breathe 4.8s ease-in-out infinite alternate !important;
+    }
+    .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback-ring::after {
+      animation: bh-sweep-flow 5.6s ease-in-out infinite alternate !important;
+    }
   }
 </style>

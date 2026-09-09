@@ -38,7 +38,9 @@ const fragmentSource = `
   uniform vec3 u_hot;
   uniform vec3 u_cool;
 
-  #define PI 3.14159265359
+  float saturate(float value) {
+    return clamp(value, 0.0, 1.0);
+  }
 
   mat2 rotate2d(float angle) {
     float s = sin(angle);
@@ -74,109 +76,181 @@ const fragmentSource = `
     return value;
   }
 
+  float wrappedAngle(float angle, float target) {
+    return atan(sin(angle - target), cos(angle - target));
+  }
+
   float starLayer(vec2 p, float scale, float threshold, float time) {
     vec2 id = floor(p * scale);
     vec2 cell = fract(p * scale) - 0.5;
     float seed = hash21(id);
     vec2 offset = vec2(hash21(id + 17.3), hash21(id + 91.7)) - 0.5;
     float radius = length(cell - offset * 0.58);
-    float point = (1.0 - smoothstep(0.0, 0.055, radius)) * smoothstep(threshold, 1.0, seed);
+    float point = (1.0 - smoothstep(0.0, 0.066, radius)) * smoothstep(threshold, 1.0, seed);
     float twinkle = 0.68 + 0.32 * sin(time * (0.7 + seed) + seed * 31.0);
     return point * twinkle;
   }
 
   void main() {
     float shortSide = min(u_resolution.x, u_resolution.y);
-    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution.xy) / shortSide;
-    p.y *= -1.0;
-    p -= u_pointer * 0.055;
+    vec2 raw = (2.0 * gl_FragCoord.xy - u_resolution.xy) / shortSide;
+    raw.y *= -1.0;
+    raw -= u_pointer * vec2(0.052, 0.036);
 
     float time = u_time;
-    float breathing = sin(time * 0.18) * 0.012;
-    p = rotate2d(-0.145 + breathing + u_pointer.x * 0.025) * p;
-    p -= vec2(0.015, -0.01);
+    float precession = sin(time * 0.115) * 0.028;
+    vec2 p = rotate2d(-0.165 + precession + u_pointer.x * 0.022) * raw;
+    p -= vec2(0.018, -0.008);
 
+    float horizon = 0.415;
     float radius = length(p);
     float angle = atan(p.y, p.x);
-    float vignette = 1.0 - smoothstep(0.24, 1.42, length(p * vec2(0.86, 1.0)));
+    float vignette = 1.0 - smoothstep(0.2, 1.48, length(p * vec2(0.78, 0.94)));
+    float radialFade = 1.0 - smoothstep(0.79, 1.48, length(raw * vec2(0.73, 0.91)));
+    vec2 frameUv = gl_FragCoord.xy / u_resolution.xy;
+    float frameEdge = min(min(frameUv.x, 1.0 - frameUv.x), min(frameUv.y, 1.0 - frameUv.y));
+    float edgeFade = radialFade * smoothstep(0.0, 0.115, frameEdge);
 
-    vec3 colour = u_void * 0.38;
-    float alpha = 0.08 + vignette * 0.3;
+    vec3 spaceBlack = mix(u_void * 0.12, vec3(0.001, 0.004, 0.008), 0.76);
+    vec3 ember = mix(u_warm, vec3(1.0, 0.12, 0.008), 0.64);
+    vec3 gold = mix(u_warm, vec3(1.0, 0.52, 0.09), 0.62);
+    vec3 whiteHeat = mix(u_hot, vec3(1.0, 0.94, 0.72), 0.52);
+    vec3 ice = mix(u_cool, vec3(0.16, 0.48, 0.58), 0.44);
 
-    /* Distant stars bend and thin out at the centre. */
-    vec2 lensUv = p * (1.0 + 0.055 / (radius * radius + 0.045));
-    float stars = starLayer(lensUv + vec2(time * 0.0017, 0.0), 20.0, 0.965, time);
-    stars += starLayer(lensUv * 1.37 - vec2(0.0, time * 0.001), 35.0, 0.982, time) * 0.62;
-    float starExclusion = smoothstep(0.34, 0.54, radius);
-    vec3 starColour = mix(u_hot, u_cool, hash21(floor(lensUv * 20.0)) * 0.58);
-    colour += starColour * stars * starExclusion * vignette * 1.55;
-    alpha += stars * 0.75;
+    vec3 colour = spaceBlack * (0.88 + 0.12 * vignette);
+    float alpha = 0.62 + vignette * 0.36;
 
-    /* A quiet vertical spray, echoing the source image without becoming a jet. */
-    float plumeShape = exp(-abs(p.x) * 8.5) * smoothstep(0.28, 0.55, abs(p.y));
-    plumeShape *= 1.0 - smoothstep(0.38, 1.24, abs(p.y));
-    float plumeNoise = fbm(vec2(p.x * 18.0 + time * 0.09, p.y * 9.0 - time * 0.06));
-    float plume = plumeShape * smoothstep(0.58, 0.92, plumeNoise) * 0.48;
-    colour += mix(u_warm, u_cool, 0.32) * plume;
-    alpha += plume * 0.7;
+    /* A deep, slowly moving sky with light gravitational distortion. */
+    vec2 lensUv = p * (1.0 + 0.1 / (radius * radius + 0.065));
+    float nebulaNoise = fbm(lensUv * 2.05 + vec2(2.7, -time * 0.012));
+    float nebula = smoothstep(0.47, 0.86, nebulaNoise) * vignette;
+    nebula *= 0.42 + 0.58 * smoothstep(-0.82, 0.72, lensUv.y - lensUv.x * 0.18);
+    colour += mix(ice, ember, saturate(nebulaNoise - 0.42)) * nebula * 0.12;
 
-    /* The accretion plane: many narrow, independently moving filaments. */
-    float tilt = 0.255 + sin(time * 0.11) * 0.008;
-    vec2 discPoint = vec2(p.x, p.y / tilt);
+    float stars = starLayer(lensUv + vec2(time * 0.0016, 0.0), 19.0, 0.915, time);
+    stars += starLayer(lensUv * 1.53 - vec2(0.0, time * 0.0011), 37.0, 0.962, time) * 0.72;
+    stars += starLayer(lensUv * 2.31 + vec2(time * 0.0007), 61.0, 0.989, time) * 0.42;
+    float starExclusion = smoothstep(horizon + 0.035, horizon + 0.22, radius);
+    float starSeed = hash21(floor(lensUv * 19.0));
+    vec3 starColour = mix(whiteHeat, ice, starSeed * 0.52);
+    colour += starColour * stars * starExclusion * vignette * 2.25;
+    alpha += stars * 0.78;
+
+    /* A dust fountain gives the surrounding darkness depth and slow drift. */
+    float fountain = exp(-abs(p.x + p.y * 0.045) * 7.2);
+    fountain *= smoothstep(0.36, 0.58, abs(p.y)) * (1.0 - smoothstep(0.52, 1.32, abs(p.y)));
+    float dustPoints = starLayer(vec2(p.x * 1.8, p.y * 0.72 - time * 0.006), 31.0, 0.93, time * 1.3);
+    float dust = fountain * dustPoints * 0.88;
+    colour += mix(gold, ice, 0.22) * dust;
+    alpha += dust * 0.72;
+
+    /* The oblique accretion plane supplies a broad body and fine moving fibres. */
+    float tilt = 0.205 + sin(time * 0.1) * 0.008;
+    float bow = p.x * p.x * 0.024 - p.x * 0.012;
+    vec2 discPoint = vec2(p.x, (p.y - bow + 0.012) / tilt);
     float discRadius = length(discPoint);
     float discAngle = atan(discPoint.y, discPoint.x);
-    float discBand = (1.0 - smoothstep(0.42, 1.22, discRadius)) * smoothstep(0.285, 0.39, discRadius);
-    float turbulence = fbm(vec2(discRadius * 7.0 - time * 0.13, discAngle * 1.8 + time * 0.08));
-    float threads = 0.5 + 0.5 * sin(discRadius * 104.0 - discAngle * 11.0 - time * 2.25 + turbulence * 8.0);
-    float fineThreads = 0.5 + 0.5 * sin(discRadius * 211.0 + discAngle * 17.0 + time * 1.35);
-    float filament = pow(threads, 5.0) * 0.78 + pow(fineThreads, 9.0) * 0.44;
-    float innerHeat = 1.0 - smoothstep(0.34, 1.16, discRadius);
-    float doppler = 0.72 + 0.55 * smoothstep(-0.72, 0.58, -discPoint.x / max(discRadius, 0.001));
-    float nearSide = 0.62 + 0.38 * smoothstep(-0.7, 0.6, discPoint.y);
-    float disc = discBand * (0.075 + filament) * innerHeat * doppler * nearSide;
+    float discBand = smoothstep(0.31, 0.48, discRadius) * (1.0 - smoothstep(1.14, 1.72, discRadius));
+    float flowNoise = fbm(vec2(discRadius * 5.8 - time * 0.21, discAngle * 1.72 + time * 0.14));
+    float coarseThread = 0.5 + 0.5 * sin(discRadius * 79.0 - discAngle * 10.0 - time * 2.0 + flowNoise * 9.0);
+    float fineThread = 0.5 + 0.5 * sin(discRadius * 174.0 + discAngle * 15.0 - time * 2.75 + flowNoise * 4.5);
+    float filament = pow(coarseThread, 4.0) * 0.18 + pow(fineThread, 10.0) * 0.1;
+    float innerHeat = 1.0 - smoothstep(0.36, 1.28, discRadius);
+    float orbitalSide = discPoint.x / max(discRadius, 0.001);
+    float doppler = 0.38 + 1.28 * smoothstep(-0.78, 0.78, orbitalSide);
+    float plasmaBody = discBand * (0.36 + flowNoise * 0.86 + filament) * (0.5 + innerHeat * 0.86) * doppler;
 
-    float horizon = 0.245;
-    float outsideHorizon = smoothstep(horizon * 0.96, horizon * 1.14, radius);
-    disc *= outsideHorizon;
-    vec3 discColour = mix(u_warm, u_hot, pow(innerHeat, 2.2));
-    discColour = mix(discColour, u_cool, smoothstep(0.98, 1.22, discRadius) * 0.22);
-    colour += discColour * disc * 1.78;
-    alpha += disc * 1.25;
+    vec3 discColour = mix(ember, gold, saturate(innerHeat * 0.92));
+    discColour = mix(discColour, whiteHeat, pow(innerHeat, 3.1) * saturate(filament * 1.55));
 
-    /* Light from the far side is folded above and below the shadow. */
-    float lensRing = exp(-abs(radius - (horizon + 0.018)) * 105.0);
-    float photonHalo = exp(-abs(radius - (horizon + 0.062)) * 31.0);
-    float polarShade = 0.58 + 0.42 * pow(abs(cos(angle - 0.42)), 1.7);
-    float hotSpot = 0.7 + 0.55 * smoothstep(-0.65, 0.75, cos(angle + 0.7));
-    colour += mix(u_warm, u_hot, 0.76) * lensRing * polarShade * hotSpot * 1.48;
-    colour += mix(u_warm, u_cool, 0.18) * photonHalo * 0.28;
-    alpha += lensRing * 0.94 + photonHalo * 0.26;
+    /* The distant half of the disc is seen first, behind the event horizon. */
+    float farSide = 1.0 - smoothstep(-0.52, 0.22, discPoint.y);
+    float farDisc = plasmaBody * (0.06 + farSide * 0.94);
+    colour += discColour * farDisc * 1.18;
+    alpha += farDisc * 0.72;
 
-    float upperArcRadius = length(vec2(p.x, (p.y + 0.018) * 1.14));
-    float upperArc = exp(-abs(upperArcRadius - 0.315) * 76.0);
-    upperArc *= smoothstep(-0.06, 0.19, -p.y) * (1.0 - smoothstep(-0.05, 0.6, -p.y));
-    upperArc *= 0.66 + 0.34 * sin(angle * 13.0 - time * 0.72);
-    colour += mix(u_warm, u_hot, 0.62) * max(upperArc, 0.0) * 0.74;
-    alpha += max(upperArc, 0.0) * 0.62;
+    /* Gravitational lensing folds the far side into a thick crown above the shadow. */
+    vec2 crownPoint = vec2(p.x * 0.99, p.y - 0.018);
+    float crownRadius = length(crownPoint);
+    float crownAngle = atan(crownPoint.y, crownPoint.x);
+    float crownUpper = 1.0 - smoothstep(-0.21, -0.025, p.y);
+    float crownFlow = valueNoise(vec2(crownRadius * 13.0 - time * 0.44, crownAngle * 3.2 + time * 0.16));
+    float crownWarpedRadius = crownRadius + (crownFlow - 0.5) * 0.045 + sin(crownAngle * 3.0 - time * 0.28) * 0.012;
+    float crownInner = smoothstep(horizon - 0.06, horizon + 0.025, crownWarpedRadius);
+    float crownOuter = 1.0 - smoothstep(horizon + 0.29, horizon + 0.48, crownWarpedRadius);
+    float crownEnvelope = crownInner * crownOuter;
+    float crownThreads = 0.5 + 0.5 * sin(crownWarpedRadius * 176.0 - crownAngle * 13.0 - time * 2.25 + crownFlow * 6.0);
+    crownThreads = pow(crownThreads, 8.0);
+    float crownFine = 0.5 + 0.5 * sin(crownWarpedRadius * 287.0 + crownAngle * 18.0 + time * 1.6 + crownFlow * 3.5);
+    crownFine = pow(crownFine, 12.0);
+    float crownHotAngle = wrappedAngle(crownAngle, -0.18) / 0.78;
+    float crownHot = exp(-(crownHotAngle * crownHotAngle));
+    float crownHeat = 1.0 - smoothstep(horizon + 0.025, horizon + 0.36, crownWarpedRadius);
+    float crown = crownEnvelope * crownUpper * (0.52 + crownFlow * 0.56 + crownThreads * 0.2 + crownFine * 0.09);
+    crown *= 0.52 + crownHeat * 0.88;
+    vec3 crownColour = mix(ember, gold, saturate(crownHeat * 0.84 + crownFlow * 0.28));
+    crownColour = mix(crownColour, whiteHeat, crownHeat * crownHeat * saturate(crownThreads + crownFine * 0.44) * 0.31);
+    colour += crownColour * crown * (1.08 + crownHot * 0.62);
+    colour += ember * crownEnvelope * crownUpper * 0.38;
+    alpha += crown * 0.86;
 
-    /* The light cannot escape this circle. A soft rim makes it read as depth. */
-    float shadow = 1.0 - smoothstep(horizon - 0.014, horizon + 0.008, radius);
-    colour = mix(colour, u_void * 0.045, shadow);
-    alpha = max(alpha, shadow * 0.985);
-    float innerRim = exp(-abs(radius - horizon) * 63.0) * 0.16;
-    colour += u_warm * innerRim;
+    /* Empty space wins at the centre. A tiny warm falloff gives the sphere volume. */
+    float shadow = 1.0 - smoothstep(horizon - 0.012, horizon + 0.009, radius);
+    float shadowFalloff = 1.0 - smoothstep(0.0, horizon, radius);
+    vec3 eventHorizon = spaceBlack * (0.018 + shadowFalloff * 0.025);
+    colour = mix(colour, eventHorizon, shadow);
+    alpha = max(alpha, shadow * 0.995);
 
-    /* Sparse orbiting sparks make the rotation legible even at phone size. */
-    float sparkOrbit = abs(discRadius - (0.48 + 0.12 * sin(discAngle * 3.0 + time * 0.36)));
-    float sparks = 1.0 - smoothstep(0.0, 0.016, sparkOrbit);
-    sparks *= smoothstep(0.72, 0.985, sin(discAngle * 29.0 - time * 4.4) * 0.5 + 0.5);
-    sparks *= outsideHorizon * discBand;
-    colour += u_hot * sparks * 1.3;
+    float hotTarget = 0.56 + sin(time * 0.42) * 0.16;
+    float hotAngleDelta = wrappedAngle(angle, hotTarget) / 0.42;
+    float hotAngle = exp(-(hotAngleDelta * hotAngleDelta));
+    float photonCore = exp(-abs(radius - (horizon + 0.008)) * 118.0);
+    float photonGlow = exp(-abs(radius - (horizon + 0.042)) * 25.0);
+    colour += whiteHeat * photonCore * (0.25 + hotAngle * 1.72);
+    colour += mix(gold, ember, 0.28) * photonGlow * (0.16 + hotAngle * 0.72);
+    alpha += photonCore * 0.94 + photonGlow * 0.21;
+
+    /* The near side sweeps over the lower shadow, completing the three-dimensional fold. */
+    float nearSide = smoothstep(-0.24, 0.32, discPoint.y);
+    float sweepHotAngle = wrappedAngle(discAngle, 0.17) / 0.72;
+    float sweepHot = exp(-(sweepHotAngle * sweepHotAngle));
+    float frontGuard = smoothstep(horizon * 0.48, horizon * 0.98, radius);
+    float nearDisc = plasmaBody * nearSide * frontGuard * (0.055 + sweepHot * 0.095);
+    vec3 nearColour = mix(discColour, whiteHeat, sweepHot * pow(innerHeat, 1.7) * 0.76);
+    colour += nearColour * nearDisc * 1.18;
+
+    float frontCurve = 0.11 - p.x * 0.08 - p.x * p.x * 0.042;
+    float ribbonDistance = abs(p.y - frontCurve);
+    float ribbonEnvelope = 1.0 - smoothstep(0.048, 0.19, ribbonDistance);
+    ribbonEnvelope *= 1.0 - smoothstep(0.78, 1.42, abs(p.x));
+    float ribbonGuard = smoothstep(horizon * 0.52, horizon * 1.02, radius);
+    float ribbonThread = 0.5 + 0.5 * sin(ribbonDistance * 168.0 + p.x * 13.0 - time * 3.35 + flowNoise * 8.0);
+    ribbonThread = pow(ribbonThread, 8.0);
+    float ribbonBody = ribbonEnvelope * ribbonGuard * (0.58 + flowNoise * 0.62 + ribbonThread * 0.16);
+    float flareCentre = 0.34 + sin(time * 0.62) * 0.14;
+    float flareX = (p.x - flareCentre) / 0.38;
+    float flareY = (p.y - frontCurve) / 0.15;
+    float ribbonFlare = exp(-(flareX * flareX + flareY * flareY));
+    vec3 ribbonColour = mix(ember, gold, saturate(0.25 + innerHeat * 0.72 + ribbonFlare * 0.46));
+    ribbonColour = mix(ribbonColour, whiteHeat, ribbonFlare * (0.58 + ribbonThread * 0.34));
+    colour += ribbonColour * ribbonBody * (1.15 + ribbonFlare * 1.28);
+    colour += gold * ribbonEnvelope * ribbonGuard * exp(-(flareX * flareX * 0.38 + flareY * flareY * 0.5)) * 0.34;
+    alpha += ribbonBody * 0.76;
+    alpha += nearDisc * 0.86;
+
+    /* Fast flecks make the orbital direction unmistakable on a phone. */
+    float sparkLane = abs(discRadius - (0.48 + 0.13 * sin(discAngle * 2.0 + time * 0.44)));
+    float sparks = 1.0 - smoothstep(0.0, 0.021, sparkLane);
+    sparks *= smoothstep(0.74, 0.985, sin(discAngle * 32.0 - time * 5.2 + flowNoise * 3.0) * 0.5 + 0.5);
+    sparks *= discBand * frontGuard * (0.36 + nearSide * 0.64);
+    colour += whiteHeat * sparks * (1.35 + hotAngle * 0.7);
     alpha += sparks;
 
-    float edgeFade = 1.0 - smoothstep(0.76, 1.37, length(p * vec2(0.78, 0.95)));
+    /* Filmic compression preserves the white-hot rim without flattening the amber gas. */
+    colour *= 0.94 + 0.06 * sin(time * 0.23);
+    colour = vec3(1.0) - exp(-max(colour, vec3(0.0)) * 1.28);
+    colour = pow(colour, vec3(0.92));
     alpha *= edgeFade;
-    colour *= 0.94 + 0.06 * sin(time * 0.24);
     gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
   }
 `;
@@ -302,11 +376,12 @@ function mount(figure: HTMLElement): Cleanup {
   const resize = (): void => {
     if (!gl) return;
     const rect = canvas.getBoundingClientRect();
-    const maxRatio = coarsePointer.matches || rect.width < 560 ? 1.45 : 1.8;
+    const isMobile = coarsePointer.matches || rect.width < 560;
+    const maxRatio = isMobile ? 1.25 : 1.7;
     const ratio = Math.min(window.devicePixelRatio || 1, maxRatio);
     let width = Math.max(1, Math.round(rect.width * ratio));
     let height = Math.max(1, Math.round(rect.height * ratio));
-    const pixelLimit = 900_000;
+    const pixelLimit = isMobile ? 425_000 : 875_000;
     if (width * height > pixelLimit) {
       const reduction = Math.sqrt(pixelLimit / (width * height));
       width = Math.max(1, Math.round(width * reduction));
@@ -340,7 +415,7 @@ function mount(figure: HTMLElement): Cleanup {
     gl.useProgram(program);
     gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
     gl.uniform2f(pointerLocation, pointerX, pointerY);
-    gl.uniform1f(timeLocation, elapsed);
+    gl.uniform1f(timeLocation, elapsed % 2048);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
@@ -360,13 +435,13 @@ function mount(figure: HTMLElement): Cleanup {
       return;
     }
     const frameInterval = coarsePointer.matches ? 1000 / 30 : 1000 / 60;
-    if (lastPaint && now - lastPaint < frameInterval) {
+    if (lastPaint && now - lastPaint < frameInterval - 1) {
       frame = requestAnimationFrame(tick);
       return;
     }
     if (previous) elapsed += Math.min((now - previous) / 1000, 0.05);
     previous = now;
-    lastPaint = now;
+    lastPaint = lastPaint ? now - ((now - lastPaint) % frameInterval) : now;
     pointerX += (targetX - pointerX) * 0.045;
     pointerY += (targetY - pointerY) * 0.045;
     draw();

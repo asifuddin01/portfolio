@@ -75,6 +75,7 @@ function syncFigureMotion(playing: boolean, restart = false): void {
       if (label) label.textContent = action;
       button.dataset.playing = String(playing);
       button.dataset.bound = '1';
+      button.setAttribute('aria-pressed', String(playing));
       button.setAttribute('aria-label', `${action} for the ${name}`);
     }
     if (playing && restart) restartFigureLoops(figure);

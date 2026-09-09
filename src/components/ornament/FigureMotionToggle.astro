@@ -12,6 +12,7 @@ const { figure } = Astro.props;
   type="button"
   data-figure-motion-toggle
   data-figure-motion-name={figure}
+  aria-pressed="false"
   aria-label={`Control the ${figure} animation`}
 >
   <span class="fmt-mark" aria-hidden="true"></span>
