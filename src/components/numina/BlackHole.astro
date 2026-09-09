@@ -1,0 +1,190 @@
+---
+import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
+---
+
+<figure
+  class="bh"
+  data-black-hole
+  data-motion-figure
+  data-reveal
+>
+  <div
+    class="bh-stage"
+    role="img"
+    aria-label="A luminous accretion disc bends around the dark event horizon of a rotating black hole."
+  >
+    <div class="bh-fallback" aria-hidden="true">
+      <span class="bh-fallback-ring"></span>
+    </div>
+    <canvas class="bh-canvas" data-black-hole-canvas aria-hidden="true"></canvas>
+    <span class="bh-reticle bh-reticle-a" aria-hidden="true"></span>
+    <span class="bh-reticle bh-reticle-b" aria-hidden="true"></span>
+    <span class="bh-index" aria-hidden="true">N · 00</span>
+  </div>
+
+  <div class="bh-meta">
+    <figcaption id="bh-caption">
+      <span class="bh-caption-title">The unseen centre</span>
+      <span class="bh-caption-copy">A presence known by what it bends.</span>
+    </figcaption>
+    <FigureMotionToggle figure="black hole" />
+  </div>
+</figure>
+
+<script>
+  import '../../scripts/black-hole';
+</script>
+
+<style>
+  .bh {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    isolation: isolate;
+  }
+
+  .bh-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 6 / 5;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 52% 52%, color-mix(in srgb, var(--ink) 12%, transparent), transparent 43%),
+      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--verdigris) 8%, transparent), transparent 68%);
+    -webkit-mask-image: radial-gradient(ellipse 88% 88% at 52% 50%, black 58%, transparent 100%);
+    mask-image: radial-gradient(ellipse 88% 88% at 52% 50%, black 58%, transparent 100%);
+  }
+
+  .bh-canvas,
+  .bh-fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bh-canvas {
+    display: block;
+    opacity: 0;
+    filter: saturate(1.08) contrast(1.03);
+  }
+
+  .bh[data-renderer='webgl'] .bh-canvas { opacity: 1; }
+  .bh[data-renderer='webgl'] .bh-fallback { opacity: 0; }
+
+  .bh-fallback {
+    display: grid;
+    place-items: center;
+    opacity: 1;
+  }
+
+  .bh-fallback::before {
+    content: '';
+    position: absolute;
+    width: 76%;
+    aspect-ratio: 2.8 / 1;
+    border-radius: 50%;
+    background:
+      repeating-radial-gradient(
+        ellipse at center,
+        transparent 0 8%,
+        color-mix(in srgb, var(--fundus) 38%, transparent) 8.5% 9%,
+        transparent 9.5% 13%
+      );
+    box-shadow:
+      0 0 2.2rem color-mix(in srgb, var(--brass) 20%, transparent),
+      0 0 5rem color-mix(in srgb, var(--verdigris) 12%, transparent);
+    transform: rotate(-9deg);
+  }
+
+  .bh-fallback-ring {
+    position: relative;
+    display: block;
+    width: 35%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--paper) 12%, var(--ink));
+    border: 2px solid color-mix(in srgb, var(--brass) 80%, var(--ink));
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--fundus) 34%, transparent),
+      0 0 1.6rem color-mix(in srgb, var(--brass) 75%, transparent),
+      0 0 4.8rem color-mix(in srgb, var(--fundus) 25%, transparent);
+  }
+
+  .bh-reticle {
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    pointer-events: none;
+    opacity: 0.48;
+  }
+
+  .bh-reticle::before,
+  .bh-reticle::after {
+    content: '';
+    position: absolute;
+    background: var(--brass);
+  }
+
+  .bh-reticle::before { width: 100%; height: var(--rule); top: 0; left: 0; }
+  .bh-reticle::after { width: var(--rule); height: 100%; top: 0; left: 0; }
+  .bh-reticle-a { top: 8%; right: 7%; }
+  .bh-reticle-b { bottom: 9%; left: 5%; transform: rotate(180deg); }
+
+  .bh-index {
+    position: absolute;
+    top: 7.5%;
+    left: 7%;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    line-height: 1;
+    letter-spacing: 0.17em;
+    color: var(--brass-text);
+    opacity: 0.62;
+    pointer-events: none;
+  }
+
+  .bh-meta {
+    min-height: 3.7rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 7% 0;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 32%, transparent);
+  }
+
+  .bh-meta figcaption { min-width: 0; }
+  .bh-caption-title,
+  .bh-caption-copy { display: block; }
+  .bh-caption-title {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    line-height: 1.4;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .bh-caption-copy {
+    margin-top: 0.16rem;
+    font-size: var(--t-sm);
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 56rem) {
+    .bh {
+      width: min(100%, 38rem);
+      margin-inline: auto;
+    }
+    .bh-stage { aspect-ratio: 1 / 1; }
+  }
+
+  @media (max-width: 30rem) {
+    .bh-stage { width: calc(100% + 1.5rem); margin-left: -0.75rem; }
+    .bh-meta { padding-inline: 0; }
+    .bh-caption-copy { max-width: 16rem; }
+  }
+</style>

@@ -2,6 +2,7 @@
 import { getEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
+import BlackHole from '../../components/numina/BlackHole.astro';
 import { getNumina } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
@@ -45,16 +46,20 @@ const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim())
   folio="N"
 >
   <div class="codex nu">
-    <header class="nu-head">
-      {meta?.data.kicker && <p class="nu-kicker" data-reveal>{meta.data.kicker}</p>}
-      <h1 class="nu-h1" data-press>{meta?.data.title ?? 'Numina'}</h1>
-      {paragraphs.map((text) => (
-        <p class="nu-lede codex-measure" data-reveal>{text}</p>
-      ))}
-      <p class="nu-sub" data-reveal>
-        {books.length} books · {chapters} chapters · {topics} {topics === 1 ? 'topic' : 'topics'} written
-      </p>
-    </header>
+    <div class="nu-hero">
+      <header class="nu-head">
+        {meta?.data.kicker && <p class="nu-kicker" data-reveal>{meta.data.kicker}</p>}
+        <h1 class="nu-h1" data-press>{meta?.data.title ?? 'Numina'}</h1>
+        {paragraphs.map((text) => (
+          <p class="nu-lede" data-reveal>{text}</p>
+        ))}
+        <p class="nu-sub" data-reveal>
+          {books.length} books · {chapters} chapters · {topics} {topics === 1 ? 'topic' : 'topics'} written
+        </p>
+      </header>
+
+      <BlackHole />
+    </div>
 
     <LesionRule />
 
@@ -81,6 +86,14 @@ const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim())
 
 <style>
   .nu { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .nu-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(23rem, 1.18fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    min-height: clamp(28rem, 58vh, 38rem);
+  }
+  .nu-head { min-width: 0; max-width: 35rem; }
   .nu-kicker {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -90,7 +103,12 @@ const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim())
     margin-bottom: 0.8rem;
   }
   .nu-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
-  .nu-lede { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1em; }
+  .nu-lede {
+    max-width: 55ch;
+    font-size: var(--body-size);
+    line-height: var(--body-leading);
+    margin-bottom: 1em;
+  }
   .nu-sub {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -143,6 +161,15 @@ const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim())
     white-space: nowrap;
   }
   .nu-count em { display: block; font-style: normal; color: var(--brass-text); margin-top: 0.25rem; }
+
+  @media (max-width: 56rem) {
+    .nu-hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(2.2rem, 7vw, 3.8rem);
+      min-height: 0;
+    }
+    .nu-head { max-width: 38rem; }
+  }
 
   @media (max-width: 40rem) {
     .nu-link { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; padding: 1.1rem 0; }
