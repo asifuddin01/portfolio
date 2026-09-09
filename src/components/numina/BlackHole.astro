@@ -45,9 +45,7 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
     width: 100%;
     aspect-ratio: 6 / 5;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 52% 50%, color-mix(in srgb, var(--verdigris) 10%, transparent), transparent 54%),
-      radial-gradient(ellipse 90% 86% at 50% 50%, color-mix(in srgb, var(--ink) 10%, transparent), transparent 76%);
+    background: transparent;
   }
 
   .bh-canvas,
@@ -70,83 +68,99 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
     display: grid;
     place-items: center;
     opacity: 1;
+    background:
+      radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--paper) 44%, transparent) 0 0.08rem, transparent 0.11rem),
+      radial-gradient(circle at 48% 80%, color-mix(in srgb, var(--brass) 58%, transparent) 0 0.09rem, transparent 0.13rem),
+      radial-gradient(ellipse 12% 72% at 50% 56%, color-mix(in srgb, var(--verdigris) 8%, transparent), transparent 72%);
   }
 
   .bh-fallback::before {
     content: '';
     position: absolute;
-    width: 108%;
-    aspect-ratio: 3.15 / 1;
+    width: 82%;
+    aspect-ratio: 4.1 / 1;
     border-radius: 50%;
     background:
-      radial-gradient(ellipse at center, transparent 0 18%, color-mix(in srgb, var(--paper) 92%, var(--brass)) 25%, color-mix(in srgb, var(--fundus) 74%, transparent) 32%, transparent 61%),
       repeating-radial-gradient(
         ellipse at center,
-        transparent 0 4.5%,
-        color-mix(in srgb, var(--fundus) 48%, transparent) 5% 5.8%,
-        transparent 6.2% 8.4%
+        transparent 0 7%,
+        color-mix(in srgb, var(--brass) 52%, transparent) 7.4% 8%,
+        transparent 8.5% 12%
       );
     box-shadow:
-      0 0 2.8rem color-mix(in srgb, var(--brass) 48%, transparent),
-      0 0 7rem color-mix(in srgb, var(--fundus) 30%, transparent);
-    transform: rotate(-7deg) scale(1.02);
+      0 0 1.3rem color-mix(in srgb, var(--brass) 22%, transparent),
+      0 0 3.4rem color-mix(in srgb, var(--verdigris) 10%, transparent);
+    transform: translateY(7%) rotate(7deg);
     transform-origin: 50% 50%;
   }
 
   .bh-fallback::after {
     content: '';
     position: absolute;
-    z-index: 1;
-    width: 48%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    border: clamp(0.42rem, 1.6vw, 0.85rem) solid color-mix(in srgb, var(--paper) 78%, var(--brass));
-    border-bottom-color: color-mix(in srgb, var(--fundus) 68%, transparent);
-    box-shadow:
-      inset 0 0 1.4rem color-mix(in srgb, var(--brass) 66%, transparent),
-      0 -0.7rem 2.7rem color-mix(in srgb, var(--paper) 38%, transparent),
-      0 0 5rem color-mix(in srgb, var(--fundus) 52%, transparent);
-    transform: translateY(-8%);
+    width: 16%;
+    height: 68%;
+    left: 42%;
+    top: 24%;
+    background:
+      radial-gradient(circle at 48% 8%, color-mix(in srgb, var(--paper) 54%, transparent) 0 0.08rem, transparent 0.12rem),
+      radial-gradient(circle at 58% 38%, color-mix(in srgb, var(--brass) 62%, transparent) 0 0.09rem, transparent 0.14rem),
+      radial-gradient(circle at 43% 72%, color-mix(in srgb, var(--paper) 40%, transparent) 0 0.07rem, transparent 0.11rem),
+      radial-gradient(circle at 54% 92%, color-mix(in srgb, var(--fundus) 70%, transparent) 0 0.1rem, transparent 0.15rem);
+    opacity: 0.72;
   }
 
   .bh-fallback-ring {
     z-index: 2;
     position: relative;
     display: block;
-    width: 39%;
+    width: 29%;
     aspect-ratio: 1;
     border-radius: 50%;
     background: color-mix(in srgb, var(--ink) 94%, #000);
-    border: 1px solid color-mix(in srgb, var(--paper) 74%, var(--brass));
+    border: 1px solid color-mix(in srgb, var(--paper) 70%, var(--brass));
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--fundus) 52%, transparent),
-      0 0 1.9rem color-mix(in srgb, var(--brass) 82%, transparent),
-      0 0 5.6rem color-mix(in srgb, var(--fundus) 35%, transparent);
+      0 0 0 2px color-mix(in srgb, var(--fundus) 30%, transparent),
+      0 0 1.2rem color-mix(in srgb, var(--brass) 48%, transparent),
+      0 0 3.2rem color-mix(in srgb, var(--fundus) 18%, transparent);
+    transform: translateY(7%);
   }
 
+  .bh-fallback-ring::before,
   .bh-fallback-ring::after {
     content: '';
     position: absolute;
     z-index: 3;
-    width: 270%;
-    height: 22%;
     left: 50%;
-    top: 64%;
     border-radius: 50%;
-    background: linear-gradient(90deg, transparent 3%, color-mix(in srgb, var(--fundus) 74%, transparent) 27%, color-mix(in srgb, var(--paper) 96%, var(--brass)) 58%, color-mix(in srgb, var(--fundus) 84%, transparent) 77%, transparent 98%);
-    box-shadow: 0 0 1.4rem color-mix(in srgb, var(--brass) 82%, transparent);
-    transform: translate(-50%, -50%) rotate(-7deg);
     transform-origin: 50% 50%;
   }
 
+  .bh-fallback-ring::before {
+    width: 126%;
+    height: 126%;
+    top: 50%;
+    border-top: 1px solid color-mix(in srgb, var(--paper) 74%, var(--brass));
+    border-left: 1px solid color-mix(in srgb, var(--brass) 32%, transparent);
+    transform: translate(-50%, -50%) rotate(7deg);
+  }
+
+  .bh-fallback-ring::after {
+    width: 286%;
+    height: 6%;
+    top: 64%;
+    background: linear-gradient(90deg, transparent 2%, color-mix(in srgb, var(--fundus) 48%, transparent) 29%, color-mix(in srgb, var(--paper) 88%, var(--brass)) 62%, color-mix(in srgb, var(--fundus) 55%, transparent) 78%, transparent 98%);
+    box-shadow: 0 0 0.65rem color-mix(in srgb, var(--brass) 44%, transparent);
+    transform: translate(-50%, -50%) rotate(7deg);
+  }
+
   .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::before {
-    animation: bh-disc-turn 15s linear infinite;
+    animation: bh-disc-turn 18s linear infinite;
   }
   .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::after {
-    animation: bh-crown-breathe 4.8s ease-in-out infinite alternate;
+    animation: bh-plume-drift 6.8s ease-in-out infinite alternate;
   }
   .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback-ring::after {
-    animation: bh-sweep-flow 5.6s ease-in-out infinite alternate;
+    animation: bh-sweep-flow 7s ease-in-out infinite alternate;
   }
 
   .bh-meta {
@@ -156,8 +170,7 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.65rem 7% 0;
-    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 32%, transparent);
+    padding: 0.35rem 0 0;
   }
 
   .bh-meta figcaption { min-width: 0; }
@@ -194,26 +207,26 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   }
 
   @keyframes bh-disc-turn {
-    to { transform: rotate(353deg) scale(1.04); }
+    to { transform: translateY(7%) rotate(367deg); }
   }
 
-  @keyframes bh-crown-breathe {
-    to { transform: translateY(-8%) scale(1.045); opacity: 0.84; }
+  @keyframes bh-plume-drift {
+    to { transform: translateY(2%); opacity: 0.42; }
   }
 
   @keyframes bh-sweep-flow {
-    to { transform: translate(-49%, -48%) rotate(-5deg) scaleX(1.035); opacity: 0.82; }
+    to { transform: translate(-49%, -48%) rotate(9deg) scaleX(1.025); opacity: 0.76; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::before {
-      animation: bh-disc-turn 15s linear infinite !important;
+      animation: bh-disc-turn 18s linear infinite !important;
     }
     .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback::after {
-      animation: bh-crown-breathe 4.8s ease-in-out infinite alternate !important;
+      animation: bh-plume-drift 6.8s ease-in-out infinite alternate !important;
     }
     .bh[data-motion='running']:not([data-motion-visible='false']) .bh-fallback-ring::after {
-      animation: bh-sweep-flow 5.6s ease-in-out infinite alternate !important;
+      animation: bh-sweep-flow 7s ease-in-out infinite alternate !important;
     }
   }
 </style>
