@@ -102,6 +102,18 @@ const listedTitle =
           } catch (e) {
             root.dataset.theme = 'vellum';
           }
+          // Shows the private archive's entry in the nav, in a browser the
+          // owner has used: one that opened the archive or the CV editor
+          // (both behind Access), or is signed in to the CMS. Cosmetic only:
+          // Access guards the route whether or not the link is visible.
+          try {
+            var cms = null;
+            try { cms = JSON.parse(localStorage.getItem('sveltia-cms.user') || 'null'); } catch (e) { cms = null; }
+            if (localStorage.getItem('codex-owner') === '1' || (cms && cms.token)) root.dataset.owner = '';
+            else delete root.dataset.owner;
+          } catch (e) {
+            /* storage blocked — the entry simply stays hidden */
+          }
         }
 
         apply();
@@ -129,8 +141,9 @@ const listedTitle =
         without the nav and the colophon that repeat on all four hundred pages
         and would otherwise match every query. It also decides what is indexed
         at all — a document without it is skipped — which is how /admin stays
-        out of the results without a rule naming it. */}
-    <main id="main" class="page" data-pagefind-body>
+        out of the results without a rule naming it, and how a noindex page
+        (the CV editor, the private archive) stays out of a public search. */}
+    <main id="main" class="page" data-pagefind-body={noindex ? undefined : ''}>
       {/* Metadata for a result: the title it is listed under, and the part of
           the book it belongs to, which is also the filter. Empty elements,
           because the `key:value` form takes the value from the attribute — a

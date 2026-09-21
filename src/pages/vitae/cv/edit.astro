@@ -47,6 +47,14 @@ const cv = await loadCv({ blanks: true });
     const root = document.querySelector<HTMLElement>('[data-proof]');
     if (!holder || !root || root.dataset.wired === 'on') return;
     root.dataset.wired = 'on';
+    // Reaching this page means passing Access, so this browser is the
+    // owner's: show the private archive's entry in the nav from now on.
+    try {
+      localStorage.setItem('codex-owner', '1');
+      document.documentElement.dataset.owner = '';
+    } catch {
+      /* storage blocked — the entry stays hidden */
+    }
 
     const base = JSON.parse(holder.textContent || '{}');
     const status = document.querySelector('[data-status]');

@@ -27,17 +27,46 @@ export const LINKEDIN = 'https://linkedin.com/in/md-asif-uddin01';
  * It must stay first: `isActive` matches by prefix, so the '/' entry is the
  * one case the header special-cases to avoid marking every page current.
  */
-export const NAV = [
+export interface NavLink {
+  href: string;
+  label: string;
+  /** A few words under the label, in a group's menu. */
+  gloss?: string;
+  /** Shown only in a browser that has opened the private archive. */
+  owner?: boolean;
+}
+export interface NavGroup {
+  label: string;
+  children: readonly NavLink[];
+}
+
+/**
+ * Two groups open as menus, so the row stays short enough to read at a
+ * glance: the writing (the course and the commonplace book) and the
+ * humanities (the plates and the mythologies).
+ */
+export const NAV: readonly (NavLink | NavGroup)[] = [
   { href: '/', label: 'Frontispiece' },
-  { href: '/elementa', label: 'Elementa' },
+  {
+    label: 'Scripta',
+    children: [
+      { href: '/elementa', label: 'Elementa', gloss: 'A course in deep learning' },
+      { href: '/marginalia', label: 'Marginalia', gloss: 'Reviews, essays and notes' },
+    ],
+  },
   { href: '/papers', label: 'Papers' },
-  { href: '/tabulae', label: 'Tabulae' },
-  { href: '/marginalia', label: 'Marginalia' },
-  { href: '/numina', label: 'Numina' },
+  {
+    label: 'Humaniora',
+    children: [
+      { href: '/tabulae', label: 'Tabulae', gloss: 'The interleaved plates' },
+      { href: '/numina', label: 'Numina', gloss: 'Eleven mythologies' },
+    ],
+  },
   { href: '/researchlens', label: 'ResearchLens' },
   { href: '/vitae', label: 'Vitae' },
   { href: '/officina', label: 'Officina' },
-] as const;
+  { href: '/artifacts/private', label: 'Artifacts', owner: true },
+];
 
 /** Roman numerals for folio marks and chapter numbers. */
 export function toRoman(n: number): string {

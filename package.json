@@ -15,7 +15,7 @@
     "audit": "node scripts/audit.mjs",
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
-    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check:links && npm run check",
+    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check:links && npm run test:edge && npm run check",
     "deploy": "npm run verify && npm run check:dist && wrangler deploy",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/sync-pyodide.mjs && node scripts/sync-emception.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
     "predev": "node scripts/sync-cms.mjs && node scripts/sync-pyodide.mjs && node scripts/sync-emception.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
@@ -27,7 +27,9 @@
     "check:elementa": "node scripts/check-elementa.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:dist": "node scripts/check-dist-fresh.mjs",
-    "check:lectiones": "node scripts/check-lectiones.mjs && node scripts/check-numina.mjs"
+    "check:lectiones": "node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
+    "test:edge": "node --test edge/index.test.mjs",
+    "artifact": "node scripts/artifact.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.6",
@@ -42,6 +44,7 @@
     "astro": "^7.2.3",
     "emception": "^4.4.0",
     "katex": "^0.18.4",
+    "marked": "^16.4.2",
     "pdf-lib": "^1.17.1",
     "pyodide": "^314.0.6",
     "rehype-katex": "^7.0.1",

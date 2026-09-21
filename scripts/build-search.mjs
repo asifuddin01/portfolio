@@ -27,6 +27,9 @@ const DIST = 'dist';
 function indexable(file, html) {
   // The CMS shell: noindexed, no <main>, not a page of the book.
   if (file.includes(`${DIST}${path.sep}admin${path.sep}`)) return false;
+  // Private routes behind Cloudflare Access: noindexed, and kept out of a
+  // search anyone can run.
+  if (/<meta\s+name=["']?robots["']?\s+content=["'][^"']*noindex/i.test(html)) return false;
   // Astro writes a meta-refresh stub for every configured redirect.
   if (/<meta\s+http-equiv=["']?refresh/i.test(html)) return false;
   return true;

@@ -1,25 +1,46 @@
 {
   // Deploys the built site as a Worker serving static assets.
   //
-  // The site is 35 prerendered pages with no server code, so there is no
-  // `main` entry — Cloudflare serves ./dist directly from its edge.
+  // The site is prerendered pages with no server code. The one exception is
+  // the private archive at /artifacts/private, whose data and files come from
+  // edge/index.js — and only the paths listed in `run_worker_first` ever reach
+  // it. Every other request is served from ./dist by Cloudflare's edge without
+  // running a line of script, exactly as before.
   //
   // Note: the CMS auth worker is a separate deployment and keeps its own
   // config. Deploy that one explicitly with:
   //   npx wrangler deploy -c worker/wrangler.toml
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "portfolio",
+  "main": "edge/index.js",
   "compatibility_date": "2026-01-01",
   "assets": {
     // Astro's build output.
     "directory": "./dist",
+    "binding": "ASSETS",
     // Serve the prerendered 404 page rather than a bare Cloudflare error.
     "not_found_handling": "404-page",
     // Every internal link is written without a trailing slash. The default
     // redirects those to the slashed form, costing a round trip on each
     // navigation, so serve them directly instead.
-    "html_handling": "drop-trailing-slash"
+    "html_handling": "drop-trailing-slash",
+    // The archive's data, its files, and the add-only inbox. The archive's
+    // page and the public door at /artifacts are static assets like any other.
+    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*"]
   },
+  "kv_namespaces": [
+    // The archive. `wrangler kv namespace create ARTIFACTS`, 2026-09-22.
+    { "binding": "ARTIFACTS", "id": "78bb9e21ec7c47c5a96bf12886810ee3" }
+  ],
+  "vars": {
+    // The Access application that already guards /vitae/cv/edit.
+    // /artifacts/private is added to it as a second path, so it shares this AUD tag. A separate
+    // application would need its tag appended here, comma-separated.
+    "ACCESS_TEAM_DOMAIN": "snowy-darkness-98e5.cloudflareaccess.com",
+    "ACCESS_AUD": "7b63eaf0ca62e070222360f4672268cf9f3856c3494e44b5e4f456713330cd77"
+  },
+  // Secret, set with `wrangler secret put INBOX_KEY` and never written here:
+  //   INBOX_KEY — the add-only key for /api/artifacts/inbox.
   "observability": {
     "enabled": true
   }

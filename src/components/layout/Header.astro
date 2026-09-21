@@ -1,7 +1,7 @@
 ---
 import SearchDialog from './SearchDialog.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { NAV, AUTHOR } from '../../consts';
+import { NAV, AUTHOR, type NavGroup, type NavLink } from '../../consts';
 
 const path = Astro.url.pathname;
 /**
@@ -11,6 +11,8 @@ const path = Astro.url.pathname;
  */
 const isActive = (href: string): boolean =>
   href === '/' ? path === '/' : path.startsWith(href);
+
+const isGroup = (item: NavLink | NavGroup): item is NavGroup => 'children' in item;
 ---
 <header class="hd">
   <div class="codex hd-inner">
@@ -21,15 +23,44 @@ const isActive = (href: string): boolean =>
     <a class="hd-name" href="/home">{AUTHOR}</a>
     <nav class="hd-nav" aria-label="Primary">
       <ul>
-        {NAV.map((item) => (
-          <li>
-            <a
-              href={item.href}
-              class:list={['hd-link', { 'is-here': isActive(item.href) }]}
-              aria-current={isActive(item.href) ? 'page' : undefined}
-            >{item.label}</a>
-          </li>
-        ))}
+        {NAV.map((item) =>
+          isGroup(item) ? (
+            <li class="hd-group" data-nav-group>
+              <button
+                type="button"
+                class:list={['hd-link', 'hd-group-btn', { 'is-here': item.children.some((c) => isActive(c.href)) }]}
+                aria-expanded="false"
+                aria-controls={`hd-menu-${item.label.toLowerCase()}`}
+                data-nav-toggle
+              >
+                {item.label}<span class="hd-caret" aria-hidden="true"></span>
+              </button>
+              <ul class="hd-menu" id={`hd-menu-${item.label.toLowerCase()}`} hidden data-nav-menu>
+                {item.children.map((c) => (
+                  <li>
+                    <a
+                      href={c.href}
+                      class:list={['hd-menu-link', { 'is-here': isActive(c.href) }]}
+                      aria-current={isActive(c.href) ? 'page' : undefined}
+                    >
+                      <span class="hd-menu-label">{c.label}</span>
+                      {c.gloss && <span class="hd-menu-gloss">{c.gloss}</span>}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ) : (
+            <li class:list={{ 'hd-owner': item.owner }}>
+              <a
+                href={item.href}
+                class:list={['hd-link', { 'is-here': isActive(item.href) }]}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+                data-astro-reload={item.owner ? true : undefined}
+              >{item.label}</a>
+            </li>
+          ),
+        )}
       </ul>
     </nav>
     <SearchDialog />
@@ -60,7 +91,7 @@ const isActive = (href: string): boolean =>
     margin-right: auto;
     white-space: nowrap;
   }
-  .hd-nav ul {
+  .hd-nav > ul {
     display: flex;
     gap: 1.15rem;
     list-style: none;
@@ -83,9 +114,144 @@ const isActive = (href: string): boolean =>
   .hd-link:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
   .hd-link.is-here { color: var(--fundus); border-bottom-color: var(--brass); }
 
+  /* The private archive's entry. Present in every page's markup, shown only
+     where the archive has been opened before (BaseLayout sets data-owner from
+     that). Hiding it is courtesy, not security: the route is behind
+     Cloudflare Access whether or not the link is visible. */
+  .hd-owner { display: none; }
+  :global(html[data-owner]) .hd-owner { display: block; }
+
+  /* --- groups ------------------------------------------------------------ */
+  .hd-group { position: relative; }
+  .hd-group-btn {
+    background: none;
+    border-top: 0;
+    border-inline: 0;
+    padding-inline: 0;
+    padding-top: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    line-height: inherit;
+  }
+  .hd-caret {
+    width: 0.42em;
+    height: 0.42em;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    transform: translateY(-0.18em) rotate(45deg);
+  }
+  @media all {
+    .hd-caret { transition: transform 200ms var(--ease-out); }
+  }
+  .hd-group-btn[aria-expanded='true'] { color: var(--fundus); }
+  .hd-group-btn[aria-expanded='true'] .hd-caret { transform: translateY(0.08em) rotate(225deg); }
+
+  .hd-menu {
+    position: absolute;
+    top: calc(100% + 0.7rem);
+    left: -0.9rem;
+    min-width: 15.5rem;
+    margin: 0;
+    padding: 0.4rem 0;
+    list-style: none;
+    background: var(--paper-raised, var(--paper));
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 70%, transparent);
+    box-shadow: 0 14px 34px -18px color-mix(in srgb, var(--ink) 55%, transparent);
+    z-index: 50;
+  }
+  /* Kept inside the viewport when the group sits near the right edge. */
+  .hd-menu.hd-menu--end { left: auto; right: -0.9rem; }
+  .hd-menu[hidden] { display: none; }
+  .hd-menu-link {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.55rem 0.9rem;
+    color: var(--ink);
+    border-left: 2px solid transparent;
+  }
+  .hd-menu-link:hover,
+  .hd-menu-link:focus-visible {
+    background: color-mix(in srgb, var(--brass) 12%, transparent);
+    border-left-color: var(--fundus);
+  }
+  .hd-menu-link.is-here { border-left-color: var(--brass); }
+  .hd-menu-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fundus);
+  }
+  .hd-menu-gloss {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink-soft);
+  }
+
   @media (max-width: 560px) {
     .hd-inner { gap: 0.85rem; }
     .hd-name { font-size: var(--t-sm); width: 100%; margin-right: 0; }
-    .hd-nav ul { gap: 1rem; }
+    .hd-nav > ul { gap: 1rem; }
   }
 </style>
+
+<script>
+  /**
+   * The two menus. Click to open, click again, Escape, a click elsewhere or
+   * following a link to close. Opening one closes the other. Written against
+   * `astro:page-load`, because the header is re-rendered on every soft
+   * navigation and the old listeners go with it.
+   */
+  function closeAll(except?: Element): void {
+    for (const group of document.querySelectorAll('[data-nav-group]')) {
+      if (group === except) continue;
+      group.querySelector('[data-nav-toggle]')?.setAttribute('aria-expanded', 'false');
+      group.querySelector<HTMLElement>('[data-nav-menu]')?.setAttribute('hidden', '');
+    }
+  }
+
+  function open(group: Element): void {
+    const btn = group.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+    const menu = group.querySelector<HTMLElement>('[data-nav-menu]');
+    if (!btn || !menu) return;
+    closeAll(group);
+    btn.setAttribute('aria-expanded', 'true');
+    menu.removeAttribute('hidden');
+    menu.classList.remove('hd-menu--end');
+    if (menu.getBoundingClientRect().right > document.documentElement.clientWidth - 8) {
+      menu.classList.add('hd-menu--end');
+    }
+  }
+
+  function bind(): void {
+    for (const group of document.querySelectorAll<HTMLElement>('[data-nav-group]')) {
+      if (group.dataset.bound === '1') continue;
+      group.dataset.bound = '1';
+      const btn = group.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+      btn?.addEventListener('click', () => {
+        if (btn.getAttribute('aria-expanded') === 'true') closeAll();
+        else open(group);
+      });
+      group.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || btn?.getAttribute('aria-expanded') !== 'true') return;
+        closeAll();
+        btn.focus();
+      });
+      // Leaving the group by keyboard closes it, as a click elsewhere does.
+      group.addEventListener('focusout', (e) => {
+        if (!group.contains(e.relatedTarget as Node | null)) closeAll();
+      });
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!(e.target as Element | null)?.closest?.('[data-nav-group]')) closeAll();
+  });
+  document.addEventListener('astro:before-preparation', () => closeAll());
+  document.addEventListener('astro:page-load', bind);
+  if (document.readyState !== 'loading') bind();
+  else document.addEventListener('DOMContentLoaded', bind);
+</script>

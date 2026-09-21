@@ -1,0 +1,118 @@
+---
+/**
+ * The public door to the private archive.
+ *
+ * Nothing links here: the nav's Artifacts entry appears only in the owner's
+ * browsers and goes straight to /artifacts/private. This page is for anyone
+ * who arrives at /artifacts by typing it or following an old link, so they
+ * meet a sentence instead of a bare Cloudflare sign-in. It is also the short
+ * way in on a new device: type asifuddin.com/artifacts, go forward.
+ *
+ * Forward is a full page load (`data-astro-reload`), because the route behind
+ * it answers with a redirect to Access, which a soft navigation cannot follow.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AUTHOR } from '../../consts';
+
+const ELSEWHERE = [
+  { href: '/papers', label: 'Papers' },
+  { href: '/elementa', label: 'Elementa' },
+  { href: '/researchlens', label: 'ResearchLens' },
+  { href: '/tabulae', label: 'Tabulae' },
+  { href: '/vitae', label: 'Vitae' },
+];
+---
+<BaseLayout
+  title={`Artifacts — ${AUTHOR}`}
+  description="A private page. Only the author can open it."
+  folio="A"
+  noindex
+>
+  <div class="codex door">
+    <p class="door-kicker" data-reveal>Private</p>
+    <h1 class="door-h1" data-press>Artifacts</h1>
+    <p class="door-text codex-measure" data-reveal>
+      Only Asif can open this page. If you are Asif, go forward. If not, please look around
+      the rest of the website. Thank you.
+    </p>
+
+    <div class="door-actions" data-reveal>
+      <a class="door-btn" href="/" data-door-back>← Back</a>
+      <a class="door-btn door-btn--forward" href="/artifacts/private" data-astro-reload>Forward →</a>
+    </div>
+
+    <p class="door-else">
+      <span class="door-else-label">Elsewhere on the site</span>
+      {ELSEWHERE.map((l, i) => (
+        <>{i > 0 && <span aria-hidden="true"> · </span>}<a class="link" href={l.href}>{l.label}</a></>
+      ))}
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .door { padding-top: clamp(3rem, 12vh, 7rem); padding-bottom: 2rem; }
+  .door-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+    margin-bottom: 0.8rem;
+  }
+  .door-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .door-text { font-size: var(--t-md); line-height: var(--body-leading); }
+  .door-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; margin: 2rem 0 2.5rem; }
+  .door-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    border: var(--rule) solid var(--brass);
+    padding: 0.7em 1.3em 0.64em;
+    min-width: 9rem;
+    text-align: center;
+    text-decoration: none;
+  }
+  .door-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .door-btn--forward { color: var(--paper); background: var(--fundus); border-color: var(--fundus); }
+  .door-btn--forward:hover { background: color-mix(in srgb, var(--fundus) 85%, var(--ink)); }
+  .door-else {
+    padding-top: 1.2rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    max-width: var(--measure);
+    font-size: var(--t-sm); color: var(--ink-soft); }
+  .door-else-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+</style>
+
+<script>
+  /** Back goes where the reader came from on this site, or home if nowhere. */
+  function bind(): void {
+    const back = document.querySelector<HTMLAnchorElement>('[data-door-back]');
+    if (!back || back.dataset.bound === '1') return;
+    back.dataset.bound = '1';
+    back.addEventListener('click', (e) => {
+      let fromHere = false;
+      try {
+        fromHere = !!document.referrer && new URL(document.referrer).origin === location.origin;
+      } catch {
+        fromHere = false;
+      }
+      if (fromHere && history.length > 1) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  }
+  document.addEventListener('astro:page-load', bind);
+  if (document.readyState !== 'loading') bind();
+  else document.addEventListener('DOMContentLoaded', bind);
+</script>

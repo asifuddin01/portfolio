@@ -1,0 +1,892 @@
+---
+/**
+ * The private archive: working documents from the research in progress,
+ * grouped by research, openable from any device.
+ *
+ * Like the CV editor, nothing here gates itself. /artifacts/private sits
+ * behind the Cloudflare Access application that guards /vitae/cv/edit, so a
+ * visitor who is not the owner never reaches this page. /artifacts, one level
+ * up, is the public door that says so. The page is also only a shell: every
+ * artifact comes from /artifacts/private/api and /artifacts/private/file, which the
+ * Worker (edge/index.js) answers only after verifying Access's signed token.
+ * A shell that leaked would show an empty page and a 401.
+ *
+ * Noindexed, out of the sitemap, disallowed in robots.txt, out of the search.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { AUTHOR } from '../../consts';
+---
+<BaseLayout
+  title={`Artifacts — ${AUTHOR}`}
+  description="The private archive of working documents from the research in progress."
+  folio="A"
+  noindex
+>
+  <div class="codex av" id="vault" data-state="loading">
+    <header class="av-head">
+      <p class="av-kicker" data-reveal>Private · only you can see this</p>
+      <h1 class="av-h1" data-press>Artifacts</h1>
+      <p class="av-lede codex-measure" data-reveal>
+        Working documents from the research in progress: blueprints, figures, notes and
+        drafts. Each research keeps its own shelf, and everything opens here on any device,
+        without Claude.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <div class="av-bar">
+      <input class="av-filter" type="search" placeholder="Filter by title, research or note" aria-label="Filter artifacts" data-filter />
+      <button class="av-btn av-btn--primary" type="button" aria-expanded="false" aria-controls="av-add" data-add-toggle>Add</button>
+      <span class="av-who" data-who></span>
+    </div>
+
+    <form class="av-add" id="av-add" hidden data-add>
+      <div class="av-add-grid">
+        <label class="av-field av-field--wide">
+          <span class="av-label">Research</span>
+          <input name="research" list="av-researches" required autocomplete="off" placeholder="e.g. HCGT-PG" />
+        </label>
+
+        <fieldset class="av-mode av-field--wide">
+          <legend class="av-label">Add</legend>
+          <label><input type="radio" name="mode" value="files" checked /> <span>Files</span></label>
+          <label><input type="radio" name="mode" value="link" /> <span>A link</span></label>
+        </fieldset>
+
+        <label class="av-drop av-field--wide" data-when="files" data-drop>
+          <input type="file" name="files" multiple data-files />
+          <span class="av-drop-text" data-drop-text>
+            Drop files here, or <u>choose them</u>. HTML, PDF, SVG, images, Markdown, anything up to 25&nbsp;MB.
+          </span>
+        </label>
+
+        <label class="av-field av-field--wide" data-when="link" hidden>
+          <span class="av-label">Link</span>
+          <input name="url" type="url" inputmode="url" placeholder="https://claude.ai/artifact/…" />
+        </label>
+
+        <label class="av-field">
+          <span class="av-label">Title <em>optional</em></span>
+          <input name="title" autocomplete="off" placeholder="Taken from the file when left blank" />
+        </label>
+        <label class="av-field">
+          <span class="av-label">Note <em>optional</em></span>
+          <input name="note" autocomplete="off" placeholder="One line on what it is" />
+        </label>
+      </div>
+      <div class="av-add-foot">
+        <button class="av-btn av-btn--primary" type="submit" data-add-submit>Add to the archive</button>
+        <button class="av-btn" type="button" data-add-cancel>Cancel</button>
+        <p class="av-progress" role="status" data-progress></p>
+      </div>
+    </form>
+
+    <datalist id="av-researches" data-researches></datalist>
+
+    <p class="av-status" role="status" data-status>Opening the archive…</p>
+    <div class="av-groups" data-groups></div>
+  </div>
+
+  <dialog class="av-view" aria-labelledby="av-view-title" data-view>
+    <div class="av-view-bar">
+      <div class="av-view-id">
+        <span class="av-view-research" data-view-research></span>
+        <h2 class="av-view-title" id="av-view-title" data-view-title></h2>
+      </div>
+      <div class="av-view-actions">
+        <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-open>Open ↗</a>
+        <a class="av-btn" data-view-download>Download</a>
+        <button class="av-btn" type="button" data-view-copy>Copy link</button>
+        <button class="av-btn" type="button" data-view-edit>Edit</button>
+        <button class="av-btn av-btn--danger" type="button" data-view-delete>Delete</button>
+        <button class="av-btn" type="button" aria-label="Close" data-view-close>Close</button>
+      </div>
+    </div>
+    <form class="av-edit" hidden data-edit>
+      <label class="av-field"><span class="av-label">Title</span><input name="title" required /></label>
+      <label class="av-field"><span class="av-label">Research</span><input name="research" list="av-researches" required /></label>
+      <label class="av-field av-field--grow"><span class="av-label">Note</span><input name="note" /></label>
+      <div class="av-edit-foot">
+        <button class="av-btn av-btn--primary" type="submit">Save</button>
+        <button class="av-btn" type="button" data-edit-cancel>Cancel</button>
+      </div>
+    </form>
+    <div class="av-view-body" data-view-body></div>
+  </dialog>
+</BaseLayout>
+
+<style is:global>
+  /* Global, not scoped: the shelves, the cards and everything in the viewer
+     are built by the script below, and Astro's scoped selectors only match
+     markup it rendered itself. Every class here carries the `av-` prefix, so
+     nothing leaks onto the rest of the site. */
+  .av { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .av-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+    margin-bottom: 0.8rem;
+  }
+  .av-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .av-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  /* --- controls ----------------------------------------------------------- */
+  .av-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .av-filter,
+  .av-field input {
+    font: inherit;
+    font-size: var(--t-sm);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--paper-raised) 80%, transparent);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0.5rem 0.7rem;
+    border-radius: 0;
+    width: 100%;
+  }
+  .av-filter { flex: 1 1 16rem; width: auto; }
+  .av-filter:focus-visible,
+  .av-field input:focus-visible { outline: 2px solid var(--fundus); outline-offset: 1px; }
+
+  .av-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    background: transparent;
+    border: var(--rule) solid var(--brass);
+    padding: 0.42em 0.85em 0.36em;
+    cursor: pointer;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .av-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .av-btn--primary { color: var(--paper); background: var(--fundus); border-color: var(--fundus); }
+  .av-btn--primary:hover { background: color-mix(in srgb, var(--fundus) 85%, var(--ink)); }
+  .av-btn--danger { color: var(--oxblood-text); border-color: var(--oxblood); }
+  .av-btn[disabled] { opacity: 0.5; cursor: progress; }
+  .av-who {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+  }
+  .av-who a { color: var(--fundus); }
+
+  .av-add {
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    background: color-mix(in srgb, var(--paper-raised) 60%, transparent);
+    padding: clamp(1rem, 3vw, 1.6rem);
+    margin-bottom: 2rem;
+  }
+  .av-add[hidden] { display: none; }
+  .av-add-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: 1rem 1.25rem;
+  }
+  .av-field { display: grid; gap: 0.35rem; }
+  .av-field--wide { grid-column: 1 / -1; }
+  .av-field[hidden], .av-drop[hidden] { display: none; }
+  .av-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .av-label em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: 0.75; }
+  .av-mode { border: 0; margin: 0; padding: 0; display: flex; gap: 1.2rem; align-items: center; }
+  .av-mode legend { float: left; margin-right: 0.4rem; }
+  .av-mode label { display: inline-flex; gap: 0.4rem; align-items: center; cursor: pointer; }
+  .av-drop {
+    position: relative;
+    display: block;
+    border: 1px dashed color-mix(in srgb, var(--brass) 80%, transparent);
+    padding: 1.4rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    font-size: var(--t-sm);
+    color: var(--ink-soft);
+  }
+  .av-drop.is-over { background: color-mix(in srgb, var(--brass) 14%, transparent); border-style: solid; }
+  .av-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .av-drop-text strong { color: var(--ink); font-weight: 500; }
+  .av-add-foot { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 1.2rem; }
+  .av-progress { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0; }
+
+  .av-status { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .av-status:empty { display: none; }
+  .av-status .av-btn { margin-left: 0.6rem; }
+
+  /* --- the shelves -------------------------------------------------------- */
+  .av-group { margin-top: 2.6rem; }
+  .av-group-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 1rem;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.2rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  .av-group-name { font-size: var(--t-xl); margin: 0; line-height: 1.1; }
+  .av-group-count {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+  }
+  .av-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+    gap: 1.1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .av-card {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    align-content: start;
+    gap: 0.45rem;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    padding: 1rem 1.1rem 1.05rem;
+    background: color-mix(in srgb, var(--paper-raised) 70%, transparent);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    cursor: pointer;
+  }
+  @media all {
+    .av-card { transition: border-color 200ms var(--ease-out), transform 200ms var(--ease-out); }
+  }
+  .av-card:hover,
+  .av-card:focus-visible { border-color: var(--fundus); }
+  .av-card:focus-visible { outline: 2px solid var(--fundus); outline-offset: 2px; }
+  .av-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    margin-bottom: 0.25rem;
+  }
+  .av-kind {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .av-title { font-family: var(--font-display); font-size: var(--t-md); line-height: 1.22; }
+  .av-meta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .av-note { font-style: italic; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.4; }
+  .av-empty { font-style: italic; color: var(--ink-soft); }
+
+  /* --- the viewer --------------------------------------------------------- */
+  /* Only when open: a `display` on a closed <dialog> beats the user agent's
+     `dialog:not([open]) { display: none }` and paints it over the page. */
+  .av-view {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .av-view[open] { display: flex; flex-direction: column; }
+  .av-view::backdrop { background: color-mix(in srgb, var(--ink) 45%, transparent); }
+  .av-view-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    padding: 0.7rem 16px;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  .av-view-id { display: grid; gap: 0.1rem; min-width: 0; }
+  .av-view-research {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .av-view-title {
+    font-size: var(--t-md);
+    margin: 0;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .av-view-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .av-view-actions [hidden] { display: none; }
+  .av-edit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem 1rem;
+    align-items: end;
+    padding: 0.9rem 16px;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+  .av-edit[hidden] { display: none; }
+  .av-edit .av-field { flex: 1 1 12rem; }
+  .av-edit .av-field--grow { flex: 2 1 18rem; }
+  .av-edit-foot { display: flex; gap: 0.5rem; }
+  .av-view-body { flex: 1; min-height: 0; display: flex; overflow: auto; }
+  .av-frame { flex: 1; width: 100%; min-height: 100%; border: 0; background: #fff; }
+  .av-frame--doc { background: transparent; }
+  .av-img { margin: auto; padding: 1rem; max-width: 100%; max-height: 100%; object-fit: contain; }
+  .av-panel {
+    margin: auto;
+    max-width: 34rem;
+    padding: 2rem 16px;
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+  }
+  .av-panel p { margin: 0; }
+  .av-panel .av-url { font-family: var(--font-mono); font-size: var(--t-xs); overflow-wrap: anywhere; color: var(--ink-soft); }
+</style>
+
+<script>
+  type Kind = 'html' | 'svg' | 'image' | 'pdf' | 'markdown' | 'text' | 'file' | 'link';
+  interface Item {
+    id: string;
+    research: string;
+    title: string;
+    kind: Kind;
+    name: string | null;
+    type: string | null;
+    size: number | null;
+    added: string;
+    url: string | null;
+    note: string | null;
+  }
+
+  const KIND_LABEL: Record<Kind, string> = {
+    html: 'Page', svg: 'SVG', image: 'Image', pdf: 'PDF',
+    markdown: 'Notes', text: 'Text', file: 'File', link: 'Link',
+  };
+  const MAX_BYTES = 25 * 1024 * 1024;
+
+  let items: Item[] = [];
+  let current: Item | null = null;
+
+  const $ = <T extends Element>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
+
+  const fileUrl = (it: Item) =>
+    `/artifacts/private/file/${it.id}/${encodeURIComponent(it.name ?? it.id)}`;
+
+  const dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const date = (iso: string) => dateFmt.format(new Date(iso));
+  function bytes(n: number | null): string {
+    if (n == null) return '';
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function el<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    cls?: string,
+    text?: string,
+  ): HTMLElementTagNameMap[K] {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  /* --- loading ------------------------------------------------------------ */
+
+  function setStatus(text: string, action?: { label: string; run: () => void }): void {
+    const status = $<HTMLElement>('[data-status]');
+    if (!status) return;
+    status.textContent = text;
+    if (action) {
+      const b = el('button', 'av-btn', action.label);
+      b.type = 'button';
+      b.addEventListener('click', action.run);
+      status.append(b);
+    }
+  }
+
+  /**
+   * `redirect: 'manual'`, because an expired Access session answers with a
+   * redirect to the sign-in page on another origin. Followed, that is a CORS
+   * failure with no message; caught, it is "sign in again".
+   */
+  async function api(path: string, init: RequestInit = {}): Promise<Response> {
+    const res = await fetch(`/artifacts/private/api/${path}`, { ...init, redirect: 'manual', credentials: 'same-origin' });
+    if (res.type === 'opaqueredirect' || res.status === 0) {
+      throw Object.assign(new Error('Your sign-in has expired.'), { expired: true });
+    }
+    return res;
+  }
+
+  async function load(): Promise<void> {
+    const vault = $<HTMLElement>('#vault');
+    try {
+      const res = await api('items');
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        vault?.setAttribute('data-state', 'locked');
+        setStatus(`The archive did not open: ${body.message ?? `HTTP ${res.status}`}`);
+        return;
+      }
+      items = body.items ?? [];
+      vault?.setAttribute('data-state', 'ready');
+      try {
+        localStorage.setItem('codex-owner', '1');
+        document.documentElement.dataset.owner = '';
+      } catch {
+        /* storage blocked — the nav entry stays hidden, nothing else changes */
+      }
+      const who = $<HTMLElement>('[data-who]');
+      if (who) {
+        who.textContent = `${body.user} · `;
+        const out = el('a', undefined, 'sign out');
+        out.href = '/cdn-cgi/access/logout';
+        out.addEventListener('click', () => {
+          try { localStorage.removeItem('codex-owner'); } catch { /* ignore */ }
+        });
+        who.append(out);
+      }
+      setStatus('');
+      render();
+      const wanted = location.hash.slice(1);
+      const hit = wanted && items.find((i) => i.id === wanted);
+      if (hit) openItem(hit);
+    } catch (err) {
+      vault?.setAttribute('data-state', 'error');
+      if ((err as { expired?: boolean }).expired) {
+        setStatus('Your sign-in has expired.', { label: 'Sign in again', run: () => location.reload() });
+      } else {
+        setStatus(`The archive did not open: ${(err as Error).message}`, { label: 'Try again', run: () => void load() });
+      }
+    }
+  }
+
+  /* --- the shelves -------------------------------------------------------- */
+
+  function render(): void {
+    const groups = $<HTMLElement>('[data-groups]');
+    if (!groups) return;
+    const q = ($<HTMLInputElement>('[data-filter]')?.value ?? '').trim().toLowerCase();
+    const shown = q
+      ? items.filter((i) =>
+          [i.title, i.research, i.note ?? '', i.name ?? '', KIND_LABEL[i.kind]].join(' ').toLowerCase().includes(q),
+        )
+      : items;
+
+    // Newest first, so a shelf's position is where its latest work is.
+    const shelves = new Map<string, Item[]>();
+    for (const it of shown) {
+      if (!shelves.has(it.research)) shelves.set(it.research, []);
+      shelves.get(it.research)!.push(it);
+    }
+
+    const list = $<HTMLDataListElement>('[data-researches]');
+    if (list) {
+      list.replaceChildren(
+        ...[...new Set(items.map((i) => i.research))].map((r) => Object.assign(el('option'), { value: r })),
+      );
+    }
+
+    groups.replaceChildren();
+    if (items.length === 0) {
+      groups.append(el('p', 'av-empty', 'Nothing here yet. Add a file or a link, or ask Cowork to send one.'));
+      return;
+    }
+    if (shown.length === 0) {
+      groups.append(el('p', 'av-empty', `Nothing matches “${q}”.`));
+      return;
+    }
+
+    for (const [name, its] of shelves) {
+      const section = el('section', 'av-group');
+      const head = el('header', 'av-group-head');
+      head.append(
+        el('h2', 'av-group-name', name),
+        el('span', 'av-group-count', `${its.length} ${its.length === 1 ? 'artifact' : 'artifacts'} · updated ${date(its[0].added)}`),
+      );
+      const grid = el('ul', 'av-grid');
+      for (const it of its) grid.append(card(it));
+      section.append(head, grid);
+      groups.append(section);
+    }
+  }
+
+  function card(it: Item): HTMLLIElement {
+    const li = el('li');
+    const btn = el('button', 'av-card');
+    btn.type = 'button';
+    if (it.kind === 'image' || it.kind === 'svg') {
+      // <img> never runs an SVG's scripts, so a thumbnail is safe here.
+      const img = el('img', 'av-thumb');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.alt = '';
+      img.src = fileUrl(it);
+      btn.append(img);
+    }
+    btn.append(el('span', 'av-kind', KIND_LABEL[it.kind] ?? it.kind), el('span', 'av-title', it.title));
+    const meta = [date(it.added), it.kind === 'link' ? hostOf(it.url) : bytes(it.size)].filter(Boolean).join(' · ');
+    btn.append(el('span', 'av-meta', meta));
+    if (it.note) btn.append(el('span', 'av-note', it.note));
+    btn.addEventListener('click', () => openItem(it));
+    li.append(btn);
+    return li;
+  }
+
+  const hostOf = (u: string | null) => {
+    try { return u ? new URL(u).hostname.replace(/^www\./, '') : ''; } catch { return ''; }
+  };
+
+  /* --- the viewer --------------------------------------------------------- */
+
+  function setHash(id: string | null): void {
+    const url = id ? `${location.pathname}#${id}` : location.pathname;
+    // Keep the router's state object, or a later Back turns into a full reload.
+    history.replaceState(history.state, '', url);
+  }
+
+  function openItem(it: Item): void {
+    const view = $<HTMLDialogElement>('[data-view]');
+    if (!view) return;
+    current = it;
+    $('[data-view-research]', view)!.textContent = it.research;
+    $('[data-view-title]', view)!.textContent = it.title;
+    $<HTMLFormElement>('[data-edit]', view)!.hidden = true;
+
+    const open = $<HTMLAnchorElement>('[data-view-open]', view)!;
+    const download = $<HTMLAnchorElement>('[data-view-download]', view)!;
+    open.href = it.kind === 'link' ? it.url ?? '#' : fileUrl(it);
+    download.hidden = it.kind === 'link';
+    download.href = `${fileUrl(it)}?download`;
+
+    const body = $<HTMLElement>('[data-view-body]', view)!;
+    body.replaceChildren(content(it));
+    if (!view.open) view.showModal();
+    setHash(it.id);
+  }
+
+  function content(it: Item): HTMLElement {
+    const src = fileUrl(it);
+    const theme = document.documentElement.dataset.theme === 'nocturne' ? 'dark' : 'light';
+    const coarse = matchMedia('(pointer: coarse)').matches;
+
+    // No `sandbox` attribute on these frames. The Worker sends every HTML,
+    // Markdown and text file with a `Content-Security-Policy: sandbox` header,
+    // which gives the document an opaque origin of its own — the frame is
+    // cross-origin to this page, and its scripts cannot reach the site's
+    // storage. The header is the control that also holds in a tab of its own;
+    // doubling it with the attribute stopped some embedded browsers from
+    // loading the frame at all, for no gain in isolation.
+    if (it.kind === 'html') {
+      const f = el('iframe', 'av-frame');
+      f.title = it.title;
+      f.src = src;
+      return f;
+    }
+    if (it.kind === 'markdown' || it.kind === 'text') {
+      const f = el('iframe', 'av-frame av-frame--doc');
+      f.title = it.title;
+      f.src = it.kind === 'markdown' ? `${src}?theme=${theme}` : src;
+      return f;
+    }
+    if (it.kind === 'image' || it.kind === 'svg') {
+      const img = el('img', 'av-img');
+      img.alt = it.title;
+      img.src = src;
+      return img;
+    }
+    if (it.kind === 'pdf' && !coarse) {
+      // No sandbox: browsers will not start their PDF viewer inside one.
+      const f = el('iframe', 'av-frame');
+      f.title = it.title;
+      f.src = src;
+      return f;
+    }
+
+    const panel = el('div', 'av-panel');
+    if (it.kind === 'pdf') {
+      // Phones show only the first page of a framed PDF, so open it whole.
+      panel.append(el('p', undefined, `${it.name ?? 'PDF'} · ${bytes(it.size)}`));
+      const a = Object.assign(el('a', 'av-btn av-btn--primary', 'Open the PDF'), { href: src, target: '_blank', rel: 'noopener' });
+      panel.append(a);
+    } else if (it.kind === 'link') {
+      panel.append(el('p', 'av-url', it.url ?? ''));
+      if (it.note) panel.append(el('p', 'av-note', it.note));
+      const a = Object.assign(el('a', 'av-btn av-btn--primary', 'Open the link ↗'), {
+        href: it.url ?? '#', target: '_blank', rel: 'noopener noreferrer',
+      });
+      panel.append(a);
+      if (hostOf(it.url) === 'claude.ai') {
+        panel.append(
+          el('p', 'av-note',
+            'This opens on claude.ai and needs your Claude sign-in. To have it here without Claude, ' +
+            'download its HTML from claude.ai and add it as a file on this shelf.'),
+        );
+      }
+    } else {
+      panel.append(el('p', undefined, `${it.name ?? 'File'} · ${bytes(it.size)}`));
+      panel.append(Object.assign(el('a', 'av-btn av-btn--primary', 'Download'), { href: `${src}?download` }));
+    }
+    return panel;
+  }
+
+  function closeView(): void {
+    const view = $<HTMLDialogElement>('[data-view]');
+    // `close` is dispatched a task after close(); if another artifact was
+    // opened in between, this event belongs to the old one and must not wipe
+    // the new one's frame.
+    if (view?.open) return;
+    // Unload the frame, so an artifact's scripts stop when it is closed.
+    $('[data-view-body]', view ?? document)?.replaceChildren();
+    current = null;
+    setHash(null);
+  }
+
+  async function saveEdit(form: HTMLFormElement): Promise<void> {
+    if (!current) return;
+    const data = new FormData(form);
+    const res = await api(`items/${current.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: data.get('title'), research: data.get('research'), note: data.get('note') }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+    items = items.map((i) => (i.id === body.id ? body : i));
+    render();
+    openItem(body);
+  }
+
+  async function remove(): Promise<void> {
+    if (!current) return;
+    if (!confirm(`Delete “${current.title}” from ${current.research}? This cannot be undone.`)) return;
+    const res = await api(`items/${current.id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `HTTP ${res.status}`);
+    const gone = current.id;
+    items = items.filter((i) => i.id !== gone);
+    $<HTMLDialogElement>('[data-view]')?.close();
+    render();
+  }
+
+  /* --- adding ------------------------------------------------------------- */
+
+  /** XHR rather than fetch, for the upload progress a large PDF on a phone needs. */
+  function send(form: FormData, onProgress: (f: number) => void): Promise<Item> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/artifacts/private/api/items');
+      xhr.responseType = 'json';
+      xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+      xhr.onload = () =>
+        xhr.status === 201 ? resolve(xhr.response) : reject(new Error(xhr.response?.message ?? `HTTP ${xhr.status}`));
+      xhr.onerror = () =>
+        reject(new Error('The upload did not reach the archive. If your sign-in has expired, reload the page.'));
+      xhr.send(form);
+    });
+  }
+
+  function mode(form: HTMLFormElement): 'files' | 'link' {
+    return (new FormData(form).get('mode') as 'files' | 'link') ?? 'files';
+  }
+
+  function syncMode(form: HTMLFormElement): void {
+    const m = mode(form);
+    for (const node of form.querySelectorAll<HTMLElement>('[data-when]')) node.hidden = node.dataset.when !== m;
+    const url = form.elements.namedItem('url') as HTMLInputElement;
+    url.required = m === 'link';
+  }
+
+  function showChosen(form: HTMLFormElement): void {
+    const input = $<HTMLInputElement>('[data-files]', form)!;
+    const text = $<HTMLElement>('[data-drop-text]', form)!;
+    const files = [...(input.files ?? [])];
+    if (files.length === 0) return;
+    text.replaceChildren(
+      el('strong', undefined, files.map((f) => f.name).join(', ')),
+      document.createTextNode(files.length > 1 ? ` · ${files.length} files` : ` · ${bytes(files[0].size)}`),
+    );
+  }
+
+  async function submitAdd(form: HTMLFormElement): Promise<void> {
+    const data = new FormData(form);
+    const research = String(data.get('research') ?? '').trim();
+    const title = String(data.get('title') ?? '').trim();
+    const note = String(data.get('note') ?? '').trim();
+    const progress = $<HTMLElement>('[data-progress]', form)!;
+    const submit = $<HTMLButtonElement>('[data-add-submit]', form)!;
+    submit.disabled = true;
+    const added: Item[] = [];
+    const failed: string[] = [];
+
+    try {
+      if (mode(form) === 'link') {
+        progress.textContent = 'Adding the link…';
+        const res = await api('items', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ research, title, note, url: data.get('url') }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+        added.push(body);
+      } else {
+        const files = [...(($<HTMLInputElement>('[data-files]', form)!.files) ?? [])];
+        if (files.length === 0) throw new Error('Choose at least one file.');
+        // One at a time: each is up to 25 MB, and a phone connection shared
+        // between five uploads finishes none of them sooner.
+        for (const [n, f] of files.entries()) {
+          const label = files.length > 1 ? `${n + 1} of ${files.length}: ${f.name}` : f.name;
+          if (f.size > MAX_BYTES) {
+            failed.push(`${f.name} is over 25 MB`);
+            continue;
+          }
+          const fd = new FormData();
+          fd.set('file', f);
+          fd.set('research', research);
+          if (title && files.length === 1) fd.set('title', title);
+          if (note) fd.set('note', note);
+          try {
+            added.push(await send(fd, (p) => (progress.textContent = `Uploading ${label} · ${Math.round(p * 100)}%`)));
+          } catch (err) {
+            failed.push(`${f.name}: ${(err as Error).message}`);
+          }
+        }
+      }
+    } catch (err) {
+      failed.push((err as Error).message);
+    } finally {
+      submit.disabled = false;
+    }
+
+    if (added.length) {
+      // KV lists are eventually consistent, so the new items are added here
+      // rather than waiting for the next list to include them.
+      items = [...added, ...items.filter((i) => !added.some((a) => a.id === i.id))];
+      render();
+    }
+    progress.textContent = [
+      added.length ? `Added ${added.length} to ${research}.` : '',
+      failed.length ? `Not added: ${failed.join('; ')}` : '',
+    ].filter(Boolean).join(' ');
+    if (added.length && !failed.length) {
+      const keep = research;
+      form.reset();
+      (form.elements.namedItem('research') as HTMLInputElement).value = keep;
+      $<HTMLElement>('[data-drop-text]', form)!.innerHTML =
+        'Drop files here, or <u>choose them</u>. HTML, PDF, SVG, images, Markdown, anything up to 25&nbsp;MB.';
+      syncMode(form);
+    }
+  }
+
+  function toggleAdd(show?: boolean): void {
+    const form = $<HTMLFormElement>('[data-add]');
+    const btn = $<HTMLButtonElement>('[data-add-toggle]');
+    if (!form || !btn) return;
+    const next = show ?? form.hidden;
+    form.hidden = !next;
+    btn.setAttribute('aria-expanded', String(next));
+    if (next) (form.elements.namedItem('research') as HTMLInputElement).focus();
+  }
+
+  /* --- wiring ------------------------------------------------------------- */
+
+  function init(): void {
+    const vault = $<HTMLElement>('#vault');
+    if (!vault || vault.dataset.bound === '1') return;
+    vault.dataset.bound = '1';
+
+    $<HTMLInputElement>('[data-filter]')?.addEventListener('input', render);
+    $('[data-add-toggle]')?.addEventListener('click', () => toggleAdd());
+
+    const form = $<HTMLFormElement>('[data-add]')!;
+    form.addEventListener('change', (e) => {
+      if ((e.target as HTMLInputElement).name === 'mode') syncMode(form);
+      if ((e.target as HTMLInputElement).name === 'files') showChosen(form);
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      void submitAdd(form);
+    });
+    $('[data-add-cancel]', form)?.addEventListener('click', () => toggleAdd(false));
+    const drop = $<HTMLElement>('[data-drop]', form)!;
+    for (const t of ['dragenter', 'dragover']) drop.addEventListener(t, () => drop.classList.add('is-over'));
+    for (const t of ['dragleave', 'drop']) drop.addEventListener(t, () => drop.classList.remove('is-over'));
+
+    const view = $<HTMLDialogElement>('[data-view]')!;
+    view.addEventListener('close', closeView);
+    $('[data-view-close]', view)?.addEventListener('click', () => view.close());
+    $('[data-view-copy]', view)?.addEventListener('click', async (e) => {
+      if (!current) return;
+      const btn = e.currentTarget as HTMLButtonElement;
+      try {
+        await navigator.clipboard.writeText(`${location.origin}/artifacts/private#${current.id}`);
+        btn.textContent = 'Copied';
+      } catch {
+        btn.textContent = 'Copy failed';
+      }
+      setTimeout(() => (btn.textContent = 'Copy link'), 1600);
+    });
+    $('[data-view-delete]', view)?.addEventListener('click', () => {
+      remove().catch((err) => alert(`Not deleted: ${(err as Error).message}`));
+    });
+    const edit = $<HTMLFormElement>('[data-edit]', view)!;
+    $('[data-view-edit]', view)?.addEventListener('click', () => {
+      if (!current) return;
+      (edit.elements.namedItem('title') as HTMLInputElement).value = current.title;
+      (edit.elements.namedItem('research') as HTMLInputElement).value = current.research;
+      (edit.elements.namedItem('note') as HTMLInputElement).value = current.note ?? '';
+      edit.hidden = !edit.hidden;
+    });
+    $('[data-edit-cancel]', edit)?.addEventListener('click', () => (edit.hidden = true));
+    edit.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveEdit(edit).catch((err) => alert(`Not saved: ${(err as Error).message}`));
+    });
+
+    void load();
+  }
+
+  /**
+   * Pasting a link anywhere on the page, outside a field, starts adding it.
+   * Bound once for the whole session and a no-op on every other page, since
+   * this module is not re-run on a soft navigation back here.
+   */
+  document.addEventListener('paste', (e) => {
+    const form = $<HTMLFormElement>('[data-add]');
+    if (!form || (e.target as HTMLElement).closest?.('input, textarea, [contenteditable]')) return;
+    const text = e.clipboardData?.getData('text')?.trim() ?? '';
+    if (!/^https?:\/\/\S+$/.test(text)) return;
+    toggleAdd(true);
+    (form.querySelector('input[value="link"]') as HTMLInputElement).checked = true;
+    syncMode(form);
+    (form.elements.namedItem('url') as HTMLInputElement).value = text;
+  });
+
+  document.addEventListener('astro:page-load', init);
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+</script>

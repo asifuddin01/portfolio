@@ -13,6 +13,7 @@ Allow: /
 Disallow: /admin
 Disallow: /uploads/
 Disallow: /vitae/cv/edit
+Disallow: /artifacts
 
 Sitemap: ${new URL('sitemap-index.xml', SITE).href}
 `,
