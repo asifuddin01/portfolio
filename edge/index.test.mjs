@@ -329,10 +329,53 @@ test('an artifact can be moved to another research and renamed', async () => {
   assert.equal(edited.title, 'Figure 1');
 });
 
+const put = (body) => ({ method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+
+test('an artifact\'s contents can be edited, and the edit is what opens next', async () => {
+  const made = await (await call('/artifacts/private/api/items', upload('inventory.html', '<title>Inv</title><td>Complete</td>'))).json();
+  assert.equal(made.version, 0);
+  const res = await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: '<title>Inv</title><td>Verified 21 Sep</td>' }));
+  assert.equal(res.status, 200);
+  const saved = await res.json();
+  assert.equal(saved.version, 1, 'a new version, so the viewer asks for a new URL');
+  assert.equal(saved.canUndo, true);
+  assert.ok(saved.edited);
+  assert.match(await (await call(`/artifacts/private/file/${made.id}`)).text(), /Verified 21 Sep/);
+});
+
+test('undo puts back the version before the last save, once', async () => {
+  const made = await (await call('/artifacts/private/api/items', upload('notes.md', '# One'))).json();
+  await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: '# Two' }));
+  const back = await (await call(`/artifacts/private/api/items/${made.id}/undo`, { method: 'POST' })).json();
+  assert.equal(back.canUndo, false);
+  assert.equal(await (await call(`/artifacts/private/file/${made.id}?raw`)).text(), '# One');
+  assert.equal((await call(`/artifacts/private/api/items/${made.id}/undo`, { method: 'POST' })).status, 404);
+});
+
+test('a PDF or an image cannot be overwritten with text', async () => {
+  const made = await (await call('/artifacts/private/api/items', upload('scan.pdf', '%PDF-1.7'))).json();
+  const res = await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: 'hello' }));
+  assert.equal(res.status, 400);
+});
+
+test('an empty save is refused, so an accident cannot blank an artifact', async () => {
+  const made = await (await call('/artifacts/private/api/items', upload('keep.html', '<p>keep</p>'))).json();
+  assert.equal((await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: '  ' }))).status, 400);
+  assert.equal(await (await call(`/artifacts/private/file/${made.id}`)).text(), '<p>keep</p>');
+});
+
+test('editing is behind the sign-in; the inbox key cannot edit', async () => {
+  const made = await (await call('/artifacts/private/api/items', upload('x.html', '<p>x</p>'))).json();
+  assert.equal((await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: '<p>y</p>' }), null)).status, 401);
+  assert.equal((await call('/api/artifacts/inbox', { method: 'PUT', headers: { authorization: 'Bearer inbox-key-for-tests' } }, null)).status, 405);
+});
+
 test('delete removes the item and its file', async () => {
   const made = await (await call('/artifacts/private/api/items', upload('gone.txt', 'bye'))).json();
+  await call(`/artifacts/private/api/items/${made.id}/content`, put({ content: 'edited' }));
   assert.equal((await call(`/artifacts/private/api/items/${made.id}`, { method: 'DELETE' })).status, 200);
   assert.equal((await call(`/artifacts/private/file/${made.id}`)).status, 404);
+  assert.equal(env.ARTIFACTS.m.has(`prev:${made.id}`), false, 'the backup goes with it');
   const ids = (await (await call('/artifacts/private/api/items')).json()).items.map((i) => i.id);
   assert.ok(!ids.includes(made.id));
 });

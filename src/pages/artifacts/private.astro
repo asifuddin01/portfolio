@@ -111,12 +111,14 @@ import { AUTHOR } from '../../consts';
         <span class="av-view-research" data-view-research></span>
         <h2 class="av-view-title" id="av-view-title" data-view-title></h2>
       </div>
-      <div class="av-view-actions">
+      <div class="av-view-actions" data-view-actions>
+        <button class="av-btn av-btn--primary" type="button" data-view-write hidden>Edit</button>
         <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-open>Open ↗</a>
         <a class="av-btn" data-view-download>Download</a>
         <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-source hidden>Source ↗</a>
         <button class="av-btn" type="button" data-view-copy>Copy link</button>
-        <button class="av-btn" type="button" data-view-edit>Edit</button>
+        <button class="av-btn" type="button" data-view-edit>Details</button>
+        <button class="av-btn" type="button" data-view-undo hidden>Undo last edit</button>
         <button class="av-btn av-btn--danger" type="button" data-view-delete>Delete</button>
         <button class="av-btn" type="button" aria-label="Close" data-view-close>Close</button>
       </div>
@@ -130,6 +132,15 @@ import { AUTHOR } from '../../consts';
         <button class="av-btn" type="button" data-edit-cancel>Cancel</button>
       </div>
     </form>
+    <div class="av-writing" hidden data-writing>
+      <p class="av-writing-hint" data-writing-hint></p>
+      <div class="av-writing-actions">
+        <button class="av-btn av-btn--primary" type="button" data-write-save>Save</button>
+        <button class="av-btn" type="button" data-write-switch hidden>Edit the code</button>
+        <button class="av-btn" type="button" data-write-cancel>Cancel</button>
+        <span class="av-progress" role="status" data-write-status></span>
+      </div>
+    </div>
     <div class="av-view-body" data-view-body></div>
   </dialog>
 </BaseLayout>
@@ -383,6 +394,38 @@ import { AUTHOR } from '../../consts';
   .av-edit .av-field--grow { flex: 2 1 18rem; }
   .av-edit-foot { display: flex; gap: 0.5rem; }
   .av-view-body { flex: 1; min-height: 0; display: flex; overflow: auto; }
+  .av-writing {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    padding: 0.6rem 16px;
+    background: color-mix(in srgb, var(--fundus) 14%, var(--paper));
+    border-bottom: var(--rule) solid var(--fundus);
+  }
+  .av-writing[hidden] { display: none; }
+  .av-writing-hint { margin: 0; font-size: var(--t-sm); color: var(--ink); }
+  .av-writing-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .av-writing-actions [hidden] { display: none; }
+  .av-code {
+    flex: 1;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 1rem 16px;
+    border: 0;
+    resize: none;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    tab-size: 2;
+    white-space: pre;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .av-code:focus-visible { outline: none; }
+  .av-view.is-writing .av-view-actions > :not([data-view-close]) { display: none; }
   .av-frame { flex: 1; width: 100%; min-height: 100%; border: 0; background: #fff; }
   .av-frame--doc { background: transparent; }
   .av-img { margin: auto; padding: 1rem; max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -411,6 +454,9 @@ import { AUTHOR } from '../../consts';
     added: string;
     url: string | null;
     note: string | null;
+    version: number;
+    edited: string | null;
+    canUndo: boolean;
   }
 
   const KIND_LABEL: Record<Kind, string> = {
@@ -418,14 +464,25 @@ import { AUTHOR } from '../../consts';
     markdown: 'Notes', text: 'Text', file: 'File', link: 'Link',
   };
   const MAX_BYTES = 25 * 1024 * 1024;
+  /** Stored as text, so they can be edited here. Matches WRITABLE in edge/. */
+  const WRITABLE = new Set<Kind>(['html', 'markdown', 'text', 'svg']);
 
   let items: Item[] = [];
   let current: Item | null = null;
 
   const $ = <T extends Element>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
 
-  const fileUrl = (it: Item) =>
-    `/artifacts/private/file/${it.id}/${encodeURIComponent(it.name ?? it.id)}`;
+  /**
+   * The file's address. Carries the version once an artifact has been edited:
+   * files are cached as immutable, so an edit has to arrive at a new URL or
+   * the browser keeps showing what was there before.
+   */
+  function fileUrl(it: Item, extra = ''): string {
+    const q = new URLSearchParams(extra);
+    if (it.version) q.set('v', String(it.version));
+    const qs = q.toString();
+    return `/artifacts/private/file/${it.id}/${encodeURIComponent(it.name ?? it.id)}${qs ? `?${qs}` : ''}`;
+  }
 
   const dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const date = (iso: string) => dateFmt.format(new Date(iso));
@@ -587,7 +644,7 @@ import { AUTHOR } from '../../consts';
     }
     btn.append(el('span', 'av-kind', KIND_LABEL[it.kind] ?? it.kind), el('span', 'av-title', it.title));
     const meta = [
-      date(it.added),
+      it.edited ? `edited ${date(it.edited)}` : date(it.added),
       it.kind === 'link' ? hostOf(it.url) : bytes(it.size),
       it.kind !== 'link' && it.url ? `from ${hostOf(it.url)}` : '',
     ].filter(Boolean).join(' · ');
@@ -622,6 +679,7 @@ import { AUTHOR } from '../../consts';
   function openItem(it: Item, record = true): void {
     const view = $<HTMLDialogElement>('[data-view]');
     if (!view) return;
+    stopWriting();
     current = it;
     $('[data-view-research]', view)!.textContent = it.research;
     $('[data-view-title]', view)!.textContent = it.title;
@@ -631,7 +689,9 @@ import { AUTHOR } from '../../consts';
     const download = $<HTMLAnchorElement>('[data-view-download]', view)!;
     open.href = it.kind === 'link' ? it.url ?? '#' : fileUrl(it);
     download.hidden = it.kind === 'link';
-    download.href = `${fileUrl(it)}?download`;
+    download.href = fileUrl(it, 'download');
+    $<HTMLButtonElement>('[data-view-write]', view)!.hidden = !WRITABLE.has(it.kind);
+    $<HTMLButtonElement>('[data-view-undo]', view)!.hidden = !it.canUndo;
     // A kept copy still knows where it came from.
     const source = $<HTMLAnchorElement>('[data-view-source]', view)!;
     source.hidden = it.kind === 'link' || !it.url;
@@ -651,6 +711,8 @@ import { AUTHOR } from '../../consts';
 
   /** Close as Back would: take the step back, and let popstate close it. */
   function requestClose(): void {
+    if (!mayDiscard()) return;
+    stopWriting();
     if (isOurs(history.state)) history.back();
     else $<HTMLDialogElement>('[data-view]')?.close();
   }
@@ -676,7 +738,7 @@ import { AUTHOR } from '../../consts';
     if (it.kind === 'markdown' || it.kind === 'text') {
       const f = el('iframe', 'av-frame av-frame--doc');
       f.title = it.title;
-      f.src = it.kind === 'markdown' ? `${src}?theme=${theme}` : src;
+      f.src = it.kind === 'markdown' ? fileUrl(it, `theme=${theme}`) : src;
       return f;
     }
     if (it.kind === 'image' || it.kind === 'svg') {
@@ -715,7 +777,7 @@ import { AUTHOR } from '../../consts';
       }
     } else {
       panel.append(el('p', undefined, `${it.name ?? 'File'} · ${bytes(it.size)}`));
-      panel.append(Object.assign(el('a', 'av-btn av-btn--primary', 'Download'), { href: `${src}?download` }));
+      panel.append(Object.assign(el('a', 'av-btn av-btn--primary', 'Download'), { href: fileUrl(it, 'download') }));
     }
     return panel;
   }
@@ -726,10 +788,202 @@ import { AUTHOR } from '../../consts';
     // opened in between, this event belongs to the old one and must not wipe
     // the new one's frame.
     if (view?.open) return;
+    stopWriting();
     // Unload the frame, so an artifact's scripts stop when it is closed.
     $('[data-view-body]', view ?? document)?.replaceChildren();
     current = null;
     if (location.hash && !isOurs(history.state)) history.replaceState(null, '', location.pathname);
+  }
+
+  /* --- writing ------------------------------------------------------------ */
+
+  /**
+   * Editing an artifact in place.
+   *
+   * A page is edited as a page: its HTML goes into a frame with `designMode`
+   * on, so any text can be clicked and typed over. That frame is sandboxed
+   * with no permission to run scripts — the artifact's own scripts stay off
+   * while it is open for editing — and that is what makes it safe to give the
+   * frame this origin, which the viewer needs in order to read the edit back.
+   * Notes, text and SVG, and any page drawn by its scripts, are edited as
+   * code. Every save keeps the version before it (see Undo last edit).
+   */
+  interface Writing {
+    item: Item;
+    mode: 'page' | 'code';
+    frame?: HTMLIFrameElement;
+    area?: HTMLTextAreaElement;
+    dirty: boolean;
+  }
+  let writing: Writing | null = null;
+
+  const view$ = () => $<HTMLDialogElement>('[data-view]')!;
+
+  function serialize(doc: Document): string {
+    const dt = doc.doctype ? `<!doctype ${doc.doctype.name}>` : '<!doctype html>';
+    return `${dt}\n${doc.documentElement.outerHTML}`;
+  }
+
+  function currentText(): string {
+    if (!writing) return '';
+    if (writing.mode === 'page') {
+      const doc = writing.frame?.contentDocument;
+      return doc ? serialize(doc) : '';
+    }
+    return writing.area?.value ?? '';
+  }
+
+  function markDirty(): void {
+    if (writing) writing.dirty = true;
+  }
+
+  function saveShortcut(e: KeyboardEvent): void {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      void saveWriting();
+    }
+  }
+
+  function showWritingBar(): void {
+    const view = view$();
+    $<HTMLElement>('[data-writing]', view)!.hidden = false;
+    view.classList.add('is-writing');
+    const hint = $<HTMLElement>('[data-writing-hint]', view)!;
+    const sw = $<HTMLButtonElement>('[data-write-switch]', view)!;
+    if (writing?.mode === 'page') {
+      hint.textContent = 'Editing. Click any text on the page and type over it, then Save.';
+      sw.textContent = 'Edit the code';
+      sw.hidden = false;
+    } else {
+      hint.textContent =
+        writing?.item.kind === 'html' ? 'Editing the code. Save when you are done.' : 'Editing. Change the text, then Save.';
+      sw.textContent = 'Edit the page';
+      sw.hidden = writing?.item.kind !== 'html';
+    }
+    $<HTMLElement>('[data-write-status]', view)!.textContent = '';
+  }
+
+  function mountPage(html: string): void {
+    const f = el('iframe', 'av-frame');
+    // Same origin so the edit can be read back; no allow-scripts, so nothing
+    // in the artifact runs while it is open for editing.
+    f.setAttribute('sandbox', 'allow-same-origin');
+    f.title = 'Editing';
+    f.addEventListener(
+      'load',
+      () => {
+        const doc = f.contentDocument;
+        if (!doc) return;
+        doc.designMode = 'on';
+        doc.addEventListener('input', markDirty);
+        doc.addEventListener('keydown', saveShortcut);
+      },
+      { once: true },
+    );
+    f.srcdoc = html;
+    $<HTMLElement>('[data-view-body]', view$())!.replaceChildren(f);
+    if (writing) Object.assign(writing, { mode: 'page', frame: f, area: undefined });
+  }
+
+  function mountCode(code: string): void {
+    const area = el('textarea', 'av-code');
+    area.value = code;
+    area.spellcheck = false;
+    area.setAttribute('autocapitalize', 'off');
+    area.setAttribute('aria-label', 'The artifact\'s code');
+    area.addEventListener('input', markDirty);
+    area.addEventListener('keydown', saveShortcut);
+    $<HTMLElement>('[data-view-body]', view$())!.replaceChildren(area);
+    if (writing) Object.assign(writing, { mode: 'code', area, frame: undefined });
+    area.focus();
+  }
+
+  async function startWriting(it: Item): Promise<void> {
+    // Fresh from storage, never from the cache: an edit must start from what
+    // is actually saved.
+    const res = await fetch(fileUrl(it, it.kind === 'markdown' ? 'raw' : ''), {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      redirect: 'manual',
+    });
+    if (res.type === 'opaqueredirect') throw new Error('Your sign-in has expired. Reload the page and sign in again.');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    $<HTMLFormElement>('[data-edit]', view$())!.hidden = true;
+    writing = { item: it, mode: it.kind === 'html' ? 'page' : 'code', dirty: false };
+    if (writing.mode === 'page') mountPage(text);
+    else mountCode(text);
+    showWritingBar();
+  }
+
+  function switchMode(): void {
+    if (!writing) return;
+    const text = currentText();
+    if (writing.mode === 'page') mountCode(text);
+    else mountPage(text);
+    showWritingBar();
+  }
+
+  function stopWriting(): void {
+    writing = null;
+    const view = $<HTMLDialogElement>('[data-view]');
+    if (!view) return;
+    $<HTMLElement>('[data-writing]', view)!.hidden = true;
+    view.classList.remove('is-writing');
+  }
+
+  /** Ask before an unsaved edit is thrown away. True means go ahead. */
+  function mayDiscard(): boolean {
+    return !writing?.dirty || confirm('Discard the changes you have not saved?');
+  }
+
+  async function saveWriting(): Promise<void> {
+    if (!writing) return;
+    const view = view$();
+    const status = $<HTMLElement>('[data-write-status]', view)!;
+    const btn = $<HTMLButtonElement>('[data-write-save]', view)!;
+    const content = currentText();
+    if (!content.trim()) {
+      status.textContent = 'There is nothing to save.';
+      return;
+    }
+    btn.disabled = true;
+    status.textContent = 'Saving…';
+    try {
+      const res = await api(`items/${writing.item.id}/content`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+      items = items.map((i) => (i.id === body.id ? body : i));
+      stopWriting();
+      render();
+      openItem(body, false);
+    } catch (err) {
+      status.textContent = `Not saved: ${(err as Error).message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function cancelWriting(): void {
+    if (!writing || !mayDiscard()) return;
+    const it = writing.item;
+    stopWriting();
+    openItem(it, false);
+  }
+
+  async function undoEdit(): Promise<void> {
+    if (!current) return;
+    if (!confirm(`Go back to the version of “${current.title}” from before the last save?`)) return;
+    const res = await api(`items/${current.id}/undo`, { method: 'POST' });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+    items = items.map((i) => (i.id === body.id ? body : i));
+    render();
+    openItem(body, false);
   }
 
   async function saveEdit(form: HTMLFormElement): Promise<void> {
@@ -976,6 +1230,16 @@ import { AUTHOR } from '../../consts';
       }
       setTimeout(() => (btn.textContent = 'Copy link'), 1600);
     });
+    $('[data-view-write]', view)?.addEventListener('click', () => {
+      if (!current) return;
+      startWriting(current).catch((err) => alert(`Could not open it for editing: ${(err as Error).message}`));
+    });
+    $('[data-write-save]', view)?.addEventListener('click', () => void saveWriting());
+    $('[data-write-cancel]', view)?.addEventListener('click', cancelWriting);
+    $('[data-write-switch]', view)?.addEventListener('click', switchMode);
+    $('[data-view-undo]', view)?.addEventListener('click', () => {
+      undoEdit().catch((err) => alert(`Not undone: ${(err as Error).message}`));
+    });
     $('[data-view-delete]', view)?.addEventListener('click', () => {
       remove().catch((err) => alert(`Not deleted: ${(err as Error).message}`));
     });
@@ -1010,8 +1274,25 @@ import { AUTHOR } from '../../consts';
       const it = items.find((i) => i.id === e.state.artifact);
       if (it) openItem(it, false);
     } else if (view.open) {
+      if (writing?.dirty && current && !confirm('Discard the changes you have not saved?')) {
+        // Stay: put the step Back just took away.
+        history.pushState({ artifact: current.id }, '', `${location.pathname}#${current.id}`);
+        return;
+      }
+      stopWriting();
       view.close();
     }
+  });
+
+  // Leaving the page (a reload, a closed tab) with an unsaved edit asks first.
+  window.addEventListener('beforeunload', (e) => {
+    if (writing?.dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (writing) saveShortcut(e);
   });
 
   document.addEventListener('paste', (e) => {

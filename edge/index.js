@@ -121,13 +121,69 @@ async function api(request, env, pathname, who) {
   }
 
   if (!ID.test(id)) return oops(404, 'not-found', 'No such artifact.');
+  if (rest[2] === 'content') {
+    return request.method === 'PUT' ? saveContent(request, env, id) : oops(405, 'method', 'PUT only.');
+  }
+  if (rest[2] === 'undo') {
+    return request.method === 'POST' ? undo(env, id) : oops(405, 'method', 'POST only.');
+  }
   if (request.method === 'PATCH') return edit(request, env, id);
   if (request.method === 'DELETE') {
     await env.ARTIFACTS.delete(`item:${id}`);
     await env.ARTIFACTS.delete(`blob:${id}`);
+    await env.ARTIFACTS.delete(`prev:${id}`);
     return json({ ok: true });
   }
   return oops(405, 'method', 'PATCH or DELETE.');
+}
+
+/** What can be written in the browser: anything stored as text. */
+const WRITABLE = new Set(['html', 'markdown', 'text', 'svg']);
+
+/**
+ * Replace an artifact's contents with an edited version.
+ *
+ * The version it replaces is kept as `prev:<id>`, one step deep, so a bad
+ * save is one tap from undone. Every save bumps `v`, which the viewer puts in
+ * the file's URL: the files are cached as immutable, and without a new URL a
+ * browser would keep showing the text from before the edit.
+ */
+async function saveContent(request, env, id) {
+  const { metadata: m } = await env.ARTIFACTS.getWithMetadata(`item:${id}`);
+  if (!m) return oops(404, 'not-found', 'No such artifact.');
+  if (!WRITABLE.has(m.k)) return oops(400, 'not-editable', 'Only pages, notes, text and SVG can be edited here.');
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return oops(400, 'bad-json', 'The body is not JSON.');
+  }
+  if (typeof body.content !== 'string' || !body.content.trim()) {
+    return oops(400, 'empty', 'There is nothing to save.');
+  }
+  const bytes = new TextEncoder().encode(body.content);
+  if (bytes.length > MAX_BYTES) return tooLarge();
+
+  const old = await env.ARTIFACTS.getWithMetadata(`blob:${id}`, { type: 'arrayBuffer' });
+  const blobMeta = old.metadata ?? { k: m.k, m: m.m, n: m.n, t: m.t };
+  if (old.value) await env.ARTIFACTS.put(`prev:${id}`, old.value, { metadata: blobMeta });
+  await env.ARTIFACTS.put(`blob:${id}`, bytes, { metadata: blobMeta });
+  const meta = fit({ ...m, s: bytes.length, v: (m.v ?? 0) + 1, e: new Date().toISOString(), p: old.value ? 1 : m.p });
+  await env.ARTIFACTS.put(`item:${id}`, '', { metadata: meta });
+  return json(view(id, meta));
+}
+
+/** Put back the version from before the last save. One step, then gone. */
+async function undo(env, id) {
+  const { metadata: m } = await env.ARTIFACTS.getWithMetadata(`item:${id}`);
+  if (!m) return oops(404, 'not-found', 'No such artifact.');
+  const prev = await env.ARTIFACTS.getWithMetadata(`prev:${id}`, { type: 'arrayBuffer' });
+  if (!prev.value) return oops(404, 'nothing', 'There is no earlier version to go back to.');
+  await env.ARTIFACTS.put(`blob:${id}`, prev.value, { metadata: prev.metadata });
+  await env.ARTIFACTS.delete(`prev:${id}`);
+  const meta = fit({ ...m, s: prev.value.byteLength, v: (m.v ?? 0) + 1, e: new Date().toISOString(), p: undefined });
+  await env.ARTIFACTS.put(`item:${id}`, '', { metadata: meta });
+  return json(view(id, meta));
 }
 
 /** The inbox: add-only, behind a key, for scripts that cannot sign in. */
@@ -413,6 +469,9 @@ const view = (id, m) => ({
   added: m.a,
   url: m.u ?? null,
   note: m.o ?? null,
+  version: m.v ?? 0,
+  edited: m.e ?? null,
+  canUndo: !!m.p,
 });
 
 /**
