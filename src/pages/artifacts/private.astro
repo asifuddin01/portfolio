@@ -143,6 +143,11 @@ import { AUTHOR } from '../../consts';
     </div>
     <div class="av-view-body" data-view-body></div>
   </dialog>
+
+  <dialog class="av-ask" aria-labelledby="av-ask-text" data-ask>
+    <p class="av-ask-text" id="av-ask-text" data-ask-text></p>
+    <div class="av-ask-actions" data-ask-actions></div>
+  </dialog>
 </BaseLayout>
 
 <style is:global>
@@ -426,6 +431,24 @@ import { AUTHOR } from '../../consts';
   }
   .av-code:focus-visible { outline: none; }
   .av-view.is-writing .av-view-actions > :not([data-view-close]) { display: none; }
+
+  /* The site's own question box. Browsers may silently suppress confirm() —
+     it answered "no" in 2 ms here without ever showing — and its OK/Cancel
+     reads backwards next to a Cancel button of our own. */
+  .av-ask {
+    /* The site's reset zeroes every margin, which takes away the centring a
+       modal <dialog> gets from the browser. */
+    margin: auto;
+    max-width: min(28rem, calc(100vw - 32px));
+    padding: 1.3rem 1.3rem 1.1rem;
+    border: var(--rule) solid var(--brass);
+    background: var(--paper-raised, var(--paper));
+    color: var(--ink);
+    box-shadow: 0 22px 60px -24px color-mix(in srgb, var(--ink) 70%, transparent);
+  }
+  .av-ask::backdrop { background: color-mix(in srgb, var(--ink) 35%, transparent); }
+  .av-ask-text { margin: 0 0 1.1rem; font-size: var(--t-base); line-height: 1.45; }
+  .av-ask-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; }
   .av-frame { flex: 1; width: 100%; min-height: 100%; border: 0; background: #fff; }
   .av-frame--doc { background: transparent; }
   .av-img { margin: auto; padding: 1rem; max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -710,8 +733,8 @@ import { AUTHOR } from '../../consts';
   }
 
   /** Close as Back would: take the step back, and let popstate close it. */
-  function requestClose(): void {
-    if (!mayDiscard()) return;
+  async function requestClose(): Promise<void> {
+    if (!(await settleUnsaved())) return;
     stopWriting();
     if (isOurs(history.state)) history.back();
     else $<HTMLDialogElement>('[data-view]')?.close();
@@ -793,6 +816,47 @@ import { AUTHOR } from '../../consts';
     $('[data-view-body]', view ?? document)?.replaceChildren();
     current = null;
     if (location.hash && !isOurs(history.state)) history.replaceState(null, '', location.pathname);
+  }
+
+  /* --- asking ------------------------------------------------------------- */
+
+  interface Choice {
+    label: string;
+    value: string;
+    kind?: 'primary' | 'danger';
+  }
+  let answer: ((value: string) => void) | null = null;
+
+  /**
+   * Ask a question in the page and wait for the answer. Used instead of
+   * confirm(), which a browser may suppress without showing anything — the
+   * cause of Cancel and Back doing nothing while editing. Escape gives
+   * `fallback`, which is always the choice that loses nothing.
+   */
+  function ask(message: string, choices: Choice[], fallback: string): Promise<string> {
+    const box = $<HTMLDialogElement>('[data-ask]')!;
+    answer?.(fallback);
+    $('[data-ask-text]', box)!.textContent = message;
+    const row = $<HTMLElement>('[data-ask-actions]', box)!;
+    return new Promise((resolve) => {
+      answer = (value) => {
+        answer = null;
+        if (box.open) box.close();
+        resolve(value);
+      };
+      row.replaceChildren(
+        ...choices.map((c) => {
+          const b = el('button', `av-btn${c.kind ? ` av-btn--${c.kind}` : ''}`, c.label);
+          b.type = 'button';
+          b.addEventListener('click', () => answer?.(c.value));
+          return b;
+        }),
+      );
+      // Escape closes the box without a click: that answer is the fallback.
+      box.onclose = () => answer?.(fallback);
+      box.showModal();
+      (row.querySelector<HTMLElement>('.av-btn--primary') ?? row.querySelector<HTMLElement>('.av-btn'))?.focus();
+    });
   }
 
   /* --- writing ------------------------------------------------------------ */
@@ -932,20 +996,35 @@ import { AUTHOR } from '../../consts';
     view.classList.remove('is-writing');
   }
 
-  /** Ask before an unsaved edit is thrown away. True means go ahead. */
-  function mayDiscard(): boolean {
-    return !writing?.dirty || confirm('Discard the changes you have not saved?');
+  /**
+   * Before leaving an edit: nothing to lose, go ahead; otherwise ask whether
+   * to save it, throw it away, or stay. True means go ahead.
+   */
+  async function settleUnsaved(): Promise<boolean> {
+    if (!writing?.dirty) return true;
+    const choice = await ask(
+      'You have changes that are not saved yet.',
+      [
+        { label: 'Save', value: 'save', kind: 'primary' },
+        { label: 'Discard changes', value: 'discard', kind: 'danger' },
+        { label: 'Keep editing', value: 'keep' },
+      ],
+      'keep',
+    );
+    if (choice === 'save') return saveWriting();
+    return choice === 'discard';
   }
 
-  async function saveWriting(): Promise<void> {
-    if (!writing) return;
+  /** Save the edit. True when it was saved. */
+  async function saveWriting(): Promise<boolean> {
+    if (!writing) return false;
     const view = view$();
     const status = $<HTMLElement>('[data-write-status]', view)!;
     const btn = $<HTMLButtonElement>('[data-write-save]', view)!;
     const content = currentText();
     if (!content.trim()) {
       status.textContent = 'There is nothing to save.';
-      return;
+      return false;
     }
     btn.disabled = true;
     status.textContent = 'Saving…';
@@ -961,23 +1040,37 @@ import { AUTHOR } from '../../consts';
       stopWriting();
       render();
       openItem(body, false);
+      return true;
     } catch (err) {
       status.textContent = `Not saved: ${(err as Error).message}`;
+      return false;
     } finally {
       btn.disabled = false;
     }
   }
 
-  function cancelWriting(): void {
-    if (!writing || !mayDiscard()) return;
-    const it = writing.item;
-    stopWriting();
-    openItem(it, false);
+  async function cancelWriting(): Promise<void> {
+    if (!writing) return;
+    if (!(await settleUnsaved())) return;
+    // A Save answer has already reopened the saved version.
+    if (writing) {
+      const it = writing.item;
+      stopWriting();
+      openItem(it, false);
+    }
   }
 
   async function undoEdit(): Promise<void> {
     if (!current) return;
-    if (!confirm(`Go back to the version of “${current.title}” from before the last save?`)) return;
+    const choice = await ask(
+      `Go back to the version of “${current.title}” from before the last save?`,
+      [
+        { label: 'Go back', value: 'undo', kind: 'primary' },
+        { label: 'Keep this version', value: 'keep' },
+      ],
+      'keep',
+    );
+    if (choice !== 'undo') return;
     const res = await api(`items/${current.id}/undo`, { method: 'POST' });
     const body = await res.json();
     if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
@@ -1003,7 +1096,15 @@ import { AUTHOR } from '../../consts';
 
   async function remove(): Promise<void> {
     if (!current) return;
-    if (!confirm(`Delete “${current.title}” from ${current.research}? This cannot be undone.`)) return;
+    const choice = await ask(
+      `Delete “${current.title}” from ${current.research}? This cannot be undone.`,
+      [
+        { label: 'Delete', value: 'delete', kind: 'danger' },
+        { label: 'Keep it', value: 'keep' },
+      ],
+      'keep',
+    );
+    if (choice !== 'delete') return;
     const res = await api(`items/${current.id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `HTTP ${res.status}`);
     const gone = current.id;
@@ -1274,9 +1375,15 @@ import { AUTHOR } from '../../consts';
       const it = items.find((i) => i.id === e.state.artifact);
       if (it) openItem(it, false);
     } else if (view.open) {
-      if (writing?.dirty && current && !confirm('Discard the changes you have not saved?')) {
-        // Stay: put the step Back just took away.
+      if (writing?.dirty && current) {
+        // Back cannot be held while the question is asked, so put the step
+        // it took away straight back, then ask. Leaving is a second Back.
         history.pushState({ artifact: current.id }, '', `${location.pathname}#${current.id}`);
+        void settleUnsaved().then((go) => {
+          if (!go) return;
+          stopWriting();
+          history.back();
+        });
         return;
       }
       stopWriting();
