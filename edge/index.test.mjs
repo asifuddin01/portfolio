@@ -167,6 +167,43 @@ test('a link is kept with its research, and a claude.ai link is named for what i
   assert.equal(made.title, 'Claude artifact');
 });
 
+const paste = (body) => ({
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+test('pasted HTML is saved as a page, titled from its <title>', async () => {
+  const html = '<!doctype html><title>Pasted Blueprint</title><h1>Stage 2</h1>';
+  const made = await (await call('/artifacts/private/api/items', paste({ research: 'HCGT-PG', content: html }))).json();
+  assert.equal(made.kind, 'html');
+  assert.equal(made.title, 'Pasted Blueprint');
+  assert.equal(made.name, 'pasted-blueprint.html');
+  const res = await call(`/artifacts/private/file/${made.id}`);
+  assert.match(res.headers.get('content-security-policy'), /^sandbox allow-scripts/);
+  assert.equal(await res.text(), html);
+});
+
+test('pasted Markdown is saved as notes, titled from its first heading', async () => {
+  const made = await (await call('/artifacts/private/api/items', paste({ research: 'CiteProof', content: '# Kappa plan\n\nTwenty pairs.', format: 'markdown' }))).json();
+  assert.equal(made.kind, 'markdown');
+  assert.equal(made.title, 'Kappa plan');
+});
+
+test('an empty paste is refused, not saved', async () => {
+  const res = await call('/artifacts/private/api/items', paste({ research: 'X', content: '   ' }));
+  assert.equal(res.status, 400);
+});
+
+test('the inbox takes pasted code as well as files', async () => {
+  const res = await call('/api/artifacts/inbox', {
+    ...paste({ research: 'HCGT-PG', content: '<title>From Cowork, pasted</title>' }),
+    headers: { 'content-type': 'application/json', authorization: 'Bearer inbox-key-for-tests' },
+  }, null);
+  assert.equal(res.status, 201);
+  assert.equal((await res.json()).title, 'From Cowork, pasted');
+});
+
 test('a link that is not http(s) is refused', async () => {
   const res = await call('/artifacts/private/api/items', {
     method: 'POST',

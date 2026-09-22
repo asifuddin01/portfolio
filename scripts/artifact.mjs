@@ -5,9 +5,11 @@
  *   npm run artifact -- "HCGT-PG" blueprint.html figure.svg notes.md
  *   npm run artifact -- "HCGT-PG" https://claude.ai/artifact/…  --title "Blueprint (Claude)"
  *   npm run artifact -- "CiteProof" report.pdf --note "first agreement figure"
+ *   pbpaste | npm run artifact -- "HCGT-PG" -        (the clipboard's HTML)
  *
  * The first argument is the research the artifacts belong to; a new name
- * starts a new shelf. Everything after it is a file path or an http(s) link.
+ * starts a new shelf. Everything after it is a file path, an http(s) link, or
+ * `-` for code on standard input (HTML, or Markdown when it has no tags).
  * --title applies when a single item is sent; --note applies to all of them.
  *
  * This goes through the inbox, which is outside Cloudflare Access because a
@@ -54,7 +56,21 @@ let failures = 0;
 for (const target of targets) {
   const isLink = /^https?:\/\//i.test(target);
   let init;
-  if (isLink) {
+  if (target === '-') {
+    const chunks = [];
+    for await (const c of process.stdin) chunks.push(c);
+    const content = Buffer.concat(chunks).toString('utf8');
+    init = {
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        research,
+        content,
+        format: /<\/?[a-z!][^>]*>/i.test(content) ? 'html' : 'markdown',
+        title: single ? flags.title : undefined,
+        note: flags.note,
+      }),
+    };
+  } else if (isLink) {
     init = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ research, url: target, title: single ? flags.title : undefined, note: flags.note }),

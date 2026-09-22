@@ -33,9 +33,14 @@ interface Props {
   /** Keeps a page out of search results. For routes behind Cloudflare Access,
       which crawlers cannot reach anyway but should not be advertised. */
   noindex?: boolean;
+  /** Soft navigation between pages. Off for a page that owns the Back
+      button itself (the archive's viewer), since the router would answer
+      Back by re-rendering the page instead of letting the page close what
+      it opened. */
+  router?: boolean;
 }
 
-const { title, description, folio, image, type, noindex } = Astro.props;
+const { title, description, folio, image, type, noindex, router = true } = Astro.props;
 
 /**
  * What the search index files this page under. Derived from the path, so a new
@@ -69,7 +74,7 @@ const listedTitle =
 <html lang="en">
   <head>
     <BaseHead title={title} description={description} image={image} type={type} noindex={noindex} />
-    <ClientRouter />
+    {router && <ClientRouter />}
     <!-- No-flash theme + the `js` gate. Both must land before first paint:
          without `js`, motion.css leaves every element visible, so a broken
          or disabled script can never blank the page.

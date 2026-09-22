@@ -100,6 +100,7 @@ export default {
 
       return env.ASSETS.fetch(request);
     } catch (err) {
+      if (err?.status) return oops(err.status, 'bad-request', err.message);
       console.error(err);
       return oops(500, 'server', String(err?.message ?? err));
     }
@@ -172,6 +173,11 @@ async function create(request, env) {
     } catch {
       return oops(400, 'bad-json', 'The body is not JSON.');
     }
+    // Pasted code: the artifact's HTML (or Markdown) as text, saved exactly as
+    // an uploaded file would be. For the page's paste box, and for anything
+    // that has the code in hand and no file to attach.
+    if (typeof body.content === 'string') return json(await pasted(env, body), 201);
+
     const url = cleanUrl(body.url);
     if (!url) return oops(400, 'bad-url', 'A link has to start with http:// or https:// and be under 400 characters.');
     const item = await store(env, {
@@ -211,6 +217,30 @@ async function create(request, env) {
   }
 
   return oops(415, 'type', 'Send a file as multipart/form-data, or a link as JSON.');
+}
+
+async function pasted(env, body) {
+  const src = body.content;
+  if (!src.trim()) throw Object.assign(new Error('There is no code to save.'), { status: 400 });
+  const bytes = new TextEncoder().encode(src);
+  if (bytes.length > MAX_BYTES) throw Object.assign(new Error('Pasted code is over 25 MB.'), { status: 413 });
+  const markdown = body.format === 'markdown';
+  const [kind, mime] = markdown ? KINDS.md : KINDS.html;
+  const title =
+    text(body.title) ||
+    (markdown ? src.match(/^#\s+(.+)$/m)?.[1]?.trim() : htmlTitle(bytes)) ||
+    (markdown ? 'Pasted notes' : 'Pasted page');
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'pasted';
+  return store(env, {
+    kind,
+    mime,
+    research: body.research,
+    title,
+    note: body.note,
+    name: `${slug}.${markdown ? 'md' : 'html'}`,
+    size: bytes.length,
+    bytes,
+  });
 }
 
 async function edit(request, env, id) {

@@ -22,6 +22,7 @@ import { AUTHOR } from '../../consts';
   description="The private archive of working documents from the research in progress."
   folio="A"
   noindex
+  router={false}
 >
   <div class="codex av" id="vault" data-state="loading">
     <header class="av-head">
@@ -53,6 +54,7 @@ import { AUTHOR } from '../../consts';
           <legend class="av-label">Add</legend>
           <label><input type="radio" name="mode" value="files" checked /> <span>Files</span></label>
           <label><input type="radio" name="mode" value="link" /> <span>A link</span></label>
+          <label><input type="radio" name="mode" value="code" /> <span>Paste code</span></label>
         </fieldset>
 
         <label class="av-drop av-field--wide" data-when="files" data-drop>
@@ -60,6 +62,12 @@ import { AUTHOR } from '../../consts';
           <span class="av-drop-text" data-drop-text>
             Drop files here, or <u>choose them</u>. HTML, PDF, SVG, images, Markdown, anything up to 25&nbsp;MB.
           </span>
+        </label>
+
+        <label class="av-field av-field--wide" data-when="code" hidden>
+          <span class="av-label">Code <em data-code-kind>HTML or Markdown</em></span>
+          <textarea name="code" rows="14" spellcheck="false" autocomplete="off" autocapitalize="off"
+            placeholder="Paste the artifact's HTML here: everything from <!doctype html> to </html>. Markdown works too."></textarea>
         </label>
 
         <label class="av-field av-field--wide" data-when="link" hidden>
@@ -143,7 +151,8 @@ import { AUTHOR } from '../../consts';
     margin-bottom: 1.5rem;
   }
   .av-filter,
-  .av-field input {
+  .av-field input,
+  .av-field textarea {
     font: inherit;
     font-size: var(--t-sm);
     color: var(--ink);
@@ -154,6 +163,17 @@ import { AUTHOR } from '../../consts';
     width: 100%;
   }
   .av-filter { flex: 1 1 16rem; width: auto; }
+  .av-field textarea {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.55;
+    min-height: 16rem;
+    resize: vertical;
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+  }
+  .av-field textarea:focus-visible { outline: 2px solid var(--fundus); outline-offset: 1px; }
   .av-filter:focus-visible,
   .av-field input:focus-visible { outline: 2px solid var(--fundus); outline-offset: 1px; }
 
@@ -472,9 +492,14 @@ import { AUTHOR } from '../../consts';
       }
       setStatus('');
       render();
+      // A link straight to an artifact (#id) opens it as a step on top of
+      // the shelves, so Back from it lands on the archive, not off the site.
       const wanted = location.hash.slice(1);
       const hit = wanted && items.find((i) => i.id === wanted);
-      if (hit) openItem(hit);
+      if (hit) {
+        history.replaceState(null, '', location.pathname);
+        openItem(hit);
+      }
     } catch (err) {
       vault?.setAttribute('data-state', 'error');
       if ((err as { expired?: boolean }).expired) {
@@ -563,13 +588,22 @@ import { AUTHOR } from '../../consts';
 
   /* --- the viewer --------------------------------------------------------- */
 
-  function setHash(id: string | null): void {
-    const url = id ? `${location.pathname}#${id}` : location.pathname;
-    // Keep the router's state object, or a later Back turns into a full reload.
-    history.replaceState(history.state, '', url);
-  }
+  /**
+   * An open artifact is a step in the browser's history, so Back — the
+   * button, the phone's swipe, Android's back key — closes it and returns to
+   * the shelves, which is where a reader expects Back to go. Without the step,
+   * Back left the archive altogether and landed pages earlier.
+   *
+   * The step carries `{ artifact: id }`. Closing by any other means (the
+   * Close button, Escape, a delete) goes back through history too, so the
+   * step is removed rather than left behind for a later Back to trip over.
+   * This page runs without the client router (router={false} below), so no
+   * one else answers these popstate events.
+   */
+  const isOurs = (state: unknown): state is { artifact: string } =>
+    !!state && typeof (state as { artifact?: unknown }).artifact === 'string';
 
-  function openItem(it: Item): void {
+  function openItem(it: Item, record = true): void {
     const view = $<HTMLDialogElement>('[data-view]');
     if (!view) return;
     current = it;
@@ -585,8 +619,20 @@ import { AUTHOR } from '../../consts';
 
     const body = $<HTMLElement>('[data-view-body]', view)!;
     body.replaceChildren(content(it));
+    if (record) {
+      const url = `${location.pathname}#${it.id}`;
+      // A second artifact opened over the first (after an edit) replaces the
+      // step instead of stacking another one.
+      if (view.open && isOurs(history.state)) history.replaceState({ artifact: it.id }, '', url);
+      else history.pushState({ artifact: it.id }, '', url);
+    }
     if (!view.open) view.showModal();
-    setHash(it.id);
+  }
+
+  /** Close as Back would: take the step back, and let popstate close it. */
+  function requestClose(): void {
+    if (isOurs(history.state)) history.back();
+    else $<HTMLDialogElement>('[data-view]')?.close();
   }
 
   function content(it: Item): HTMLElement {
@@ -663,7 +709,7 @@ import { AUTHOR } from '../../consts';
     // Unload the frame, so an artifact's scripts stop when it is closed.
     $('[data-view-body]', view ?? document)?.replaceChildren();
     current = null;
-    setHash(null);
+    if (location.hash && !isOurs(history.state)) history.replaceState(null, '', location.pathname);
   }
 
   async function saveEdit(form: HTMLFormElement): Promise<void> {
@@ -688,7 +734,7 @@ import { AUTHOR } from '../../consts';
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `HTTP ${res.status}`);
     const gone = current.id;
     items = items.filter((i) => i.id !== gone);
-    $<HTMLDialogElement>('[data-view]')?.close();
+    requestClose();
     render();
   }
 
@@ -709,15 +755,46 @@ import { AUTHOR } from '../../consts';
     });
   }
 
-  function mode(form: HTMLFormElement): 'files' | 'link' {
-    return (new FormData(form).get('mode') as 'files' | 'link') ?? 'files';
+  type Mode = 'files' | 'link' | 'code';
+  function mode(form: HTMLFormElement): Mode {
+    return (new FormData(form).get('mode') as Mode) ?? 'files';
   }
 
   function syncMode(form: HTMLFormElement): void {
     const m = mode(form);
     for (const node of form.querySelectorAll<HTMLElement>('[data-when]')) node.hidden = node.dataset.when !== m;
-    const url = form.elements.namedItem('url') as HTMLInputElement;
-    url.required = m === 'link';
+    (form.elements.namedItem('url') as HTMLInputElement).required = m === 'link';
+    (form.elements.namedItem('code') as HTMLTextAreaElement).required = m === 'code';
+    showCodeKind(form);
+  }
+
+  /**
+   * HTML or Markdown, decided from the code itself: any tag at all makes it a
+   * page. An artifact's HTML always has tags; notes written in Markdown
+   * almost never do, and when they do, a page is still the right way to show
+   * them.
+   */
+  const looksLikeHtml = (t: string) => /<\/?[a-z!][^>]*>/i.test(t);
+
+  function showCodeKind(form: HTMLFormElement): void {
+    const code = (form.elements.namedItem('code') as HTMLTextAreaElement).value;
+    const label = $<HTMLElement>('[data-code-kind]', form);
+    if (!label) return;
+    label.textContent = !code.trim()
+      ? 'HTML or Markdown'
+      : looksLikeHtml(code)
+        ? 'saved as a page (HTML)'
+        : 'saved as notes (Markdown)';
+  }
+
+  /** Opens the add form on "Paste code" with this code in the box. */
+  function startPaste(code: string): void {
+    const form = $<HTMLFormElement>('[data-add]');
+    if (!form) return;
+    toggleAdd(true);
+    (form.querySelector('input[value="code"]') as HTMLInputElement).checked = true;
+    (form.elements.namedItem('code') as HTMLTextAreaElement).value = code;
+    syncMode(form);
   }
 
   function showChosen(form: HTMLFormElement): void {
@@ -743,7 +820,21 @@ import { AUTHOR } from '../../consts';
     const failed: string[] = [];
 
     try {
-      if (mode(form) === 'link') {
+      if (mode(form) === 'code') {
+        const code = String(data.get('code') ?? '');
+        if (!code.trim()) throw new Error('Paste the code first.');
+        progress.textContent = 'Saving the code…';
+        const res = await api('items', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            research, title, note, content: code, format: looksLikeHtml(code) ? 'html' : 'markdown',
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+        added.push(body);
+      } else if (mode(form) === 'link') {
         progress.textContent = 'Adding the link…';
         const res = await api('items', {
           method: 'POST',
@@ -823,6 +914,9 @@ import { AUTHOR } from '../../consts';
     $('[data-add-toggle]')?.addEventListener('click', () => toggleAdd());
 
     const form = $<HTMLFormElement>('[data-add]')!;
+    form.addEventListener('input', (e) => {
+      if ((e.target as HTMLElement).getAttribute('name') === 'code') showCodeKind(form);
+    });
     form.addEventListener('change', (e) => {
       if ((e.target as HTMLInputElement).name === 'mode') syncMode(form);
       if ((e.target as HTMLInputElement).name === 'files') showChosen(form);
@@ -838,7 +932,12 @@ import { AUTHOR } from '../../consts';
 
     const view = $<HTMLDialogElement>('[data-view]')!;
     view.addEventListener('close', closeView);
-    $('[data-view-close]', view)?.addEventListener('click', () => view.close());
+    $('[data-view-close]', view)?.addEventListener('click', requestClose);
+    // Escape goes through history too, so the step it opened is taken back.
+    view.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      requestClose();
+    });
     $('[data-view-copy]', view)?.addEventListener('click', async (e) => {
       if (!current) return;
       const btn = e.currentTarget as HTMLButtonElement;
@@ -871,19 +970,36 @@ import { AUTHOR } from '../../consts';
   }
 
   /**
-   * Pasting a link anywhere on the page, outside a field, starts adding it.
+   * Pasting anywhere on the page, outside a field, starts adding what was
+   * pasted: a link opens "A link", an artifact's HTML opens "Paste code".
    * Bound once for the whole session and a no-op on every other page, since
    * this module is not re-run on a soft navigation back here.
    */
+  /** Back and Forward move between the shelves and an open artifact. */
+  window.addEventListener('popstate', (e) => {
+    const view = $<HTMLDialogElement>('[data-view]');
+    if (!view) return;
+    if (isOurs(e.state)) {
+      const it = items.find((i) => i.id === e.state.artifact);
+      if (it) openItem(it, false);
+    } else if (view.open) {
+      view.close();
+    }
+  });
+
   document.addEventListener('paste', (e) => {
     const form = $<HTMLFormElement>('[data-add]');
     if (!form || (e.target as HTMLElement).closest?.('input, textarea, [contenteditable]')) return;
     const text = e.clipboardData?.getData('text')?.trim() ?? '';
-    if (!/^https?:\/\/\S+$/.test(text)) return;
-    toggleAdd(true);
-    (form.querySelector('input[value="link"]') as HTMLInputElement).checked = true;
-    syncMode(form);
-    (form.elements.namedItem('url') as HTMLInputElement).value = text;
+    if (/^https?:\/\/\S+$/.test(text)) {
+      toggleAdd(true);
+      (form.querySelector('input[value="link"]') as HTMLInputElement).checked = true;
+      syncMode(form);
+      (form.elements.namedItem('url') as HTMLInputElement).value = text;
+    } else if (text.length > 20 && looksLikeHtml(text)) {
+      e.preventDefault();
+      startPaste(text);
+    }
   });
 
   document.addEventListener('astro:page-load', init);
