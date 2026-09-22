@@ -72,7 +72,15 @@ import { AUTHOR } from '../../consts';
 
         <label class="av-field av-field--wide" data-when="link" hidden>
           <span class="av-label">Link</span>
-          <input name="url" type="url" inputmode="url" placeholder="https://claude.ai/artifact/…" />
+          <input name="url" type="url" inputmode="url" placeholder="https://arxiv.org/pdf/… or any page, PDF or image" />
+        </label>
+
+        <label class="av-check av-field--wide" data-when="link" hidden>
+          <input type="checkbox" name="copy" checked />
+          <span>
+            <strong>Keep a copy here.</strong> The file the link points at is saved, so it opens
+            here even if the original moves. claude.ai links stay links: paste their code instead.
+          </span>
         </label>
 
         <label class="av-field">
@@ -106,6 +114,7 @@ import { AUTHOR } from '../../consts';
       <div class="av-view-actions">
         <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-open>Open ↗</a>
         <a class="av-btn" data-view-download>Download</a>
+        <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-source hidden>Source ↗</a>
         <button class="av-btn" type="button" data-view-copy>Copy link</button>
         <button class="av-btn" type="button" data-view-edit>Edit</button>
         <button class="av-btn av-btn--danger" type="button" data-view-delete>Delete</button>
@@ -227,6 +236,9 @@ import { AUTHOR } from '../../consts';
     color: var(--ink-soft);
   }
   .av-label em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: 0.75; }
+  .av-check { display: flex; gap: 0.6rem; align-items: baseline; font-size: var(--t-sm); color: var(--ink-soft); cursor: pointer; }
+  .av-check[hidden] { display: none; }
+  .av-check strong { color: var(--ink); font-weight: 500; }
   .av-mode { border: 0; margin: 0; padding: 0; display: flex; gap: 1.2rem; align-items: center; }
   .av-mode legend { float: left; margin-right: 0.4rem; }
   .av-mode label { display: inline-flex; gap: 0.4rem; align-items: center; cursor: pointer; }
@@ -574,7 +586,11 @@ import { AUTHOR } from '../../consts';
       btn.append(img);
     }
     btn.append(el('span', 'av-kind', KIND_LABEL[it.kind] ?? it.kind), el('span', 'av-title', it.title));
-    const meta = [date(it.added), it.kind === 'link' ? hostOf(it.url) : bytes(it.size)].filter(Boolean).join(' · ');
+    const meta = [
+      date(it.added),
+      it.kind === 'link' ? hostOf(it.url) : bytes(it.size),
+      it.kind !== 'link' && it.url ? `from ${hostOf(it.url)}` : '',
+    ].filter(Boolean).join(' · ');
     btn.append(el('span', 'av-meta', meta));
     if (it.note) btn.append(el('span', 'av-note', it.note));
     btn.addEventListener('click', () => openItem(it));
@@ -616,6 +632,10 @@ import { AUTHOR } from '../../consts';
     open.href = it.kind === 'link' ? it.url ?? '#' : fileUrl(it);
     download.hidden = it.kind === 'link';
     download.href = `${fileUrl(it)}?download`;
+    // A kept copy still knows where it came from.
+    const source = $<HTMLAnchorElement>('[data-view-source]', view)!;
+    source.hidden = it.kind === 'link' || !it.url;
+    if (it.url) source.href = it.url;
 
     const body = $<HTMLElement>('[data-view-body]', view)!;
     body.replaceChildren(content(it));
@@ -818,6 +838,8 @@ import { AUTHOR } from '../../consts';
     submit.disabled = true;
     const added: Item[] = [];
     const failed: string[] = [];
+    /** Things that were added, but not quite as asked. */
+    const notes: string[] = [];
 
     try {
       if (mode(form) === 'code') {
@@ -835,15 +857,19 @@ import { AUTHOR } from '../../consts';
         if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
         added.push(body);
       } else if (mode(form) === 'link') {
-        progress.textContent = 'Adding the link…';
+        progress.textContent = data.get('copy') === 'on' ? 'Fetching a copy…' : 'Adding the link…';
         const res = await api('items', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ research, title, note, url: data.get('url') }),
+          body: JSON.stringify({ research, title, note, url: data.get('url'), copy: data.get('copy') === 'on' }),
         });
         const body = await res.json();
         if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
         added.push(body);
+        // Kept as a link when a copy was asked for and could not be made:
+        // say so, with the reason, rather than let it pass as a copy.
+        if (body.copied === false) notes.push(`Saved as a link, no copy kept: ${body.reason}`);
+        else if (body.copied) notes.push('A copy is kept here.');
       } else {
         const files = [...(($<HTMLInputElement>('[data-files]', form)!.files) ?? [])];
         if (files.length === 0) throw new Error('Choose at least one file.');
@@ -881,6 +907,7 @@ import { AUTHOR } from '../../consts';
     }
     progress.textContent = [
       added.length ? `Added ${added.length} to ${research}.` : '',
+      ...notes,
       failed.length ? `Not added: ${failed.join('; ')}` : '',
     ].filter(Boolean).join(' ');
     if (added.length && !failed.length) {

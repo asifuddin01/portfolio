@@ -17,6 +17,23 @@ import { generateKeyPairSync, createSign, webcrypto, timingSafeEqual } from 'nod
 webcrypto.subtle.timingSafeEqual ??= (a, b) =>
   a.byteLength === b.byteLength && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
+/**
+ * The network, as far as "keep a copy" can see it. Staged responses only; any
+ * other https request fails loudly, so no test ever reaches a real site.
+ */
+const realFetch = globalThis.fetch;
+const REMOTE = new Map();
+const fetched = [];
+globalThis.fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : input.url;
+  if (REMOTE.has(url)) {
+    fetched.push(url);
+    return REMOTE.get(url)();
+  }
+  if (/^https?:/.test(url)) throw new TypeError(`network is off in tests: ${url}`);
+  return realFetch(input, init);
+};
+
 const { default: worker } = await import('./index.js');
 
 const TEAM = 'test-team.cloudflareaccess.com';
@@ -202,6 +219,76 @@ test('the inbox takes pasted code as well as files', async () => {
   }, null);
   assert.equal(res.status, 201);
   assert.equal((await res.json()).title, 'From Cowork, pasted');
+});
+
+const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a]);
+REMOTE.set('https://arxiv.org/pdf/2401.00001.pdf', () =>
+  new Response(PDF, { headers: { 'content-type': 'application/pdf' } }));
+REMOTE.set('https://example.org/notes/index', () =>
+  new Response('<!doctype html><html><head><title>Lab notes</title><link rel="stylesheet" href="style.css"></head><body>x</body></html>',
+    { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+REMOTE.set('https://example.org/gone.pdf', () => new Response('nope', { status: 404 }));
+REMOTE.set('https://example.org/checked', () =>
+  new Response('<html><head><title>Just a moment...</title></head></html>', { headers: { 'content-type': 'text/html' } }));
+REMOTE.set('https://example.org/data.zip', () =>
+  new Response(new Uint8Array([80, 75, 3, 4]), { headers: { 'content-type': 'application/zip' } }));
+
+REMOTE.set('https://arxiv.org/pdf/1706.03762', () =>
+  new Response(PDF, { headers: { 'content-type': 'application/pdf' } }));
+
+const keep = (url, extra = {}) => paste({ research: 'Copies', url, copy: true, ...extra });
+
+test('keep a copy: a PDF link becomes a PDF that opens here, with its source kept', async () => {
+  const made = await (await call('/artifacts/private/api/items', keep('https://arxiv.org/pdf/2401.00001.pdf'))).json();
+  assert.equal(made.copied, true);
+  assert.equal(made.kind, 'pdf');
+  assert.equal(made.name, '2401.00001.pdf');
+  assert.equal(made.url, 'https://arxiv.org/pdf/2401.00001.pdf');
+  const res = await call(`/artifacts/private/file/${made.id}`);
+  assert.equal(res.headers.get('content-type'), 'application/pdf');
+  assert.deepEqual(new Uint8Array(await res.arrayBuffer()), PDF);
+});
+
+test('keep a copy: an arXiv id is a name, not a file extension', async () => {
+  const made = await (await call('/artifacts/private/api/items', keep('https://arxiv.org/pdf/1706.03762'))).json();
+  assert.equal(made.kind, 'pdf');
+  assert.equal(made.name, '1706.03762.pdf');
+});
+
+test('keep a copy: a page keeps loading its own styles, through a <base> back to the source', async () => {
+  const made = await (await call('/artifacts/private/api/items', keep('https://example.org/notes/index'))).json();
+  assert.equal(made.kind, 'html');
+  assert.equal(made.title, 'Lab notes');
+  const body = await (await call(`/artifacts/private/file/${made.id}`)).text();
+  assert.match(body, /<head><base href="https:\/\/example\.org\/notes\/index">/);
+});
+
+test('keep a copy: claude.ai is not fetched at all, and the answer says what to do instead', async () => {
+  const before = fetched.length;
+  const made = await (await call('/artifacts/private/api/items', keep('https://claude.ai/artifact/FXzWT5sewKkPHHBsY7tAPZ'))).json();
+  assert.equal(fetched.length, before, 'no request to claude.ai');
+  assert.equal(made.kind, 'link');
+  assert.equal(made.copied, false);
+  assert.match(made.reason, /Paste code/);
+});
+
+test('keep a copy: an error page, a bot check or an unknown file stays a link, never a wrong copy', async () => {
+  for (const [url, why] of [
+    ['https://example.org/gone.pdf', /404/],
+    ['https://example.org/checked', /bot check/],
+    ['https://example.org/data.zip', /does not open/],
+  ]) {
+    const made = await (await call('/artifacts/private/api/items', keep(url))).json();
+    assert.equal(made.kind, 'link', url);
+    assert.match(made.reason, why, url);
+  }
+});
+
+test('without "keep a copy", a link is only a link and nothing is fetched', async () => {
+  const before = fetched.length;
+  const made = await (await call('/artifacts/private/api/items', paste({ research: 'X', url: 'https://arxiv.org/pdf/2401.00001.pdf' }))).json();
+  assert.equal(made.kind, 'link');
+  assert.equal(fetched.length, before);
 });
 
 test('a link that is not http(s) is refused', async () => {

@@ -7,6 +7,10 @@
  *   npm run artifact -- "CiteProof" report.pdf --note "first agreement figure"
  *   pbpaste | npm run artifact -- "HCGT-PG" -        (the clipboard's HTML)
  *
+ * A link keeps a copy of what it points at (a PDF, an image, a page), so it
+ * opens in the archive even if the original moves. --link-only keeps just
+ * the link. claude.ai links always stay links: claude.ai refuses servers.
+ *
  * The first argument is the research the artifacts belong to; a new name
  * starts a new shelf. Everything after it is a file path, an http(s) link, or
  * `-` for code on standard input (HTML, or Markdown when it has no tags).
@@ -36,6 +40,7 @@ const flags = {};
 const rest = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--title' || args[i] === '--note') flags[args[i].slice(2)] = args[++i];
+  else if (args[i] === '--link-only') flags.linkOnly = true;
   else rest.push(args[i]);
 }
 const [research, ...targets] = rest;
@@ -73,7 +78,8 @@ for (const target of targets) {
   } else if (isLink) {
     init = {
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ research, url: target, title: single ? flags.title : undefined, note: flags.note }),
+      // A copy is kept by default, as on the page; --link-only keeps just the link.
+      body: JSON.stringify({ research, url: target, copy: !flags.linkOnly, title: single ? flags.title : undefined, note: flags.note }),
     };
   } else {
     let bytes;
@@ -108,7 +114,8 @@ for (const target of targets) {
     failures++;
     continue;
   }
-  console.log(`✓ ${body.research} · ${body.title}`);
+  console.log(`✓ ${body.research} · ${body.title}${body.copied ? '  (copy kept)' : ''}`);
+  if (body.copied === false) console.log(`  saved as a link: ${body.reason}`);
   console.log(`  https://asifuddin.com/artifacts/private#${body.id}`);
 }
 

@@ -180,6 +180,30 @@ async function create(request, env) {
 
     const url = cleanUrl(body.url);
     if (!url) return oops(400, 'bad-url', 'A link has to start with http:// or https:// and be under 400 characters.');
+
+    // "Keep a copy": fetch what the link points at and keep it as a file, so
+    // it opens here even when the source moves or disappears. When that is
+    // not possible the link is kept as a link, and the answer says why.
+    let why = null;
+    if (body.copy) {
+      const got = await fetchCopy(url);
+      if (got.ok) {
+        const title = text(body.title) || (got.kind === 'html' ? htmlTitle(got.bytes) : '') || titleFromName(got.name);
+        const item = await store(env, {
+          kind: got.kind,
+          mime: got.mime,
+          research: body.research,
+          title,
+          note: body.note,
+          name: got.name,
+          size: got.bytes.byteLength,
+          bytes: got.bytes,
+          url,
+        });
+        return json({ ...item, copied: true }, 201);
+      }
+      why = got.reason;
+    }
     const item = await store(env, {
       kind: 'link',
       research: body.research,
@@ -187,7 +211,7 @@ async function create(request, env) {
       note: body.note,
       url,
     });
-    return json(item, 201);
+    return json(why ? { ...item, copied: false, reason: why } : item, 201);
   }
 
   if (type.includes('multipart/form-data')) {
@@ -217,6 +241,103 @@ async function create(request, env) {
   }
 
   return oops(415, 'type', 'Send a file as multipart/form-data, or a link as JSON.');
+}
+
+/** Content types a copy can be kept as, when the URL has no telling extension. */
+const TYPES = [
+  [/^text\/html/, 'html'],
+  [/^application\/xhtml/, 'htm'],
+  [/^image\/svg/, 'svg'],
+  [/^image\/png/, 'png'],
+  [/^image\/jpe?g/, 'jpg'],
+  [/^image\/webp/, 'webp'],
+  [/^image\/gif/, 'gif'],
+  [/^image\/avif/, 'avif'],
+  [/^application\/pdf/, 'pdf'],
+  [/^text\/markdown/, 'md'],
+  [/^text\/(plain|csv)/, 'txt'],
+  [/^application\/json/, 'json'],
+];
+
+/**
+ * Download a link's target for keeping. Refuses rather than keeping the
+ * wrong thing: a bot check, a sign-in page or an error page saved as "the
+ * paper" would be worse than the link it replaced.
+ */
+async function fetchCopy(url) {
+  const no = (reason) => ({ ok: false, reason });
+  const host = new URL(url).hostname;
+  // claude.ai answers every server with a bot check; there is nothing to
+  // fetch, and getting round the check is not something to build.
+  if (host === 'claude.ai' || host.endsWith('.claude.ai')) {
+    return no(
+      "claude.ai doesn't let other servers read artifacts, so this stays a link. For a copy " +
+        'that opens here, paste the artifact\'s code into Paste code.',
+    );
+  }
+
+  let res;
+  try {
+    res = await fetch(url, {
+      redirect: 'follow',
+      headers: { 'user-agent': 'asifuddin.com archive (keeping a copy for its owner)', accept: '*/*' },
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch (err) {
+    return no(`the site did not answer (${err?.name === 'TimeoutError' ? 'timed out' : 'unreachable'}).`);
+  }
+  if (!res.ok) return no(`the site answered ${res.status}, so there was nothing to keep.`);
+  const declared = Number(res.headers.get('content-length') ?? 0);
+  if (declared > MAX_BYTES) return no('the file is over 25 MB, the most a copy can be.');
+
+  // Read with a running count, so an undeclared giant stops at the limit.
+  const chunks = [];
+  let total = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BYTES) {
+      await reader.cancel();
+      return no('the file is over 25 MB, the most a copy can be.');
+    }
+    chunks.push(value);
+  }
+  let bytes = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  if (total === 0) return no('the site sent an empty file.');
+
+  const type = (res.headers.get('content-type') ?? '').toLowerCase();
+  const final = new URL(res.url || url);
+  const last = decodeURIComponent(final.pathname.split('/').filter(Boolean).pop() ?? '');
+  // Only a known extension counts: in "1706.03762" the ".03762" is part of
+  // an arXiv id, not a file type.
+  const found = (last.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
+  const urlExt = KINDS[found] ? found : '';
+  const ext = urlExt || TYPES.find(([re]) => re.test(type))?.[1];
+  if (!ext) return no(`it is a kind of file the archive does not open (${type || 'unknown type'}).`);
+  const [kind, mime] = KINDS[ext];
+
+  if (kind === 'html') {
+    const head = new TextDecoder().decode(bytes.slice(0, 64 * 1024));
+    if (/<title>\s*just a moment|cf-chl|challenge-platform|captcha/i.test(head)) {
+      return no('the site answered with a bot check instead of the page.');
+    }
+    // A page's stylesheets and images are usually relative to where it
+    // lives. A <base> pointing back there keeps them loading in the copy.
+    const src = new TextDecoder().decode(bytes);
+    const base = `<base href="${esc(final.href)}">`;
+    const withBase = /<head[^>]*>/i.test(src) ? src.replace(/<head[^>]*>/i, (m) => m + base) : base + src;
+    bytes = new TextEncoder().encode(withBase);
+  }
+
+  const stem = (urlExt ? last.replace(/\.[^.]+$/, '') : last || final.hostname).replace(/[^\w.-]+/g, '-').slice(0, 80);
+  return { ok: true, bytes, kind, mime, name: `${stem || 'copy'}.${ext}` };
 }
 
 async function pasted(env, body) {
