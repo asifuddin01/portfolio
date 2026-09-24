@@ -1,0 +1,662 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getCollection } from 'astro:content';
+import { AUTHOR } from '../../consts';
+
+/**
+ * Officina AI — write a Python program, trace it, and step through what it
+ * actually did.
+ *
+ * The honest shape of this page:
+ *
+ * **The trace comes from the interpreter.** The program runs on the same
+ * Pyodide /officina serves, in a worker, under src/lib/officina-ai/python/
+ * tracer.py, which records each line, every variable it changed, each
+ * condition with the values it compared, and every call and return — as they
+ * happen. A language model may later explain a trace; it never writes one.
+ *
+ * **Stepping is free.** A program is traced once; Next, Previous, the
+ * scrubber and Play all read the finished trace in memory
+ * (src/lib/officina-ai/trace/store.ts) and never run anything again.
+ *
+ * **It loads Python straight away**, unlike the notebook, which waits for a
+ * Run: somebody who opened this page came to run something, so the 13 MB is
+ * fetched while they read or type rather than after they press Trace.
+ *
+ * The examples are the notebook's Python examples, from the `recipes`
+ * collection, editable from /admin. The "Tracing" group was written to be
+ * stepped through and comes first.
+ */
+const python = (await getCollection('recipes')).find(
+  (r) => r.data.language === 'python' && (import.meta.env.DEV || r.data.status !== 'draft')
+);
+const all = python?.data.examples ?? [];
+const groups = [...new Set(all.map((x) => x.group))].sort(
+  (a, b) => Number(b === 'Tracing') - Number(a === 'Tracing')
+);
+const EXAMPLES = groups.flatMap((group) =>
+  all
+    .filter((x) => x.group === group)
+    .map(({ title, note, code, stdin }) => ({ title, note, group, code, stdin: stdin ?? '' }))
+);
+// `<` escaped so an example containing "</script>" cannot end the data block.
+const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
+---
+<BaseLayout
+  title={`Officina AI — ${AUTHOR}`}
+  description="Write Python, trace it, and step through what it actually did — every line, variable and condition, recorded by the interpreter in your browser."
+  folio="O"
+>
+  <div class="codex oa" id="oa">
+    <header class="oa-head">
+      <p class="oa-kicker" data-reveal><a href="/officina">Officina</a> · AI</p>
+      <h1 class="oa-h1" data-press>Write. Run. Understand.</h1>
+      <p class="oa-lede codex-measure" data-reveal>
+        Write a Python program and press <strong>Trace</strong>. It runs here, in your browser, and every step it
+        takes is recorded as it happens — the line, the variables it changed, what each condition evaluated to and
+        why. Then step through it, forwards and back, at your own pace.
+      </p>
+      <p class="oa-sub" data-reveal>
+        Nothing is uploaded. The trace comes from the interpreter, not from a model: what you see is what ran.
+        <a class="link oa-back" href="/officina">Back to the notebook</a>
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <div class="oa-bench">
+      <div class="oa-bar">
+        <div class="oa-tabs" role="tablist" aria-label="View">
+          <button class="oa-tab" type="button" role="tab" id="oa-tab-code" aria-selected="true" aria-controls="oa-panel-code">Code</button>
+          <button class="oa-tab" type="button" role="tab" id="oa-tab-trace" aria-selected="false" aria-controls="oa-panel-trace">Trace</button>
+        </div>
+        <span class="oa-lang">Python</span>
+        <span class="oa-gap"></span>
+        <button class="oa-btn" type="button" id="oa-examples" aria-haspopup="dialog">Examples</button>
+        <button class="oa-btn oa-btn-go" type="button" id="oa-trace">▶ Trace</button>
+      </div>
+      <p class="oa-status" id="oa-status" role="status"></p>
+
+      <section class="oa-panel" id="oa-panel-code" role="tabpanel" aria-labelledby="oa-tab-code">
+        <div class="oa-editor">
+          <div class="oa-gutter" id="oa-gutter" aria-hidden="true"></div>
+          <textarea id="oa-code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python program"></textarea>
+        </div>
+        <details class="oa-stdin" id="oa-stdin-wrap">
+          <summary>Input <span class="oa-note">— what <code>input()</code> reads, one line per call</span></summary>
+          <textarea id="oa-stdin" spellcheck="false" rows="3" aria-label="Program input"></textarea>
+        </details>
+        <p class="oa-hint">Ctrl/⌘ + Enter traces. In the trace: ← → step, Space plays, and clicking a line jumps to the next time it runs.</p>
+      </section>
+
+      <section class="oa-panel" id="oa-panel-trace" role="tabpanel" aria-labelledby="oa-tab-trace" hidden>
+        <p class="oa-stale" id="oa-stale" hidden>
+          The code has changed since this trace. <button class="oa-linkish" type="button" id="oa-retrace">Trace it again</button>
+        </p>
+        <div id="oa-view"></div>
+        <p class="oa-empty" id="oa-none">Nothing traced yet. Write a program on the Code tab and press Trace.</p>
+      </section>
+    </div>
+
+    {/* The example picker. A dialog rather than a <select>: fifty-odd
+        examples in ten groups made a native menu taller than the window, and
+        this one scrolls inside itself, filters, and closes on Escape — the
+        same picker the notebook uses. */}
+    <dialog class="oa-modal" id="oa-modal" aria-labelledby="oa-modal-title">
+      <div class="oa-modal-head">
+        <h2 class="oa-modal-title" id="oa-modal-title">Examples</h2>
+        <input class="oa-search" type="search" id="oa-search" placeholder="Filter by name or topic…" aria-label="Filter examples" />
+        <button class="oa-btn" type="button" id="oa-modal-close">Close</button>
+      </div>
+      <div class="oa-modal-body" id="oa-modal-body"></div>
+    </dialog>
+
+    <LesionRule />
+
+    <section class="oa-about codex-measure">
+      <h2 class="oa-h2">How this works</h2>
+      <p>
+        Your program runs on CPython compiled to WebAssembly, in a background worker, so a program that never stops
+        cannot freeze the page. A tracer watches it line by line and writes down only what it observes. Conditions
+        are recorded as they are computed, so the values shown are the values the program used — nothing is run a
+        second time to display it.
+      </p>
+      <p>
+        Long programs are stopped at 50,000 steps or 5 seconds, and the trace says it is incomplete rather than
+        pretending otherwise. Explanations from a language model will sit alongside the trace; they will never
+        replace it.
+      </p>
+    </section>
+  </div>
+
+  <script type="application/json" id="oa-data" set:html={data} is:inline />
+</BaseLayout>
+
+<script>
+  import '../../lib/officina-ai/view/trace-view.css';
+  import { PythonRuntime } from '../../lib/officina-ai/python/runtime.ts';
+  import { mountTraceView, type TraceView } from '../../lib/officina-ai/view/trace-view.ts';
+  import type { TraceResult } from '../../lib/officina-ai/trace/schema.ts';
+
+  type Example = { title: string; note: string; group: string; code: string; stdin: string };
+
+  const STORE = 'officina.ai.v1';
+
+  /**
+   * One interpreter for as long as the reader stays on this page. The site
+   * navigates without reloading, so this script outlives the page: leaving
+   * shuts the workers down (each holds a Python heap), and coming back starts
+   * them again.
+   */
+  let runtime: PythonRuntime | null = null;
+  let view: TraceView | null = null;
+
+  function start() {
+    const root = document.getElementById('oa');
+    if (!root) {
+      view?.destroy();
+      view = null;
+      runtime?.dispose();
+      runtime = null;
+      return;
+    }
+    if (root.dataset.ready !== undefined) return;
+    root.dataset.ready = '';
+
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const EXAMPLES: Example[] = JSON.parse($('oa-data')?.textContent || '[]');
+    const codeEl = $<HTMLTextAreaElement>('oa-code');
+    const gutter = $<HTMLElement>('oa-gutter');
+    const stdinEl = $<HTMLTextAreaElement>('oa-stdin');
+    const stdinWrap = $<HTMLDetailsElement>('oa-stdin-wrap');
+    const statusEl = $<HTMLElement>('oa-status');
+    const traceBtn = $<HTMLButtonElement>('oa-trace');
+    const examplesBtn = $<HTMLButtonElement>('oa-examples');
+    const modal = $<HTMLDialogElement>('oa-modal');
+    const modalBody = $<HTMLElement>('oa-modal-body');
+    const modalTitle = $<HTMLElement>('oa-modal-title');
+    const search = $<HTMLInputElement>('oa-search');
+    const viewEl = $<HTMLElement>('oa-view');
+    const staleEl = $<HTMLElement>('oa-stale');
+    const noTrace = $<HTMLElement>('oa-none');
+    const tabs = { code: $<HTMLButtonElement>('oa-tab-code'), trace: $<HTMLButtonElement>('oa-tab-trace') };
+    const panels = { code: $<HTMLElement>('oa-panel-code'), trace: $<HTMLElement>('oa-panel-trace') };
+
+    const debug = import.meta.env.DEV || new URLSearchParams(location.search).has('debug');
+    const rt = (runtime ??= new PythonRuntime({ indexURL: '/pyodide/', debug }));
+    view = null;
+    let tracedSource: string | null = null;
+    let tracedInput: string | null = null;
+    let busy = false;
+
+    const status = (text: string, kind: 'idle' | 'busy' | 'error' = 'idle') => {
+      statusEl.textContent = text;
+      statusEl.dataset.kind = kind;
+    };
+
+    // ── Tabs ──
+    const select = (tab: 'code' | 'trace') => {
+      for (const name of ['code', 'trace'] as const) {
+        tabs[name].setAttribute('aria-selected', String(name === tab));
+        panels[name].hidden = name !== tab;
+      }
+      (tab === 'trace' ? viewEl : codeEl).focus({ preventScroll: true });
+    };
+    tabs.code.addEventListener('click', () => select('code'));
+    tabs.trace.addEventListener('click', () => select('trace'));
+
+    // ── The editor ──
+    const paintGutter = () => {
+      const n = codeEl.value.split('\n').length;
+      gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
+    };
+    const grow = () => {
+      codeEl.style.height = 'auto';
+      codeEl.style.height = `${Math.max(codeEl.scrollHeight, 240)}px`;
+    };
+    const save = () => {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({ code: codeEl.value, stdin: stdinEl.value }));
+      } catch { /* a private window: the work lasts this visit */ }
+    };
+    const markStale = () => {
+      staleEl.hidden = tracedSource === null || (codeEl.value === tracedSource && stdinEl.value === tracedInput);
+    };
+
+    codeEl.addEventListener('input', () => {
+      paintGutter();
+      grow();
+      save();
+      markStale();
+      // An edit supersedes a trace still being made — cancelled, not ignored.
+      if (busy) rt.cancel();
+    });
+    stdinEl.addEventListener('input', () => { save(); markStale(); });
+
+    // Tab indents rather than leaving the editor; Shift+Tab still leaves it.
+    codeEl.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        void trace();
+      } else if (e.key === 'Tab' && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        codeEl.setRangeText('    ', codeEl.selectionStart, codeEl.selectionEnd, 'end');
+        codeEl.dispatchEvent(new Event('input'));
+      }
+    });
+
+    // ── Examples, grouped as the notebook groups them ──
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const renderExamples = (filter = '') => {
+      const q = filter.trim().toLowerCase();
+      const matches = EXAMPLES.filter(
+        (x) => !q || x.title.toLowerCase().includes(q) || x.note.toLowerCase().includes(q) || x.group.toLowerCase().includes(q)
+      );
+      modalTitle.textContent = q ? `Examples — ${matches.length} of ${EXAMPLES.length}` : `Examples — ${EXAMPLES.length}`;
+      const groups = [...new Set(matches.map((x) => x.group))];
+      modalBody.innerHTML =
+        groups
+          .map((g) => `
+            <section class="oa-ex-group">
+              <h3 class="oa-ex-h">${esc(g)}</h3>
+              <ul class="oa-ex-list">${matches
+                .filter((x) => x.group === g)
+                .map((x) => `
+                  <li><button class="oa-ex-btn" type="button" data-ex="${EXAMPLES.indexOf(x)}">
+                    <span class="oa-ex-t">${esc(x.title)}</span>
+                    <span class="oa-ex-n">${esc(x.note)}</span>
+                  </button></li>`)
+                .join('')}</ul>
+            </section>`)
+          .join('') || '<p class="oa-ex-none">Nothing matches that.</p>';
+    };
+    examplesBtn.addEventListener('click', () => {
+      search.value = '';
+      renderExamples();
+      modal.showModal();
+      modalBody.scrollTop = 0;
+    });
+    $<HTMLButtonElement>('oa-modal-close').addEventListener('click', () => modal.close());
+    // A click on the dimmed backdrop lands on the dialog element itself.
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+    search.addEventListener('input', () => renderExamples(search.value));
+    modalBody.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-ex]');
+      const x = b && EXAMPLES[Number(b.dataset.ex)];
+      if (!x) return;
+      modal.close();
+      codeEl.value = x.code;
+      stdinEl.value = x.stdin;
+      stdinWrap.open = Boolean(x.stdin);
+      codeEl.dispatchEvent(new Event('input'));
+      select('code');
+      status(`${x.title}: ${x.note}`);
+    });
+
+    // ── Tracing ──
+    async function trace() {
+      const source = codeEl.value;
+      const input = stdinEl.value;
+      if (!source.trim()) {
+        status('There is no program to trace yet.', 'error');
+        return;
+      }
+      busy = true;
+      traceBtn.disabled = true;
+      status(rt.state === 'ready' ? 'Tracing…' : 'Preparing Python, then tracing…', 'busy');
+
+      const run = await rt.trace({ code: source, stdin: input });
+      view?.destroy();
+      tracedSource = source;
+      tracedInput = input;
+      markStale();
+      noTrace.hidden = true;
+      view = mountTraceView(viewEl, { source, store: run.store });
+      select('trace');
+
+      const result = await run.result;
+      busy = false;
+      traceBtn.disabled = false;
+      if (run.store.length === 0) {
+        // Nothing ran, so there is nothing to step through — only the reason.
+        view.destroy();
+        view = null;
+        noTrace.hidden = false;
+        noTrace.textContent = failure(result);
+        select(result.status === 'syntax' ? 'code' : 'trace');
+        if (result.status === 'syntax' && result.error?.line) caret(result.error.line, result.error.column ?? 1);
+      }
+      status(summary(result, run.cached), result.status === 'ok' ? 'idle' : 'error');
+    }
+
+    function summary(r: TraceResult, cached: boolean): string {
+      const steps = `${r.steps.toLocaleString()} step${r.steps === 1 ? '' : 's'}`;
+      const took = cached ? 'from the cache' : r.timing?.totalMs !== undefined ? `in ${r.timing.totalMs} ms` : '';
+      switch (r.status) {
+        case 'ok':
+          return `Traced ${steps} ${took}.${r.exitCode ? ` The program exited with status ${r.exitCode}.` : ''}`;
+        case 'error':
+          return `Traced ${steps} ${took}. The program stopped with ${r.error?.type} on line ${r.error?.line ?? '?'}.`;
+        case 'stopped':
+        case 'cancelled':
+          return r.stopped?.message ?? 'Stopped.';
+        default:
+          return failure(r);
+      }
+    }
+
+    function failure(r: TraceResult): string {
+      const e = r.error;
+      if (r.status === 'syntax' && e) {
+        return `Syntax error on line ${e.line ?? '?'}${e.column ? `, column ${e.column}` : ''}: ${e.message}. Nothing ran, so there is no trace.`;
+      }
+      if (r.status === 'cancelled') return 'Cancelled before any step was recorded.';
+      return e ? e.message : r.stopped?.message ?? 'The program produced no steps.';
+    }
+
+    function caret(line: number, column: number) {
+      const before = codeEl.value.split('\n').slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0);
+      const at = before + Math.max(0, column - 1);
+      codeEl.focus();
+      codeEl.setSelectionRange(at, at);
+    }
+
+    traceBtn.addEventListener('click', () => void trace());
+    $<HTMLButtonElement>('oa-retrace').addEventListener('click', () => void trace());
+
+    rt.onStateChange((s) => {
+      if (busy) return;
+      if (s === 'loading') status('Preparing Python in the background — you can start writing.', 'busy');
+      else if (s === 'ready') status('Python is ready.');
+      else if (s === 'failed') status('Python did not load. Check the connection and reload the page.', 'error');
+    });
+
+    // ── Start ──
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (saved && typeof saved.code === 'string' && saved.code.trim()) {
+        codeEl.value = saved.code;
+        stdinEl.value = typeof saved.stdin === 'string' ? saved.stdin : '';
+      }
+    } catch { /* unreadable: start from the first example */ }
+    if (!codeEl.value.trim() && EXAMPLES[0]) {
+      codeEl.value = EXAMPLES[0].code;
+      stdinEl.value = EXAMPLES[0].stdin;
+    }
+    stdinWrap.open = Boolean(stdinEl.value);
+    paintGutter();
+    grow();
+    if (rt.state === 'ready') status('Python is ready.');
+
+    const idle = (globalThis as { requestIdleCallback?: (cb: () => void, o?: object) => void }).requestIdleCallback;
+    (idle ?? ((cb: () => void) => setTimeout(cb, 200)))(() => void rt.warm().catch(() => {}), { timeout: 1500 });
+
+    if (debug) Object.assign(globalThis, { officina: { runtime: rt, get view() { return view; } } });
+  }
+
+  // The site's router fires astro:page-load on the first load and after every
+  // soft navigation, onto this page or away from it.
+  document.addEventListener('astro:page-load', start);
+  if (document.readyState !== 'loading') start();
+  else document.addEventListener('DOMContentLoaded', start);
+</script>
+
+<style>
+  .oa { padding-top: clamp(2.5rem, 7vh, 5rem); padding-bottom: 3rem; }
+  .oa-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .oa-kicker a { color: inherit; }
+  .oa-kicker a:hover { color: var(--fundus); }
+  .oa-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .oa-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .oa-sub {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0.8rem 0 0;
+    max-width: var(--measure);
+  }
+  .oa-back { margin-left: 0.3rem; white-space: nowrap; }
+  .oa-back::before { content: '← '; }
+
+  /* The bench: tabs, toolbar, editor — the notebook's controls, one row. */
+  .oa-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.7rem;
+    padding-bottom: 0.7rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+  .oa-tabs { display: flex; gap: 0.35rem; }
+  .oa-tab, .oa-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    background: none;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+    border-radius: 3px;
+    padding: 0.4em 0.85em;
+    cursor: pointer;
+  }
+  .oa-tab:hover, .oa-btn:hover { border-color: var(--fundus); color: var(--ink); }
+  .oa-tab[aria-selected='true'] {
+    color: var(--ink);
+    border-color: var(--fundus);
+    background: color-mix(in srgb, var(--fundus) 10%, transparent);
+  }
+  .oa-btn-go {
+    color: var(--fundus);
+    border-color: color-mix(in srgb, var(--fundus) 55%, transparent);
+    padding-inline: 1.1em;
+  }
+  .oa-btn:disabled { opacity: 0.55; cursor: progress; }
+  .oa-lang {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-left: 0.3rem;
+  }
+  .oa-gap { flex: 1 1 auto; }
+
+  .oa-status {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 0.7rem 0 1rem;
+    min-height: 1.4em;
+  }
+  .oa-status[data-kind='busy'] { color: var(--brass-text); }
+  .oa-status[data-kind='error'] { color: var(--oxblood-text); }
+
+  .oa-editor {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    border-radius: 3px;
+    background: var(--paper-raised);
+    overflow: hidden;
+  }
+  .oa-gutter, #oa-code {
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    padding: 0.7rem 0;
+    margin: 0;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .oa-gutter {
+    white-space: pre;
+    text-align: right;
+    color: var(--ink-soft);
+    padding-inline: 0.9rem 0.7rem;
+    border-right: var(--rule) solid color-mix(in srgb, var(--brass) 25%, transparent);
+    user-select: none;
+  }
+  #oa-code {
+    display: block;
+    width: 100%;
+    min-height: 15rem;
+    border: 0;
+    resize: none;
+    background: none;
+    color: var(--ink);
+    padding-inline: 0.9rem;
+    tab-size: 4;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #oa-code:focus { outline: 2px solid color-mix(in srgb, var(--brass) 55%, transparent); outline-offset: -2px; }
+
+  .oa-stdin { margin-top: 0.8rem; font-family: var(--font-mono); font-size: var(--t-xs); }
+  .oa-stdin summary { cursor: pointer; color: var(--ink-soft); }
+  .oa-note { color: var(--ink-soft); }
+  #oa-stdin {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    border-radius: 3px;
+    padding: 0.5rem 0.8rem;
+    resize: vertical;
+  }
+  .oa-hint {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin: 0.8rem 0 0;
+  }
+
+  .oa-panel:focus { outline: none; }
+  .oa-stale {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--brass-text);
+    margin: 0 0 0.8rem;
+    padding: 0.4rem 0.7rem;
+    border-left: 3px solid var(--brass);
+    background: color-mix(in srgb, var(--brass) 9%, transparent);
+  }
+  .oa-linkish {
+    font: inherit;
+    color: var(--fundus);
+    background: none;
+    border: 0;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    cursor: pointer;
+  }
+  .oa-empty {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-soft);
+    margin: 1rem 0;
+  }
+
+  .oa-about { font-size: var(--t-sm); line-height: 1.8; color: var(--ink-soft); }
+  .oa-h2 { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); margin: 0 0 0.6em; }
+  .oa-about p { margin: 0 0 1em; }
+
+  /* The example picker, dressed as the notebook's. Its list is built with
+     innerHTML, so those rules are :global() — Astro's scoping attribute is
+     only on elements the server rendered. */
+  .oa-modal {
+    margin: auto;
+    width: min(46rem, 92vw);
+    max-height: 82vh;
+    padding: 0;
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    border-radius: 4px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .oa-modal::backdrop {
+    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+  .oa-modal-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+  }
+  .oa-modal-title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0;
+    flex: 1 1 auto;
+  }
+  .oa-search {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    padding: 0.3em 0.6em;
+    background: var(--paper);
+    color: var(--ink);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    border-radius: 3px;
+    min-width: 0;
+    flex: 1 1 12rem;
+  }
+  .oa-modal-body { overflow-y: auto; max-height: calc(82vh - 4.5rem); padding: 0.6rem 1rem 1rem; overscroll-behavior: contain; }
+  .oa-modal-body :global(.oa-ex-group) { margin-bottom: 1rem; }
+  .oa-modal-body :global(.oa-ex-h) {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0.8rem 0 0.4rem;
+  }
+  .oa-modal-body :global(.oa-ex-list) { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+  .oa-modal-body :global(.oa-ex-btn) {
+    display: grid;
+    gap: 0.1rem;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: var(--rule) solid transparent;
+    border-radius: 3px;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    color: var(--ink);
+    font: inherit;
+  }
+  .oa-modal-body :global(.oa-ex-btn:hover),
+  .oa-modal-body :global(.oa-ex-btn:focus-visible) {
+    border-color: var(--brass);
+    background: color-mix(in srgb, var(--brass) 8%, transparent);
+  }
+  .oa-modal-body :global(.oa-ex-t) { font-size: var(--t-sm); }
+  .oa-modal-body :global(.oa-ex-n) { font-size: var(--t-xs); color: var(--ink-soft); line-height: 1.5; }
+  .oa-modal-body :global(.oa-ex-none) { color: var(--ink-soft); font-size: var(--t-sm); }
+
+  @media (max-width: 560px) {
+    .oa-gap { display: none; }
+  }
+</style>

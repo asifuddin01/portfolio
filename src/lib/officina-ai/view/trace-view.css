@@ -1,0 +1,288 @@
+/*
+ * The trace viewer, dressed in Officina's own tokens.
+ *
+ * Every colour and face is one of the portfolio's variables (tokens.css:
+ * --paper, --ink, --brass, --fundus …), with that site's light values as the
+ * fallback, so the viewer inherits Vellum and Nocturne wherever it is placed
+ * and still looks right on a page that defines none of them.
+ */
+.ot {
+  --ot-paper: var(--paper, #E7E1CE);
+  --ot-raised: var(--paper-raised, #F2EDDE);
+  --ot-ink: var(--ink, #191713);
+  --ot-soft: var(--ink-soft, #4A443A);
+  --ot-brass: var(--brass, #94762F);
+  --ot-brass-text: var(--brass-text, #6E571F);
+  --ot-accent: var(--fundus, #984A16);
+  --ot-bad: var(--oxblood-text, #6B2230);
+  --ot-rule: var(--rule, 0.5px);
+  --ot-mono: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  --ot-line: color-mix(in srgb, var(--ot-brass) 35%, transparent);
+
+  display: grid;
+  gap: 0.9rem;
+  color: var(--ot-ink);
+  font-family: var(--ot-mono);
+  font-size: var(--t-xs, 0.8125rem);
+  /* The site sets old-style figures on body; values read as data here. */
+  font-variant-numeric: lining-nums;
+  outline: none;
+}
+.ot:focus-visible { outline: 2px solid color-mix(in srgb, var(--ot-brass) 55%, transparent); outline-offset: 4px; }
+.ot code { font-family: var(--ot-mono); }
+
+.ot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+/* ── Code ── */
+.ot-code {
+  border: var(--ot-rule) solid var(--ot-line);
+  border-radius: 3px;
+  background: var(--ot-raised);
+  max-height: min(68vh, 44rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+.ot-lines { list-style: none; margin: 0; padding: 0.5rem 0; font-size: var(--t-sm, 0.875rem); line-height: 1.7; }
+.ot-line {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.ot-line:hover { background: color-mix(in srgb, var(--ot-brass) 7%, transparent); }
+.ot-ln {
+  text-align: right;
+  padding-right: 0.9rem;
+  color: var(--ot-soft);
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.ot-src {
+  /* Long lines wrap rather than scroll sideways, with continuation lines
+     hung two characters in so they do not read as new statements. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0 1rem 0 2ch;
+  text-indent: -2ch;
+  tab-size: 4;
+}
+.ot-line.is-current {
+  background: color-mix(in srgb, var(--ot-accent) 15%, transparent);
+  border-left-color: var(--ot-accent);
+}
+.ot-line.is-current .ot-ln { color: var(--ot-accent); font-weight: 600; }
+.ot-line.is-current .ot-ln::before { content: '▶ '; font-size: 0.7em; }
+.ot-line.is-waiting { background: color-mix(in srgb, var(--ot-brass) 10%, transparent); border-left-color: var(--ot-line); }
+.ot-line.is-error {
+  background: color-mix(in srgb, var(--ot-bad) 14%, transparent);
+  border-left-color: var(--ot-bad);
+}
+.ot-tk-keyword { color: var(--ot-accent); }
+.ot-tk-builtin { color: var(--ot-brass-text); }
+.ot-tk-string { color: var(--ot-bad); }
+.ot-tk-number { color: var(--ot-brass-text); }
+.ot-tk-comment { color: var(--ot-soft); font-style: italic; }
+.ot-tk-def { font-weight: 600; }
+
+/* ── The state side ── */
+.ot-side { display: grid; gap: 0.8rem; min-width: 0; }
+.ot-now {
+  border-left: 3px solid var(--ot-accent);
+  padding: 0.15rem 0 0.15rem 0.75rem;
+}
+.ot-now p { margin: 0; }
+.ot-now-head { color: var(--ot-brass-text); letter-spacing: 0.04em; margin-bottom: 0.25rem !important; }
+.ot-now-text {
+  font-family: var(--font-body, Georgia, serif);
+  font-size: var(--t-sm, 0.95rem);
+  line-height: 1.6;
+}
+.ot-now-text code, .ot-cond code { background: color-mix(in srgb, var(--ot-brass) 12%, transparent); padding: 0 0.25em; border-radius: 2px; }
+.ot-bad { color: var(--ot-bad); font-weight: 600; }
+
+.ot-conds:empty { display: none; }
+.ot-cond {
+  border: var(--ot-rule) solid var(--ot-line);
+  border-radius: 3px;
+  padding: 0.5rem 0.7rem;
+  background: var(--ot-raised);
+}
+.ot-cond + .ot-cond { margin-top: 0.5rem; }
+.ot-cond p { margin: 0; line-height: 1.6; }
+.ot-cond-kind {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  color: var(--ot-brass-text);
+  margin-right: 0.4rem;
+}
+.ot-cond-arrow { color: var(--ot-soft); }
+.ot-cond[data-result='true'] strong { color: var(--ot-accent); }
+.ot-cond[data-result='false'] strong { color: var(--ot-bad); }
+.ot-operands { list-style: none; margin: 0.35rem 0 0; padding: 0; display: grid; gap: 0.15rem; }
+.ot-operands li { color: var(--ot-soft); }
+.ot-skip { font-style: italic; }
+
+.ot-panel { min-width: 0; }
+.ot-h {
+  font-family: var(--ot-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ot-brass-text);
+  margin: 0 0 0.4rem;
+}
+.ot-h-note { letter-spacing: 0.04em; text-transform: none; color: var(--ot-soft); margin-left: 0.4rem; }
+
+.ot-vars { display: grid; gap: 0.55rem; }
+.ot-frame {
+  border: var(--ot-rule) solid var(--ot-line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ot-frame.is-top { border-color: color-mix(in srgb, var(--ot-accent) 55%, transparent); }
+.ot-frame-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  background: color-mix(in srgb, var(--ot-brass) 9%, transparent);
+  border-bottom: var(--ot-rule) solid var(--ot-line);
+}
+.ot-frame-note { color: var(--ot-soft); }
+.ot-var-table { width: 100%; border-collapse: collapse; }
+.ot-var th, .ot-var td { text-align: left; vertical-align: top; padding: 0.28rem 0.6rem; line-height: 1.5; }
+.ot-var th { font-weight: 500; width: 1%; white-space: nowrap; }
+.ot-var td code { word-break: break-word; }
+.ot-var + .ot-var th, .ot-var + .ot-var td { border-top: var(--ot-rule) solid color-mix(in srgb, var(--ot-brass) 18%, transparent); }
+.ot-type { color: var(--ot-soft); width: 1%; white-space: nowrap; text-align: right !important; }
+.ot-var.is-def { color: var(--ot-soft); }
+.ot-var.is-changed { background: color-mix(in srgb, var(--ot-accent) 11%, transparent); }
+.ot-var.is-changed th { color: var(--ot-accent); }
+.ot-var.is-deleted td { color: var(--ot-soft); font-style: italic; }
+.ot-var.is-deleted th { text-decoration: line-through; color: var(--ot-soft); }
+.ot-var.is-return th { color: var(--ot-accent); }
+.ot-was, .ot-new {
+  display: block;
+  color: var(--ot-soft);
+  font-size: 0.72rem;
+  margin-top: 0.1rem;
+}
+.ot-new { display: inline-block; margin-left: 0.5rem; color: var(--ot-accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.ot-empty { margin: 0; padding: 0.4rem 0.6rem; color: var(--ot-soft); }
+
+.ot-stack { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+.ot-stack li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.2rem 0.6rem;
+  border-left: 3px solid var(--ot-line);
+  color: var(--ot-soft);
+}
+.ot-stack li.is-top { border-left-color: var(--ot-accent); color: var(--ot-ink); }
+
+/* ── Transport ── */
+.ot-transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  padding: 0.6rem 0;
+  border-top: var(--ot-rule) solid var(--ot-line);
+  border-bottom: var(--ot-rule) solid var(--ot-line);
+}
+.ot-buttons { display: flex; gap: 0.3rem; }
+.ot-btn {
+  font-family: var(--ot-mono);
+  font-size: var(--t-xs, 0.8125rem);
+  color: var(--ot-soft);
+  background: none;
+  border: var(--ot-rule) solid color-mix(in srgb, var(--ot-brass) 45%, transparent);
+  border-radius: 3px;
+  padding: 0.35em 0.7em;
+  min-width: 2.4rem;
+  cursor: pointer;
+}
+.ot-btn:hover { border-color: var(--ot-accent); color: var(--ot-ink); }
+.ot-play { color: var(--ot-accent); border-color: color-mix(in srgb, var(--ot-accent) 50%, transparent); min-width: 6.2rem; }
+.ot-scrub { flex: 1 1 12rem; accent-color: var(--ot-accent); min-width: 8rem; }
+.ot-count { font-variant-numeric: tabular-nums; color: var(--ot-soft); min-width: 7rem; text-align: right; }
+.ot-speed { display: flex; align-items: center; gap: 0.4rem; color: var(--ot-soft); }
+.ot-speed select {
+  font: inherit;
+  color: var(--ot-ink);
+  background: var(--ot-raised);
+  border: var(--ot-rule) solid var(--ot-line);
+  border-radius: 3px;
+  padding: 0.2em 0.3em;
+}
+
+/* ── Output ── */
+.ot-out {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  background: color-mix(in srgb, var(--ot-ink) 4%, transparent);
+  border: var(--ot-rule) solid color-mix(in srgb, var(--ot-brass) 22%, transparent);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 16rem;
+  overflow: auto;
+  line-height: 1.6;
+  font-family: var(--ot-mono);
+}
+.ot-out.is-empty::before { content: 'Nothing printed yet.'; color: var(--ot-soft); font-style: italic; }
+.ot-err { color: var(--ot-bad); margin-top: 0.4rem; }
+
+/* ── Timeline ── */
+.ot-timeline-wrap summary { cursor: pointer; list-style-position: inside; }
+.ot-timeline {
+  position: relative;
+  height: 15rem;
+  overflow-y: auto;
+  border: var(--ot-rule) solid var(--ot-line);
+  border-radius: 3px;
+  margin-top: 0.4rem;
+}
+.ot-tl-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--ot-soft);
+}
+.ot-tl-row:hover { background: color-mix(in srgb, var(--ot-brass) 8%, transparent); }
+.ot-tl-row.is-current { background: color-mix(in srgb, var(--ot-accent) 14%, transparent); color: var(--ot-ink); }
+.ot-tl-n { width: 3.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.ot-tl-line { width: 2.8rem; color: var(--ot-brass-text); }
+.ot-tl-fn { color: var(--ot-accent); }
+.ot-tl-what { overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 760px) {
+  .ot-grid { grid-template-columns: minmax(0, 1fr); }
+  .ot-code { max-height: 22rem; }
+  /* Python's indentation eats a phone's width; a size down keeps a
+     three-level loop on one line. */
+  .ot-lines { font-size: var(--t-xs, 0.8125rem); }
+  .ot-line { grid-template-columns: 2.6rem 1fr; }
+  .ot-ln { padding-right: 0.6rem; }
+  .ot-count { min-width: 0; }
+  .ot-btn { min-width: 2.2rem; padding: 0.35em 0.5em; }
+  .ot-play { min-width: 5.4rem; }
+}

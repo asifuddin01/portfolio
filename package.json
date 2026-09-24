@@ -15,7 +15,7 @@
     "audit": "node scripts/audit.mjs",
     "contrast": "node scripts/contrast.mjs",
     "plates": "node scripts/fetch-plates.mjs",
-    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check:links && npm run test:edge && npm run check",
+    "verify": "npm run build && npm run audit && npm run contrast && npm run check:cms && npm run check:elementa && npm run check:links && npm run test:edge && npm run test:officina-ai && npm run check",
     "deploy": "npm run verify && npm run check:dist && wrangler deploy",
     "prebuild": "node scripts/sync-cms.mjs && node scripts/sync-pyodide.mjs && node scripts/sync-emception.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
     "predev": "node scripts/sync-cms.mjs && node scripts/sync-pyodide.mjs && node scripts/sync-emception.mjs && node scripts/build-cv.mjs && node scripts/check-content-images.mjs && node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
@@ -29,6 +29,7 @@
     "check:dist": "node scripts/check-dist-fresh.mjs",
     "check:lectiones": "node scripts/check-lectiones.mjs && node scripts/check-numina.mjs",
     "test:edge": "node --test edge/index.test.mjs",
+    "test:officina-ai": "node scripts/test-officina-ai.mjs",
     "artifact": "node scripts/artifact.mjs"
   },
   "dependencies": {

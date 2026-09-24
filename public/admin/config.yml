@@ -2209,6 +2209,79 @@ collections:
         min: 1
 
   # ------------------------------------------------------------------
+  - name: recipes
+    label: Officina examples
+    label_singular: Language
+    description: >-
+      The worked examples on Officina (/officina) and Officina AI (/officina/ai), one entry per language. Add an example to a language's list and it appears in both pickers, filed under its group. Python examples in the "Tracing" group are the ones Officina AI opens with.
+    folder: src/content/recipes
+    extension: mdx
+    format: frontmatter
+    # The five languages are fixed: each one needs a runtime in the page's
+    # code, so a new file here would be a tab with nothing behind it.
+    create: false
+    delete: false
+    identifier_field: label
+    summary: "{{order}}. {{label}}"
+    sortable_fields: [ order ]
+    fields:
+      - label: Language
+        name: language
+        widget: select
+        options: [ python, c, cpp, java, asm ]
+        hint: "What the page picks a compiler or interpreter by. Leave it as it is."
+      - { label: Tab label, name: label, widget: string }
+      - { label: Tab order, name: order, widget: number, value_type: int, min: 1 }
+      - label: Runs in the browser
+        name: runnable
+        widget: boolean
+        default: false
+        hint: "Must agree with Runtime: a language that runs needs a runtime, and one that does not must say None. The build refuses a mismatch."
+      - label: Runtime
+        name: runtime
+        widget: select
+        default: none
+        options:
+          - { label: "Pyodide (Python)", value: pyodide }
+          - { label: "emception (C and C++)", value: emception }
+          - { label: "CheerpJ (Java)", value: cheerpj }
+          - { label: "None — edit and download only", value: none }
+      - { label: File extension, name: extension, widget: string, hint: "With the dot, e.g. .py" }
+      - label: How to run it
+        name: howToRun
+        widget: string
+        hint: >-
+          For a language that runs here: "<how it runs here>. Outside it: <command>". Otherwise just the command to build it.
+      - label: Status
+        name: status
+        widget: select
+        default: published
+        options:
+          - { label: Draft, value: draft }
+          - { label: Review, value: review }
+          - { label: Published, value: published }
+      - label: Examples
+        name: examples
+        widget: list
+        label_singular: Example
+        summary: "{{fields.group}} — {{fields.title}}"
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Note, name: note, widget: string, hint: "One line on what it shows." }
+          - label: Group
+            name: group
+            widget: string
+            hint: "The heading it is filed under in the picker. Reuse an existing one (Basics, Control flow, Tracing …) unless starting a new group."
+          - label: Code
+            name: code
+            widget: text
+          - label: Input
+            name: stdin
+            widget: text
+            required: false
+            hint: "Python only, for Officina AI: what input() reads, one line per call. Leave empty if the example reads nothing."
+
+  # ------------------------------------------------------------------
   - name: site
     label: Site text
     description: Prose that appears on the home page.

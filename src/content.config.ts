@@ -1123,6 +1123,12 @@ const recipes = defineCollection({
           /** Grouping in the picker: basics, control, data, and so on. */
           group: z.string(),
           code: z.string(),
+          /**
+           * What `input()` reads, one line per call. Officina AI fills its
+           * Input box from this when the example is chosen; the notebook has
+           * no input box and ignores it.
+           */
+          stdin: z.string().optional(),
         })
       )
       .min(1),

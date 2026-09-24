@@ -37,6 +37,15 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Officina AI's tracer is tested on the Python that Pyodide 314 embeds,
+      # because line events differ between versions. Installed first so the
+      # 3.12 below stays the default `python3`; the tests find this one
+      # through OFFICINA_PYTHON (scripts/test-officina-ai.mjs).
+      - uses: actions/setup-python@v5
+        id: py314
+        with:
+          python-version: '3.14'
+
       # The reproduction snippets are executed by `verify-snippets`, so the
       # runner needs a Python that matches the one their output was recorded
       # under (spec I-4).
@@ -136,6 +145,7 @@ jobs:
           # then to the offline message — which is what it should say when
           # there is nothing to embed.
           PUBLIC_RESEARCHLENS_SPACE: https://asifuddin01-researchlens.hf.space
+          OFFICINA_PYTHON: ${{ steps.py314.outputs.python-path }}
         run: npm run verify
 
       - name: Deploy

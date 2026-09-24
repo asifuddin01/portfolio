@@ -885,4 +885,73 @@ examples:
           print("raised as expected:", e)
 
       print("all assertions passed")
+  - title: "Palindrome check"
+    note: "Two indices walk inward; trace it to see each comparison and the letters it compared."
+    group: "Tracing"
+    code: |2-
+      s = "madam"
+      ok = True
+      for i in range(len(s) // 2):
+          if s[i] != s[len(s) - 1 - i]:
+              ok = False
+              break
+      print("palindrome" if ok else "not a palindrome")
+  - title: "Stars that read both ways"
+    note: "Rows of * that grow to six and shrink back — a palindrome of widths."
+    group: "Tracing"
+    code: |2-
+      n = 6
+      for width in list(range(1, n + 1)) + list(range(n - 1, 0, -1)):
+          print("*" * width)
+  - title: "Bubble sort, swap by swap"
+    note: "A list sorted in place; the trace names the two positions each swap changed."
+    group: "Tracing"
+    code: |2-
+      def bubble(xs):
+          n = len(xs)
+          for i in range(n):
+              for j in range(n - 1 - i):
+                  if xs[j] > xs[j + 1]:
+                      xs[j], xs[j + 1] = xs[j + 1], xs[j]
+          return xs
+
+      data = [5, 1, 4, 2, 8]
+      bubble(data)
+      print(data)
+  - title: "A linked list"
+    note: "Objects and the references between them, built and then walked."
+    group: "Tracing"
+    code: |2-
+      class Node:
+          def __init__(self, value, next=None):
+              self.value = value
+              self.next = next
+
+      head = None
+      for v in [3, 2, 1]:
+          head = Node(v, head)
+
+      node = head
+      while node:
+          print(node.value)
+          node = node.next
+  - title: "Reading input"
+    note: "input() reads a line at a time; the tutor fills it from its Input box."
+    group: "Tracing"
+    stdin: "Ada\n2\n"
+    code: |2-
+      name = input("Your name? ")
+      times = int(input("How many times? "))
+      for _ in range(times):
+          print("Hello,", name)
+  - title: "A runtime error, traced"
+    note: "Where the exception was raised, and how it unwinds through the call."
+    group: "Tracing"
+    code: |2-
+      def average(xs):
+          return sum(xs) / len(xs)
+
+      print(average([4, 8]))
+      print(average([]))
+      print("never printed")
 ---

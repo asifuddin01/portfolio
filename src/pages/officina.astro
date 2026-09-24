@@ -66,10 +66,16 @@ const totalExamples = LANGS.reduce((n, l) => n + l.examples.length, 0);
 const runnable = LANGS.filter((l) => l.runnable).map((l) => l.label);
 const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : 'run'} here`;
 ---
+{/* router={false}: this page's script builds the notebook once, when it
+    loads. Under the site's soft navigation, coming back to /officina from any
+    other page swapped the markup in without running it again, and the
+    notebook arrived empty. A full load each time is the cure, and costs
+    little on a page that is mostly one large script. */}
 <BaseLayout
   title={`Officina — ${AUTHOR}`}
   description="A notebook in the browser: write Python, C, C++ and assembly in cells, run the Python, and take the files with you."
   folio="O"
+  router={false}
 >
   <div class="codex of">
     <header class="of-head">
@@ -84,6 +90,12 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
       <p class="of-sub" data-reveal>
         {totalExamples} examples · {LANGS.length} languages · {runsHere}
       </p>
+      {/* Its own page rather than another button in the notebook's toolbar:
+          the toolbar acts on cells, and this leaves the notebook. */}
+      <a class="of-ai" href="/officina/ai" data-reveal>
+        <span class="of-ai-name">Officina AI</span>
+        <span class="of-ai-tag">Trace a program and step through it, line by line →</span>
+      </a>
     </header>
 
     <LesionRule />
@@ -1248,6 +1260,32 @@ _officina_out.getvalue()
     font-size: var(--t-xs);
     color: var(--ink-soft);
     margin: 0.8rem 0 0;
+  }
+
+  /* The way to Officina AI: shaped like a language tab, lit like Run. */
+  .of-ai {
+    display: inline-grid;
+    gap: 0.2rem;
+    margin-top: 1.4rem;
+    padding: 0.65rem 1.05rem;
+    border: var(--rule) solid color-mix(in srgb, var(--fundus) 55%, transparent);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--fundus) 7%, transparent);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .of-ai:hover,
+  .of-ai:focus-visible {
+    border-color: var(--fundus);
+    background: color-mix(in srgb, var(--fundus) 13%, transparent);
+  }
+  .of-ai-name { font-family: var(--font-display); font-size: var(--t-md); }
+  .of-ai-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brass-text);
   }
 
   /* Language row */
