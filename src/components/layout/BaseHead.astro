@@ -1,4 +1,23 @@
 ---
+/**
+ * The three faces the first screen is set in, imported for their built URLs.
+ *
+ * Every @font-face on the site is declared inside the stylesheet, so the
+ * browser could not learn a font existed until it had fetched and parsed
+ * 58KB of CSS: measured cold, the fonts were not requested until 646ms and
+ * did not land until 1043ms, and the page spent that second set in a fallback
+ * before re-flowing into the real thing. Naming them here puts them in front
+ * of the preload scanner in the first packet of HTML instead.
+ *
+ * Upright only, and only the latin subsets. The italics and the Greek, maths
+ * and symbol subsets are still declared in the stylesheet and still load on
+ * the pages that need them — they are simply not worth a head start, and four
+ * or five preloads compete with each other for the same bandwidth.
+ */
+import fontSerif from '@fontsource-variable/eb-garamond/files/eb-garamond-latin-wght-normal.woff2?url';
+import fontDisplay from '@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-wght-normal.woff2?url';
+import fontMono from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
+
 import { ogPathFor } from '../../lib/og';
 import { SITE, AUTHOR } from '../../consts';
 import { getContact, getRole } from '../../lib/collections';
@@ -63,6 +82,12 @@ const personLd = {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="generator" content={Astro.generator} />
+
+<!-- Ahead of the stylesheet on purpose: the preload scanner reads these
+     before it has fetched any CSS, which is the whole point of them. -->
+<link rel="preload" as="font" type="font/woff2" href={fontSerif} crossorigin />
+<link rel="preload" as="font" type="font/woff2" href={fontDisplay} crossorigin />
+<link rel="preload" as="font" type="font/woff2" href={fontMono} crossorigin />
 
 <title>{title}</title>
 

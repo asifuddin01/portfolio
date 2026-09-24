@@ -70,11 +70,30 @@
 }
 
 /* ── Worked problem ──────────────────────────────────────────────────── */
+
+/*
+ * A chapter's problem set is the heaviest thing the site serves. Losses runs
+ * to 45,000 elements and 1,146 separate KaTeX formulas down a page 38,600
+ * pixels tall at a 1280px viewport, and laying the whole of it out cost a
+ * measured 1.3 seconds of main thread before anything could be scrolled.
+ *
+ * `content-visibility: auto` lets the browser skip layout and paint for the
+ * problems that are nowhere near the viewport and do them as they approach.
+ * The intrinsic size is a guess only until a block has been rendered once —
+ * the `auto` keyword tells the browser to remember the real height after
+ * that, so the scrollbar stops shifting under the reader on a second pass.
+ * The figures are the medians measured on that page at 1280px wide.
+ *
+ * Find-in-page and anchor links still reach skipped content: browsers treat
+ * both as making a block relevant and render it before jumping.
+ */
 .pb {
   max-width: 64rem;
   margin: 2.6rem 0;
   border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
   background: var(--paper-raised);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4600px;
 }
 .pb-head {
   display: flex;
@@ -188,10 +207,13 @@
 }
 
 /* ── Exercise ────────────────────────────────────────────────────────── */
+/* Same reasoning as .pb above; exercises are shorter, so the guess is too. */
 .ex {
   max-width: 64rem;
   padding: 1rem 0;
   border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
 }
 .ex-head {
   display: flex;
@@ -350,3 +372,16 @@ h1.pb-title, .ex-title-page {
   border-top: var(--rule) solid color-mix(in srgb, var(--brass) 30%, transparent);
 }
 .pb-body > :first-child h2 { margin-top: 0; }
+
+/*
+ * Printing must never inherit the skipping above. Browsers are supposed to
+ * force every block relevant when paginating for paper, but a problem set
+ * that prints as blank boxes is a bad enough failure to be worth one rule.
+ */
+@media print {
+  .pb,
+  .ex {
+    content-visibility: visible;
+    contain-intrinsic-size: none;
+  }
+}

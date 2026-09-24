@@ -151,3 +151,26 @@
     84%,100% { transform: translate(calc(var(--dx, 0px) * 3), var(--dy, 0px)); }
   }
 }
+
+/* ==================================================================
+   Off-screen figures stop moving.
+
+   The three bespoke plates — the network, the descent, the black hole —
+   each pause themselves when they leave the viewport. The generic figures
+   never did: the loops above are unconditional, so a chapter with a dozen
+   illustrations kept all of them animating for as long as the page was
+   open, and the figure gallery kept seventy-nine of them going at once,
+   nearly all of them thousands of pixels off screen.
+
+   The flag is written by the observer in scripts/motion.ts. It is only ever
+   set to 'false', so a figure whose observer never ran keeps animating —
+   the resting state of a broken switch has to be the working figure.
+   ================================================================== */
+.fig[data-motion-visible='false'] .anim-slide,
+.fig[data-motion-visible='false'] .anim-trace,
+.fig[data-motion-visible='false'] .anim-cycle,
+.fig[data-motion-visible='false'] .anim-pulse,
+.fig[data-motion-visible='false'] .anim-fade,
+.fig[data-motion-visible='false'] .anim-scan {
+  animation-play-state: paused;
+}

@@ -211,6 +211,42 @@ function initDrawLengths(): void {
   }
 }
 
+/* ---- Plain figures: stop the loops that are nowhere near the reader ---- */
+
+/**
+ * The bespoke plates carry their own wrapper and their own pause rules. The
+ * ordinary illustrations — the `.fig` SVGs that fill the chapters — carried
+ * neither, so their loops ran for the life of the page however far off screen
+ * they were. The gallery page alone holds seventy-nine of them.
+ *
+ * Only 'false' is ever written. A figure this never reaches keeps animating,
+ * which is the right way round for a switch that might not be wired up.
+ */
+function initPlainFigures(): void {
+  if (typeof IntersectionObserver === 'undefined') return;
+  const figs = Array.from(document.querySelectorAll<SVGElement>('svg.fig'));
+  if (figs.length === 0) return;
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const fig = entry.target as SVGElement;
+        if (entry.isIntersecting) fig.removeAttribute('data-motion-visible');
+        else fig.setAttribute('data-motion-visible', 'false');
+      }
+    },
+    /* A screen's margin either side, so a figure is already running by the
+       time it is scrolled to rather than starting under the reader's eye. */
+    { rootMargin: '100% 0px' }
+  );
+  for (const fig of figs) io.observe(fig);
+
+  cleanups.push(() => {
+    io.disconnect();
+    for (const fig of figs) fig.removeAttribute('data-motion-visible');
+  });
+}
+
 /* ---- Parallax ---- */
 function initParallax(): void {
   const items = Array.from(document.querySelectorAll<HTMLElement>('[data-parallax]'));
@@ -257,13 +293,45 @@ function initCursor(): void {
   let raf = 0;
   let live = false;
 
-  const loop = (): void => {
-    cx += (tx - cx) * 0.18;
-    cy += (ty - cy) * 0.18;
+  const write = (): void => {
     lens.style.setProperty('--cx', `${cx.toFixed(1)}px`);
     lens.style.setProperty('--cy', `${cy.toFixed(1)}px`);
-    raf = requestAnimationFrame(loop);
   };
+
+  /**
+   * The easing runs only while there is ground left to cover.
+   *
+   * This loop used to re-schedule itself unconditionally, which meant every
+   * desktop visit held a 60fps timer open for the life of the page: two custom
+   * properties written per frame, on an element that blends with its backdrop,
+   * whether or not the pointer had ever moved. It now settles and stops, and
+   * the next movement wakes it.
+   */
+  const step = (): void => {
+    raf = 0;
+    const dx = tx - cx;
+    const dy = ty - cy;
+    // Below a tenth of a pixel the rounding in write() produces the same
+    // string, so there is nothing left to say: land on the target and stop.
+    if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+      cx = tx;
+      cy = ty;
+      write();
+      return;
+    }
+    cx += dx * 0.18;
+    cy += dy * 0.18;
+    write();
+    raf = requestAnimationFrame(step);
+  };
+
+  const wake = (): void => {
+    if (raf === 0) raf = requestAnimationFrame(step);
+  };
+
+  /* The hover test walks up the tree, so it is worth doing once per element
+     entered rather than once per pixel travelled across it. */
+  let lastTarget: Element | null = null;
 
   const onMove = (e: PointerEvent): void => {
     tx = e.clientX;
@@ -272,25 +340,89 @@ function initCursor(): void {
       live = true;
       lens.classList.add('is-live');
     }
-    const interactive = (e.target as Element | null)?.closest(
-      'a, button, [data-tilt], summary, input, label'
-    );
-    lens.classList.toggle('is-over', Boolean(interactive));
+    const target = e.target as Element | null;
+    if (target !== lastTarget) {
+      lastTarget = target;
+      const interactive = target?.closest('a, button, [data-tilt], summary, input, label');
+      lens.classList.toggle('is-over', Boolean(interactive));
+    }
+    wake();
   };
   const onLeave = (): void => {
     live = false;
+    lastTarget = null;
     lens.classList.remove('is-live');
   };
 
   window.addEventListener('pointermove', onMove, { passive: true });
   document.addEventListener('pointerleave', onLeave);
-  raf = requestAnimationFrame(loop);
+  write();
 
   cleanups.push(() => {
     cancelAnimationFrame(raf);
     window.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerleave', onLeave);
     lens.classList.remove('is-live', 'is-over');
+  });
+}
+
+/**
+ * A pointer handler that reads the element's box without paying for it twice.
+ *
+ * A pointermove handler that calls getBoundingClientRect() forces the browser
+ * to finish layout before it can answer — once per event, and a 1000Hz mouse
+ * sends far more events than there are frames to draw. This measures once on
+ * entry, re-measures only when scrolling or resizing can have moved the box,
+ * and does its writing inside a frame, so a burst of events costs one update.
+ */
+function onPointerWithin(
+  el: HTMLElement,
+  paint: (rect: DOMRect, x: number, y: number) => void,
+  leave: () => void
+): void {
+  let rect: DOMRect | null = null;
+  let point: { x: number; y: number } | null = null;
+  let raf = 0;
+
+  const stale = (): void => { rect = null; };
+
+  const frame = (): void => {
+    raf = 0;
+    if (!point) return;
+    if (!rect) rect = el.getBoundingClientRect();
+    paint(rect, point.x, point.y);
+  };
+
+  const onEnter = (e: PointerEvent): void => {
+    rect = el.getBoundingClientRect();
+    point = { x: e.clientX, y: e.clientY };
+    if (raf === 0) raf = requestAnimationFrame(frame);
+  };
+  const onMove = (e: PointerEvent): void => {
+    point = { x: e.clientX, y: e.clientY };
+    if (raf === 0) raf = requestAnimationFrame(frame);
+  };
+  const onLeave = (): void => {
+    if (raf !== 0) { cancelAnimationFrame(raf); raf = 0; }
+    point = null;
+    rect = null;
+    leave();
+  };
+
+  el.addEventListener('pointerenter', onEnter, { passive: true });
+  el.addEventListener('pointermove', onMove, { passive: true });
+  el.addEventListener('pointerleave', onLeave, { passive: true });
+  window.addEventListener('scroll', stale, { passive: true });
+  window.addEventListener('resize', stale, { passive: true });
+
+  cleanups.push(() => {
+    if (raf !== 0) cancelAnimationFrame(raf);
+    el.removeEventListener('pointerenter', onEnter);
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerleave', onLeave);
+    window.removeEventListener('scroll', stale);
+    window.removeEventListener('resize', stale);
+    leave();
   });
 }
 
@@ -303,23 +435,17 @@ function initTilt(): void {
   const MAX = 7; // degrees
 
   for (const card of cards) {
-    const onMove = (e: PointerEvent): void => {
-      const r = card.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - 0.5;
-      const py = (e.clientY - r.top) / r.height - 0.5;
-      card.style.transform =
-        `perspective(900px) rotateX(${(-py * MAX).toFixed(2)}deg) ` +
-        `rotateY(${(px * MAX).toFixed(2)}deg) translate3d(0,-3px,0)`;
-    };
-    const onLeave = (): void => { card.style.transform = ''; };
-
-    card.addEventListener('pointermove', onMove);
-    card.addEventListener('pointerleave', onLeave);
-    cleanups.push(() => {
-      card.removeEventListener('pointermove', onMove);
-      card.removeEventListener('pointerleave', onLeave);
-      card.style.transform = '';
-    });
+    onPointerWithin(
+      card,
+      (r, x, y) => {
+        const px = (x - r.left) / r.width - 0.5;
+        const py = (y - r.top) / r.height - 0.5;
+        card.style.transform =
+          `perspective(900px) rotateX(${(-py * MAX).toFixed(2)}deg) ` +
+          `rotateY(${(px * MAX).toFixed(2)}deg) translate3d(0,-3px,0)`;
+      },
+      () => { card.style.transform = ''; }
+    );
   }
 }
 
@@ -330,25 +456,21 @@ function initMagnets(): void {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
   for (const el of magnets) {
-    const onMove = (e: PointerEvent): void => {
-      const r = el.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2);
-      const dy = e.clientY - (r.top + r.height / 2);
-      el.classList.add('is-pulled');
-      el.style.setProperty('--mx', `${(dx * 0.18).toFixed(1)}px`);
-      el.style.setProperty('--my', `${(dy * 0.24).toFixed(1)}px`);
-    };
-    const onLeave = (): void => {
-      el.classList.remove('is-pulled');
-      el.style.setProperty('--mx', '0px');
-      el.style.setProperty('--my', '0px');
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    cleanups.push(() => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    });
+    onPointerWithin(
+      el,
+      (r, x, y) => {
+        const dx = x - (r.left + r.width / 2);
+        const dy = y - (r.top + r.height / 2);
+        el.classList.add('is-pulled');
+        el.style.setProperty('--mx', `${(dx * 0.18).toFixed(1)}px`);
+        el.style.setProperty('--my', `${(dy * 0.24).toFixed(1)}px`);
+      },
+      () => {
+        el.classList.remove('is-pulled');
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      }
+    );
   }
 }
 
@@ -361,6 +483,7 @@ function boot(): void {
   }
   initDrawLengths();
   initReveals();
+  initPlainFigures();
   initParallax();
   initCursor();
   initTilt();
