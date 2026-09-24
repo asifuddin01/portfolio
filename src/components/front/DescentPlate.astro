@@ -210,10 +210,14 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
      Below ~940px the plate stacks above the hero text and there is no room to
      overlap without crowding, so the caption stays a row beneath it. */
   @media (min-width: 940px) {
+    .dp {
+      /* Keep the caption and motion control on one shared lower edge. */
+      --dp-meta-bottom: -0.3rem;
+    }
     .dp-cap {
       position: absolute;
       left: 0;
-      bottom: 0.2rem;
+      bottom: var(--dp-meta-bottom);
       z-index: 1;
       max-width: min(21rem, 58%);
     }
@@ -227,7 +231,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     .dp-motion {
       position: absolute;
       right: 0;
-      bottom: 0.2rem;
+      bottom: var(--dp-meta-bottom);
       z-index: 2;
     }
   }
