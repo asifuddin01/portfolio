@@ -535,16 +535,29 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
      */
     let livePaint: ReturnType<typeof setTimeout> | null = null;
     let livePainted = 0;
+    let liveCell: Cell | null = null;
+    function paintLive() {
+      livePaint = null;
+      livePainted = performance.now();
+      if (!liveCell) return;
+      const out = cellsEl.querySelector<HTMLElement>(`.of-cell[data-id="${liveCell.id}"] .of-out:not(.is-error)`);
+      if (out) out.textContent = liveCell.output;
+    }
     function showLive(cell: Cell, raw: string) {
       cell.output = raw || 'Running…';
-      const paint = () => {
-        livePaint = null;
-        livePainted = performance.now();
-        const out = cellsEl.querySelector<HTMLElement>(`.of-cell[data-id="${cell.id}"] .of-out:not(.is-error)`);
-        if (out) out.textContent = cell.output;
-      };
-      if (performance.now() - livePainted >= 50) paint();
-      else livePaint ??= setTimeout(paint, 50);
+      // A new cell starts its own clock. Under Run all the next cell begins
+      // the moment the last one ends, and it must not wait on — or lose its
+      // first line to — a paint timed for the cell before.
+      if (liveCell !== cell) {
+        liveCell = cell;
+        livePainted = 0;
+      }
+      if (performance.now() - livePainted >= 50) {
+        if (livePaint) clearTimeout(livePaint);
+        paintLive();
+      } else {
+        livePaint ??= setTimeout(paintLive, 50);
+      }
     }
 
     /** Run a Python cell. Returns the text the reader should see. */
