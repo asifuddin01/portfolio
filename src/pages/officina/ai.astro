@@ -97,6 +97,11 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
         <div id="oa-view"></div>
         <p class="oa-empty" id="oa-none">Nothing traced yet. Write a program on the Code tab and press Trace.</p>
       </section>
+
+      {/* The tutor: below both tabs, so "Ask for a program" is there before
+          anything has been traced. Asked for explicitly; it downloads nothing
+          until the reader presses its button. */}
+      <section id="oa-tutor" aria-label="The tutor"></section>
     </div>
 
     {/* The example picker. A dialog rather than a <select>: fifty-odd
@@ -124,8 +129,13 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
       </p>
       <p>
         Long programs are stopped at 50,000 steps or 5 seconds, and the trace says it is incomplete rather than
-        pretending otherwise. Explanations from a language model will sit alongside the trace; they will never
-        replace it.
+        pretending otherwise.
+      </p>
+      <p>
+        The tutor under the program is a language model that runs in your browser, downloaded only when you ask
+        for it. It is handed what the interpreter recorded and asked to put that into words — it never produces a
+        trace, and every answer is marked as its account. A program it writes goes into the editor to be traced
+        like any other, so you can watch whether it works.
       </p>
     </section>
   </div>
@@ -135,9 +145,13 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
 
 <script>
   import '../../lib/officina-ai/view/trace-view.css';
+  import '../../lib/officina-ai/view/tutor-panel.css';
   import { PythonRuntime } from '../../lib/officina-ai/python/runtime.ts';
   import { mountTraceView, type TraceView } from '../../lib/officina-ai/view/trace-view.ts';
+  import { mountTutor, type TutorPanel } from '../../lib/officina-ai/view/tutor-panel.ts';
+  import { WebLLMProvider, DEFAULT_MODEL } from '../../lib/officina-ai/ai/webllm.ts';
   import type { TraceResult } from '../../lib/officina-ai/trace/schema.ts';
+  import type { TraceStore } from '../../lib/officina-ai/trace/store.ts';
 
   type Example = { title: string; note: string; group: string; code: string; stdin: string };
 
@@ -151,12 +165,24 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
    */
   let runtime: PythonRuntime | null = null;
   let view: TraceView | null = null;
+  /**
+   * The tutor's model. Unloaded when the reader leaves, like the
+   * interpreter: a loaded model holds gigabytes of GPU memory, and the rest
+   * of the site has no use for it. Coming back reloads it from the browser's
+   * cache, not from the network.
+   */
+  let provider: WebLLMProvider | null = null;
+  let tutor: TutorPanel | null = null;
 
   function start() {
     const root = document.getElementById('oa');
     if (!root) {
       view?.destroy();
       view = null;
+      tutor?.destroy();
+      tutor = null;
+      void provider?.unload();
+      provider = null;
       runtime?.dispose();
       runtime = null;
       return;
@@ -189,6 +215,8 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
     let tracedSource: string | null = null;
     let tracedInput: string | null = null;
     let busy = false;
+    let store: TraceStore | null = null;
+    let lastResult: TraceResult | undefined;
 
     const status = (text: string, kind: 'idle' | 'busy' | 'error' = 'idle') => {
       statusEl.textContent = text;
@@ -312,10 +340,18 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
       tracedInput = input;
       markStale();
       noTrace.hidden = true;
-      view = mountTraceView(viewEl, { source, store: run.store });
+      store = run.store;
+      lastResult = undefined;
+      view = mountTraceView(viewEl, {
+        source,
+        store: run.store,
+        // An answer is about the step it was asked about; moving on dates it.
+        onStep: () => tutor?.refresh(),
+      });
       select('trace');
 
       const result = await run.result;
+      lastResult = result;
       busy = false;
       traceBtn.disabled = false;
       if (run.store.length === 0) {
@@ -370,6 +406,37 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
       if (s === 'loading') status('Preparing Python in the background — you can start writing.', 'busy');
       else if (s === 'ready') status('Python is ready.');
       else if (s === 'failed') status('Python did not load. Check the connection and reload the page.', 'error');
+    });
+
+    // ── The tutor ──
+    // Made eagerly and loaded never: constructing the provider costs
+    // nothing, since both the library and the weights wait for the reader's
+    // own click on the panel's button.
+    provider ??= new WebLLMProvider({
+      totalSteps: () => store?.length ?? 0,
+      read: (i) => {
+        if (!store) throw new Error('there is no trace to read');
+        return store.at(i);
+      },
+    });
+    tutor?.destroy();
+    tutor = mountTutor($<HTMLElement>('oa-tutor'), {
+      provider,
+      providerName: provider.name,
+      downloadGB: DEFAULT_MODEL.gb,
+      step: () => (store && view && view.index >= 0 ? store.at(view.index) : null),
+      source: () => tracedSource ?? codeEl.value,
+      result: () => lastResult,
+      showStep: (index) => {
+        view?.show(index);
+        select('trace');
+      },
+      useProgram: (code) => {
+        codeEl.value = code;
+        codeEl.dispatchEvent(new Event('input'));
+        select('code');
+        status('The tutor wrote that. Trace it to see what it actually does.');
+      },
     });
 
     // ── Start ──
@@ -518,6 +585,7 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
     overflow-x: auto;
     overflow-y: hidden;
   }
+  #oa-tutor { margin-top: 0.4rem; }
   #oa-code:focus { outline: 2px solid color-mix(in srgb, var(--brass) 55%, transparent); outline-offset: -2px; }
 
   .oa-stdin { margin-top: 0.8rem; font-family: var(--font-mono); font-size: var(--t-xs); }

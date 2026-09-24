@@ -1,0 +1,91 @@
+/*
+ * The tutor, set apart from the trace on purpose. The trace is the record;
+ * this is a model talking about it, and the panel should never be mistaken
+ * for the first. Hence the rule above it and the standing note over every
+ * answer. Built with innerHTML, so these are global rules under `.tu`.
+ */
+.tu {
+  margin: 2rem 0 0;
+  padding: 1.2rem 0 0;
+  border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  max-width: var(--measure);
+}
+.tu-head { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+.tu-h {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--t-md);
+  margin: 0;
+  color: var(--ink);
+}
+.tu-by, .tu-note, .tu-progress, .tu-said, .tu-thinking {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin: 0;
+}
+.tu-note, .tu-progress { margin: 0.6rem 0; line-height: 1.7; }
+.tu-progress { color: var(--brass-text); }
+
+.tu-btn {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+  border-radius: 3px;
+  padding: 0.42rem 0.8rem;
+  cursor: pointer;
+}
+.tu-btn:hover:not(:disabled) { border-color: var(--fundus); }
+.tu-btn:disabled { opacity: 0.55; cursor: default; }
+
+.tu-actions { display: flex; flex-direction: column; gap: 0.8rem; margin: 0.9rem 0 0; }
+.tu-ask, .tu-solve { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.tu-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  flex: 0 0 100%;
+}
+.tu-input {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  border-radius: 3px;
+  padding: 0.42rem 0.6rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.tu-out { margin: 1.2rem 0 0; }
+.tu-said {
+  padding-left: 0.7rem;
+  border-left: 3px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  margin-bottom: 0.7rem;
+}
+.tu-answer { font-size: var(--t-sm); line-height: 1.75; color: var(--ink); }
+.tu-answer p { margin: 0 0 0.8em; }
+
+/* An answer about a step the reader has since left. Said, not faded: text
+   at half opacity fails the site's contrast floor, and the answer was true
+   about where they were. */
+.tu-stale .tu-said { border-left-color: var(--oxblood-text); }
+.tu-stale .tu-said::after { content: ' — about the step you were on, not this one.'; color: var(--oxblood-text); }
+
+.tu-step {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--fundus);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  padding: 0;
+  cursor: pointer;
+}
+.tu-after { margin: 0.7rem 0 0; }
+.tu-stop { margin: 0.7rem 0 0; }

@@ -25,6 +25,11 @@ trace/cache.ts       traces keyed by a hash of everything that determines them
 view/trace-view.ts   the viewer; every navigation is a read from the store
 view/format.ts       values spelled as Python prints them
 view/highlight.ts    minimal Python highlighting
+view/tutor-panel.ts  the tutor: explain this step, ask about it, write a program
+ai/provider.ts       what the tutor asks of a model, and nothing about which model
+ai/context.ts        a step's facts written out, so the model never has to work one out
+ai/prompts.ts        the three prompts: explain, ask, solve
+ai/webllm.ts         the model, in the reader's browser (WebLLM), in its own worker
 tests/               the tracer on CPython 3.14, the store, the formatter, Pyodide parity
 ```
 
@@ -119,9 +124,35 @@ Needs Python 3.14 — the version Pyodide 314 embeds. CI installs it beside the
 budgets are asserted locally and only reported in CI, where they mostly
 measure the runner.
 
+## The tutor
+
+A language model in the reader's own browser (WebLLM; Qwen2.5 Coder 3B by
+default), behind `ai/provider.ts` so the three tasks do not know which model
+answers. Nothing about it loads until the reader presses the panel's
+button, which states the download — about 2.4 GB, once per device; the
+library is a dynamic import in its own chunk.
+
+The model is never asked what the program did. `ai/context.ts` writes out
+everything the interpreter recorded about a step — including the operand
+values a learner cannot see and a model would otherwise invent — and the
+prompts forbid adding anything. Answers are labelled as the model's account,
+step numbers in them link back to the trace, and a program it writes lands
+in the editor to be traced. `tests/prompt.test.ts` checks the facts reach
+the prompt and that it fits a 4k window.
+
+It runs in its own worker, never the Python one: that worker has had its
+network removed on purpose, and this one downloads the model.
+
+**Where the model comes from.** WebLLM fetches the weights from
+huggingface.co and its compiled model library from raw.githubusercontent.com
+— the second outside origin on this site after CheerpJ, reached only when a
+reader asks for the tutor. The shards are up to ~150 MB each, over the 25 MB
+per-file limit of the site's own assets, so self-hosting means an R2 bucket
+under this domain. A CSP for this page would need
+`connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://raw.githubusercontent.com`
+while it loads from there.
+
 ## Next
 
-The AI layer: a provider interface with **No AI** working exactly as now;
-the owner has chosen local, in-browser (WebLLM), loaded only when a reader
-turns it on. Then C/C++ (emception, with source instrumentation), Java, and
-an assembly simulator — each producing the same step format.
+C/C++ (emception, with source instrumentation), Java, and an assembly
+simulator — each producing the same step format.
