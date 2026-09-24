@@ -2,11 +2,12 @@
  * The site's Worker.
  *
  * Almost nothing reaches it. The site is prerendered pages served straight
- * from ./dist, and wrangler.jsonc sends only three path prefixes here:
+ * from ./dist, and wrangler.jsonc sends only these paths here:
  *
  *   /artifacts/private/api/*   the private archive's data — list, add, edit, delete
  *   /artifacts/private/file/*  the archive's files, served so they open anywhere
  *   /api/artifacts/*   the inbox, for adding from a script or from Cowork
+ *   /api/tutor         Officina AI's tutor, answered by Workers AI (edge/tutor.js)
  *
  * The first two sit behind Cloudflare Access and check its signed token on
  * every request (edge/access.js says why the path alone is not enough). The
@@ -25,6 +26,7 @@
 
 import { marked } from 'marked';
 import { verifyAccess } from './access.js';
+import { tutor } from './tutor.js';
 
 /** KV's ceiling for a single value. */
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -83,6 +85,7 @@ export default {
     const { pathname } = new URL(request.url);
     try {
       if (pathname === '/api/artifacts/inbox') return await inbox(request, env);
+      if (pathname === '/api/tutor') return await tutor(request, env);
 
       if (pathname.startsWith('/artifacts/private/api/') || pathname.startsWith('/artifacts/private/file/')) {
         const who = await verifyAccess(request, env);

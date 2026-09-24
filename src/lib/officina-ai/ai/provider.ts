@@ -20,7 +20,8 @@
 import type { StepView } from '../trace/store.ts';
 import type { TraceResult } from '../trace/schema.ts';
 
-export type TutorTask = 'explain' | 'solve' | 'ask';
+import type { TutorTask } from './system-prompts.ts';
+export type { TutorTask };
 
 /** What the model is told about, assembled by ai/context.ts. */
 export interface TutorRequest {

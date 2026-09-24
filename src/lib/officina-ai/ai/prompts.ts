@@ -16,6 +16,7 @@
  * the answer arrives as something to test rather than something to trust.
  */
 import type { TutorRequest } from './provider.ts';
+import { SYSTEM_PROMPTS } from './system-prompts.ts';
 import { describeStep } from './context.ts';
 import type { StepView } from '../trace/store.ts';
 
@@ -24,41 +25,7 @@ export interface PromptMessage {
   content: string;
 }
 
-const NEVER_INVENT =
-  'Every value you need is in the facts you are given. Never guess at a ' +
-  'value, and never state one that is not written there. If something is ' +
-  'genuinely not in the facts, say that it is not shown rather than filling ' +
-  'it in.';
-
-const SYSTEM: Record<TutorRequest['task'], string> = {
-  explain:
-    'You explain one step of a Python program to someone learning to program. ' +
-    'An interpreter has already recorded exactly what happened; your job is to ' +
-    'say it in plain English, not to work it out. ' +
-    NEVER_INVENT + ' ' +
-    'Write two or three sentences. Say what the line did and why the values ' +
-    'came out as they did. No preamble, no headings, no code fences, no ' +
-    'restating the question. British spelling.',
-
-  ask:
-    'You answer a learner\'s question about one step of a Python program. ' +
-    'An interpreter has already recorded what happened; answer from those ' +
-    'facts. ' +
-    NEVER_INVENT + ' ' +
-    'Answer only what was asked, in at most four sentences. If the question ' +
-    'is about a different part of the program than the step shown, say which ' +
-    'step number they should look at instead. No preamble, no headings. ' +
-    'British spelling.',
-
-  solve:
-    'You write small Python programs for a learner who will immediately run ' +
-    'yours and watch every line of it execute. ' +
-    'Write the simplest correct program that does what was asked, using only ' +
-    'the standard library and no input() unless asked for. ' +
-    'Give a one-sentence description, then the program in a single ```python ' +
-    'code block, then one sentence naming the line worth watching when they ' +
-    'trace it. Nothing else. British spelling.',
-};
+const SYSTEM = SYSTEM_PROMPTS;
 
 /**
  * The top of the editor's contents, for context only.

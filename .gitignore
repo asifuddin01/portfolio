@@ -33,3 +33,6 @@ public/cv/
 # Pyodide runtime, copied out of node_modules by scripts/sync-pyodide.mjs
 public/pyodide/
 public/emception/
+
+# Wrangler's local state from `wrangler dev`
+.wrangler/

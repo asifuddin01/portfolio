@@ -132,10 +132,10 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
         pretending otherwise.
       </p>
       <p>
-        The tutor under the program is a language model that runs in your browser, downloaded only when you ask
-        for it. It is handed what the interpreter recorded and asked to put that into words — it never produces a
-        trace, and every answer is marked as its account. A program it writes goes into the editor to be traced
-        like any other, so you can watch whether it works.
+        The tutor under the program is a language model on this site's server. When you ask it something, your
+        program and what the interpreter recorded about the step in view are sent to it, and it is asked to put
+        those facts into words — it never produces a trace, and every answer is marked as its account. A program
+        it writes goes into the editor to be traced like any other, so you can watch whether it works.
       </p>
     </section>
   </div>
@@ -149,7 +149,7 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
   import { PythonRuntime } from '../../lib/officina-ai/python/runtime.ts';
   import { mountTraceView, type TraceView } from '../../lib/officina-ai/view/trace-view.ts';
   import { mountTutor, type TutorPanel } from '../../lib/officina-ai/view/tutor-panel.ts';
-  import { WebLLMProvider, DEFAULT_MODEL } from '../../lib/officina-ai/ai/webllm.ts';
+  import { RemoteProvider } from '../../lib/officina-ai/ai/remote.ts';
   import type { TraceResult } from '../../lib/officina-ai/trace/schema.ts';
   import type { TraceStore } from '../../lib/officina-ai/trace/store.ts';
 
@@ -165,13 +165,8 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
    */
   let runtime: PythonRuntime | null = null;
   let view: TraceView | null = null;
-  /**
-   * The tutor's model. Unloaded when the reader leaves, like the
-   * interpreter: a loaded model holds gigabytes of GPU memory, and the rest
-   * of the site has no use for it. Coming back reloads it from the browser's
-   * cache, not from the network.
-   */
-  let provider: WebLLMProvider | null = null;
+  /** The tutor's model — on this site's server, so there is nothing to load. */
+  let provider: RemoteProvider | null = null;
   let tutor: TutorPanel | null = null;
 
   function start() {
@@ -409,10 +404,9 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
     });
 
     // ── The tutor ──
-    // Made eagerly and loaded never: constructing the provider costs
-    // nothing, since both the library and the weights wait for the reader's
-    // own click on the panel's button.
-    provider ??= new WebLLMProvider({
+    // Answered by the site's Worker (edge/tutor.js), which asks Cloudflare
+    // Workers AI. Nothing is sent until the reader asks something.
+    provider ??= new RemoteProvider({
       totalSteps: () => store?.length ?? 0,
       read: (i) => {
         if (!store) throw new Error('there is no trace to read');
@@ -423,7 +417,9 @@ const data = JSON.stringify(EXAMPLES).replace(/</g, '\\u003c');
     tutor = mountTutor($<HTMLElement>('oa-tutor'), {
       provider,
       providerName: provider.name,
-      downloadGB: DEFAULT_MODEL.gb,
+      notice:
+        'Asking sends your program and the facts of the step in view to the tutor on this site\u2019s ' +
+        'server (Cloudflare Workers AI) to be answered. Nothing is kept. Running and tracing never leave your browser.',
       step: () => (store && view && view.index >= 0 ? store.at(view.index) : null),
       source: () => tracedSource ?? codeEl.value,
       result: () => lastResult,

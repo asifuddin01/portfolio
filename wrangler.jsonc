@@ -1,10 +1,10 @@
 {
   // Deploys the built site as a Worker serving static assets.
   //
-  // The site is prerendered pages with no server code. The one exception is
+  // The site is prerendered pages with no server code. The exceptions are
   // the private archive at /artifacts/private, whose data and files come from
-  // edge/index.js — and only the paths listed in `run_worker_first` ever reach
-  // it. Every other request is served from ./dist by Cloudflare's edge without
+  // edge/index.js, and Officina AI's tutor at /api/tutor — and only the paths
+  // listed in `run_worker_first` ever reach it. Every other request is served from ./dist by Cloudflare's edge without
   // running a line of script, exactly as before.
   //
   // Note: the CMS auth worker is a separate deployment and keeps its own
@@ -26,8 +26,15 @@
     "html_handling": "drop-trailing-slash",
     // The archive's data, its files, and the add-only inbox. The archive's
     // page and the public door at /artifacts are static assets like any other.
-    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*"]
+    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*", "/api/tutor"]
   },
+  // Officina AI's tutor: the model it asks (edge/tutor.js). Billed to this
+  // account's Workers AI allowance — 10,000 neurons a day free.
+  "ai": { "binding": "AI" },
+  // And how often one visitor may ask it: ten questions a minute.
+  "ratelimits": [
+    { "name": "TUTOR_RATE", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }
+  ],
   "kv_namespaces": [
     // The archive. `wrangler kv namespace create ARTIFACTS`, 2026-09-22.
     { "binding": "ARTIFACTS", "id": "78bb9e21ec7c47c5a96bf12886810ee3" }

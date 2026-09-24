@@ -29,7 +29,8 @@ view/tutor-panel.ts  the tutor: explain this step, ask about it, write a program
 ai/provider.ts       what the tutor asks of a model, and nothing about which model
 ai/context.ts        a step's facts written out, so the model never has to work one out
 ai/prompts.ts        the three prompts: explain, ask, solve
-ai/webllm.ts         the model, in the reader's browser (WebLLM), in its own worker
+ai/system-prompts.ts the instructions and the model, read by the page and the Worker
+ai/remote.ts         the page's side: asks /api/tutor and reads the stream
 tests/               the tracer on CPython 3.14, the store, the formatter, Pyodide parity
 ```
 
@@ -126,31 +127,42 @@ measure the runner.
 
 ## The tutor
 
-A language model in the reader's own browser (WebLLM; Qwen2.5 Coder 3B by
-default), behind `ai/provider.ts` so the three tasks do not know which model
-answers. Nothing about it loads until the reader presses the panel's
-button, which states the download — about 2.4 GB, once per device; the
-library is a dynamic import in its own chunk.
+Explain this step, a question about it, or a program written to order —
+answered by a language model on this site's server, so there is nothing for
+a reader to download. The page asks `/api/tutor` (edge/tutor.js), which asks
+Cloudflare Workers AI (Qwen2.5 Coder 32B) and streams the answer back.
 
 The model is never asked what the program did. `ai/context.ts` writes out
-everything the interpreter recorded about a step — including the operand
-values a learner cannot see and a model would otherwise invent — and the
-prompts forbid adding anything. Answers are labelled as the model's account,
-step numbers in them link back to the trace, and a program it writes lands
-in the editor to be traced. `tests/prompt.test.ts` checks the facts reach
-the prompt and that it fits a 4k window.
+everything the interpreter recorded about the step in view — including the
+operand values a learner cannot see and a model would otherwise invent — and
+the prompts forbid adding to it. Answers are labelled as the model's account,
+step numbers in them link back to the trace, and a program it writes goes
+into the editor to be traced like any other.
 
-It runs in its own worker, never the Python one: that worker has had its
-network removed on purpose, and this one downloads the model.
+The page sends a task and the facts; the Worker adds the instructions, from
+`ai/system-prompts.ts`, which both sides read. A caller can pick a task but
+never tell the model what it is, so the endpoint is no general chatbot on this
+account. It also takes same-origin requests only, caps the prompt and each
+answer, and allows ten questions a minute per visitor (`TUTOR_RATE` in
+wrangler.jsonc).
 
-**Where the model comes from.** WebLLM fetches the weights from
-huggingface.co and its compiled model library from raw.githubusercontent.com
-— the second outside origin on this site after CheerpJ, reached only when a
-reader asks for the tutor. The shards are up to ~150 MB each, over the 25 MB
-per-file limit of the site's own assets, so self-hosting means an R2 bucket
-under this domain. A CSP for this page would need
-`connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://raw.githubusercontent.com`
-while it loads from there.
+**What it sends, and costs.** Asking sends the program and the step's facts
+to Workers AI to be answered; nothing is kept, and the panel says so beside
+the questions. Running and tracing still never leave the browser. An answer
+costs about 40–60 neurons — roughly 200 a day inside the account's 10,000
+free. Past that the tutor says it has used today's allowance. `TUTOR_MODEL`
+is the one line to change: Qwen3 30B with `/no_think` costs a tenth as much,
+and was nearly as good on these prompts.
+
+**One quirk to know.** Workers AI parses each streamed token as JSON when it
+can, so digits arrive as numbers and `true`/`false`/`null` as bare values
+without their leading space. `ai/remote.ts` puts them back; without that,
+every number vanished from every answer.
+
+The tutor was first written, by another session, to run a model in the
+reader's browser (WebLLM). It was replaced before release: a 2.4 GB download
+per reader is not something a page on this site should ask for. The provider
+interface (`ai/provider.ts`) still takes such a model.
 
 ## Next
 

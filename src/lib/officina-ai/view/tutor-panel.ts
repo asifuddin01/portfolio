@@ -1,11 +1,11 @@
 /**
  * The tutor, as the reader meets it.
  *
- * Three things are on offer and all three are explicitly asked for. The
- * panel starts as one sentence and a button, and the button says how large
- * the download is, because the honest version of "AI explanations" here is
- * "two gigabytes, once, and then it is yours". Nothing is fetched before
- * that click — not the weights, not the library.
+ * Three things are on offer and all three are explicitly asked for: explain
+ * this step, a question about it, a program written to order. What asking
+ * sends is said beside the questions (`notice`). A provider that has to load
+ * first — a model in the browser — gets a button that says what it costs
+ * before anything is fetched; the site's own provider needs none.
  *
  * What comes back is kept visibly apart from the trace. The trace is what
  * the interpreter recorded; this is a model's account of it, and the panel
@@ -26,9 +26,11 @@ export interface TutorPanelOptions {
   showStep(index: number): void;
   /** Put a solved program into the editor. Absent hides the solver. */
   useProgram?(code: string): void;
-  /** How large the download is, for the button to say so. */
-  downloadGB: number;
+  /** How large a download the provider needs first, if any, for its button to say so. */
+  downloadGB?: number;
   providerName: string;
+  /** What asking sends, and where — said beside the questions. */
+  notice?: string;
 }
 
 export interface TutorPanel {
@@ -40,17 +42,34 @@ export interface TutorPanel {
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/**
- * An answer, with step references turned into links.
- *
- * Done on the escaped text so a model that emits a tag cannot open one, and
- * done last so the link markup survives escaping.
- */
-function render(text: string): string {
-  return esc(text)
+/** Prose: paragraphs, `inline code`, and step references turned into links. */
+function prose(text: string): string {
+  const html = esc(text.trim())
+    .replace(/`([^`\n]+)`/g, '<code class="tu-inline">$1</code>')
     .replace(/\b(steps?)\s*#?\s*(\d+)/gi, '$1 <button type="button" class="tu-step" data-step="$2">$2</button>')
     .replace(/\n{2,}/g, '</p><p>')
     .replace(/\n/g, '<br>');
+  return html ? `<p>${html}</p>` : '';
+}
+
+/**
+ * An answer, as blocks.
+ *
+ * Code the model fences is shown as code, indentation and all — in Python the
+ * indentation is the program, and prose rendering flattened it. A fence still
+ * open while the answer streams is shown as code already. Everything is
+ * escaped before any markup is added, so a model that emits a tag cannot open
+ * one.
+ */
+export function renderAnswer(text: string): string {
+  return text
+    .split('```')
+    .map((part, i) =>
+      i % 2 === 1
+        ? `<pre class="tu-code"><code>${esc(part.replace(/^[\w+-]*\n/, '').replace(/\n+$/, ''))}</code></pre>`
+        : prose(part)
+    )
+    .join('');
 }
 
 /** The program out of a solver's answer, if it wrote one. */
@@ -72,6 +91,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
       <h3 class="tu-h">The tutor</h3>
       <p class="tu-by" hidden></p>
     </header>
+    <p class="tu-note tu-notice" hidden></p>
     <div class="tu-gate"></div>
     <div class="tu-actions" hidden>
       <button type="button" class="tu-btn" data-task="explain">Explain this step</button>
@@ -104,6 +124,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
   const after = root.querySelector<HTMLElement>('.tu-after')!;
   const stop = root.querySelector<HTMLButtonElement>('.tu-stop')!;
   const by = root.querySelector<HTMLElement>('.tu-by')!;
+  const notice = root.querySelector<HTMLElement>('.tu-notice')!;
 
   function say(html: string) {
     gate.innerHTML = html;
@@ -127,6 +148,8 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
       actions.hidden = false;
       by.hidden = false;
       by.textContent = options.providerName;
+      notice.hidden = !options.notice;
+      notice.textContent = options.notice ?? '';
       return;
     }
 
@@ -137,7 +160,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
       `nothing you write or run leaves this device.</p>` +
       `<button type="button" class="tu-btn tu-load">${
         cached ? 'Start the tutor (already downloaded)'
-               : `Download the tutor (about ${options.downloadGB} GB, once)`
+               : options.downloadGB ? `Download the tutor (about ${options.downloadGB} GB, once)` : 'Start the tutor'
       }</button>` +
       `<p class="tu-progress" hidden></p>`
     );
@@ -195,7 +218,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
       for await (const chunk of provider.answer(request, signal)) {
         if (chunk.type === 'delta') {
           text += chunk.text;
-          answer.innerHTML = `<p>${render(text)}</p>`;
+          answer.innerHTML = renderAnswer(text);
         } else if (chunk.type === 'error') {
           /* A cancellation is the reader's own doing and needs no notice
              beyond leaving what had already arrived on screen. */
@@ -203,7 +226,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
             answer.innerHTML = `<p class="tu-note">${esc(chunk.message)}</p>`;
           }
         } else {
-          answer.innerHTML = `<p>${render(chunk.explanation.text)}</p>`;
+          answer.innerHTML = renderAnswer(chunk.explanation.text);
           if (task === 'solve' && options.useProgram) offerProgram(chunk.explanation.text);
         }
       }
