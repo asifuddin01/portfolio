@@ -12,8 +12,11 @@ import { AUTHOR } from '../consts';
  *
  * **Python executes.** Pyodide is CPython compiled to WebAssembly, served from
  * this origin by scripts/sync-pyodide.mjs. It is 12.9 MB and is fetched only
- * when a reader presses Run on a Python cell — never on page load, so somebody
- * reading the rest of the site pays nothing for it.
+ * when a reader picks Python or presses Run — never on page load, so somebody
+ * reading the rest of the site pays nothing for it. It runs in a worker with
+ * no network access (src/lib/officina-ai/python/), so a cell that never ends
+ * can be stopped, and a pasted cell cannot make requests with this site's
+ * cookies.
  *
  * **C and C++ execute too.** Not interpreted, and not sent anywhere: clang and
  * wasm-ld compiled to WebAssembly compile the cell to a wasm module, which the
@@ -152,7 +155,10 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
         WebAssembly — the whole standard library, arbitrary-precision integers,
         exceptions and all — fetched the first time you press Run and cached by
         the browser after that. It is 12.9 MB, which is why it is not fetched
-        until you ask for it.
+        until you ask for it. It runs in the background, so a cell that never
+        finishes can be stopped: press Stop, or it stops itself after 30
+        seconds. Stopping restarts Python, so variables from earlier cells have
+        to be made again.
       </p>
       <p>
         C and C++ are compiled, not interpreted and not sent anywhere. Pressing
@@ -211,6 +217,8 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
 </BaseLayout>
 
 <script>
+  import { PythonSession, type CellResult } from '../lib/officina-ai/python/session.ts';
+
   // ── Data and state ────────────────────────────────────────────────────
   type Example = { title: string; note: string; group: string; code: string };
   type Lang = {
@@ -255,6 +263,10 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
 
     let lang: Lang = LANGS[0];
     let cells: Cell[] = [];
+    /** The cell running now, by id; only one runs at a time. */
+    let runningId: string | null = null;
+    /** Set by Stop during Run all, so the cells after it are not started. */
+    let stopAll = false;
 
     const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -348,7 +360,14 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
       document.querySelectorAll<HTMLButtonElement>('.of-lang').forEach((b) => {
         b.setAttribute('aria-selected', String(b.dataset.lang === lang.id));
       });
-      document.getElementById('of-run-all')!.hidden = !lang.runnable;
+      // While a Python cell runs, Run all becomes its Stop. The compiled
+      // languages run in their own toolchains, which this page cannot
+      // interrupt, so there it only waits.
+      const runAllBtn = document.getElementById('of-run-all') as HTMLButtonElement;
+      const canStop = lang.runtime === 'pyodide';
+      runAllBtn.hidden = !lang.runnable;
+      runAllBtn.textContent = runningId && canStop ? 'Stop' : 'Run all';
+      runAllBtn.disabled = Boolean(runningId) && !canStop;
 
       // A strip sits at every boundary — above the first cell, between each
       // pair, below the last — so a cell can be added anywhere rather than
@@ -364,9 +383,11 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
       cellsEl.innerHTML = cells
         .map((c, i) => {
           const runBtn =
-            c.type === 'code' && lang.runnable
-              ? `<button class="of-cell-btn of-run" data-act="run" data-i="${i}">Run</button>`
-              : '';
+            c.type !== 'code' || !lang.runnable
+              ? ''
+              : c.id === runningId && canStop
+                ? `<button class="of-cell-btn of-run is-stop" data-act="stop" data-i="${i}" title="Stop this cell — Python restarts, and earlier cells' variables go with it">Stop</button>`
+                : `<button class="of-cell-btn of-run" data-act="run" data-i="${i}" ${runningId ? 'disabled title="Another cell is running"' : ''}>Run</button>`;
           const body =
             c.type === 'code'
               ? `<textarea class="of-src of-code" data-i="${i}" rows="${Math.max(3, c.source.split('\n').length)}" spellcheck="false">${esc(c.source)}</textarea>`
@@ -377,7 +398,7 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
           const out = c.output !== '' ? `<pre class="of-out">${esc(c.output)}</pre>` : '';
           const err = c.error ? `<pre class="of-out is-error">${esc(c.error)}</pre>` : '';
           return `
-            <article class="of-cell" data-type="${c.type}">
+            <article class="of-cell" data-type="${c.type}" data-id="${c.id}">
               <div class="of-cell-bar">
                 <span class="of-cell-n">[${i + 1}] ${c.type === 'code' ? lang.label : 'Text'}</span>
                 ${runBtn}
@@ -398,42 +419,24 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
       save();
     }
 
-    // ── Python, via Pyodide ─────────────────────────────────────────────
-    // Loaded from this origin, and only on the first Run. `pyodideReady` is
-    // the promise rather than the interpreter so that pressing Run twice
-    // quickly does not start two downloads.
-    let pyodideReady: Promise<any> | null = null;
-
-    function loadPyodide(): Promise<any> {
-      if (pyodideReady) return pyodideReady;
-      status('Fetching the Python runtime — 12.9 MB, once per browser…', 'busy');
-      // A <script> tag rather than import(). Vite refuses to serve a dynamic
-      // import of anything under public/ — it answers with an error page
-      // saying the file "will be copied as-is during build without going
-      // through the plugin transforms" — and @vite-ignore does not help,
-      // because the browser still asks the dev server for it as a module.
-      // The classic build sets globalThis.loadPyodide and involves no
-      // bundler at all, in dev and in production alike.
-      pyodideReady = new Promise<void>((resolve, reject) => {
-        if ((globalThis as any).loadPyodide) return resolve();
-        const tag = document.createElement('script');
-        tag.src = '/pyodide/pyodide.js';
-        tag.onload = () => resolve();
-        tag.onerror = () => reject(new Error('could not fetch /pyodide/pyodide.js'));
-        document.head.appendChild(tag);
-      })
-        .then(() => (globalThis as any).loadPyodide({ indexURL: '/pyodide/' }))
-        .then((py: any) => {
-          status(`Python ${py.version} ready.`);
-          return py;
-        })
-        .catch((err: unknown) => {
-          pyodideReady = null;              // let a later Run try again
-          status(`The Python runtime did not load: ${String(err)}`, 'error');
-          throw err;
-        });
-      return pyodideReady;
-    }
+    // ── Python, via Pyodide, in a worker ─────────────────────────────────
+    // Cells run off the page's thread (src/lib/officina-ai/python/session.ts),
+    // so a cell that never finishes can be stopped and the page stays usable
+    // while one runs. The worker has no network: a pasted cell cannot fetch
+    // anything with this site's cookies. Nothing is loaded until the reader
+    // picks Python or presses Run.
+    const python = new PythonSession({ indexURL: '/pyodide/' });
+    let pythonStarted = false;
+    python.onStateChange((state) => {
+      if (state === 'loading') {
+        status(pythonStarted ? 'Restarting Python…' : 'Fetching the Python runtime — 12.9 MB, once per browser…', 'busy');
+      } else if (state === 'ready') {
+        status(pythonStarted ? 'Python restarted.' : `Python ${python.version} ready.`);
+        pythonStarted = true;
+      } else if (state === 'failed') {
+        status('The Python runtime did not load. Check the connection and press Run again.', 'error');
+      }
+    });
 
     const TRACEBACK_HEAD = 'Traceback (most recent call last):';
 
@@ -441,10 +444,9 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
      * Separate what the cell printed from the traceback that ended it, and
      * drop the frames belonging to the runtime rather than to the reader.
      *
-     * Pyodide prints the traceback to `sys.stderr`, which this page redirects,
-     * so it arrives glued to whatever the cell printed before it failed — it
-     * does not come through the thrown error. (`String(err)` is the single
-     * word "PythonError"; the text lives on `err.message`.) Every traceback
+     * The worker writes the traceback into the same stream as everything the
+     * cell printed (notebook.py), so it arrives glued to whatever the cell
+     * printed before it failed. Every traceback
      * opens with two frames inside /lib/python314.zip/_pyodide/_base.py, the
      * runtime's own eval machinery, before reaching `File "<exec>"` — the
      * first line the reader actually wrote. Those frames are noise in every
@@ -502,36 +504,62 @@ const runsHere = `${sentenceList(runnable)} ${runnable.length === 1 ? 'runs' : '
       return emceptionReady;
     }
 
-    /** Run a Python cell on Pyodide. Returns the text the reader should see. */
-    async function runOnPyodide(source: string) {
-      const py = await loadPyodide();
-      // Capture stdout and stderr for this cell only, and restore them
-      // afterwards so one cell's redirection cannot outlive it.
-      py.runPython(`
-import sys, io
-_officina_out = io.StringIO()
-_officina_saved = (sys.stdout, sys.stderr)
-sys.stdout = sys.stderr = _officina_out
-`);
-      let failed = false;
-      let trace = '';
-      try {
-        await py.runPythonAsync(source);
-      } catch (err: unknown) {
-        failed = true;
-        // The redirected stderr almost always has the traceback already, so
-        // this is the fallback for the case where it does not — kept raw here
-        // and tidied once, below, with everything else.
-        trace = String((err as { message?: string } | null)?.message ?? err);
+    /** Why a cell ended early, in the words the cell shows under its output. */
+    function endNote(r: CellResult, source: string, err: string): string {
+      const lost = 'Python was restarted, so anything earlier cells defined is gone — run them again.';
+      switch (r.outcome) {
+        case 'stopped':
+          return `Stopped. ${lost}`;
+        case 'time-limit':
+          return `Stopped after ${python.timeLimitMs / 1000} seconds — the time limit. ${lost}`;
+        case 'output-limit':
+          return `Stopped after ${Math.round(python.maxOutput / 1024)} KB of output — the output limit.`;
+        case 'crashed':
+          return 'The notebook\'s Python runner failed; Python was restarted. Run the cell again.';
+        default:
+          // input() reads end-of-file here: there is no keyboard to ask.
+          return /EOFError/.test(err) && /\binput\s*\(/.test(source)
+            ? 'The notebook has no keyboard input, so input() reads nothing here. Officina AI (/officina/ai) has an Input box.'
+            : '';
       }
-      const captured = py.runPython(`
-sys.stdout, sys.stderr = _officina_saved
-_officina_out.getvalue()
-`);
-      const raw = String(captured).includes(TRACEBACK_HEAD)
-        ? String(captured)                        // stderr already has it
-        : [captured, trace].filter(Boolean).join('\n');
-      return { ...splitOutput(raw), failed };
+    }
+
+    /**
+     * Show what a running cell has printed so far, without redrawing the page.
+     *
+     * Painted as it arrives, but at most every 50 ms: a cell can send output
+     * far faster than anyone reads it, and each paint replaces the whole text.
+     * The first paint after a quiet spell is immediate rather than timed, so
+     * output appears the moment it exists — a timer in a background tab can
+     * be held back for a minute.
+     */
+    let livePaint: ReturnType<typeof setTimeout> | null = null;
+    let livePainted = 0;
+    function showLive(cell: Cell, raw: string) {
+      cell.output = raw || 'Running…';
+      const paint = () => {
+        livePaint = null;
+        livePainted = performance.now();
+        const out = cellsEl.querySelector<HTMLElement>(`.of-cell[data-id="${cell.id}"] .of-out:not(.is-error)`);
+        if (out) out.textContent = cell.output;
+      };
+      if (performance.now() - livePainted >= 50) paint();
+      else livePaint ??= setTimeout(paint, 50);
+    }
+
+    /** Run a Python cell. Returns the text the reader should see. */
+    async function runOnPyodide(cell: Cell) {
+      await python.warm();
+      status('Running — Stop ends it.', 'busy');
+      const r = await python.run(cell.source, (raw) => showLive(cell, raw));
+      const { out, err } = splitOutput(r.output);
+      const note = endNote(r, cell.source, err);
+      return {
+        out,
+        err: [err, note].filter(Boolean).join('\n'),
+        failed: r.outcome !== 'ok',
+        halted: r.outcome === 'stopped' || r.outcome === 'time-limit',
+      };
     }
 
     /**
@@ -805,40 +833,56 @@ _officina_out.getvalue()
       };
     }
 
-    async function runCell(i: number) {
+    /** Run one cell. Resolves false if it was stopped, so Run all can stop too. */
+    async function runCell(i: number): Promise<boolean> {
       const cell = cells[i];
-      if (!cell || cell.type !== 'code' || !lang.runnable) return;
+      if (!cell || cell.type !== 'code' || !lang.runnable || runningId) return true;
 
+      runningId = cell.id;
       cell.output = 'Running…';
       cell.error = '';
       cell.failed = false;
       render();
 
+      let halted = false;
       try {
-        const { out, err, failed } =
+        const result =
           lang.runtime === 'emception'
             ? await runOnEmception(cell.source, lang.id)
             : lang.runtime === 'cheerpj'
               ? await runOnCheerpj(cell.source)
-              : await runOnPyodide(cell.source);
+              : await runOnPyodide(cell);
+        const { out, err, failed } = result;
+        halted = 'halted' in result && result.halted === true;
 
         cell.output = out || (err ? '' : '(no output — the cell ran and printed nothing)');
         cell.error = err;
         cell.failed = failed;
-        status(failed ? 'The cell did not finish.' : 'Done.', failed ? 'error' : 'idle');
+        status(halted ? 'Stopped.' : failed ? 'The cell did not finish.' : 'Done.', failed ? 'error' : 'idle');
       } catch (err: unknown) {
         cell.output = '';
         cell.error =
           `Could not run: the ${lang.label} runtime is unavailable. ${String(err)}`.trim();
         cell.failed = true;
+      } finally {
+        runningId = null;
       }
       render();
+      return !halted;
     }
 
     async function runAll() {
+      stopAll = false;
       for (let i = 0; i < cells.length; i++) {
-        if (cells[i].type === 'code') await runCell(i);
+        if (stopAll) break;
+        if (cells[i].type === 'code' && !(await runCell(i))) break;
       }
+    }
+
+    /** Stop the running Python cell, and any Run all it belongs to. */
+    function stopRunning() {
+      stopAll = true;
+      python.stop();
     }
 
     // ── Cell operations ─────────────────────────────────────────────────
@@ -853,9 +897,15 @@ _officina_out.getvalue()
       const i = Number(t.dataset.i);
       switch (t.dataset.act) {
         case 'run': runCell(i); break;
+        case 'stop': stopRunning(); break;
         case 'ins-code': addCell('code', '', i); break;
         case 'ins-md': addCell('markdown', '', i); break;
-        case 'del': cells.splice(i, 1); render(); break;
+        case 'del':
+          // Deleting the cell that is running stops it: nothing would show its output.
+          if (cells[i]?.id === runningId && python.running) stopRunning();
+          cells.splice(i, 1);
+          render();
+          break;
         case 'dup': addCell(cells[i].type, cells[i].source, i + 1); break;
         case 'up': if (i > 0) { [cells[i - 1], cells[i]] = [cells[i], cells[i - 1]]; render(); } break;
         case 'down': if (i < cells.length - 1) { [cells[i], cells[i + 1]] = [cells[i + 1], cells[i]]; render(); } break;
@@ -1141,7 +1191,10 @@ _officina_out.getvalue()
     document.getElementById('of-add-md')!.addEventListener('click', () => addCell('markdown'));
     document.getElementById('of-add-end')!.addEventListener('click', () => addCell('code'));
     document.getElementById('of-add-end-md')!.addEventListener('click', () => addCell('markdown'));
-    document.getElementById('of-run-all')!.addEventListener('click', runAll);
+    document.getElementById('of-run-all')!.addEventListener('click', () => {
+      if (python.running) stopRunning();
+      else if (!runningId) runAll();
+    });
     document.getElementById('of-clear')!.addEventListener('click', () => {
       cells.forEach((c) => { c.output = ''; c.error = ''; c.failed = false; });
       render();
@@ -1180,7 +1233,7 @@ _officina_out.getvalue()
       warmed.add(id);
 
       if (runtime === 'pyodide') {
-        loadPyodide().catch(() => {});
+        python.warm().catch(() => { warmed.delete(id); });
         return;
       }
 
@@ -1397,6 +1450,7 @@ _officina_out.getvalue()
   .of-cell-btn:hover:not(:disabled) { border-color: var(--brass); color: var(--ink); }
   .of-cell-btn:disabled { opacity: 0.3; cursor: default; }
   .of-run { color: var(--fundus); border-color: color-mix(in srgb, var(--fundus) 40%, transparent); }
+  .of-run.is-stop { color: var(--oxblood-text); border-color: color-mix(in srgb, var(--oxblood-text) 55%, transparent); }
 
   .of-src {
     display: block;

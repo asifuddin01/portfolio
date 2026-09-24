@@ -1,5 +1,5 @@
-import workerSource from './worker.js?raw';
 import tracerSource from './tracer.py?raw';
+import { PythonWorker, type WorkerMessage } from './worker-client.ts';
 import { LRU, traceKey } from '../trace/cache.ts';
 import { TraceStore } from '../trace/store.ts';
 import type { TraceLimits, TraceResult, TraceStep } from '../trace/schema.ts';
@@ -57,13 +57,6 @@ export interface RuntimeMetrics {
   runs: { steps: number; firstChunkMs: number | null; totalMs: number; cached: boolean }[];
 }
 
-type WorkerMessage =
-  | { type: 'ready'; version: string; ms: number }
-  | { type: 'fatal'; message: string }
-  | { type: 'chunk'; runId: number; json: string }
-  | { type: 'stopped'; runId: number; json: string }
-  | { type: 'done'; runId: number; json: string };
-
 interface Active {
   runId: number;
   store: TraceStore;
@@ -73,40 +66,6 @@ interface Active {
   hardTimer: ReturnType<typeof setTimeout>;
   stopTimer: ReturnType<typeof setTimeout> | null;
   resolve(result: TraceResult): void;
-}
-
-class PythonWorker {
-  readonly ready: Promise<{ version: string; ms: number }>;
-  onRunMessage: (m: WorkerMessage) => void = () => {};
-  private worker: Worker;
-  private port: MessagePort;
-
-  constructor(indexURL: string) {
-    const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
-    this.worker = new Worker(url, { type: 'module', name: 'officina-python' });
-    const channel = new MessageChannel();
-    this.port = channel.port1;
-    this.ready = new Promise((resolve, reject) => {
-      this.worker.onerror = (e) => reject(new Error(e.message || 'the Python worker failed to start'));
-      this.port.onmessage = (e: MessageEvent<WorkerMessage>) => {
-        const m = e.data;
-        if (m.type === 'ready') resolve({ version: m.version, ms: m.ms });
-        else if (m.type === 'fatal') reject(new Error(m.message));
-        else this.onRunMessage(m);
-      };
-    });
-    this.ready.finally(() => URL.revokeObjectURL(url)).catch(() => {});
-    this.worker.postMessage({ type: 'init', indexURL, tracerSource }, [channel.port2]);
-  }
-
-  run(runId: number, code: string, stdin: string, limits: TraceLimits) {
-    this.port.postMessage({ type: 'run', runId, code, stdin, limits });
-  }
-
-  terminate() {
-    this.worker.terminate();
-    this.port.close();
-  }
 }
 
 export class PythonRuntime {
@@ -150,7 +109,7 @@ export class PythonRuntime {
   warm(): Promise<void> {
     if (!this.primary) {
       this.setState('loading');
-      this.primary = new PythonWorker(this.indexURL);
+      this.primary = new PythonWorker(this.indexURL, { tracer: tracerSource });
       const worker = this.primary;
       worker.ready.then(
         ({ ms }) => {
@@ -331,7 +290,7 @@ export class PythonRuntime {
     if (!this.keepSpare || this.spare) return;
     const start = () => {
       if (this.spare || !this.primary) return;
-      this.spare = new PythonWorker(this.indexURL);
+      this.spare = new PythonWorker(this.indexURL, { tracer: tracerSource });
       this.spare.ready.catch(() => { this.spare = null; });
     };
     // Loading a second interpreter competes with the run for the CPU, so it

@@ -14,8 +14,11 @@ may later explain a trace; it will not write one.
 
 ```
 python/tracer.py     runs a program under sys.settrace and records what finished at each step
-python/worker.js     Pyodide + tracer in a module worker, with the network removed
-python/runtime.ts    worker lifecycle, a pre-loaded spare, limits, real cancellation, cache
+python/worker.js     Pyodide in a module worker, network removed — shared by both pages
+python/worker-client.ts   that worker, seen from the page
+python/runtime.ts    /officina/ai: traces, with a pre-loaded spare, limits, cancellation, cache
+python/notebook.py   /officina: runs notebook cells in a shared namespace, output streamed and capped
+python/session.ts    /officina: one cell at a time, Stop, a 30 s limit, a spare for instant restart
 trace/schema.ts      the step format — language-independent, facts only
 trace/store.ts       holds a trace; the state at any step, checkpointed every 256 steps
 trace/cache.ts       traces keyed by a hash of everything that determines them
@@ -67,6 +70,17 @@ Measured on an Apple M1 in Chromium, against the build guide's budgets:
 | 5,441-step program traced (Node, Pyodide) | ~200 ms | < 500 ms |
 | 50,000 steps traced, first steps on screen | 387 ms, 32 ms | < 1 s first chunk |
 | Showing any step (p50 / p95) | 0.3 / 0.5 ms | < 50 ms |
+
+## The notebook uses the same worker
+
+/officina's Python cells run in this worker too (session.ts, notebook.py),
+not on the page's main thread as they used to. Before, `while True: pass`
+froze the tab with no way out, output had no cap, and a cell could
+`import js` and reach the page — `js.fetch` with the site's cookies,
+`js.localStorage` with the CMS token. Now a cell can be stopped (Stop, or
+30 s), output stops at 256 KB, and none of the page is reachable. Stopping
+terminates the worker, so earlier cells' variables go with it; the cell says
+so. `input()` reads end-of-file — a worker has no keyboard.
 
 ## Running other people's code
 
