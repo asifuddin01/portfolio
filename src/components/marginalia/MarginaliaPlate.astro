@@ -1,0 +1,275 @@
+---
+import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
+---
+
+<figure class="mp" data-motion-figure data-reveal>
+  <svg
+    class="mp-svg"
+    viewBox="0 0 520 420"
+    role="img"
+    aria-labelledby="mp-title mp-desc"
+  >
+    <title id="mp-title">A living page of marginal notes</title>
+    <desc id="mp-desc">
+      A reading point moves down a manuscript margin while three annotations,
+      underlines, and cross-references write themselves beside the text.
+    </desc>
+
+    <g aria-hidden="true">
+      <!-- A page implied by ink alone: no panel or rectangular edge. -->
+      <path class="mp-edge" d="M136 28 C126 126 145 262 133 392" />
+      <path class="mp-folio" d="M157 40 C247 35 353 38 458 32" />
+      <path class="mp-folio" d="M157 386 C268 391 367 384 457 389" />
+
+      <g class="mp-prose">
+        <path d="M165 72 C231 66 319 74 428 68" />
+        <path d="M165 98 C248 104 340 92 454 99" />
+        <path d="M165 124 C221 119 300 129 394 121" />
+        <path d="M165 151 C251 157 359 143 446 150" />
+        <path d="M165 190 C232 183 321 195 420 188" />
+        <path d="M165 216 C248 222 339 209 456 216" />
+        <path d="M165 242 C223 237 309 247 389 240" />
+        <path d="M165 269 C257 276 356 260 439 267" />
+        <path d="M165 308 C229 302 319 314 420 306" />
+        <path d="M165 334 C246 341 348 327 454 334" />
+        <path d="M165 360 C224 355 299 365 397 358" />
+      </g>
+
+      <!-- The three parts of the commonplace book become real annotations. -->
+      <g class="mp-note" style="--delay: 0ms; --accent: var(--lesion-ma)">
+        <text class="mp-number" x="70" y="96">I</text>
+        <circle class="mp-anchor" cx="135" cy="98" r="4.5" />
+        <path class="mp-ink" pathLength="1" d="M82 91 C99 83 112 82 135 98 C145 105 151 111 162 113" />
+        <path class="mp-ink mp-emphasis" pathLength="1" d="M165 113 C214 108 263 119 307 111" />
+        <path class="mp-scratch" d="M88 104 l16 5 M91 110 l11 3" />
+      </g>
+
+      <g class="mp-note" style="--delay: 2800ms; --accent: var(--lesion-ex)">
+        <text class="mp-number" x="64" y="220">II</text>
+        <circle class="mp-anchor" cx="135" cy="216" r="4.5" />
+        <path class="mp-ink" pathLength="1" d="M84 214 C103 224 116 227 135 216 C147 209 153 202 165 201" />
+        <path class="mp-ink mp-loop" pathLength="1" d="M246 199 C268 184 309 185 329 201 C340 211 329 223 303 226 C270 229 245 216 246 199" />
+        <path class="mp-scratch" d="M87 230 q12 7 24 1 M92 237 q9 4 17 0" />
+      </g>
+
+      <g class="mp-note" style="--delay: 5600ms; --accent: var(--lesion-cws)">
+        <text class="mp-number" x="59" y="340">III</text>
+        <circle class="mp-anchor" cx="135" cy="334" r="4.5" />
+        <path class="mp-ink" pathLength="1" d="M84 335 C105 345 119 347 135 334 C145 326 151 320 165 320" />
+        <path class="mp-ink mp-emphasis" pathLength="1" d="M165 320 C223 313 279 327 342 317" />
+        <path class="mp-ink mp-bracket" pathLength="1" d="M430 301 q17 5 8 18 q-7 10 5 19 q8 7 -8 16" />
+      </g>
+
+      <!-- Five index marks echo the categories and the rule below the hero. -->
+      <g class="mp-tabs">
+        <circle class="mp-tab" style="--tab-delay: 0ms; --tab: var(--lesion-ma)" cx="468" cy="81" r="3.2" />
+        <circle class="mp-tab" style="--tab-delay: 900ms; --tab: var(--lesion-he)" cx="474" cy="143" r="3.2" />
+        <circle class="mp-tab" style="--tab-delay: 1800ms; --tab: var(--lesion-ex)" cx="470" cy="207" r="3.2" />
+        <circle class="mp-tab" style="--tab-delay: 2700ms; --tab: var(--lesion-cws)" cx="476" cy="273" r="3.2" />
+        <circle class="mp-tab" style="--tab-delay: 3600ms; --tab: var(--lesion-ves)" cx="469" cy="341" r="3.2" />
+      </g>
+
+      <!-- The moving reader keeps the loop visibly alive on small screens. -->
+      <circle class="mp-reader-ring" cx="0" cy="0" r="9" />
+      <circle class="mp-reader" cx="0" cy="0" r="2.8" />
+    </g>
+  </svg>
+
+  <div class="mp-motion">
+    <FigureMotionToggle figure="marginalia illustration" />
+  </div>
+</figure>
+
+<style>
+  .mp {
+    width: 100%;
+    min-width: 0;
+    max-width: 39rem;
+    margin: 0 auto;
+    position: relative;
+  }
+  .mp-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .mp-motion { display: flex; justify-content: flex-end; margin-top: -0.25rem; }
+  .mp:not([data-motion]) .mp-motion { display: none; }
+
+  .mp-edge,
+  .mp-folio,
+  .mp-prose path,
+  .mp-ink,
+  .mp-scratch,
+  .mp-reader-ring {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+  }
+  .mp-edge { stroke: var(--brass); stroke-width: 0.9; stroke-opacity: 0.52; }
+  .mp-folio { stroke: var(--brass); stroke-width: 0.55; stroke-opacity: 0.22; }
+  .mp-prose path {
+    stroke: var(--ink-soft);
+    stroke-width: 0.8;
+    stroke-linecap: round;
+    stroke-opacity: 0.26;
+  }
+  .mp-prose path:nth-child(3n + 2) { stroke-opacity: 0.17; }
+  .mp-prose path:nth-child(4n) { stroke-dasharray: 7 3 22 3; }
+
+  .mp-number {
+    fill: var(--brass-text);
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-style: italic;
+  }
+  .mp-anchor {
+    fill: var(--paper);
+    stroke: color-mix(in srgb, var(--accent) 72%, var(--ink) 28%);
+    stroke-width: 1.2;
+    vector-effect: non-scaling-stroke;
+  }
+  .mp-ink {
+    stroke: color-mix(in srgb, var(--accent) 72%, var(--ink) 28%);
+    stroke-width: 1.35;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    opacity: 0.82;
+  }
+  .mp-emphasis { stroke-width: 1.7; }
+  .mp-loop { stroke-width: 1.1; }
+  .mp-bracket { stroke-width: 1.25; }
+  .mp-scratch {
+    stroke: color-mix(in srgb, var(--accent) 52%, var(--ink) 48%);
+    stroke-width: 0.75;
+    stroke-linecap: round;
+    opacity: 0.55;
+  }
+  .mp-tab { fill: color-mix(in srgb, var(--tab) 72%, var(--ink) 28%); opacity: 0.72; }
+
+  .mp-reader,
+  .mp-reader-ring {
+    offset-path: path('M 136 37 C 124 126 144 263 133 385');
+    offset-rotate: 0deg;
+  }
+  .mp-reader { fill: var(--fundus); offset-distance: 100%; }
+  .mp-reader-ring {
+    stroke: var(--fundus);
+    stroke-width: 0.65;
+    stroke-opacity: 0.48;
+    offset-distance: 100%;
+  }
+
+  @media all {
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-ink {
+      animation: mp-write 8400ms var(--ease-ink) infinite both;
+      animation-delay: var(--delay);
+    }
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-number,
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-anchor,
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-scratch {
+      animation: mp-note 8400ms ease-in-out infinite both;
+      animation-delay: var(--delay);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-tab {
+      animation: mp-tab 4500ms ease-in-out infinite;
+      animation-delay: var(--tab-delay);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-reader,
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-reader-ring {
+      animation: mp-read 8400ms linear infinite;
+    }
+    .mp[data-motion='running']:not([data-motion-visible='false']) .mp-reader-ring {
+      animation-name: mp-read-ring;
+    }
+
+    @keyframes mp-write {
+      0%, 4% { stroke-dashoffset: 1; opacity: 0; }
+      18%, 48% { stroke-dashoffset: 0; opacity: 0.92; }
+      62% { stroke-dashoffset: 0; opacity: 0.2; }
+      72%, 100% { stroke-dashoffset: 1; opacity: 0; }
+    }
+    @keyframes mp-note {
+      0%, 3% { opacity: 0; transform: scale(0.82); }
+      13%, 50% { opacity: 1; transform: scale(1); }
+      66%, 100% { opacity: 0; transform: scale(0.96); }
+    }
+    @keyframes mp-tab {
+      0%, 100% { opacity: 0.48; transform: scale(1); }
+      45% { opacity: 1; transform: scale(1.65); }
+      68% { opacity: 0.72; transform: scale(1); }
+    }
+    @keyframes mp-read {
+      0% { offset-distance: 0%; opacity: 0; }
+      4% { opacity: 1; }
+      94% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+    @keyframes mp-read-ring {
+      0% { offset-distance: 0%; opacity: 0; transform: scale(0.7); }
+      4% { opacity: 0.7; }
+      50% { transform: scale(1.18); }
+      94% { opacity: 0.7; }
+      100% { offset-distance: 100%; opacity: 0; transform: scale(0.7); }
+    }
+  }
+
+  .mp[data-motion='paused'] .mp-ink,
+  .mp[data-motion='paused'] .mp-number,
+  .mp[data-motion='paused'] .mp-anchor,
+  .mp[data-motion='paused'] .mp-scratch,
+  .mp[data-motion='paused'] .mp-tab,
+  .mp[data-motion='paused'] .mp-reader,
+  .mp[data-motion='paused'] .mp-reader-ring { animation: none !important; }
+  .mp[data-motion='paused'] .mp-ink { stroke-dashoffset: 0; opacity: 0.82; }
+  .mp[data-motion='paused'] .mp-number,
+  .mp[data-motion='paused'] .mp-anchor,
+  .mp[data-motion='paused'] .mp-scratch { opacity: 1; transform: none; }
+  .mp[data-motion='paused'] .mp-tab { opacity: 0.72; transform: none; }
+  .mp[data-motion='paused'] .mp-reader,
+  .mp[data-motion='paused'] .mp-reader-ring { opacity: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mp[data-motion='running'] .mp-ink {
+      animation: mp-write 8400ms var(--ease-ink) infinite both !important;
+      animation-delay: var(--delay) !important;
+    }
+    .mp[data-motion='running'] .mp-number,
+    .mp[data-motion='running'] .mp-anchor,
+    .mp[data-motion='running'] .mp-scratch {
+      animation: mp-note 8400ms ease-in-out infinite both !important;
+      animation-delay: var(--delay) !important;
+    }
+    .mp[data-motion='running'] .mp-tab {
+      animation: mp-tab 4500ms ease-in-out infinite !important;
+      animation-delay: var(--tab-delay) !important;
+    }
+    .mp[data-motion='running'] .mp-reader { animation: mp-read 8400ms linear infinite !important; }
+    .mp[data-motion='running'] .mp-reader-ring { animation: mp-read-ring 8400ms linear infinite !important; }
+  }
+
+  .mp.is-motion-restarting .mp-ink,
+  .mp.is-motion-restarting .mp-number,
+  .mp.is-motion-restarting .mp-anchor,
+  .mp.is-motion-restarting .mp-scratch,
+  .mp.is-motion-restarting .mp-tab,
+  .mp.is-motion-restarting .mp-reader,
+  .mp.is-motion-restarting .mp-reader-ring { animation: none !important; }
+
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-ink,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-number,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-anchor,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-scratch,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-tab,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-reader,
+  .mp[data-motion='running'][data-motion-visible='false'] .mp-reader-ring {
+    animation-play-state: paused !important;
+  }
+
+  @media (max-width: 30rem) {
+    .mp { max-width: 31rem; }
+    .mp-motion { margin-top: -0.6rem; }
+    .mp-folio { display: none; }
+  }
+</style>
