@@ -49,7 +49,7 @@ test('a condition reaches the model with both operands and its result', () => {
 
 test('a variable change reaches the model as before and after', () => {
   const { source, store, read, steps } = load('bubble.py');
-  const index = steps.findIndex((s, i) => i > 0 && store.at(i).changes.some((c) => c.existedBefore));
+  const index = steps.findIndex((_, i) => i > 0 && store.at(i).changes.some((c) => c.existedBefore));
   assert.ok(index >= 0);
 
   const view = store.at(index);
