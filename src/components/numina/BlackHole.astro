@@ -7,6 +7,7 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   data-black-hole
   data-motion-figure
   data-reveal
+  aria-labelledby="bh-caption"
 >
   <div
     class="bh-stage"
@@ -21,6 +22,7 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
 
   <div class="bh-meta">
     <figcaption id="bh-caption">
+      <span class="bh-caption-number">Figura III</span>
       <span class="bh-caption-title">The unseen centre</span>
       <span class="bh-caption-copy">A presence known by what it bends.</span>
     </figcaption>
@@ -174,21 +176,28 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   }
 
   .bh-meta figcaption { min-width: 0; }
+  .bh-caption-number,
   .bh-caption-title,
   .bh-caption-copy { display: block; }
-  .bh-caption-title {
+  .bh-caption-number {
     font-family: var(--font-mono);
-    font-size: 0.64rem;
+    font-size: var(--t-xs);
     line-height: 1.4;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--brass-text);
   }
-  .bh-caption-copy {
-    margin-top: 0.16rem;
+  .bh-caption-title {
+    margin-top: 0.25rem;
+    font-family: var(--font-body);
     font-size: var(--t-sm);
-    line-height: 1.45;
     font-style: italic;
+    color: var(--ink);
+  }
+  .bh-caption-copy {
+    margin-top: 0.25rem;
+    font-size: var(--t-xs);
+    line-height: 1.65;
     color: var(--ink-soft);
   }
 
