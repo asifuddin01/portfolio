@@ -50,8 +50,10 @@ const note = NOTES[entry.id];
 
 const meta: Array<{ label: string; value: string }> = [
   { label: 'Year', value: d.year },
-  { label: d.supervisors.length > 1 ? 'Supervisors' : 'Supervisor', value: d.supervisors.join(', ') },
 ];
+if (d.supervisors.length > 0) {
+  meta.push({ label: d.supervisors.length > 1 ? 'Supervisors' : 'Supervisor', value: d.supervisors.join(', ') });
+}
 if (d.coauthors.length > 0) meta.push({ label: 'Co-authors', value: d.coauthors.join(', ') });
 if (d.datasets.length > 0) meta.push({ label: 'Datasets', value: d.datasets.join(' · ') });
 ---

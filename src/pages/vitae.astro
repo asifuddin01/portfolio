@@ -61,7 +61,7 @@ const role = await getRole();
             <p class="cv-full">{w.data.fullTitle}</p>
             <p class="cv-detail">
               <span class="cv-tag">{w.data.status.replace(/-/g, ' ')}</span>
-              Supervisors: {w.data.supervisors.join(', ')}.
+              {w.data.supervisors.length > 0 && ` Supervisor${w.data.supervisors.length > 1 ? 's' : ''}: ${w.data.supervisors.join(', ')}.`}
               {w.data.coauthors.length > 0 && ` Co-authors: ${w.data.coauthors.join(', ')}.`}
             </p>
             {w.data.metrics.length > 0 && (
