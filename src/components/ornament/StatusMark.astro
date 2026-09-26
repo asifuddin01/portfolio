@@ -10,7 +10,7 @@
  * a status nobody had written a label for.
  */
 interface Props {
-  status: 'deposited' | 'in-preparation' | 'under-review' | 'proposal-accepted';
+  status: 'deposited' | 'in-preparation' | 'under-review' | 'proposal-accepted' | 'released';
 }
 const { status } = Astro.props;
 
@@ -19,6 +19,7 @@ const LABELS: Record<Props['status'], string> = {
   'in-preparation': 'In preparation',
   'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
+  'released': 'Released',
 };
 ---
 <span class="status">{LABELS[status]}</span>

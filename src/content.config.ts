@@ -55,7 +55,7 @@ const works = defineCollection({
     title: z.string(),
     fullTitle: z.string(),
     subtitle: z.string(),
-    status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted']),
+    status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted', 'released']),
     disclosure: z.enum(['public', 'embargoed']),
     year: z.string(),
     /** Omitted entirely by work nobody supervised — PRISMA-Local is one. */

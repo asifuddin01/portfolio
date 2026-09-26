@@ -1288,6 +1288,7 @@ collections:
           - { label: "Under review — submitted, not yet accepted", value: under-review }
           - { label: "Proposal accepted", value: proposal-accepted }
           - { label: "Deposited", value: deposited }
+          - { label: "Released — a finished tool, code and demo public, no paper", value: released }
       - label: Disclosure
         name: disclosure
         widget: select

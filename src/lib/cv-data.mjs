@@ -28,6 +28,7 @@ const PLATE_STATUS = {
   'in-preparation': 'In preparation',
   'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
+  released: 'Released',
 };
 
 const host = (u) => String(u ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '');
