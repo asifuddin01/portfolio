@@ -2,7 +2,7 @@
 import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
 ---
 
-<figure class="mp" data-motion-figure data-reveal>
+<figure class="mp" data-motion-figure data-reveal aria-labelledby="mp-cap">
   <svg
     class="mp-svg"
     viewBox="0 0 520 420"
@@ -78,6 +78,16 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
   <div class="mp-motion">
     <FigureMotionToggle figure="marginalia illustration" />
   </div>
+
+  <figcaption class="mp-cap" id="mp-cap">
+    <span class="mp-cap-n">Figura I</span>
+    <span class="mp-cap-t">The page remembers where it was read</span>
+    <span class="mp-cap-d">
+      The reader moves down the margin. Notes appear in its wake — one
+      underlined, one circled, one cross-referenced — until the three parts of
+      the commonplace book become one working index.
+    </span>
+  </figcaption>
 </figure>
 
 <style>
@@ -87,10 +97,28 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
     max-width: 39rem;
     margin: 0 auto;
     position: relative;
+    display: grid;
+    gap: 0.9rem;
   }
   .mp-svg { width: 100%; height: auto; display: block; overflow: visible; }
-  .mp-motion { display: flex; justify-content: flex-end; margin-top: -0.25rem; }
+  .mp-motion { display: flex; justify-content: flex-end; }
   .mp:not([data-motion]) .mp-motion { display: none; }
+
+  .mp-cap { display: grid; gap: 0.25rem; max-width: 26rem; }
+  .mp-cap-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .mp-cap-t {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--t-sm);
+    color: var(--ink);
+  }
+  .mp-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
 
   .mp-edge,
   .mp-folio,
@@ -269,7 +297,6 @@ import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
 
   @media (max-width: 30rem) {
     .mp { max-width: 31rem; }
-    .mp-motion { margin-top: -0.6rem; }
     .mp-folio { display: none; }
   }
 </style>
