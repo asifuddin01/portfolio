@@ -64,7 +64,13 @@ export const NAV: readonly (NavLink | NavGroup)[] = [
   },
   { href: '/researchlens', label: 'ResearchLens' },
   { href: '/vitae', label: 'Vitae' },
-  { href: '/officina', label: 'Officina' },
+  {
+    label: 'Fabrica',
+    children: [
+      { href: '/officina', label: 'Officina', gloss: 'A notebook that runs the code' },
+      { href: '/winnow', label: 'Winnow', gloss: 'A platform for systematic reviews' },
+    ],
+  },
   { href: '/artifacts/private', label: 'Artifacts', owner: true },
 ];
 

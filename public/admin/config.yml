@@ -1301,8 +1301,9 @@ collections:
       - label: Supervisors
         name: supervisors
         widget: list
+        required: false
         field: { label: Name, name: name, widget: string }
-        hint: "At least one — the schema requires it."
+        hint: "Leave empty for work nobody supervised; the label is then omitted."
       - { label: Co-authors, name: coauthors, widget: list, required: false, field: { label: Name, name: name, widget: string } }
       - { label: Datasets, name: datasets, widget: list, required: false, field: { label: Dataset, name: dataset, widget: string } }
       - label: Abstract

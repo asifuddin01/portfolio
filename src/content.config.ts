@@ -58,7 +58,8 @@ const works = defineCollection({
     status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted']),
     disclosure: z.enum(['public', 'embargoed']),
     year: z.string(),
-    supervisors: z.array(z.string()),
+    /** Omitted entirely by work nobody supervised — PRISMA-Local is one. */
+    supervisors: z.array(z.string()).default([]),
     coauthors: z.array(z.string()).default([]),
     datasets: z.array(z.string()).default([]),
     abstract: z.string(),                    // verbatim from the paper

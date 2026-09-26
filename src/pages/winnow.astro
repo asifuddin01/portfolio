@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { AUTHOR } from '../consts';
+
+/**
+ * Winnow's page while Winnow has nowhere to live.
+ *
+ * Deliberately short. The long account is the Appendix entry in the projects
+ * collection; this is the page a nav button needs to point at, and until the
+ * thing is running the most useful page is one that says what it does, what
+ * it was measured at, and why it is not open yet.
+ */
+
+/** Every figure written as a budget first, then measured on 100,000 records. */
+const BUDGETS = [
+  ['Screening, 95th percentile', '32–69 ms', '80 ms'],
+  ['Record list, across 15 filters, sorts and searches', '12–64 ms', '150 ms'],
+  ['Import of 100,000 records', '49 s', '60 s'],
+  ['Deduplication of 50,000 records', '13 s', '30 s'],
+  ['Page load on 4G (LCP)', '0.7 s', '1.5 s'],
+];
+---
+<BaseLayout
+  title={`Winnow — a platform for systematic reviews — ${AUTHOR}`}
+  description="Free, open-source and self-hostable: search results in, PRISMA 2020 diagram out, on a server the lab owns."
+  folio="—"
+>
+  <div class="codex wn">
+    <p class="wn-kicker" data-reveal>Built · awaiting a server</p>
+    <h1 class="wn-h1" data-press>Winnow</h1>
+    <p class="wn-lede codex-measure" data-reveal>
+      Separate the evidence from the noise. A systematic review starts with
+      thousands of database records and ends with a diagram every reader
+      expects; the tools that carry it between the two are commercial and
+      closed, and they want your unpublished data on their servers. Winnow is
+      the whole pipeline instead — free, open source, and running on a machine
+      the lab owns.
+    </p>
+
+    <LesionRule />
+
+    <section class="wn-sec" aria-labelledby="wn-what">
+      <h2 class="wn-h2" id="wn-what">What it does</h2>
+      <ul class="wn-list codex-measure" data-reveal-stagger>
+        <li>Twenty search exports at once — RIS, PubMed MEDLINE and XML, BibTeX, EndNote XML, Zotero RDF, CSV — with live progress and undo.</li>
+        <li>Deduplication that merges the certain pairs and puts the doubtful ones side by side for a person.</li>
+        <li>Keyboard-first screening, blind or open, two reviewers, with conflicts resolved against each other's reasons.</li>
+        <li>A relevance model that retrains from each reviewer's own decisions, shows the likely includes first, and estimates when stopping is defensible.</li>
+        <li>Full texts uploaded or fetched from Unpaywall and PubMed Central, virus-scanned before anyone opens them.</li>
+        <li>Dual data extraction on versioned forms with a consensus step, and risk of bias in RoB 2, ROBINS-I, Newcastle–Ottawa or QUADAS-2.</li>
+        <li>Out the other end: the PRISMA 2020 flow diagram, Cohen's and Fleiss' kappa, a methods paragraph to paste, and a backup that restores anywhere.</li>
+      </ul>
+    </section>
+
+    <section class="wn-sec" aria-labelledby="wn-fast">
+      <h2 class="wn-h2" id="wn-fast">How well it works</h2>
+      <p class="wn-note codex-measure" data-reveal>
+        Every number below was written down as a budget before it was
+        measured, and measured on reviews of 100,000 records.
+      </p>
+      <table class="wn-table" data-reveal>
+        <thead>
+          <tr><th scope="col">What</th><th scope="col">Measured</th><th scope="col">Budget</th></tr>
+        </thead>
+        <tbody>
+          {BUDGETS.map(([what, measured, budget]) => (
+            <tr><th scope="row">{what}</th><td>{measured}</td><td>{budget}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="wn-note codex-measure" data-reveal>
+        Fifty reviewers deciding every three seconds for ten minutes: a 37 ms
+        95th percentile and 0 errors in 19,920 requests. Authorisation is
+        checked per review with PostgreSQL row-level security behind it, and
+        blind mode is enforced in the database rather than hidden in the
+        interface. WCAG 2.2 AA with no serious or critical axe findings across
+        43 pages, four screen sizes and both themes. 900 backend tests at 95%
+        coverage, Playwright end to end, <code>mypy --strict</code>, and an
+        OWASP ZAP baseline scan in CI with no high-risk findings.
+      </p>
+    </section>
+
+    <section class="wn-sec" aria-labelledby="wn-live">
+      <h2 class="wn-h2" id="wn-live">Not live yet</h2>
+      <p class="wn-note codex-measure" data-reveal>
+        The production stack is complete and tested — one command brings it up
+        with automatic HTTPS, encrypted nightly backups and a restore test CI
+        runs monthly. What it does not have is somewhere to run. Winnow keeps
+        its own database, a background worker and a virus scanner, so it needs
+        a paid server rather than the free static hosting the rest of this site
+        uses. It goes up at <strong>winnow.sandhiresearch.org</strong> for
+        Sandhi Research Lab once that server is in place, and this page becomes
+        a link on the day it does.
+      </p>
+      <p class="wn-actions" data-reveal>
+        <a class="wn-btn" href="https://github.com/asifuddin01/WINNOW">Read the source</a>
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .wn { padding-top: clamp(2.4rem, 9vh, 5rem); }
+  .wn-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .wn-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .wn-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .wn-sec { margin-top: 2.6rem; }
+  .wn-h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: var(--t-lg);
+    margin: 0 0 0.9rem;
+  }
+  .wn-list { margin: 0; padding-left: 1.1rem; line-height: 1.8; }
+  .wn-list li { margin-bottom: 0.5rem; }
+  .wn-note { line-height: 1.8; margin: 0 0 1rem; }
+
+  .wn-table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 48rem;
+    margin: 0 0 1.2rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+  }
+  .wn-table th,
+  .wn-table td {
+    text-align: left;
+    padding: 0.5rem 0.9rem 0.5rem 0;
+    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    font-weight: 400;
+  }
+  .wn-table thead th {
+    color: var(--brass-text);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-bottom-color: color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  .wn-table tbody th { color: var(--ink); }
+  .wn-table td { color: var(--ink-soft); white-space: nowrap; }
+
+  .wn-actions { margin: 1.2rem 0 0; }
+  .wn-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0.5rem 0.9rem;
+  }
+  .wn-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+
+  @media (max-width: 560px) {
+    .wn-table { font-size: 0.75rem; }
+    .wn-table th, .wn-table td { padding-right: 0.5rem; }
+  }
+</style>
