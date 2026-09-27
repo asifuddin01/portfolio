@@ -7,7 +7,7 @@ const entries = await getEducation();
 const meta = await getEntry('site', 'chronicle');
 const coursework = meta?.data.coursework ?? '';
 ---
-<Chapter n={8} title="Chronicle" id="chronicle">
+<Chapter title="Chronicle" id="chronicle">
   <ol class="ch" data-reveal-stagger>
     {entries.map((e) => (
       <li class="ch-row">

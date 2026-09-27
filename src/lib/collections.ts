@@ -425,15 +425,57 @@ export async function getTabulae(): Promise<CollectionEntry<'art'>[]> {
 }
 
 /**
- * The positions a plate can occupy on the home page, in the order they appear.
- * Position 1 is the frontispiece, beside the name; the rest follow a chapter
- * each, down the scroll.
+ * The Summa's running order: every chapter on /home, top to bottom.
+ *
+ * This is the only place the order is written. The page composes its chapters
+ * from it, the rail lists them from it, each chapter's numeral is counted from
+ * it, and the plates are dealt out along it — so the art plates always read in
+ * sequence down the scroll. It used to be written out four times, and a
+ * reorder that missed one put plates out of order or a numeral on the wrong
+ * chapter. Move a line here and all four follow.
+ *
+ * The sequence reads as a person, then their work: who he is; the research;
+ * the architectures built for it; the principles, placed after the work they
+ * cite so that "HierarchiRetina, Stage III" means something when it is read;
+ * the course; an interleaf of lighter reading; the toolkit that built all of
+ * it; where he studied; the systems; and how to write to him.
+ *
+ * Position 1 is the frontispiece, beside the name, and carries no chapter.
  */
 export const PLATE_SLOTS = [
-  'frontispiece', 'prologue', 'axioms', 'instrumentarium', 'compendium',
-  'instrumenta', 'elementa', 'marginalia', 'chronicle', 'appendix',
+  'frontispiece',
+  'prologue',
+  'compendium',
+  'instrumenta',
+  'axioms',
+  'elementa',
+  'marginalia',
+  'instrumentarium',
+  'chronicle',
+  'appendix',
   'correspondence',
 ] as const;
+
+/** Sections set between chapters rather than numbered as one. */
+const INTERLEAVES: ReadonlySet<PlateSlot> = new Set(['marginalia']);
+
+/**
+ * A chapter's numeral, counted from its place in PLATE_SLOTS.
+ *
+ * The frontispiece is I, so the first chapter is II; an interleaf takes no
+ * numeral and does not advance the count.
+ */
+export function chapterNumeral(id: string): number {
+  let n = 1;
+  for (const slot of PLATE_SLOTS) {
+    if (slot === 'frontispiece' || INTERLEAVES.has(slot)) continue;
+    n++;
+    if (slot === id) return n;
+  }
+  throw new Error(`"${id}" is not a chapter in PLATE_SLOTS`);
+}
+
+export const isInterleaf = (id: string) => INTERLEAVES.has(id as PlateSlot);
 
 export type PlateSlot = (typeof PLATE_SLOTS)[number];
 

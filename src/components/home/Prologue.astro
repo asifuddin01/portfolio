@@ -6,7 +6,7 @@ const entry = await getEntry('site', 'prologue');
 if (!entry) throw new Error('Missing src/content/site/prologue.mdx');
 const { Content } = await render(entry);
 ---
-<Chapter n={2} title={entry.data.title} id="prologue">
+<Chapter title={entry.data.title} id="prologue">
   <div
     class:list={['codex-measure', 'prose', 'pr-body', { 'has-dropcap': entry.data.dropCap }]}
     data-reveal

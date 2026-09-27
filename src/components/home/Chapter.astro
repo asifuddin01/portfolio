@@ -1,13 +1,15 @@
 ---
 import { toRoman } from '../../consts';
+import { chapterNumeral } from '../../lib/collections';
 
 interface Props {
-  n: number;
   title: string;
   id: string;
   class?: string;
 }
-const { n, title, id, class: className = '' } = Astro.props;
+const { title, id, class: className = '' } = Astro.props;
+// Counted from the Summa's one running order, not written by hand here.
+const n = chapterNumeral(id);
 ---
 <section id={id} class:list={['chapter', className]} aria-labelledby={`${id}-h`}>
   <header class="ch-head" data-reveal>

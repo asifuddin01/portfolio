@@ -5,7 +5,7 @@ import { getCollection } from 'astro:content';
 
 const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
 ---
-<Chapter n={5} title="Compendium" id="compendium">
+<Chapter title="Compendium" id="compendium">
   <div class="cm-grid" data-reveal-stagger>
     {works.map((w) => (
       <PlateCard

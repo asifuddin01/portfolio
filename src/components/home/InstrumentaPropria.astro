@@ -7,7 +7,7 @@ const entries = (await getCollection('instrumenta')).sort(
   (a, b) => a.data.order - b.data.order
 );
 ---
-<Chapter n={6} title="Instrumenta propria" id="instrumenta">
+<Chapter title="Instrumenta propria" id="instrumenta">
   <ol class="ip" data-reveal-stagger>
     {entries.map((e, i) => (
       <li class="ip-item">

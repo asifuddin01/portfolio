@@ -1,4 +1,6 @@
 ---
+import { PLATE_SLOTS, chapterNumeral, isInterleaf } from '../../lib/collections';
+import { toRoman } from '../../consts';
 /**
  * The Summa's marginal rail.
  *
@@ -17,23 +19,28 @@
  */
 
 /**
- * Mirrors the order the sections are composed in `pages/home.astro`. The
- * numerals are the ones each Chapter already prints, so the rail and the page
- * agree; `marginalia` is the interleaf between VII and VIII and carries no
- * numeral of its own, which is why it shows a mark instead.
+ * Order and numerals come from PLATE_SLOTS, the same running order the page is
+ * composed from and every Chapter counts its numeral from, so the rail cannot
+ * disagree with the page. Only the names are the rail's own. An interleaf
+ * carries no numeral and shows a mark instead.
  */
-const CHAPTERS = [
-  { id: 'prologue', n: 'II', name: 'Prologue' },
-  { id: 'axioms', n: 'III', name: 'Axioms' },
-  { id: 'instrumentarium', n: 'IV', name: 'Instrumentarium' },
-  { id: 'compendium', n: 'V', name: 'Compendium' },
-  { id: 'instrumenta', n: 'VI', name: 'Instrumenta propria' },
-  { id: 'elementa', n: 'VII', name: 'Elementa' },
-  { id: 'marginalia', n: '·', name: 'Marginalia' },
-  { id: 'chronicle', n: 'VIII', name: 'Chronicle' },
-  { id: 'appendix', n: 'IX', name: 'Appendix' },
-  { id: 'correspondence', n: 'X', name: 'Correspondence' },
-];
+const NAMES: Record<string, string> = {
+  prologue: 'Prologue',
+  compendium: 'Compendium',
+  instrumenta: 'Instrumenta propria',
+  axioms: 'Axioms',
+  elementa: 'Elementa',
+  marginalia: 'Marginalia',
+  instrumentarium: 'Instrumentarium',
+  chronicle: 'Chronicle',
+  appendix: 'Appendix',
+  correspondence: 'Correspondence',
+};
+const CHAPTERS = PLATE_SLOTS.filter((id) => id !== 'frontispiece').map((id) => ({
+  id,
+  n: isInterleaf(id) ? '·' : toRoman(chapterNumeral(id)),
+  name: NAMES[id] ?? id,
+}));
 ---
 <nav class="sr" aria-label="Chapters">
   <ul class="sr-list">
