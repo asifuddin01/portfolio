@@ -300,13 +300,18 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
   const strip = document.getElementById('fr-ev');
 
   if (strip && !reduce) {
-    const cells = [...strip.querySelectorAll<HTMLElement>('[data-count]')];
+    /* Only plain numbers are counted. Anything else — "8.7k★", a range, a
+       "6×" — is left exactly as printed. This used to be decided inside run(),
+       after the loop below had already zeroed every cell, so a value that
+       could not be counted was zeroed and then abandoned: "8.7k★" sat on the
+       page as "0.000". Deciding it here, once, means a cell is only ever
+       zeroed if it is going to be counted back up. */
+    const cells = [...strip.querySelectorAll<HTMLElement>('[data-count]')]
+      .filter((c) => Number.isFinite(Number(c.dataset.count)));
 
     const run = (el: HTMLElement) => {
       const raw = el.dataset.count ?? '';
       const target = Number(raw);
-      // Anything that is not a plain number — a range, a "6×" — is left alone.
-      if (!Number.isFinite(target)) return;
       const dp = (raw.split('.')[1] ?? '').length;
       const started = performance.now();
       const DURATION = 1100;
