@@ -140,6 +140,27 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
 
     <LesionRule />
 
+    {/* ---- Research --------------------------------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-res-h">
+      <h2 class="fr-h2" id="fr-res-h">Research</h2>
+      <ol class="fr-res" data-reveal-stagger>
+        {works.map((w) => (
+          <li class="fr-res-i">
+            <a class="fr-res-link" href={`/works/${w.id}`}>
+              <span class="fr-res-y">{w.data.year}</span>
+              <span class="fr-res-m">
+                <span class="fr-res-t">{w.data.title}</span>
+                <span class="fr-res-s">{w.data.subtitle}</span>
+              </span>
+              <span class="fr-res-st">{w.data.status.replace(/-/g, ' ')}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <LesionRule />
+
     {/* ---- Systems that run ------------------------------------------ */}
     <section class="fr-sec" aria-labelledby="fr-sys-h">
       <h2 class="fr-h2" id="fr-sys-h">Systems that run</h2>
@@ -177,27 +198,6 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
 
     <LesionRule />
 
-    {/* ---- Appendix: every project in a line -------------------------- */}
-    <section class="fr-sec" aria-labelledby="fr-app-h">
-      <h2 class="fr-h2" id="fr-app-h">Appendix</h2>
-      <p class="fr-lede">Everything built, one line each. Each opens its full entry in the Summa.</p>
-      <ol class="fr-app" data-reveal-stagger>
-        {projects.map((p) => {
-          const { name, line } = brief(p);
-          return (
-            <li>
-              <a class="fr-app-a" href={`/home#${p.id}`}>
-                <span class="fr-app-n">{name}</span>
-                <span class="fr-app-l">{line}</span>
-              </a>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
-
-    <LesionRule />
-
     {/* ---- Architectures --------------------------------------------- */}
     <section class="fr-sec" aria-labelledby="fr-arch-h">
       <h2 class="fr-h2" id="fr-arch-h">Architectures built, not fine-tuned</h2>
@@ -226,6 +226,27 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
 
     <LesionRule />
 
+    {/* ---- Appendix: every project in a line -------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-app-h">
+      <h2 class="fr-h2" id="fr-app-h">Appendix</h2>
+      <p class="fr-lede">Everything built, one line each. Each opens its full entry in the Summa.</p>
+      <ol class="fr-app" data-reveal-stagger>
+        {projects.map((p) => {
+          const { name, line } = brief(p);
+          return (
+            <li>
+              <a class="fr-app-a" href={`/home#${p.id}`}>
+                <span class="fr-app-n">{name}</span>
+                <span class="fr-app-l">{line}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+
+    <LesionRule />
+
     {/* ---- The stack -------------------------------------------------- */}
     <section class="fr-sec" aria-labelledby="fr-stack-h">
       <h2 class="fr-h2" id="fr-stack-h">What that takes, in practice</h2>
@@ -245,27 +266,6 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
           </div>
         ))}
       </dl>
-    </section>
-
-    <LesionRule />
-
-    {/* ---- Research --------------------------------------------------- */}
-    <section class="fr-sec" aria-labelledby="fr-res-h">
-      <h2 class="fr-h2" id="fr-res-h">Research</h2>
-      <ol class="fr-res" data-reveal-stagger>
-        {works.map((w) => (
-          <li class="fr-res-i">
-            <a class="fr-res-link" href={`/works/${w.id}`}>
-              <span class="fr-res-y">{w.data.year}</span>
-              <span class="fr-res-m">
-                <span class="fr-res-t">{w.data.title}</span>
-                <span class="fr-res-s">{w.data.subtitle}</span>
-              </span>
-              <span class="fr-res-st">{w.data.status.replace(/-/g, ' ')}</span>
-            </a>
-          </li>
-        ))}
-      </ol>
     </section>
 
     <LesionRule />
