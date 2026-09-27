@@ -1,5 +1,5 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
-import { EMAIL, GITHUB, LINKEDIN, LOCATION, ROLE } from '../consts';
+import { EMAIL, GITHUB, LINKEDIN, ORCID, LOCATION, ROLE } from '../consts';
 import {
   APPARATUS_PARTS, TIER_RULES, COVERAGE_RULES, STRANDS,
   propositionId, type MathTier, type Strand,
@@ -583,6 +583,7 @@ export async function getContact(): Promise<{
   email: string;
   github: string;
   linkedin: string;
+  orcid: string;
   location: string;
 }> {
   const e = await getEntry('site', 'contact');
@@ -590,6 +591,7 @@ export async function getContact(): Promise<{
     email: e?.data.email ?? EMAIL,
     github: e?.data.github ?? GITHUB,
     linkedin: e?.data.linkedin ?? LINKEDIN,
+    orcid: e?.data.orcid ?? ORCID,
     location: e?.data.location ?? LOCATION,
   };
 }

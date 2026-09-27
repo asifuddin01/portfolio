@@ -28,7 +28,6 @@ const PLATE_STATUS = {
   'in-preparation': 'In preparation',
   'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
-  released: 'Released',
 };
 
 const host = (u) => String(u ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -53,6 +52,7 @@ export function buildCv({
   const email = contact.email ?? fallback.email ?? '';
   const github = contact.github ?? fallback.github ?? '';
   const linkedin = contact.linkedin ?? fallback.linkedin ?? '';
+  const orcid = contact.orcid ?? fallback.orcid ?? '';
   const location = contact.location ?? fallback.location ?? '';
 
   const sections = [];
@@ -224,7 +224,7 @@ export function buildCv({
     // The phone number is deliberately absent. This file is served publicly,
     // and a number on a public page is a different exposure from one on a CV
     // handed to a person.
-    contact: [location, email, host(linkedin), host(github), host(siteUrl)].filter(Boolean),
+    contact: [location, email, host(linkedin), host(github), host(orcid), host(siteUrl)].filter(Boolean),
     summary: cvMeta.summary ?? '',
     sections,
     siteHost: host(siteUrl),

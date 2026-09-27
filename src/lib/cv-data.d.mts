@@ -51,7 +51,7 @@ export interface CvInput {
   author?: string;
   siteUrl?: string;
   /** consts.ts values, used when the contact entry is silent. */
-  fallback?: { email?: string; github?: string; linkedin?: string; location?: string };
+  fallback?: { email?: string; github?: string; linkedin?: string; orcid?: string; location?: string };
 }
 
 export function buildCv(input?: CvInput): Cv;

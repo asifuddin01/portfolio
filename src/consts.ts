@@ -19,6 +19,7 @@ export const LOCATION = 'Dhaka, Bangladesh';
 export const EMAIL = 'md.asif.uddin@g.bracu.ac.bd';
 export const GITHUB = 'https://github.com/asifuddin01';
 export const LINKEDIN = 'https://linkedin.com/in/md-asif-uddin01';
+export const ORCID = 'https://orcid.org/0009-0000-1705-4097';
 
 /**
  * The primary nav. Frontispiece is the home page, which the wordmark to its

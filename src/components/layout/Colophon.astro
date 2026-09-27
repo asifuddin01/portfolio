@@ -3,7 +3,7 @@ import LesionRule from '../ornament/LesionRule.astro';
 import { getEntry, render } from 'astro:content';
 import { getContact } from '../../lib/collections';
 
-const { email, github, linkedin } = await getContact();
+const { email, github, linkedin, orcid } = await getContact();
 
 const entry = await getEntry('site', 'colophon');
 const Colophon = entry ? (await render(entry)).Content : null;
@@ -17,6 +17,7 @@ const Colophon = entry ? (await render(entry)).Content : null;
         <li><a class="link" href={`mailto:${email}`}>{email}</a></li>
         <li><a class="link" href={github} rel="me">github</a></li>
         <li><a class="link" href={linkedin} rel="me">linkedin</a></li>
+        <li><a class="link" href={orcid} rel="me">orcid</a></li>
         <li>
           <a class="link" href="/vitae/cv">curriculum vitae</a>
         </li>

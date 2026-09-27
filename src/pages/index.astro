@@ -35,6 +35,21 @@ const projects = await getProjects();
 /* The two that run. Everything else on the appendix is coursework beside them. */
 const systems = projects.filter((p) => p.data.system);
 
+/**
+ * A project in one line, for the frontispiece's index of the Appendix.
+ *
+ * Seven of nine titles are already "Name — what it is", so the line is the
+ * part after the dash. The two that are plain titles fall back to the first
+ * sentence of their CV line. Nothing new to write or keep in step in /admin.
+ */
+const brief = (p: (typeof projects)[number]) => {
+  const [name, ...rest] = p.data.title.split(' — ');
+  const line =
+    rest.join(' — ') ||
+    (fillFacts(p.data.cvSummary ?? p.data.summary).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '');
+  return { name, line: line.charAt(0).toUpperCase() + line.slice(1) };
+};
+
 const instrumenta = (await getCollection('instrumenta'))
   .sort((a, b) => a.data.order - b.data.order);
 
@@ -158,6 +173,27 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
           </li>
         ))}
       </ul>
+    </section>
+
+    <LesionRule />
+
+    {/* ---- Appendix: every project in a line -------------------------- */}
+    <section class="fr-sec" aria-labelledby="fr-app-h">
+      <h2 class="fr-h2" id="fr-app-h">Appendix</h2>
+      <p class="fr-lede">Everything built, one line each. Each opens its full entry in the Summa.</p>
+      <ol class="fr-app" data-reveal-stagger>
+        {projects.map((p) => {
+          const { name, line } = brief(p);
+          return (
+            <li>
+              <a class="fr-app-a" href={`/home#${p.id}`}>
+                <span class="fr-app-n">{name}</span>
+                <span class="fr-app-l">{line}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
     </section>
 
     <LesionRule />
@@ -444,6 +480,26 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
   }
 
   /* ---- Systems ------------------------------------------------------ */
+  /* The Appendix index: a line per project, the whole row a link. */
+  .fr-app { list-style: none; margin: 0; padding: 0; max-width: 58rem; }
+  .fr-app li { border-top: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent); }
+  .fr-app li:last-child { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 34%, transparent); }
+  .fr-app-a {
+    display: grid;
+    grid-template-columns: minmax(8rem, 13rem) minmax(0, 1fr);
+    gap: 0.4rem 1.4rem;
+    padding: 0.8rem 0;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .fr-app-n { font-family: var(--font-display); font-size: var(--t-md); line-height: 1.3; }
+  .fr-app-l { font-size: var(--t-sm); line-height: 1.6; color: var(--ink-soft); align-self: center; }
+  .fr-app-a:hover .fr-app-n,
+  .fr-app-a:focus-visible .fr-app-n { color: var(--fundus); }
+  @media (max-width: 560px) {
+    .fr-app-a { grid-template-columns: 1fr; }
+  }
+
   .fr-sys {
     list-style: none;
     margin: 0;

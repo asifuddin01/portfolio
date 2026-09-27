@@ -5,7 +5,7 @@
  */
 import { getCollection } from 'astro:content';
 import { buildCv } from './cv-data.mjs';
-import { AUTHOR, SITE, EMAIL, GITHUB, LINKEDIN, LOCATION } from '../consts.ts';
+import { AUTHOR, SITE, EMAIL, GITHUB, LINKEDIN, ORCID, LOCATION } from '../consts.ts';
 
 export const CV_PDF = '/cv/Md-Asif-Uddin-CV.pdf';
 export const CV_DOCX = '/cv/Md-Asif-Uddin-CV.docx';
@@ -29,6 +29,6 @@ export async function loadCv(opts = {}) {
     blanks: opts.blanks === true,
     author: AUTHOR,
     siteUrl: SITE,
-    fallback: { email: EMAIL, github: GITHUB, linkedin: LINKEDIN, location: LOCATION },
+    fallback: { email: EMAIL, github: GITHUB, linkedin: LINKEDIN, orcid: ORCID, location: LOCATION },
   });
 }

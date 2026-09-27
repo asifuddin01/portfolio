@@ -97,6 +97,8 @@ export default defineConfig({
     '/codex': '/home',
     '/cv': '/vitae/cv',
     '/cv/edit': '/vitae/cv/edit',
+    // PRISMA-Local was a research plate until it was recognised as a tool.
+    '/works/prisma-local': '/home#prisma-local',
   },
   build: { inlineStylesheets: 'auto' },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },

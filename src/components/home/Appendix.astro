@@ -18,7 +18,7 @@ const items = await getProjects();
   </p>
   <ol class="ap" data-reveal-stagger>
     {items.map((it) => (
-      <li class="ap-item">
+      <li class="ap-item" id={it.id}>
         <h3 class="ap-title">{it.data.title}</h3>
         <p class="ap-body">{fillFacts(it.data.summary)}</p>
         {(it.data.link || it.data.repo) && (

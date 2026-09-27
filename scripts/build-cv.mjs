@@ -57,11 +57,33 @@ const cv = buildCv({
     email: constOf('EMAIL'),
     github: constOf('GITHUB'),
     linkedin: constOf('LINKEDIN'),
+    orcid: constOf('ORCID'),
     location: constOf('LOCATION'),
   },
 });
 
-if (/\+?\d[\d\s().-]{7,}/.test(JSON.stringify(cv))) {
+// An ORCID iD is sixteen digits in fours: shaped exactly like a phone number
+// and not one. Only an iD written as its own orcid.org address is set aside
+// before the scan, so nothing else gets a way through by looking like an iD —
+// a bare 0009-0000-1705-4097 anywhere else still stops the build.
+const phoneShaped = (text) =>
+  /\+?\d[\d\s().-]{7,}/.test(text.replace(/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/g, 'orcid'));
+
+// The guard checks itself before it checks the CV. If the exemption is ever
+// widened far enough to let a number through, this is where the build stops.
+for (const [text, blocked] of [
+  ['orcid.org/0009-0000-1705-4097', false],
+  ['0009-0000-1705-4097', true],
+  ['+880 1712-345678', true],
+  ['orcid.org/0009-0000-1705-4097 +880 1712-345678', true],
+]) {
+  if (phoneShaped(text) !== blocked) {
+    console.error(`✗ the phone-number guard is broken: it ${blocked ? 'let through' : 'blocked'} ${JSON.stringify(text)}.`);
+    process.exit(1);
+  }
+}
+
+if (phoneShaped(JSON.stringify(cv))) {
   console.error('✗ refusing to write the CV: it contains something shaped like a phone number.');
   process.exit(1);
 }

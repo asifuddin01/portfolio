@@ -14,7 +14,7 @@ const projects = await getProjects();
 const papers = await getPapers();
 const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
-const { email, github, linkedin, location } = await getContact();
+const { email, github, linkedin, orcid, location } = await getContact();
 
 
 const role = await getRole();
@@ -41,6 +41,7 @@ const role = await getRole();
         <li><a class="link" href={`mailto:${email}`}>{email}</a></li>
         <li><a class="link" href={github}>{github.replace(/^https?:\/\//, '')}</a></li>
         <li><a class="link" href={linkedin}>{linkedin.replace(/^https?:\/\//, '')}</a></li>
+        <li><a class="link" href={orcid}>{orcid.replace(/^https?:\/\//, '')}</a></li>
         <li>{location}</li>
       </ul>
     </header>
