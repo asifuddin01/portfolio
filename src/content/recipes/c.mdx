@@ -473,4 +473,127 @@ examples:
           printf("sum: %ld\n", sum);
           return 0;
       }
+  - title: "Palindrome check"
+    note: "Two indices walk inward; trace it to see each comparison and the letters it compared."
+    group: "Tracing"
+    code: |2-
+      #include <stdio.h>
+      #include <string.h>
+      #include <stdbool.h>
+
+      int main(void) {
+          char s[] = "madam";
+          bool ok = true;
+          int i = 0, j = (int)strlen(s) - 1;
+          while (i < j) {
+              if (s[i] != s[j]) {
+                  ok = false;
+                  break;
+              }
+              i++;
+              j--;
+          }
+          printf("%s: %s\n", s, ok ? "palindrome" : "not a palindrome");
+          return 0;
+      }
+  - title: "Swap through pointers"
+    note: "A function changes its caller's variables through their addresses; the trace names what each pointer points at."
+    group: "Tracing"
+    code: |2-
+      #include <stdio.h>
+
+      void swap(int *a, int *b) {
+          int t = *a;
+          *a = *b;
+          *b = t;
+      }
+
+      int main(void) {
+          int x = 1, y = 2;
+          swap(&x, &y);
+          printf("x = %d, y = %d\n", x, y);
+          return 0;
+      }
+  - title: "Bubble sort, swap by swap"
+    note: "An array sorted in place; the trace names the two positions each swap changed."
+    group: "Tracing"
+    code: |2-
+      #include <stdio.h>
+
+      void bubble(int xs[], int n) {
+          for (int i = 0; i < n - 1; i++) {
+              for (int j = 0; j < n - 1 - i; j++) {
+                  if (xs[j] > xs[j + 1]) {
+                      int t = xs[j];
+                      xs[j] = xs[j + 1];
+                      xs[j + 1] = t;
+                  }
+              }
+          }
+      }
+
+      int main(void) {
+          int data[] = {5, 1, 4, 2, 8};
+          bubble(data, 5);
+          for (int i = 0; i < 5; i++) printf("%d ", data[i]);
+          printf("\n");
+          return 0;
+      }
+  - title: "A linked list"
+    note: "Structs and the pointers between them, built and then walked."
+    group: "Tracing"
+    code: |2-
+      #include <stdio.h>
+
+      struct Node {
+          int value;
+          struct Node *next;
+      };
+
+      int main(void) {
+          struct Node c = {3, NULL};
+          struct Node b = {2, &c};
+          struct Node a = {1, &b};
+          int total = 0;
+          for (struct Node *p = &a; p != NULL; p = p->next) {
+              total += p->value;
+          }
+          printf("total = %d\n", total);
+          return 0;
+      }
+  - title: "Reading input"
+    note: "scanf reads from the Input box; the trace shows what each call took."
+    group: "Tracing"
+    stdin: "Ada 36\n"
+    code: |2-
+      #include <stdio.h>
+
+      int main(void) {
+          char name[32];
+          int age;
+          if (scanf("%31s %d", name, &age) != 2) {
+              printf("Put a name and an age in the Input box.\n");
+              return 1;
+          }
+          printf("%s will be %d next year.\n", name, age + 1);
+          return 0;
+      }
+  - title: "A runtime error, traced"
+    note: "Dividing by zero: the trace stops on the line that did it, with the values that led there."
+    group: "Tracing"
+    code: |2-
+      #include <stdio.h>
+
+      int average(int total, int count) {
+          return total / count;
+      }
+
+      int main(void) {
+          int scores[] = {70, 85, 90};
+          int sum = 0;
+          for (int i = 0; i < 3; i++) sum += scores[i];
+          printf("average = %d\n", average(sum, 3));
+          printf("average = %d\n", average(sum, 0));
+          return 0;
+      }
 ---

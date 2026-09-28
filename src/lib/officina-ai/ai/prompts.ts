@@ -16,7 +16,8 @@
  * the answer arrives as something to test rather than something to trust.
  */
 import type { TutorRequest } from './provider.ts';
-import { SYSTEM_PROMPTS } from './system-prompts.ts';
+import { systemPrompt } from './system-prompts.ts';
+import { LANGUAGE_NAMES, type TraceLanguage } from '../languages.ts';
 import { describeStep } from './context.ts';
 import type { StepView } from '../trace/store.ts';
 
@@ -24,8 +25,6 @@ export interface PromptMessage {
   role: 'system' | 'user';
   content: string;
 }
-
-const SYSTEM = SYSTEM_PROMPTS;
 
 /**
  * The top of the editor's contents, for context only.
@@ -36,10 +35,10 @@ const SYSTEM = SYSTEM_PROMPTS;
  */
 const EDITOR_CONTEXT_LINES = 28;
 
-function head(source: string): string {
+function head(source: string, language: TraceLanguage): string {
   const lines = source.split('\n');
   if (lines.length <= EDITOR_CONTEXT_LINES) return source;
-  return `${lines.slice(0, EDITOR_CONTEXT_LINES).join('\n')}\n# … ${lines.length - EDITOR_CONTEXT_LINES} more line(s)`;
+  return `${lines.slice(0, EDITOR_CONTEXT_LINES).join('\n')}\n${language === 'python' ? '#' : '//'} … ${lines.length - EDITOR_CONTEXT_LINES} more line(s)`;
 }
 
 /** How many steps the trace has, for resolving "step 12" back to a link. */
@@ -48,7 +47,8 @@ export interface PromptOptions {
 }
 
 export function buildPrompt(request: TutorRequest, options: PromptOptions): PromptMessage[] {
-  const system = SYSTEM[request.task];
+  const language = request.language ?? 'python';
+  const system = systemPrompt(request.task, language);
 
   if (request.task === 'solve') {
     const asked = (request.question ?? '').trim();
@@ -56,10 +56,10 @@ export function buildPrompt(request: TutorRequest, options: PromptOptions): Prom
        a learner asking for a palindrome check while a sorting program sits
        in the buffer does not want the sorting program extended. */
     const existing = request.source.trim() ? `\n\nFor context, this is currently in their editor. Ignore it unless ` +
-        `they asked you to change it:\n\n\`\`\`python\n${head(request.source)}\n\`\`\`` : '';
+        `they asked you to change it:\n\n\`\`\`${language}\n${head(request.source, language)}\n\`\`\`` : '';
     return [
       { role: 'system', content: system },
-      { role: 'user', content: `Write a Python program that does this:\n\n${asked}${existing}` },
+      { role: 'user', content: `Write a ${LANGUAGE_NAMES[language]} program that does this:\n\n${asked}${existing}` },
     ];
   }
 
@@ -70,7 +70,7 @@ export function buildPrompt(request: TutorRequest, options: PromptOptions): Prom
     ];
   }
 
-  const facts = describeStep(request.step, request.source, options.read, request.result);
+  const facts = describeStep(request.step, request.source, options.read, request.result, language);
 
   const user =
     request.task === 'ask'

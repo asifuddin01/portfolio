@@ -19,6 +19,7 @@
  */
 import type { StepView } from '../trace/store.ts';
 import type { TraceResult } from '../trace/schema.ts';
+import type { TraceLanguage } from '../languages.ts';
 
 import type { TutorTask } from './system-prompts.ts';
 export type { TutorTask };
@@ -26,6 +27,7 @@ export type { TutorTask };
 /** What the model is told about, assembled by ai/context.ts. */
 export interface TutorRequest {
   task: TutorTask;
+  language?: TraceLanguage;
   /** The program as written. */
   source: string;
   /** The step in view. Absent for `solve`, which is asked before running. */

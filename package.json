@@ -51,6 +51,8 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "tailwindcss": "^4.3.3",
+    "tree-sitter-wasms": "0.1.13",
+    "web-tree-sitter": "0.25.10",
     "zod": "^4.4.3"
   },
   "devDependencies": {

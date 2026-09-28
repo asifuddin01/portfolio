@@ -6,12 +6,13 @@ import type { TraceValue } from '../trace/schema.ts';
  * only its spelling, so the same step can be shown here and quoted exactly in
  * an AI prompt.
  */
-export function formatValue(v: TraceValue, room = 120): string {
-  const text = spell(v);
+export function formatValue(v: TraceValue, room = 120, language = 'python'): string {
+  const text = spell(v, language);
   return text.length <= room ? text : text.slice(0, room - 1) + '…';
 }
 
-function quote(s: string): string {
+function quote(s: string, language = 'python'): string {
+  if (language !== 'python') return JSON.stringify(s);
   // Python's own choice: single quotes unless the text has one and no double.
   const q = s.includes("'") && !s.includes('"') ? '"' : "'";
   const body = s
@@ -23,24 +24,25 @@ function quote(s: string): string {
   return q + body + q;
 }
 
-function spell(v: TraceValue): string {
-  if (v === null) return 'None';
-  if (v === true) return 'True';
-  if (v === false) return 'False';
+function spell(v: TraceValue, language: string): string {
+  const python = language === 'python';
+  if (v === null) return python ? 'None' : language === 'c' ? 'NULL' : 'null';
+  if (v === true) return python ? 'True' : 'true';
+  if (v === false) return python ? 'False' : 'false';
   if (typeof v === 'number') return String(v);
-  if (typeof v === 'string') return quote(v);
+  if (typeof v === 'string') return quote(v, language);
 
   switch (v.t) {
     case 'int':
     case 'float':
       return v.r;
     case 'str':
-      return `${quote(v.v)}… (${v.n.toLocaleString()} chars)`;
+      return `${quote(v.v, language)}… (${v.n.toLocaleString()} chars)`;
     case 'list':
     case 'tuple':
     case 'set':
     case 'frozenset': {
-      const parts = v.items.map(spell);
+      const parts = v.items.map((item) => spell(item, language));
       if (v.n > v.items.length) parts.push(`… ${(v.n - v.items.length).toLocaleString()} more`);
       const inner = parts.join(', ');
       const body =
@@ -48,16 +50,18 @@ function spell(v: TraceValue): string {
         : v.t === 'tuple' ? (v.n === 1 ? `(${inner},)` : `(${inner})`)
         : v.n === 0 ? `${v.t}()`
         : v.t === 'set' ? `{${inner}}` : `frozenset({${inner}})`;
-      return v.cls ? `${v.cls}(${body})` : body;
+      return !python && v.t === 'list' ? `[${inner}]` : v.cls ? `${v.cls}(${body})` : body;
     }
     case 'dict': {
-      const parts = v.items.map(([k, val]) => `${spell(k)}: ${spell(val)}`);
+      const parts = v.items.map(([k, val]) => `${spell(k, language)}: ${spell(val, language)}`);
       if (v.n > v.items.length) parts.push(`… ${(v.n - v.items.length).toLocaleString()} more`);
       const body = `{${parts.join(', ')}}`;
-      return v.cls ? `${v.cls}(${body})` : body;
+      return v.cls && python ? `${v.cls}(${body})` : body;
     }
     case 'object':
-      return `${v.cls}(${v.attrs.map(([k, val]) => `${k}=${spell(val)}`).join(', ')})`;
+      // A C struct as a debugger prints one; a Java or Python object by its class.
+      if (language === 'c') return `{${v.attrs.map(([k, val]) => `${k} = ${spell(val, language)}`).join(', ')}}`;
+      return `${v.cls}(${v.attrs.map(([k, val]) => `${k}=${spell(val, language)}`).join(', ')})`;
     case 'function':
       return `<function ${v.name}>`;
     case 'class':
@@ -65,7 +69,7 @@ function spell(v: TraceValue): string {
     case 'module':
       return `<module ${v.name}>`;
     case 'exception':
-      return `${v.cls}(${v.r ? quote(v.r) : ''})`;
+      return `${v.cls}(${v.r ? quote(v.r, language) : ''})`;
     case 'other':
       return v.r;
     case 'more':
@@ -76,11 +80,11 @@ function spell(v: TraceValue): string {
 }
 
 /** A short type label for the variable table. */
-export function typeOf(v: TraceValue): string {
-  if (v === null) return 'None';
-  if (typeof v === 'boolean') return 'bool';
+export function typeOf(v: TraceValue, language = 'python'): string {
+  if (v === null) return language === 'python' ? 'None' : language === 'c' ? 'NULL' : 'null';
+  if (typeof v === 'boolean') return language === 'java' ? 'boolean' : 'bool';
   if (typeof v === 'number') return 'int';
-  if (typeof v === 'string') return 'str';
+  if (typeof v === 'string') return language === 'python' ? 'str' : language === 'java' ? 'String' : 'char[]';
   switch (v.t) {
     case 'object':
     case 'other':
@@ -93,7 +97,9 @@ export function typeOf(v: TraceValue): string {
     case 'module':
       return v.t;
     case 'str':
-      return 'str';
+      return language === 'python' ? 'str' : language === 'java' ? 'String' : 'char[]';
+    case 'list':
+      return v.cls || (language === 'python' ? 'list' : 'array');
     default:
       return 'cls' in v && v.cls ? v.cls : v.t;
   }

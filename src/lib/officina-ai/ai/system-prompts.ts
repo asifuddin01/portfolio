@@ -67,3 +67,28 @@ export const SYSTEM_PROMPTS: Record<TutorTask, string> = {
     'code block, then one sentence naming the line worth watching when they ' +
     'trace it. Nothing else. British spelling.',
 };
+
+/**
+ * The instructions for a task in a language. The page may say which language
+ * — the Worker checks it is one of three — but never what the model is told.
+ * C and Java are compiled and run with tracing calls added, so "an execution
+ * tracer" recorded what happened, as the interpreter does for Python.
+ */
+export function systemPrompt(task: TutorTask, language: 'python' | 'c' | 'java' = 'python'): string {
+  if (language === 'python') return SYSTEM_PROMPTS[task];
+  const name = language === 'java' ? 'Java' : 'C';
+  if (task !== 'solve') {
+    return SYSTEM_PROMPTS[task].replace(/Python/g, name).replace(/An interpreter/g, 'An execution tracer') +
+      ' A value shown as ? has not been given one yet.';
+  }
+  return `You write small ${name} programs for a learner who will immediately run yours and watch every line of it execute. ` +
+    'Write the simplest correct single-file program that does what was asked, using only the standard library. ' +
+    (language === 'java'
+      ? 'Write Java 8: public class Main with public static void main(String[] args); no var, records, text blocks or ' +
+        'switch expressions. Prefer plain loops to streams and lambdas, whose insides are not traced. No threads. ' +
+        'Read input with Scanner only when asked. '
+      : 'Write C with int main(void), printf for output and scanf for input only when asked. Initialise every variable. ' +
+        'No goto, no threads. ') +
+    `Give a one-sentence description, then the program in a single \`\`\`${language} code block, then one sentence ` +
+    'naming the line worth watching when they trace it. Nothing else. British spelling.';
+}
