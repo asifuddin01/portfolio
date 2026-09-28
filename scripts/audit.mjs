@@ -26,12 +26,16 @@ const SITE_ORIGIN = (
  * self-hosting the runtime requires a commercial licence. So Java is either
  * this exception or nothing, and it was chosen deliberately over nothing.
  *
- * Scoped to the page that needs it and to that vendor's origin, so the rule
+ * Scoped to the pages that need it and to that vendor's origin, so the rule
  * still holds everywhere else and this stays one visible, arguable decision
- * rather than a hole. The page carries the attribution the licence asks for.
+ * rather than a hole. Each page carries the attribution the licence asks for.
+ * /officina/ai traces Java on the same JVM; it adds the loader only when a
+ * reader picks Java, so its HTML has nothing here to find, but it is the same
+ * decision and is recorded as one.
  */
 const ALLOWED_EXTERNAL = [
   { origin: 'https://cjrtnc.leaningtech.com/', page: '/officina' },
+  { origin: 'https://cjrtnc.leaningtech.com/', page: '/officina/ai' },
 ];
 
 const isAllowed = (page, url) =>
@@ -121,7 +125,7 @@ if (problems.length) {
 } else {
   console.log(
     '✓ headings, alt text, landmarks, lang and self-hosting all clean ' +
-    `(${ALLOWED_EXTERNAL.length} declared exception: the Java runtime on /officina)`
+    '(1 declared exception: the Java runtime, on /officina and /officina/ai)'
   );
 }
 process.exit(fail);

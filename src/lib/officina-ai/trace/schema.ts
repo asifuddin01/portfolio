@@ -1,11 +1,10 @@
 /**
  * The trace schema: what every language adapter produces and every view reads.
  *
- * It is language-independent on purpose. Python produces it today from
- * python/tracer.py; C, C++, Java and the assembly simulator
- * will produce the same shape, with their own facts in the optional fields
- * (memory, registers, program counter). The UI never learns which language
- * it is showing except to label things.
+ * It is language-independent on purpose. Python produces it from
+ * python/tracer.py, C from compiled/trace.c and Java from
+ * compiled/OfficinaTrace.java, all in the same shape. The UI never learns
+ * which language it is showing except to label things and spell values.
  *
  * Two rules the schema exists to enforce:
  *
@@ -54,7 +53,7 @@ export interface ConditionOperand {
 }
 
 export interface Condition {
-  kind: 'if' | 'while' | 'ternary';
+  kind: 'if' | 'while' | 'for' | 'ternary';
   expr: string;
   result: boolean;
   line: number;
@@ -74,6 +73,8 @@ export interface TraceStep {
   depth: number;
 
   changes?: Change[];
+  /** A variable's declared type, where the language has one: `[frame, name, "int[4]"]`. */
+  declared?: [fid: number, name: string, type: string][];
   conditions?: Condition[];
   stdout?: string;
   stderr?: string;

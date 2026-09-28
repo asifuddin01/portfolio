@@ -22,6 +22,26 @@ const TOKEN =
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const COMPILED_KEYWORDS = new Set(('auto bool break case char class const continue default do double else enum extern ' +
+  'false final float for if import int interface long new null package private protected public return short signed ' +
+  'sizeof static struct super switch this throw throws true try typedef union unsigned void volatile while').split(' '));
+const COMPILED_TOKEN = /(\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|(?![\s\S]))|^[ \t]*#[^\n]*)|("(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(\b(?:0[xX][\da-fA-F]+|\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)[fFlLuU]*\b)|([A-Za-z_]\w*)/gm;
+
+export function highlightSource(source: string, language = 'python'): string[] {
+  if (language === 'python') return highlightPython(source);
+  let last = 0;
+  let html = '';
+  for (const match of source.matchAll(COMPILED_TOKEN)) {
+    html += esc(source.slice(last, match.index));
+    const [text, comment, string, number, name] = match;
+    const cls = comment ? 'ot-tk-comment' : string ? 'ot-tk-string' : number ? 'ot-tk-number' :
+      COMPILED_KEYWORDS.has(name) ? 'ot-tk-keyword' : '';
+    html += cls ? wrapLines(text, cls) : esc(text);
+    last = match.index! + text.length;
+  }
+  return (html + esc(source.slice(last))).split('\n');
+}
+
 export function highlightPython(source: string): string[] {
   const out: string[] = [];
   let last = 0;

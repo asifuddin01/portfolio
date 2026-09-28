@@ -1,7 +1,7 @@
 import type { TraceStore, StepView, FrameView, VariableChange } from '../trace/store.ts';
 import type { Condition, TraceStep, TraceValue } from '../trace/schema.ts';
-import { changedIndices, formatValue, isDefinition, typeOf } from './format.ts';
-import { highlightPython } from './highlight.ts';
+import { changedIndices, formatValue as format, isDefinition, typeOf as valueType } from './format.ts';
+import { highlightSource } from './highlight.ts';
 
 /**
  * The trace viewer: the program on the left with the running line marked,
@@ -26,6 +26,7 @@ export interface TraceView {
 }
 
 export interface TraceViewOptions {
+  language?: string;
   source: string;
   store: TraceStore;
   /** Step to open on. Defaults to the first step. */
@@ -42,7 +43,13 @@ const esc = (s: string) =>
 
 export function mountTraceView(root: HTMLElement, options: TraceViewOptions): TraceView {
   const { store, source } = options;
-  const lines = highlightPython(source);
+  const language = options.language ?? 'python';
+  const formatValue = (value: TraceValue, room = 120) => format(value, room, language);
+  const typeOf = (value: TraceValue) => valueType(value, language);
+  const python = language === 'python';
+  /* Python deletes names; C and Java variables go out of scope. */
+  const gone = python ? 'deleted' : 'out of scope';
+  const lines = highlightSource(source, language);
 
   root.classList.add('ot');
   root.tabIndex = 0;
@@ -171,7 +178,7 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
 
   function paintNow(view: StepView) {
     const { step } = view;
-    const where = step.line > 0 ? `line ${step.line}` : 'start';
+    const where = step.line > 0 ? `line ${step.line}` : step.event === 'return' ? 'end' : 'start';
     const fn = step.function === '<module>' ? '' : ` · in <code>${esc(step.function)}()</code>`;
     nowEl.innerHTML = `
       <p class="ot-now-head">Step ${step.step + 1} of ${store.length.toLocaleString()}${store.done ? '' : '+'} · ${where}${fn}</p>
@@ -190,9 +197,14 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
       case 'return':
         if (step.function === '<module>') return step.unwinding ? 'The program stopped on an unhandled exception.' : 'The program finished.';
         if (step.unwinding) return `${fn} is left because an exception is passing through it.`;
-        return `${fn} returns <code>${esc(formatValue(step.returnValue ?? null, 60))}</code>.`;
-      case 'exception':
-        return `<span class="ot-bad">${esc(step.exception?.type ?? 'Exception')}</span> raised: ${esc(step.exception?.message ?? '')}`;
+        // A C or Java function declared void returns nothing, not None.
+        if (step.returnValue === undefined) return `${fn} returns.`;
+        return `${fn} returns <code>${esc(formatValue(step.returnValue, 60))}</code>.`;
+      case 'exception': {
+        const how = language === 'c' ? ':' : language === 'java' ? ' thrown:' : ' raised:';
+        const message = step.exception?.message;
+        return `<span class="ot-bad">${esc(step.exception?.type ?? 'Exception')}</span>${message ? `${how} ${esc(message)}` : ` ${how.replace(/:$/, '').trim() || 'happened'}.`}`;
+      }
       case 'line': {
         const parts: string[] = [];
         if (step.partial) parts.push('This line was cut off by the output limit before it finished.');
@@ -203,7 +215,7 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
         }
         const own = view.changes.filter((c) => c.fid === step.fid);
         if (own.length) {
-          parts.push(own.map((c) => (c.after === undefined ? `<code>${esc(c.name)}</code> deleted` : `<code>${esc(c.name)}</code> = <code>${esc(formatValue(c.after, 40))}</code>`)).join(', ') + '.');
+          parts.push(own.map((c) => (c.after === undefined ? `<code>${esc(c.name)}</code> ${gone}` : `<code>${esc(c.name)}</code> = <code>${esc(formatValue(c.after, 40))}</code>`)).join(', ') + '.');
         }
         if (step.stdout) parts.push(`Printed <code>${esc(formatValue(step.stdout.replace(/\n$/, ''), 60))}</code>.`);
         if (step.stdin) parts.push(`Read <code>${esc(formatValue(step.stdin.replace(/\n$/, ''), 40))}</code> from input.`);
@@ -217,7 +229,7 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
       .map((c) => `
         <div class="ot-cond" data-result="${c.result}">
           <p class="ot-cond-head"><span class="ot-cond-kind">${c.kind === 'ternary' ? 'if … else' : c.kind}</span>
-            <code>${esc(c.expr)}</code> <span class="ot-cond-arrow">→</span> <strong>${c.result ? 'True' : 'False'}</strong></p>
+            <code>${esc(c.expr)}</code> <span class="ot-cond-arrow">→</span> <strong>${formatValue(c.result)}</strong></p>
           ${c.operands?.length ? `<ul class="ot-operands">${c.operands
             .map((o) => `<li><code>${esc(o.expr)}</code> ${o.skipped ? '<span class="ot-skip">not evaluated — the result was already decided</span>' : `= <code>${esc(formatValue(o.value ?? null, 60))}</code>`}</li>`)
             .join('')}</ul>` : ''}
@@ -230,10 +242,12 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
   function paintVariables(view: StepView) {
     const changed = new Map<string, VariableChange>();
     for (const c of view.changes) changed.set(`${c.fid}:${c.name}`, c);
-    const frames = [...view.frames].reverse();            // current first, globals last
+    // Current first, globals last. C and Java have no module scope to speak of:
+    // their globals frame is shown only when it holds something.
+    const frames = [...view.frames].reverse().filter((f) => python || f.function !== '<module>' || f.vars.size);
     varsEl.innerHTML = frames
       .map((f, n) => {
-        const label = f.function === '<module>' ? 'Global' : `${f.function}()`;
+        const label = f.function !== '<module>' ? `${f.function}()` : language === 'java' ? 'Static fields' : 'Global';
         const isModule = f.function === '<module>';
         const note = n === 0
           ? (f.returning ? (isModule ? 'finished' : 'returning') : 'current')
@@ -241,8 +255,8 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
         const rows = [...f.vars.entries()]
           .sort(([, a], [, b]) => Number(isDefinition(a)) - Number(isDefinition(b)))
           .map(([name, value]) => varRow(f, name, value, changed.get(`${f.fid}:${name}`)));
-        const gone = view.changes.filter((c) => c.fid === f.fid && c.after === undefined);
-        for (const g of gone) rows.push(`<tr class="ot-var is-deleted"><th>${esc(g.name)}</th><td colspan="2">deleted</td></tr>`);
+        const left = view.changes.filter((c) => c.fid === f.fid && c.after === undefined);
+        for (const g of left) rows.push(`<tr class="ot-var is-deleted"><th>${esc(g.name)}</th><td colspan="2">${gone}</td></tr>`);
         const ret = f.returning && view.step.returnValue !== undefined
           ? `<tr class="ot-var is-return"><th>return</th><td><code>${esc(formatValue(view.step.returnValue, 80))}</code></td><td class="ot-type">${esc(typeOf(view.step.returnValue))}</td></tr>`
           : '';
@@ -275,12 +289,13 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
         }
       }
     }
-    return `<tr class="${cls.join(' ')}" data-fid="${f.fid}"><th>${esc(name)}</th><td><code>${esc(formatValue(value, 80))}</code>${detail}</td><td class="ot-type">${esc(typeOf(value))}</td></tr>`;
+    return `<tr class="${cls.join(' ')}" data-fid="${f.fid}"><th>${esc(name)}</th><td><code>${esc(formatValue(value, 80))}</code>${detail}</td><td class="ot-type">${esc(f.types.get(name) ?? typeOf(value))}</td></tr>`;
   }
 
   function paintStack(view: StepView) {
     stackEl.innerHTML = [...view.frames]
       .reverse()
+      .filter((f) => python || f.function !== '<module>')
       .map((f, n) => `<li class="${n === 0 ? 'is-top' : ''}"><code>${esc(f.function === '<module>' ? 'main program' : f.function + '()')}</code><span>line ${f.line || '—'}</span></li>`)
       .join('');
   }
@@ -402,7 +417,7 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
         row.setAttribute('role', 'option');
         row.style.top = `${i * ROW}px`;
         row.dataset.i = String(i);
-        row.innerHTML = timelineRow(store.steps[i]);
+        row.innerHTML = timelineRow(store.steps[i], language);
         tl.appendChild(row);
       }
       row.classList.toggle('is-current', i === index);
@@ -455,22 +470,24 @@ export function mountTraceView(root: HTMLElement, options: TraceViewOptions): Tr
   };
 }
 
-function timelineRow(step: TraceStep): string {
+function timelineRow(step: TraceStep, language: string): string {
   const fn = step.function === '<module>' ? '' : `<span class="ot-tl-fn">${esc(step.function)}</span>`;
-  return `<span class="ot-tl-n">${step.step + 1}</span><span class="ot-tl-line">${step.line ? `L${step.line}` : ''}</span>${fn}<span class="ot-tl-what">${esc(summary(step))}</span>`;
+  return `<span class="ot-tl-n">${step.step + 1}</span><span class="ot-tl-line">${step.line ? `L${step.line}` : ''}</span>${fn}<span class="ot-tl-what">${esc(summary(step, language))}</span>`;
 }
 
-function summary(step: TraceStep): string {
+function summary(step: TraceStep, language: string): string {
+  const formatValue = (value: TraceValue, room: number) => format(value, room, language);
   switch (step.event) {
     case 'call':
       return step.function === '<module>' ? 'start' : `call ${step.function}(${(step.args ?? []).map(([, v]) => formatValue(v, 16)).join(', ')})`;
     case 'return':
-      return step.function === '<module>' ? 'end' : step.unwinding ? 'unwinding' : `return ${formatValue(step.returnValue ?? null, 30)}`;
+      return step.function === '<module>' ? 'end' : step.unwinding ? 'unwinding'
+        : step.returnValue === undefined ? 'return' : `return ${formatValue(step.returnValue, 30)}`;
     case 'exception':
       return `${step.exception?.type}: ${step.exception?.message ?? ''}`;
     case 'line': {
       const bits: string[] = [];
-      for (const c of step.conditions ?? []) bits.push(`${c.kind} → ${c.result ? 'True' : 'False'}`);
+      for (const c of step.conditions ?? []) bits.push(`${c.kind} → ${formatValue(c.result, 10)}`);
       if (step.loop?.iteration) bits.push(`iteration ${step.loop.iteration}`);
       if (step.loop?.done !== undefined) bits.push('loop ends');
       for (const c of (step.changes ?? []).filter((c) => c[0] === step.fid).slice(0, 2)) {

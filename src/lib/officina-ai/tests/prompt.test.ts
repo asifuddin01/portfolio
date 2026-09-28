@@ -108,3 +108,13 @@ test('step references are parsed, and only when they say "step"', () => {
   assert.deepEqual(stepsNamedIn('n was 12 and xs had 3 items', 100), [], 'bare numbers are values, not steps');
   assert.deepEqual(stepsNamedIn('step 900', 100), [], 'out of range is dropped');
 });
+
+test('compiled solver prompts require a program in the selected language', () => {
+  for (const language of ['c', 'java'] as const) {
+    const [system, user] = buildPrompt({ task: 'solve', language, source: 'int x = 1;', question: 'sum an array' }, { read: () => { throw new Error('no trace'); } });
+    assert.match(system.content, language === 'java' ? /public class Main/ : /int main\(void\)/);
+    assert.ok(system.content.includes('```' + language));
+    assert.ok(user.content.includes('```' + language));
+    assert.doesNotMatch(system.content, /Python/);
+  }
+});

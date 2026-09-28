@@ -129,25 +129,25 @@ export class PythonRuntime {
   }
 
   async trace(request: TraceRequest): Promise<TraceRun> {
-    const generation = ++this.generation;
     this.cancel();                                  // a new run supersedes the old, for real
+    const generation = this.generation;
 
     const limits = { ...DEFAULT_LIMITS, ...request.limits };
     const stdin = request.stdin ?? '';
     const key = await traceKey({ language: 'python', code: request.code, stdin, limits });
     const store = new TraceStore();
 
+    if (generation !== this.generation) {
+      const result = cancelledResult(0);
+      store.finish(result);
+      return { store, result: Promise.resolve(result), cached: false, cancel: () => {} };
+    }
     const hit = this.cache.get(key);
     if (hit) {
       store.append(hit.steps);
       store.finish(hit.result);
       this.metrics.runs.push({ steps: hit.steps.length, firstChunkMs: 0, totalMs: 0, cached: true });
       return { store, result: Promise.resolve(hit.result), cached: true, cancel: () => {} };
-    }
-    if (generation !== this.generation) {
-      const result = cancelledResult(0);
-      store.finish(result);
-      return { store, result: Promise.resolve(result), cached: false, cancel: () => {} };
     }
 
     let resolve!: (r: TraceResult) => void;
@@ -188,6 +188,7 @@ export class PythonRuntime {
 
   /** Stop the run in progress, if any. The trace so far is kept. */
   cancel() {
+    this.generation++;
     if (this.active) this.kill('cancelled');
   }
 
@@ -197,6 +198,7 @@ export class PythonRuntime {
     this.spare?.terminate();
     this.primary = this.spare = null;
     this.setState('cold');
+    this.listeners.clear();
   }
 
   private onMessage(active: Active, m: WorkerMessage) {

@@ -465,6 +465,17 @@ test('the tutor refuses a task it does not have', () => withTutor(async () => {
   assert.equal(asked.length, 0, 'the model was never asked');
 }));
 
+test('the tutor uses server-owned instructions for each supported language', () => withTutor(async () => {
+  for (const [language, name] of [['python', 'Python'], ['c', 'C'], ['java', 'Java']]) {
+    const res = await ask({ task: 'solve', language, prompt: 'Sum an array.' });
+    assert.equal(res.status, 200);
+    assert.ok(asked.at(-1).input.messages[0].content.includes(name));
+  }
+  assert.equal((await ask({ task: 'solve', language: 'javascript', prompt: 'Sum an array.' })).status, 400);
+  assert.equal((await ask({ task: 'solve', language: '__proto__', prompt: 'Sum an array.' })).status, 400);
+  assert.equal(asked.length, 3);
+}));
+
 test('the tutor refuses an empty prompt, an oversized one, and a body that is not JSON', () => withTutor(async () => {
   assert.equal((await ask({ task: 'ask', prompt: '   ' })).status, 400);
   assert.equal((await ask({ task: 'ask', prompt: 'x'.repeat(24_001) })).status, 413);

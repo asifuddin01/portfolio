@@ -18,6 +18,7 @@
  */
 import {
   SYSTEM_PROMPTS,
+  systemPrompt,
   TUTOR_MODEL,
   MAX_PROMPT_CHARS,
   MAX_ANSWER_TOKENS,
@@ -55,15 +56,16 @@ export async function tutor(request, env) {
   } catch {
     return reply(400, 'bad-request', 'Send JSON: { task, prompt }.');
   }
-  const { task, prompt } = body ?? {};
+  const { task, prompt, language = 'python' } = body ?? {};
   if (!Object.hasOwn(SYSTEM_PROMPTS, task)) return reply(400, 'bad-request', 'Unknown task.');
+  if (!['python', 'c', 'java'].includes(language)) return reply(400, 'bad-request', 'Unknown language.');
   if (typeof prompt !== 'string' || !prompt.trim()) return reply(400, 'bad-request', 'Nothing to ask.');
   if (prompt.length > MAX_PROMPT_CHARS) return reply(413, 'too-long', 'That is more than the tutor reads at once.');
 
   try {
     const stream = await env.AI.run(TUTOR_MODEL, {
       messages: [
-        { role: 'system', content: SYSTEM_PROMPTS[task] },
+        { role: 'system', content: systemPrompt(task, language) },
         { role: 'user', content: prompt },
       ],
       stream: true,

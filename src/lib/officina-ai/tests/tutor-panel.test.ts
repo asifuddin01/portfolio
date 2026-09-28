@@ -30,3 +30,11 @@ test('the program put in the editor is the one in the fence, as written', () => 
   assert.equal(codeFrom('Text\n```python\nx = 1\n    y = 2\n```\nmore'), 'x = 1\n    y = 2');
   assert.equal(codeFrom('no code here'), null);
 });
+
+test('only a code block in the selected language is offered to the editor', () => {
+  assert.equal(codeFrom('```java\npublic class Main {}\n```', 'java'), 'public class Main {}');
+  assert.equal(codeFrom('```c\nint main(void) { return 0; }\n```', 'c'), 'int main(void) { return 0; }');
+  assert.equal(codeFrom('```python\nprint(1)\n```', 'java'), null);
+  assert.equal(codeFrom('```java\nclass Main {}\n```', 'python'), null);
+  assert.equal(codeFrom('```\nint total = 0;\n```', 'c'), 'int total = 0;');
+});

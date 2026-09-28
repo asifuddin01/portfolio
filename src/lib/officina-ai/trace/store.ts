@@ -23,6 +23,8 @@ export interface FrameView {
   /** The line this frame is on: running, or waiting on a call it made. */
   line: number;
   vars: Map<string, TraceValue>;
+  /** Declared types, for C and Java; Python's come from the values. */
+  types: Map<string, string>;
   /** This frame is returning at the step being viewed. */
   returning?: boolean;
 }
@@ -58,7 +60,7 @@ const empty = (): Snapshot => ({ frames: new Map(), order: [], leaving: null });
 
 function clone(s: Snapshot): Snapshot {
   const frames = new Map<number, FrameView>();
-  for (const [fid, f] of s.frames) frames.set(fid, { ...f, vars: new Map(f.vars) });
+  for (const [fid, f] of s.frames) frames.set(fid, { ...f, vars: new Map(f.vars), types: new Map(f.types) });
   return { frames, order: [...s.order], leaving: s.leaving };
 }
 
@@ -73,7 +75,7 @@ function apply(s: Snapshot, step: TraceStep, record?: VariableChange[]) {
   if (step.event === 'call') {
     s.frames.set(step.fid, {
       fid: step.fid, function: step.function, depth: step.depth,
-      parent: step.parent, line: step.line, vars: new Map(),
+      parent: step.parent, line: step.line, vars: new Map(), types: new Map(),
     });
     s.order.push(step.fid);
     if (step.parent !== undefined && step.callerLine !== undefined) {
@@ -83,6 +85,7 @@ function apply(s: Snapshot, step: TraceStep, record?: VariableChange[]) {
   }
 
   for (const change of step.changes ?? []) applyChange(s, change, record);
+  for (const [fid, name, type] of step.declared ?? []) s.frames.get(fid)?.types.set(name, type);
 
   const frame = s.frames.get(step.fid);
   if (frame) {
@@ -105,6 +108,7 @@ function applyChange(s: Snapshot, change: Change, record?: VariableChange[]) {
     record?.push({ fid, name, before, after: change[2], existedBefore });
   } else {
     frame.vars.delete(name);
+    frame.types.delete(name);
     record?.push({ fid, name, before, existedBefore });
   }
 }

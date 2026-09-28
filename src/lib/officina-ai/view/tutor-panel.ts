@@ -15,12 +15,15 @@
 import type { StepView } from '../trace/store.ts';
 import type { TraceResult } from '../trace/schema.ts';
 import type { TutorProvider, TutorRequest, TutorTask } from '../ai/provider.ts';
+import type { TraceLanguage } from '../languages.ts';
 
 export interface TutorPanelOptions {
   provider: TutorProvider;
   /** The step in view, or null on the Code tab. */
   step(): StepView | null;
   source(): string;
+  editorSource?(): string;
+  language?(): TraceLanguage;
   result(): TraceResult | undefined;
   /** Jump the viewer to a step named in an answer. */
   showStep(index: number): void;
@@ -73,8 +76,8 @@ export function renderAnswer(text: string): string {
 }
 
 /** The program out of a solver's answer, if it wrote one. */
-export function codeFrom(text: string): string | null {
-  const fenced = text.match(/```(?:python)?\n([\s\S]*?)```/);
+export function codeFrom(text: string, language: TraceLanguage = 'python'): string | null {
+  const fenced = text.match(new RegExp('```(?:' + language + ')?\\r?\\n([\\s\\S]*?)```', 'i'));
   return fenced ? fenced[1].replace(/\s+$/, '') : null;
 }
 
@@ -82,6 +85,14 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
   const { provider } = options;
   let running: AbortController | null = null;
   let supported: boolean | null = null;
+  let destroyed = false;
+  let lastContext = '';
+  const language = () => options.language?.() ?? 'python';
+  /* What an answer depends on beyond its step: the language, and — for an
+     answer about a trace — the program traced. A program the tutor wrote is
+     about the question, so the editor changing (not least by "Put this in the
+     editor") leaves it standing. */
+  const context = (task: TutorTask) => `${language()}\n${task === 'solve' ? '' : options.source()}`;
   /** What the answer on screen was asked about, so a step change can date it. */
   let lastTask: TutorTask | null = null;
 
@@ -133,6 +144,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
   /** What the panel offers before anything has been downloaded. */
   async function paintGate() {
     if (supported === null) supported = await provider.available();
+    if (destroyed) return;
     if (!supported) {
       say(
         `<p class="tu-note">The tutor runs its model inside this browser, which needs WebGPU. ` +
@@ -154,6 +166,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
     }
 
     const cached = provider.cached ? await provider.cached() : false;
+    if (destroyed) return;
     say(
       `<p class="tu-note">The tutor is a language model that runs entirely in this browser. ` +
       `It is downloaded once, from Hugging Face, where its publishers host it; after that, ` +
@@ -201,6 +214,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
     stop.hidden = false;
 
     lastTask = task;
+    lastContext = context(task);
     out.classList.remove('tu-stale');
     const step = task === 'solve' ? undefined : options.step() ?? undefined;
     if (task !== 'solve' && !step) {
@@ -210,12 +224,14 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
     }
 
     const request: TutorRequest = {
-      task, source: options.source(), step, result: options.result(), question,
+      task, language: language(), source: task === 'solve' ? options.editorSource?.() ?? options.source() : options.source(),
+      step, result: options.result(), question,
     };
 
     let text = '';
     try {
       for await (const chunk of provider.answer(request, signal)) {
+        if (signal.aborted || destroyed || running?.signal !== signal) return;
         if (chunk.type === 'delta') {
           text += chunk.text;
           answer.innerHTML = renderAnswer(text);
@@ -231,13 +247,12 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
         }
       }
     } finally {
-      stop.hidden = true;
-      if (running?.signal === signal) running = null;
+      if (running?.signal === signal) { stop.hidden = true; running = null; }
     }
   }
 
   function offerProgram(text: string) {
-    const code = codeFrom(text);
+    const code = codeFrom(text, language());
     if (!code) return;
     after.innerHTML = '<button type="button" class="tu-btn tu-use">Put this in the editor</button>';
     after.querySelector('.tu-use')!.addEventListener('click', () => {
@@ -277,6 +292,14 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
 
   return {
     refresh() {
+      // A different program or language: an answer still arriving is about nothing on screen.
+      if (lastTask !== null && context(lastTask) !== lastContext) {
+        running?.abort();
+        running = null;
+        stop.hidden = true;
+        after.innerHTML = '';
+        if (!out.hidden) out.classList.add('tu-stale');
+      }
       /* The answer on screen was about the step that was in view when it was
          asked for. Once the reader moves, it is about somewhere else. */
       if (!out.hidden && running === null && lastTask !== null && lastTask !== 'solve') {
@@ -284,6 +307,7 @@ export function mountTutor(root: HTMLElement, options: TutorPanelOptions): Tutor
       }
     },
     destroy() {
+      destroyed = true;
       running?.abort();
       root.removeEventListener('click', onClick);
       root.removeEventListener('submit', onSubmit);
