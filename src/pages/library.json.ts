@@ -37,9 +37,13 @@ export const GET: APIRoute = async () => {
     page: new URL('/papers#library', SITE).href,
   }));
 
+  /* No build timestamp. It made every deploy a new manifest, and ResearchLens
+     re-reads the library whenever the manifest changes — an edit anywhere on
+     the site cost the Space every book in it again. Unchanged papers now mean
+     an unchanged file, and the Space's conditional request answers 304. */
   return new Response(
     JSON.stringify(
-      { author: AUTHOR, site: SITE, schema: 1, generated: new Date().toISOString(), documents },
+      { author: AUTHOR, site: SITE, schema: 1, documents },
       null,
       2
     ),

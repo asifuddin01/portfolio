@@ -1,0 +1,69 @@
+# Keeps the ResearchLens figures on asifuddin.com in step with the running system.
+#
+# Why this file exists: the number of papers ResearchLens holds cannot be
+# counted from this repository. A paper added through /admin is listed here,
+# then downloaded, parsed and indexed by the Space at run time — minutes after
+# the deploy that listed it, and longer for a book. `npm run facts` measures
+# the figure from the Space, but a command somebody has to remember is a number
+# that goes stale: the front page said 103 for days while /admin listed five
+# papers.
+#
+# So this measures it every hour, and only when it moved commits the new figure
+# and starts a deploy. Asking also wakes the Space's refresh, so a paper added
+# at any time is counted within about two runs.
+name: Facts
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: facts
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # commit src/data/facts.json
+  actions: write   # start the deploy; a push made with this job's token starts nothing
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The test counts need sibling checkouts this runner does not have; the
+      # script says so and keeps them. Only the corpus is measured here.
+      - name: Measure
+        run: node scripts/sync-facts.mjs
+
+      - name: Commit and deploy if the figures moved
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # checkedAt changes on every run; only the figures decide.
+          moved=$(node -e '
+            const fs = require("fs");
+            const { execSync } = require("child_process");
+            const was = JSON.parse(execSync("git show HEAD:src/data/facts.json")).researchlens;
+            const now = JSON.parse(fs.readFileSync("src/data/facts.json")).researchlens;
+            console.log(JSON.stringify(was) === JSON.stringify(now) ? "" : `${now.papers} papers, ${now.passages} passages`);
+          ')
+          if [ -z "$moved" ]; then
+            echo "Unchanged; nothing to deploy." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/facts.json
+          git commit -m "ResearchLens now holds $moved"
+          # A save from /admin may have landed while this measured.
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
+          echo "ResearchLens now holds $moved; deploy started." >> "$GITHUB_STEP_SUMMARY"
