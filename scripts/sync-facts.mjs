@@ -95,7 +95,14 @@ async function askSpace() {
   const text = await stream.text();
   const line = text.split('\n').find((l) => l.startsWith('data: '));
   const [stats] = JSON.parse(line.slice(6));
-  return { papers: stats.papers, passages: stats.passages, added: stats.added ?? 0 };
+  return {
+    papers: stats.papers,
+    passages: stats.passages,
+    added: stats.added ?? 0,
+    /* Both are newer than the Space's first deploy; an older one sends neither. */
+    indexing: stats.indexing ?? false,
+    skipped: stats.skipped ?? [],
+  };
 }
 
 /**
@@ -109,8 +116,12 @@ async function askSpace() {
  * papers had been added, the Space had them minutes later, and this recorded
  * 101 because it asked once, at the wrong moment, and believed the answer.
  *
- * So it asks until two consecutive answers agree. That is the only signal
- * available from outside that the background work has finished.
+ * So it asks until two consecutive answers agree, and the Space says it is not
+ * reading anything. Agreement alone was not enough: a book takes the Space
+ * minutes to parse, two reads fifteen seconds apart agree throughout, and a
+ * Space that had just restarted would have been recorded at 101 — the corpus
+ * with none of the library — and the site's figure would have gone backwards.
+ * A figure taken mid-read is not recorded at all; the next run gets it.
  */
 async function corpusFromSpace() {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -121,10 +132,18 @@ async function corpusFromSpace() {
       now = await askSpace();
     } catch (e) {
       notes.push(`researchlens: the Space did not answer (${e.name ?? e.message})`);
-      return previous;
+      return null;
     }
-    if (previous && previous.papers === now.papers && previous.passages === now.passages) {
+    if (
+      !now.indexing &&
+      previous &&
+      previous.papers === now.papers &&
+      previous.passages === now.passages
+    ) {
       if (attempt > 2) console.log(`  (the Space settled after ${attempt} reads)`);
+      /* A paper listed in /admin that the Space could not read is otherwise
+         invisible: the count is simply one short, and nothing says which. */
+      for (const s of now.skipped) notes.push(`researchlens: not indexed — ${s}`);
       return now;
     }
     previous = now;
@@ -134,9 +153,9 @@ async function corpusFromSpace() {
   }
   notes.push(
     'researchlens: the Space was still indexing after eight reads — ' +
-      'run this again in a few minutes',
+      'not recording a figure; run this again in a few minutes',
   );
-  return previous;
+  return null;
 }
 
 const before = JSON.parse(await readFile(FILE, 'utf8'));
