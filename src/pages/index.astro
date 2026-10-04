@@ -23,6 +23,7 @@ import { AUTHOR, LOCATION, GITHUB } from '../consts';
  */
 const fp = await getEntry('site', 'frontispiece');
 const tagline = fp?.data.tagline ?? fp?.data.role ?? '';
+const standing = fp?.data.standing ?? '';
 const epigraph = fp?.data.epigraph ?? '';
 const highlights = fp?.data.highlights ?? [];
 const now = fp?.data.now ?? '';
@@ -73,6 +74,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <div class="fr-hero-text">
         <h1 class="fr-name" id="fr-h" data-intro="press">{AUTHOR}</h1>
         <p class="fr-tag" data-intro style="--d:160ms">{tagline}</p>
+        {standing && <p class="fr-standing" data-intro style="--d:220ms">{standing}</p>}
 
         <blockquote class="fr-epi">
           <p class="fr-epi-t">
@@ -352,6 +354,17 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     color: var(--ink);
     max-width: 34ch;
     margin-bottom: 2rem;
+  }
+  /* Areas and position: read after the tagline, so quieter than it, and the
+     tagline gives up its bottom margin to keep the two together. */
+  .fr-tag:has(+ .fr-standing) { margin-bottom: 0.7rem; }
+  .fr-standing {
+    font-family: var(--font-body);
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin: 0 0 2rem;
   }
   .fr-epi { margin: 0 0 2rem; padding-left: clamp(0.8rem, 4vw, 2.4rem); border: 0; max-width: 46ch; }
   .fr-epi-t {

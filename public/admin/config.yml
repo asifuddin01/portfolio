@@ -2439,6 +2439,13 @@ collections:
               The line under your name on the landing page, and the description
               search engines and Slack show. Lead with the engineering. One
               sentence — a visitor reads it in two seconds or not at all.
+          - label: Areas and position
+            name: standing
+            widget: string
+            required: false
+            hint: >-
+              One line under the tagline: research areas, then current position,
+              separated by " · ". Keep it to what is true today.
           - label: Role line
             name: role
             widget: text

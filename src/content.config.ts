@@ -760,6 +760,11 @@ const site = defineCollection({
      * leads with the engineering because that is what the page is for.
      */
     tagline: z.string().optional(),
+    /**
+     * Under the tagline: the research areas and the current position, so a
+     * visitor can place him without decoding the rest of the page first.
+     */
+    standing: z.string().optional(),
     /** What is being worked on now, and when that was last true. */
     now: z.string().optional(),
     nowLabel: z.string().optional(),
