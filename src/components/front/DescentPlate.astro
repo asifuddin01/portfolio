@@ -56,8 +56,18 @@ const ENDS = RUNS.map((r) => r.points[r.points.length - 1]);
 const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
   (a, b) => b.points.length - a.points.length
 );
+
+interface Props {
+  /** Appended to the plate's ids, so a second copy on the same page (the
+      frontispiece shows one per screen width) neither duplicates an id nor
+      points its caption and gradient at the other copy. */
+  idSuffix?: string;
+}
+const { idSuffix = '' } = Astro.props;
+const capId = `dp-cap${idSuffix}`;
+const deepId = `dp-deep${idSuffix}`;
 ---
-<figure class="dp" data-reveal data-motion-figure aria-labelledby="dp-cap">
+<figure class="dp" data-reveal data-motion-figure aria-labelledby={capId}>
   <svg
     class="dp-svg"
     viewBox={`0 0 ${W} ${H}`}
@@ -65,14 +75,14 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     aria-label="Contour map of a two-basin loss surface. Three gradient-descent trajectories cross it; two begin at the same point and finish in different basins."
   >
     <defs>
-      <radialGradient id="dp-deep">
+      <radialGradient id={deepId}>
         <stop offset="0%" stop-color="var(--fundus)" stop-opacity="0.22" />
         <stop offset="100%" stop-color="var(--fundus)" stop-opacity="0" />
       </radialGradient>
     </defs>
 
     {/* The deeper basin, lit faintly, so the eye knows where the answer was. */}
-    <circle class="dp-glow" cx={sx(0.68)} cy={sy(0.62)} r="52" fill="url(#dp-deep)" />
+    <circle class="dp-glow" cx={sx(0.68)} cy={sy(0.62)} r="52" fill={`url(#${deepId})`} />
 
     <g class="dp-rings">
       {RINGS.map((ring, li) =>
@@ -132,7 +142,7 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     <FigureMotionToggle figure="descent figure" />
   </div>
 
-  <figcaption class="dp-cap" id="dp-cap">
+  <figcaption class="dp-cap" id={capId}>
     <span class="dp-cap-n">Figura I</span>
     <span class="dp-cap-t">Three runs, one surface</span>
     <span class="dp-cap-d">

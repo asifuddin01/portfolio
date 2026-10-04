@@ -169,6 +169,14 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       </ol>
     </section>
 
+    {/* On a phone the figure waits until after Research. It is the one thing on
+        this page that is illustration rather than evidence, and in one column
+        it stood between the name and all of the evidence. Wider screens keep
+        it beside the name; this copy exists only below 700px. */}
+    <div class="fr-plate-phone">
+      <DescentPlate idSuffix="-phone" />
+    </div>
+
     <LesionRule />
 
     {/* ---- Systems that run ------------------------------------------ */}
@@ -239,7 +247,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     {/* ---- Appendix: every project in a line -------------------------- */}
     <section class="fr-sec" aria-labelledby="fr-app-h">
       <h2 class="fr-h2" id="fr-app-h">Appendix</h2>
-      <p class="fr-lede">Everything built, one line each. Each opens its full entry in the Summa.</p>
+      <p class="fr-lede">{projects.length} projects, one line each. Each opens its full entry in the Summa.</p>
       <ol class="fr-app" data-reveal-stagger>
         {projects.map((p) => {
           const { name, line } = brief(p);
@@ -308,6 +316,11 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     padding-block: clamp(1rem, 4vh, 3rem);
   }
   .fr-hero .fr-ev { order: 1; margin-bottom: 0; }
+  .fr-plate-phone { display: none; }
+  @media (max-width: 699px) {
+    .fr-hero-plate { display: none; }
+    .fr-plate-phone { display: block; margin-top: clamp(2.4rem, 8vw, 3.4rem); }
+  }
   .fr-hero-plate { order: 2; }
   @media (min-width: 940px) {
     /* Laid out exactly as before the strip moved in. The first row keeps the
