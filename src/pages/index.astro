@@ -94,24 +94,34 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <div class="fr-hero-plate" data-intro style="--d:280ms">
         <DescentPlate />
       </div>
+      {/* The strip lives inside the hero so the two can be ordered together:
+          on a phone the 533px figure used to stand between the name and every
+          result, pushing the strip below the first screen. Narrow screens now
+          read name, results, figure; wide screens are laid out as before. */}
+      {/* ---- The evidence strip ---------------------------------------- */}
+      {highlights.length > 0 && (
+        <ul class="fr-ev" id="fr-ev" data-reveal-stagger>
+          {highlights.map((h) => (
+            <li class="fr-ev-i">
+              <a class="fr-ev-link" href={h.href ?? '/home'}>
+                {/* A highlight may name a fact rather than state one —
+                    "{papers}" resolves from src/data/facts.json.
+
+                    Shown as printed, never counted up. A count-up starts every
+                    figure at zero, so anything that read the page before the
+                    strip scrolled into view — a phone, a link preview, a
+                    crawler — read "0.0000 macro-AUC", and mid-count it showed
+                    values that were never measured. A result is stated, not
+                    performed. */}
+                <span class="fr-ev-v">{fillFacts(h.value)}</span>
+                <span class="fr-ev-l">{h.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
 
-    {/* ---- The evidence strip ---------------------------------------- */}
-    {highlights.length > 0 && (
-      <ul class="fr-ev" id="fr-ev" data-reveal-stagger>
-        {highlights.map((h) => (
-          <li class="fr-ev-i">
-            <a class="fr-ev-link" href={h.href ?? '/home'}>
-              {/* A highlight may name a fact rather than state one —
-                  "{papers}" resolves from src/data/facts.json. The odometer
-                  reads the resolved text, so it counts to the real number. */}
-              <span class="fr-ev-v" data-count={fillFacts(h.value)}>{fillFacts(h.value)}</span>
-              <span class="fr-ev-l">{h.label}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    )}
 
     <LesionRule />
 
@@ -166,9 +176,9 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <h2 class="fr-h2" id="fr-sys-h">Systems that run</h2>
       <p class="fr-lede">
         Not repositories — things a stranger can open and put a question to.
-        Each was measured against the baseline that might have beaten it, and
-        each says plainly where it did. Two of them ground every claim in a
-        passage you can check and refuse when the evidence is not there; the
+        Each says plainly how it was tested, and where a simpler method held
+        its own. Two of them answer only from passages you can check, and
+        refuse when the evidence is not there; the
         third ranks a review's records and reports, in its own results table,
         that a method twenty years older still ranks them better.
       </p>
@@ -286,76 +296,6 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     </section>
   </div>
 </BaseLayout>
-
-<script>
-  /**
-   * Count the evidence numbers up on first reveal.
-   *
-   * Deliberately not a generic odometer: "0.9422" must keep four decimals and
-   * land exactly on its printed value, because it is a measured result and an
-   * animation that overshoots to 0.9431 and settles back would be inventing
-   * a number. Decimal places are read off the source string and preserved.
-   */
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const strip = document.getElementById('fr-ev');
-
-  if (strip && !reduce) {
-    /* Only plain numbers are counted. Anything else — "8.7k★", a range, a
-       "6×" — is left exactly as printed. This used to be decided inside run(),
-       after the loop below had already zeroed every cell, so a value that
-       could not be counted was zeroed and then abandoned: "8.7k★" sat on the
-       page as "0.000". Deciding it here, once, means a cell is only ever
-       zeroed if it is going to be counted back up. */
-    const cells = [...strip.querySelectorAll<HTMLElement>('[data-count]')]
-      .filter((c) => Number.isFinite(Number(c.dataset.count)));
-
-    const run = (el: HTMLElement) => {
-      const raw = el.dataset.count ?? '';
-      const target = Number(raw);
-      const dp = (raw.split('.')[1] ?? '').length;
-      const started = performance.now();
-      const DURATION = 1100;
-
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - started) / DURATION);
-        // Ease out cubic: fast first, so the final digits settle rather than race.
-        const v = target * (1 - Math.pow(1 - p, 3));
-        el.textContent = v.toFixed(dp);
-        if (p < 1) requestAnimationFrame(tick);
-        else el.textContent = raw;      // land on the printed value exactly
-      };
-      requestAnimationFrame(tick);
-    };
-
-    /* No negative rootMargin. The strip sits near the fold on a laptop, and a
-       -15% bottom inset put it *outside* the observer's box on first paint —
-       so four zeroes sat there until the reader scrolled, which reads as a
-       broken page rather than a pending animation. */
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        run(e.target as HTMLElement);
-        io.unobserve(e.target);
-      }
-    });
-
-    for (const c of cells) {
-      const dp = (c.dataset.count?.split('.')[1] ?? '').length;
-      /* Zero it only if it is going to be animated up from zero. An element
-         already on screen is counted immediately, so it never shows a zero. */
-      const box = c.getBoundingClientRect();
-      const onScreen = box.top < window.innerHeight && box.bottom > 0;
-      if (onScreen) {
-        c.textContent = (0).toFixed(dp);
-        run(c);
-      } else {
-        c.textContent = (0).toFixed(dp);
-        io.observe(c);
-      }
-    }
-  }
-</script>
-
 <style>
   .fr { padding-top: clamp(2rem, 5vh, 4rem); padding-bottom: 2rem; }
 
@@ -367,8 +307,23 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     min-height: clamp(26rem, 72vh, 40rem);
     padding-block: clamp(1rem, 4vh, 3rem);
   }
+  .fr-hero .fr-ev { order: 1; margin-bottom: 0; }
+  .fr-hero-plate { order: 2; }
   @media (min-width: 940px) {
-    .fr-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+    /* Laid out exactly as before the strip moved in. The first row keeps the
+       room the hero used to have — its min-height less its own padding, since
+       boxes here are border-box — and the row gap is the padding that used to
+       separate hero from strip. No bottom padding: the strip's margin used to
+       collapse into the divider's larger one, so the divider alone sets that gap. */
+    .fr-hero {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      grid-template-rows: minmax(calc(clamp(26rem, 72vh, 40rem) - 2 * clamp(1rem, 4vh, 3rem)), auto) auto;
+      min-height: 0;
+      row-gap: clamp(1rem, 4vh, 3rem);
+      padding-block-end: 0;
+    }
+    .fr-hero .fr-ev, .fr-hero-plate { order: 0; }
+    .fr-hero .fr-ev { grid-column: 1 / -1; }
   }
   .fr-name {
     font-size: clamp(2.6rem, 8.5vw, 4rem);
