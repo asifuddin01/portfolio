@@ -56,6 +56,15 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The Java tracer's tests compile programs natively, for Java 8 — the
+      # language level the browser's compiler runs at — which needs a JDK that
+      # has --release. clang, for the C tracer's, is already on the runner.
+      - uses: actions/setup-java@v4
+        id: jdk
+        with:
+          distribution: temurin
+          java-version: '17'
+
       # The credential is inspected before the build, so a missing one costs
       # ten seconds instead of three minutes. The result is turned into three
       # separately named steps rather than one message, so the *name of the
@@ -146,6 +155,7 @@ jobs:
           # there is nothing to embed.
           PUBLIC_RESEARCHLENS_SPACE: https://asifuddin01-researchlens.hf.space
           OFFICINA_PYTHON: ${{ steps.py314.outputs.python-path }}
+          OFFICINA_JAVA_HOME: ${{ steps.jdk.outputs.path }}
         run: npm run verify
 
       - name: Deploy

@@ -1,0 +1,164 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { AUTHOR } from '../consts';
+
+/**
+ * A door to SANDHI, not a copy of it.
+ *
+ * The lab has its own site, and anything said about it should be said there.
+ * This page exists so that the Fabrica button lands somewhere that explains
+ * what the reader is about to visit and who is sending them, then sends them.
+ * Its wording follows sandhiresearch.org's own; nothing here describes the
+ * team, because the lab's own People page does not yet either.
+ */
+const SITE = 'https://sandhiresearch.org';
+
+/** The lab's five themes and the areas under each, as its research map has them. */
+const THEMES = [
+  ['Perception', 'Computer vision'],
+  ['Language', 'Language models and NLP'],
+  ['Junction', 'Vision-language models, multimodal AI'],
+  ['Understanding', 'Representation learning, causal inference'],
+  ['Discovery', 'AI for science, computational biology'],
+];
+---
+<BaseLayout
+  title={`SANDHI Research Lab — ${AUTHOR}`}
+  description="An independent research lab exploring artificial intelligence and computational science, founded and led by Md. Asif Uddin."
+  folio="—"
+>
+  <div class="codex sd">
+    <p class="sd-kicker" data-reveal>Founder and research lead</p>
+    <h1 class="sd-h1" data-press>SANDHI Research Lab</h1>
+    <p class="sd-motto" data-reveal>Where ideas meet, discovery begins.</p>
+    <p class="sd-lede codex-measure" data-reveal>
+      An independent research lab exploring artificial intelligence and
+      computational science — difficult problems across vision, language,
+      multimodal AI and AI for science.
+    </p>
+
+    <LesionRule />
+
+    <section class="sd-sec" aria-labelledby="sd-name">
+      <h2 class="sd-h2" id="sd-name"><span lang="sa">सन्धि</span> — the place where two things join</h2>
+      <p class="sd-p codex-measure" data-reveal>
+        In Sanskrit grammar, <em>sandhi</em> is what happens where two words
+        meet: sounds shift and settle into something that reads as one. The lab
+        is built on the same bet about research — that the useful ideas rarely
+        come from a single field, and form instead at the junctions, where
+        methods, disciplines and people meet and are changed by the meeting.
+      </p>
+    </section>
+
+    <section class="sd-sec" aria-labelledby="sd-themes">
+      <h2 class="sd-h2" id="sd-themes">Five themes</h2>
+      <dl class="sd-themes" data-reveal-stagger>
+        {THEMES.map(([theme, areas]) => (
+          <div class="sd-theme"><dt>{theme}</dt><dd>{areas}</dd></div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="sd-sec" aria-labelledby="sd-built">
+      <h2 class="sd-h2" id="sd-built">The lab's platform</h2>
+      <p class="sd-p codex-measure" data-reveal>
+        I built the lab's site as a single application: the public face — the
+        research map, projects with public progress, publications, notes and
+        applications to join — together with a members' workspace for tasks,
+        meetings, experiment logs and drafts sent for review, and the
+        administration behind both. Invitation-only accounts with two-factor
+        sign-in for everyone, every administrative change audited in the same
+        transaction as the change itself, more than 400 unit tests and more than 140
+        end-to-end tests, and fourteen days from the first commit to
+        production.
+      </p>
+    </section>
+
+    <section class="sd-go" aria-label="Go to SANDHI">
+      <p class="sd-p codex-measure" data-reveal>
+        Everything about the lab — its research, publications, people and how
+        to join — lives on its own site.
+      </p>
+      <p class="sd-actions" data-reveal>
+        <a class="sd-btn" href={SITE}>Go to SANDHI<span aria-hidden="true"> →</span></a>
+        <a class="sd-src" href="https://github.com/asifuddin01/Sandhi" rel="noopener">Source</a>
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .sd { padding-top: clamp(2.4rem, 9vh, 5rem); }
+  .sd-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.8rem;
+  }
+  .sd-h1 { font-size: var(--t-2xl); margin-bottom: 0.4rem; }
+  .sd-motto {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--t-lg);
+    color: var(--ink-soft);
+    margin: 0 0 1.2rem;
+  }
+  .sd-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+
+  .sd-sec { margin-top: 2.6rem; }
+  .sd-h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: var(--t-lg);
+    margin: 0 0 0.9rem;
+  }
+  .sd-p { line-height: 1.8; margin: 0 0 1rem; }
+
+  .sd-themes { margin: 0; max-width: 46rem; }
+  .sd-theme {
+    display: grid;
+    grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+    gap: 0.3rem 1.2rem;
+    padding: 0.6rem 0;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+  }
+  .sd-theme:last-child { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .sd-theme dt { font-family: var(--font-display); font-size: var(--t-md); }
+  .sd-theme dd { margin: 0; color: var(--ink-soft); align-self: center; }
+
+  .sd-go {
+    margin-top: 3rem;
+    padding-top: 1.6rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .sd-actions { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin: 1rem 0 0; }
+  .sd-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+    padding: 0.6rem 1.1rem;
+  }
+  .sd-btn:hover,
+  .sd-btn:focus-visible { background: color-mix(in srgb, var(--brass) 14%, var(--paper-raised)); border-color: var(--brass); }
+  .sd-src {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  .sd-src:hover { color: var(--fundus); }
+
+  @media (max-width: 560px) {
+    .sd-theme { grid-template-columns: 1fr; }
+  }
+</style>

@@ -28,7 +28,7 @@ const HISTORY = 6;
 /** Room given to any single value, in characters. */
 const VALUE_ROOM = 80;
 
-const val = (v: unknown) => formatValue(v as never, VALUE_ROOM);
+const NAMES: Record<string, string> = { python: 'Python', c: 'C', java: 'Java' };
 
 /**
  * The program, numbered, narrowed to the neighbourhood of one line.
@@ -55,14 +55,16 @@ export function sourceAround(source: string, line: number): string {
 }
 
 /** A variable change as "before → after", or as an arrival or a departure. */
-function changeLine(c: VariableChange): string {
-  if (c.after === undefined) return `${c.name} was deleted (it held ${val(c.before)})`;
+function changeLine(c: VariableChange, language: string): string {
+  const val = (v: unknown) => formatValue(v as never, VALUE_ROOM, language);
+  if (c.after === undefined) return `${c.name} ${language === 'python' ? 'was deleted' : 'went out of scope'} (it held ${val(c.before)})`;
   if (!c.existedBefore) return `${c.name} = ${val(c.after)}  (new — it did not exist before this step)`;
   return `${c.name}: ${val(c.before)} → ${val(c.after)}`;
 }
 
 /** What the step itself did, in the trace's own terms. */
-function whatHappened(step: TraceStep): string[] {
+function whatHappened(step: TraceStep, language: string): string[] {
+  const val = (v: unknown) => formatValue(v as never, VALUE_ROOM, language);
   const out: string[] = [];
 
   if (step.event === 'call') {
@@ -73,10 +75,12 @@ function whatHappened(step: TraceStep): string[] {
     out.push(
       step.unwinding
         ? `${step.function}() was left because an exception is passing through it.`
+        : step.returnValue === undefined ? `${step.function}() returned, with no value.`
         : `${step.function}() returned ${val(step.returnValue)}.`
     );
   } else if (step.event === 'exception' && step.exception) {
-    out.push(`${step.exception.type} was raised: ${step.exception.message}`);
+    const how = language === 'c' ? 'The program hit a runtime error,' : language === 'java' ? 'An exception was thrown,' : 'An exception was raised,';
+    out.push(`${how} ${step.exception.type}${step.exception.message ? `: ${step.exception.message}` : ' (with no message)'}`);
   } else {
     out.push(`Line ${step.line} finished running.`);
   }
@@ -129,21 +133,28 @@ export function describeStep(
   view: StepView,
   source: string,
   read: (i: number) => StepView,
-  result?: TraceResult
+  result?: TraceResult,
+  language = 'python'
 ): string {
   const { step } = view;
   const here = view.frames[view.frames.length - 1];
   const parts: string[] = [];
 
-  parts.push('PROGRAM (→ marks the line this step is about):', sourceAround(source, step.line), '');
-  parts.push(`STEP ${step.step} of ${result?.steps ?? 'the run'} — in ${step.function}(), line ${step.line}.`);
+  const python = language === 'python';
+  const val = (v: unknown) => formatValue(v as never, VALUE_ROOM, language);
+  /* C and Java's global frame holds their globals and static fields; its only
+     steps are the program's first and last. */
+  const where = step.function !== '<module>' ? `in ${step.function}(), line ${step.line}`
+    : python ? `in <module>, line ${step.line}` : step.event === 'call' ? 'as the program starts' : 'as the program ends';
+  parts.push(`LANGUAGE: ${NAMES[language] ?? language}`, 'PROGRAM (→ marks the line this step is about):', sourceAround(source, step.line), '');
+  parts.push(`STEP ${step.step} of ${result?.steps ?? 'the run'} — ${where}.`);
 
   parts.push('', 'WHAT THIS STEP DID:');
-  for (const line of whatHappened(step)) parts.push(`  ${line}`);
+  for (const line of whatHappened(step, language)) parts.push(`  ${line}`);
 
   if (view.changes.length) {
     parts.push('', 'VARIABLES THIS STEP CHANGED:');
-    for (const c of view.changes) parts.push(`  ${changeLine(c)}`);
+    for (const c of view.changes) parts.push(`  ${changeLine(c, language)}`);
   } else {
     parts.push('', 'This step changed no variables.');
   }
@@ -154,12 +165,14 @@ export function describeStep(
   if (here && here.vars.size) {
     const shown = [...here.vars].slice(0, VARS_PER_FRAME);
     parts.push('', `VARIABLES IN SCOPE in ${here.function}() after this step:`);
-    for (const [name, v] of shown) parts.push(`  ${name} = ${val(v)}`);
+    // Declared types, where the language has them: "int total = 14".
+    for (const [name, v] of shown) parts.push(`  ${here.types?.has(name) ? `${here.types.get(name)} ` : ''}${name} = ${val(v)}`);
     if (here.vars.size > shown.length) parts.push(`  … and ${here.vars.size - shown.length} more`);
   }
 
-  if (view.frames.length > 1) {
-    parts.push('', `CALL STACK: ${view.frames.map((f) => `${f.function}()`).join(' → ')}`);
+  const stack = view.frames.filter((f) => python || f.function !== '<module>');
+  if (stack.length > 1) {
+    parts.push('', `CALL STACK: ${stack.map((f) => `${f.function}()`).join(' → ')}`);
   }
 
   const history = historyBefore(view, read);

@@ -30,6 +30,12 @@ chapters:
 status: published
 ---
 
+import { Image } from 'astro:assets';
+import dragon from '../../assets/numina/before-the-world/marduk-dragon.webp';
+
+<div className="np-illustrated-intro">
+<div>
+
 The literature of the land between the Tigris and the Euphrates survives because
 its people wrote on clay and clay does not burn. Sumerian scribes, and the
 Akkadian, Babylonian and Assyrian writers who inherited their script, left the
@@ -45,3 +51,21 @@ Gilgamesh* asks what a king is for once he understands he will die.
 Nothing here is complete. Tablets break, columns are lost, and a scholar's
 brackets stand where a line should be. Read it knowing that the gaps are part
 of the text.
+
+</div>
+
+<figure className="np-intro-plate">
+  <a href="https://www.metmuseum.org/art/collection/search/327048">
+    <Image src={dragon} alt="A broken Babylonian limestone monument carved with a long-necked dragon facing Marduk's spade emblem on a raised stand." widths={[360, 640, 960]} sizes="(max-width: 26rem) calc(100vw - 2.5rem), 352px" loading="eager" />
+  </a>
+  <figcaption>
+    <p className="np-plate-label">Plate I · Marduk's dragon</p>
+    <p>
+    A mushhushshu dragon and Marduk's spade emblem on a Babylonian
+    <em> kudurru</em>, a stone monument recording a land grant.
+    About 1156 to 1025 BCE. This is not a depiction of Tiamat.
+    </p>
+    <p className="np-plate-credit">The Metropolitan Museum of Art, 1985.45. Rogers Fund, 1985. Image: The Met, public domain. <a href="https://www.metmuseum.org/art/collection/search/327048">Museum record</a> · <a href="https://images.metmuseum.org/CRDImages/an/original/DP360675.jpg">Full image</a></p>
+  </figcaption>
+</figure>
+</div>

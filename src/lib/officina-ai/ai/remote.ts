@@ -98,7 +98,7 @@ export class RemoteProvider implements TutorProvider {
       response = await fetch(this.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: request.task, prompt: user.content }),
+        body: JSON.stringify({ task: request.task, language: request.language ?? 'python', prompt: user.content }),
         signal,
       });
     } catch (error) {

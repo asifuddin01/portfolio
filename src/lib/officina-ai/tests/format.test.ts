@@ -31,6 +31,18 @@ test('type labels', () => {
   assert.equal(typeOf({ t: 'object', cls: 'Node', attrs: [] }), 'Node');
 });
 
+test('compiled values use their own null, boolean, string and array spellings', () => {
+  assert.equal(formatValue(null, 120, 'java'), 'null');
+  assert.equal(formatValue(null, 120, 'c'), 'NULL');
+  assert.equal(formatValue(true, 120, 'java'), 'true');
+  assert.equal(formatValue(false, 120, 'c'), 'false');
+  assert.equal(formatValue('a\nb', 120, 'java'), '"a\\nb"');
+  assert.equal(formatValue({ t: 'list', items: [true, null], n: 2, cls: 'Object[]' }, 120, 'java'), '[true, null]');
+  assert.equal(typeOf(true, 'java'), 'boolean');
+  assert.equal(typeOf('hello', 'java'), 'String');
+  assert.equal(typeOf({ t: 'list', items: [1], n: 1, cls: 'int[]' }, 'c'), 'int[]');
+});
+
 test('in-place list changes name the positions that changed', () => {
   const before = { t: 'list' as const, items: [10, 20, 30, 40], n: 4 };
   const after = { t: 'list' as const, items: [10, 20, 50, 40], n: 4 };

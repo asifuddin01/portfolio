@@ -13,7 +13,7 @@ import type { StepView } from '../trace/store.ts';
 const step: StepView = {
   index: 3,
   step: { step: 3, event: 'line', line: 2, fid: 0, function: '<module>', depth: 0 },
-  frames: [{ fid: 0, function: '<module>', depth: 0, line: 2, vars: new Map([['x', 42]]) }],
+  frames: [{ fid: 0, function: '<module>', depth: 0, line: 2, vars: new Map([['x', 42]]), types: new Map() }],
   changes: [],
   stdout: '',
   stderr: '',
@@ -101,7 +101,8 @@ test('an answer streams in, and step numbers in it become links', async () => {
     assert.deepEqual(done.type === 'done' && done.explanation.steps, [4]);
     // What went to the server: the task and the facts — never instructions.
     const [{ body }] = server.sent;
-    assert.deepEqual(Object.keys(body as object).sort(), ['prompt', 'task']);
+    assert.deepEqual(Object.keys(body as object).sort(), ['language', 'prompt', 'task']);
+    assert.equal((body as { language: string }).language, 'python');
     assert.match((body as { prompt: string }).prompt, /WHAT THIS STEP DID/);
   } finally {
     server.restore();
@@ -116,6 +117,18 @@ test('a refusal from the server is shown in its own words', async () => {
   } finally {
     server.restore();
   }
+});
+
+test('the selected language reaches the tutor server and solver prompt', async () => {
+  const server = serve(() => new Response(streamOf('data: {"response":"Try it."}\n\ndata: [DONE]\n\n')));
+  try {
+    for (const language of ['c', 'java'] as const) {
+      await collect(provider().answer({ task: 'solve', language, source: '', question: 'add two numbers' }, new AbortController().signal));
+      const body = server.sent.at(-1)!.body as { language: string; prompt: string };
+      assert.equal(body.language, language);
+      assert.match(body.prompt, language === 'c' ? /Write a C program/ : /Write a Java program/);
+    }
+  } finally { server.restore(); }
 });
 
 test('stopping before the server answers is a cancellation, not an error', async () => {

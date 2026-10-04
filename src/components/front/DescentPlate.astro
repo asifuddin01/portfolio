@@ -205,6 +205,12 @@ const DRAW = RUNS.map((r, i) => ({ ...r, i })).sort(
     height: 0;
     border-top: 1.5px solid currentColor;
   }
+  /* Brass text on paper is 3.28:1, under the 4.5:1 small text needs. The line
+     in the plot only needs 3:1, so it keeps --brass; the label takes the
+     text-safe --brass-text, and its swatch stays the plot's colour so the key
+     still names the line it stands beside. (In Nocturne the two are equal.) */
+  .dp-key-i.dp-coarse { color: var(--brass-text); }
+  .dp-key-i.dp-coarse::before { border-top-color: var(--brass); }
 
   /* ---- The legend, set into the plate -------------------------------
      Below ~940px the plate stacks above the hero text and there is no room to
