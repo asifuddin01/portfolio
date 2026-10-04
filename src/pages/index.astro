@@ -381,6 +381,11 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
     border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
   }
+  /* Five figures in auto-fit columns came out four-and-one on desktop, leaving
+     the last alone on a row of its own. Wide enough, they share one row. */
+  @media (min-width: 1100px) {
+    .fr-ev { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
   .fr-ev-link { display: grid; gap: 0.3rem; color: var(--ink); }
   .fr-ev-v {
     font-family: var(--font-display);

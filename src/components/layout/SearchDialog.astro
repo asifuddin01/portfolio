@@ -178,8 +178,12 @@
       if (mine !== token) return;
 
       if (!pf) {
-        status!.textContent =
-          'The search index is built with the site, so it is not available while running locally.';
+        // The index only exists in a build, so locally its absence is expected.
+        // On the live site it means the download failed, and saying "running
+        // locally" there would blame the reader's setup for the site's fault.
+        status!.textContent = import.meta.env.DEV
+          ? 'The search index is built with the site, so it is not available while running locally.'
+          : 'Search could not load just now. Check the connection and try again.';
         return;
       }
 
