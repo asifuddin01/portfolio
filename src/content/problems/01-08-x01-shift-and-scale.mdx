@@ -1,0 +1,48 @@
+---
+id: "I.8.X01"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Epsilon breaks exact scale invariance"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+For $x=(-1,0,1)$ and $\varepsilon=1/3$, compute the standardised vector.
+Then replace $x$ by $x+10$ and by $2x$. Which transformation leaves the result
+unchanged? Derive the statement for a general positive multiplier $a$.
+
+<Hint>
+The variance is multiplied by $a^2$, but epsilon is not.
+</Hint>
+
+<SolutionToggle>
+
+The original mean is zero, variance is $2/3$ and denominator is one, so the
+standardised vector is $(-1,0,1)$. Adding ten changes the mean to ten and
+leaves the centred values unchanged. The result is still $(-1,0,1)$.
+
+For $2x=(-2,0,2)$, the variance is $8/3$ and the denominator is $\sqrt3$.
+The result is $(-2/\sqrt3,0,2/\sqrt3)$, approximately
+$(-1.1547,0,1.1547)$, which differs from the original.
+
+For $a>0$,
+
+$$
+\frac{a(x_i-\mu)}{\sqrt{a^2v+\varepsilon}}
+=\frac{x_i-\mu}{\sqrt{v+\varepsilon/a^2}}.
+$$
+
+Shift invariance is exact for fixed epsilon. Positive scale invariance is exact
+only when epsilon is zero with positive variance, or in special degenerate
+cases such as a constant group. It is an approximation when both relevant
+epsilon-to-variance ratios are small. A negative multiplier also changes the
+sign and cannot be folded into this positive-scale identity without that sign.
+
+</SolutionToggle>

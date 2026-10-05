@@ -1,0 +1,92 @@
+---
+id: "I.8.B05"
+kind: problem
+chapter: "I.8"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "A mean-preserving mask does not preserve a prediction"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+<Statement>
+Compute dropout's distribution exactly, rather than estimating it by sampling.
+Use the result to test the claim that deterministic inference is the exact
+average of the masked networks.
+</Statement>
+
+<Given>
+A fixed activation $h=2$, independent keep probability $q=1/2$, inverted
+dropout $\widetilde h=Mh/q$, and a downstream function $f(u)=u^2$.
+</Given>
+
+<Find>
+The mean and variance of the masked activation, the expected squared output,
+and the deterministic inference prediction. Then derive the general formulas
+for fixed $h$ and $0<q\leq1$.
+</Find>
+
+<Strategy>
+Enumerate the two mask outcomes. Keep $\mathbb E[f(\widetilde h)]$ separate
+from $f(\mathbb E[\widetilde h])$.
+</Strategy>
+
+<Solution>
+
+| Mask $M$ | Probability | $\widetilde h$ | $f(\widetilde h)$ |
+|---|---|---|---|
+| $0$ | $1/2$ | $0$ | $0$ |
+| $1$ | $1/2$ | $4$ | $16$ |
+
+The first moment is $(0+4)/2=2$. The second moment is $(0+16)/2=8$.
+Subtracting the square of the first moment gives variance $8-2^2=4$.
+
+At inference inverted dropout leaves $h$ unchanged, so the squared output
+is $f(2)=4$. But averaging the masked predictions gives $8$.
+The discrepancy is the activation variance, not a sampling error.
+
+For arbitrary fixed $h$, the outcomes are zero and $h/q$:
+
+$$
+\mathbb E[\widetilde h]=q\frac hq=h,\qquad
+\mathbb E[\widetilde h^2]=q\frac{h^2}{q^2}=\frac{h^2}{q}.
+$$
+
+Therefore $\operatorname{Var}(\widetilde h)=h^2(1-q)/q$, as in (I.8.8).
+For an affine downstream map $au+b$, expectation does commute with the map.
+The square gives a concrete case where it does not.
+
+For independent masks on several fixed activations, the dropout-induced
+off-diagonal covariances are zero. This is conditional on the activations.
+It does not claim that the activations themselves are independent across data.
+
+</Solution>
+
+<Answer>
+Mean $2$, variance $4$, expected masked squared output $8$, and deterministic
+squared output $4$. Inverted dropout preserves the activation mean and
+does not, in general, preserve the expected downstream prediction.
+</Answer>
+
+<CheckSanity>
+At $q=1$ both paths coincide and the variance is zero. For fixed nonzero $h$,
+the variance grows without bound as $q$ tends to zero. The operation is not
+defined at $q=0$ by the formula used here.
+</CheckSanity>
+
+<Breaks>
+This arithmetic is not a claim about the test accuracy of dropout. It shows
+exactly what the scaling guarantees and what it does not. Correlated masks,
+such as dropping a whole channel together, produce a different covariance
+structure even when the marginal mean formula still holds.
+</Breaks>
+
+<Variation>
+Let $h=0$ or replace the square with an affine function. Explain why the
+counterexample disappears without establishing the general equality.
+</Variation>

@@ -1,0 +1,28 @@
+---
+const entries = [[1, 4, 7], [2, 5, 8], [3, 6, 9]];
+---
+<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="na-t na-d"
+  preserveAspectRatio="xMidYMid meet" style="--fig-min: 600px">
+  <title id="na-t">Batch and layer normalisation reduce over different axes</title>
+  <desc id="na-d">Two identical three-by-three matrices have examples in rows
+    and features in columns. Batch normalisation highlights a column:
+    one feature across three examples. Layer normalisation highlights a row:
+    three features within one example. The other columns or rows form their
+    own separate groups. Neither operation changes the tensor shape.</desc>
+  {[0, 380].map((offset, panel) => (
+    <g transform={'translate(' + offset + ', 0)'}>
+      <text x="0" y="22" class="t-lab">{panel === 0 ? 'batch normalisation' : 'layer normalisation'}</text>
+      <text x="155" y="57" class="t-sm" text-anchor="middle">features →</text>
+      <rect x={panel === 0 ? 78 : 74} y={panel === 0 ? 72 : 121}
+        width={panel === 0 ? 48 : 168} height={panel === 0 ? 148 : 48}
+        fill="var(--brass)" fill-opacity="0.12" stroke="var(--brass)" stroke-width="1" />
+      {entries.map((row, i) => row.map((value, j) => (
+        <text x={102 + j * 58} y={103 + i * 49} class="t-key" text-anchor="middle">{value}</text>
+      )))}
+      <text x="14" y="145" class="t-sm" transform="rotate(-90, 14, 145)" text-anchor="middle">examples</text>
+      <text x="0" y="254" class="t-key">{panel === 0 ? 'one feature, across examples' : 'one example, across features'}</text>
+      <text x="0" y="278" class="t-sm">{panel === 0 ? 'Other examples affect this output.' : 'Other examples do not affect it.'}</text>
+      <text x="0" y="300" class="t-sm">{panel === 0 ? 'Inference normally freezes the statistics.' : 'The same rule at training and inference.'}</text>
+    </g>
+  ))}
+</svg>

@@ -1,0 +1,43 @@
+---
+id: "I.8.X07"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "A mask can keep the right fraction and still be biased"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+For fixed nonzero $h$, examine (I.8.8) as $q$ tends to one and as $q$ tends to
+zero. Next let $h$ be equally likely to be $-1$ or $1$ and keep it exactly
+when $h=1$. The overall keep fraction is $1/2$. Does dividing by that fraction
+preserve the mean?
+
+<Hint>
+The theorem conditions on $h$. An overall keep fraction does not establish
+independence between the mask and the activation.
+</Hint>
+
+<SolutionToggle>
+
+At $q=1$, dropout is the identity and its induced variance is zero.
+As $q$ tends to zero through positive values, the mean remains $h$ but the
+variance $h^2(1-q)/q$ diverges. Rare surviving activations become arbitrarily
+large. The formula cannot be evaluated at $q=0$.
+
+In the dependent-mask example, $Mh/q$ is zero when $h=-1$ and two when
+$h=1$. Its mean is one, whereas $\mathbb E[h]=0$.
+The mask kept half the examples but preferentially selected the positive ones.
+Conditional on $h=-1$, its keep probability is zero, not the advertised $q$.
+
+The usual expectation calculation needs a mask sampled independently of the
+fixed activation, or a separately specified conditional sampling and weighting
+scheme. Matching an aggregate drop fraction is insufficient.
+
+</SolutionToggle>

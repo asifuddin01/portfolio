@@ -19,6 +19,7 @@ import FigDepthFolds from '../components/figures/FigDepthFolds.astro';
 import FigComputationalGraph from '../components/figures/FigComputationalGraph.astro';
 import FigDescentStep from '../components/figures/FigDescentStep.astro';
 import FigRegularisation from '../components/figures/FigRegularisation.astro';
+import FigNormalisationAxes from '../components/figures/FigNormalisationAxes.astro';
 /* Book I, Chapter IV — Loss Functions */
 import FigLossShapes from '../components/figures/FigLossShapes.astro';
 import FigLossIsALikelihood from '../components/figures/FigLossIsALikelihood.astro';
@@ -253,7 +254,13 @@ export const FIGURES = {
     component: FigRegularisation,
     caption:
       'Seven points fitted exactly and fitted loosely. Regularisation does not improve the fit — it decides which fit you get when many are available.',
-    source: 'Book I, Ch. II, Prop. 5',
+    source: 'Book I, Ch. VIII, Prop. 1',
+  },
+  FigNormalisationAxes: {
+    component: FigNormalisationAxes,
+    caption:
+      'The same matrix, different reduction groups. Batch normalisation shares statistics down a feature column; layer normalisation shares them across one example. Highlighted entries form one group; the remaining rows or columns form their own groups.',
+    source: 'Book I, Ch. VIII, Prop. 2',
   },
 
   FigTokenBoundary: {

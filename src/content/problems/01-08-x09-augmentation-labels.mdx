@@ -1,0 +1,44 @@
+---
+id: "I.8.X09"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "An augmentation that makes perfect classification impossible"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+A balanced dataset contains just two inputs: $x=-1$ has label zero and $x=1$
+has label one. During training, independently negate the input with
+probability $1/2$ but keep its original label.
+Compute the conditional label distribution after augmentation. What
+classification error is unavoidable, and which assumption was broken?
+
+<Hint>
+List the original input and the transformation as separate random choices.
+</Hint>
+
+<SolutionToggle>
+
+The four equally likely transformed pairs are
+$(-1,0)$, $(1,0)$, $(1,1)$ and $(-1,1)$.
+At either observed input, each label now has conditional probability $1/2$.
+Thus any deterministic classifier has error $1/2$ on this augmented
+distribution. A random classifier cannot do better in expectation.
+
+The original distribution had zero achievable error: return whether $x$ is
+positive. Negation changes that target, so treating it as label-preserving
+creates contradictory supervision.
+
+The failure has nothing to do with the optimiser's ability to fit the model.
+The training distribution was changed so that the input no longer identifies
+the label. If negation were required, transforming the label at the same time
+would preserve the relationship; that would be a different augmentation.
+
+</SolutionToggle>

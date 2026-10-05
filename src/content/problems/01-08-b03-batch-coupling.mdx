@@ -1,0 +1,100 @@
+---
+id: "I.8.B03"
+kind: problem
+chapter: "I.8"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "The same example changes sign in another batch"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+<Statement>
+Refute the claim that batch normalisation during training defines a function
+of one example alone. Then show why layer normalisation is not a drop-in
+mathematical equivalent.
+</Statement>
+
+<Given>
+One scalar feature, $\gamma=1$, $\beta=0$, and $\varepsilon=10^{-5}$.
+The target example has value $1$. In batch A it is paired with $3$;
+in batch B it is paired with $-1$.
+</Given>
+
+<Find>
+The output for the target example in each batch. Repeat the reasoning for
+layer normalisation applied to the target row $(1,3)$, and for a
+normalisation group containing only one scalar.
+</Find>
+
+<Strategy>
+Hold the target fixed and change only a member of its reduction group.
+The difference between the two algorithms is whether that changed value
+belongs to the target's group.
+</Strategy>
+
+<Solution>
+
+Batch A has mean $2$ and variance $1$. Its target output is
+
+$$
+\hat x_A=\frac{1-2}{\sqrt{1+10^{-5}}}\approx-1.0000.
+$$
+
+Batch B has mean $0$ and variance $1$, so
+
+$$
+\hat x_B=\frac{1-0}{\sqrt{1+10^{-5}}}\approx+1.0000.
+$$
+
+The unrounded magnitudes are below one. The sign change is exact.
+The feature, parameters and epsilon did not change. The companion example
+did. This is a counterexample to a sample-independent training map, not a
+failure of the implementation.
+
+For layer normalisation over the target's row $(1,3)$, its statistics remain
+mean $2$ and variance $1$ regardless of other rows. Its output stays
+$(-1,+1)/\sqrt{1+10^{-5}}$. It depends on its other feature rather than on
+other examples.
+
+If the reduction group has size one, $\mu=x$ and $v=0$. The output is
+$\gamma(0/\sqrt\varepsilon)+\beta=\beta$ for every input.
+Its derivative with respect to the input is zero. Dense batch normalisation
+can encounter this at batch size one. Layer normalisation can encounter it
+when the normalised feature width is one, even with a large batch.
+
+</Solution>
+
+<Answer>
+The target changes from approximately $-1$ to $+1$ under training-mode batch
+normalisation. Feature-wise layer normalisation leaves its row unchanged
+when other examples change. Either rule degenerates if its actual reduction
+group contains one scalar.
+</Answer>
+
+<CheckSanity>
+The comparison uses the same variance in both batches, so the sign reversal
+comes entirely from the change of mean. Ordinary evaluation-mode batch
+normalisation with frozen statistics would also be independent of the
+companion example.
+</CheckSanity>
+
+<Breaks>
+Batch coupling can introduce useful training noise; this counterexample does
+not establish that layer normalisation performs better. Spatial batch
+normalisation at batch size one still pools spatial positions and need not
+have a singleton group. Correlation between those positions can nevertheless
+make the statistics less informative than their raw count suggests.
+</Breaks>
+
+<Variation>
+Keep the original two training batches but freeze the evaluation statistics at
+mean $0$ and variance $1$. Both evaluations of the target now return
+$1/\sqrt{1+10^{-5}}$. State which dependency disappeared and why the trained
+affine parameters need not change.
+</Variation>

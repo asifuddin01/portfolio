@@ -1,0 +1,195 @@
+---
+chapter: neural-networks--normalisation
+proposition: 2
+statement: The normalisation formula is incomplete until its axes are named.
+claim: "Batch normalisation shares statistics between examples; layer normalisation shares them between features of one example. Their forward and backward passes inherit that choice."
+given:
+  - backpropagation-is-the-chain-rule-over-a-graph
+  - optimisation-follows-the-gradient
+figure: FigNormalisationAxes
+figureType: A
+status: published
+updated: 2026-10-05
+sources:
+  - title: "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift"
+    url: https://proceedings.mlr.press/v37/ioffe15.html
+  - title: "Layer Normalization"
+    url: https://arxiv.org/abs/1607.06450
+  - title: "How Does Batch Normalization Help Optimization?"
+    url: https://arxiv.org/abs/1805.11604
+  - title: "BatchNorm1d: forward and running-variance conventions"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
+---
+
+## The same arithmetic, two different functions
+
+Take a matrix $\mat X\in\mathbb R^{N\times D}$ with one example per row.
+For dense batch normalisation, each feature column supplies its own mean and
+variance across the $N$ examples. For layer normalisation over features, each
+example supplies its statistics across the $D$ entries of its row.
+
+The figure highlights one group in each case. A column pools information
+between examples. A row does not. Writing only “subtract the mean” leaves
+this distinction out of the model.
+
+For any group of $m$ scalar entries, define
+
+<Eq id="I.8.1" gloss="The mean and variance are computed over the same explicitly chosen group.">
+
+$$
+\mu=\frac1m\sum_{i=1}^m x_i,\qquad
+v=\frac1m\sum_{i=1}^m(x_i-\mu)^2,\qquad
+\hat x_i=\frac{x_i-\mu}{\sqrt{v+\varepsilon}}.
+$$
+
+</Eq>
+
+The forward variance in (I.8.1) has divisor $m$, not $m-1$.
+The positive $\varepsilon$ keeps the denominator nonzero. It also means the
+standardised values have variance $v/(v+\varepsilon)$, not exactly one.
+If every input in a group is the same, all $\hat x_i$ are zero.
+
+The model then learns an affine transformation. For batch normalisation,
+$\gamma$ and $\beta$ belong to a feature and are shared across its examples.
+For layer normalisation, each normalised feature can have its own
+$\gamma_j,\beta_j$. Standardising activations does not force the layer's final
+outputs to have zero mean or unit variance.
+
+## Batch normalisation has two forward passes
+
+Ordinary batch normalisation uses the current group's statistics during
+training and frozen running estimates at inference:
+
+<Eq id="I.8.2" gloss="Evaluation stops asking the neighbouring examples how to scale this one.">
+
+$$
+y_i^{\mathrm{train}}=\gamma\hat x_i+\beta,\qquad
+y_i^{\mathrm{eval}}=
+\gamma\frac{x_i-\mu_{\mathrm{run}}}{\sqrt{v_{\mathrm{run}}+\varepsilon}}+\beta.
+$$
+
+</Eq>
+
+An exponential update might be
+$\mu_{\mathrm{run}}\leftarrow(1-\alpha)\mu_{\mathrm{run}}+\alpha\mu$,
+where $\alpha$ is the weight given to the new batch. This state update is
+separate from gradient descent on $\gamma$ and $\beta$. Frameworks do not
+all name their averaging coefficient the same way.
+
+The variance estimator must also be recorded. PyTorch's documented default
+uses the biased variance in the training forward pass and an unbiased
+estimate for the running-variance update. A textbook implementation using the
+same variance for both is a different convention, not automatically an
+implementation bug.
+
+The checkpoint therefore contains more than weights: it needs the running
+statistics and the correct evaluation mode. Keeping training mode at inference
+can make one prediction depend on the other examples served with it.
+Some explicit inference policies use batch statistics; they are a different
+policy and must be evaluated as such.
+
+Layer normalisation has no corresponding switch of statistics. It computes
+them from each example at both training and inference. This does not make
+every layer in the network mode-independent: dropout still has its own switch.
+
+## The backward pass must differentiate the statistics
+
+Let $c_i=x_i-\mu$ and $r=\sqrt{v+\varepsilon}$. Since
+$\sum_i c_i=0$, differentiation gives
+
+$$
+\frac{\partial\mu}{\partial x_j}=\frac1m,\qquad
+\frac{\partial v}{\partial x_j}=\frac{2c_j}{m},\qquad
+\frac{\partial r}{\partial x_j}=\frac{c_j}{mr}.
+$$
+
+Applying the quotient rule to $\hat x_i=c_i/r$ now gives the whole Jacobian:
+
+<Eq id="I.8.3" gloss="Every entry participates in the shared mean and denominator.">
+
+$$
+\frac{\partial\hat x_i}{\partial x_j}
+=\frac1r\left(\delta_{ij}-\frac1m-\frac{\hat x_i\hat x_j}{m}\right).
+$$
+
+</Eq>
+
+For batch normalisation, write $g_i=\partial\mathcal L/\partial y_i$.
+Multiply (I.8.3) by $\gamma g_i$ and sum over $i$:
+
+<Eq id="I.8.4" gloss="Two reductions are enough; the dense Jacobian need not be stored.">
+
+$$
+\frac{\partial\mathcal L}{\partial x_j}
+=\frac{\gamma}{r}
+\left[g_j-\overline g-\hat x_j\,\overline{g\hat x}\right].
+$$
+
+</Eq>
+
+The bars are means over the group. The parameter gradients are
+$\partial\mathcal L/\partial\gamma=\sum_i g_i\hat x_i$ and
+$\partial\mathcal L/\partial\beta=\sum_i g_i$.
+For layer normalisation with per-feature scales, first set $u_i=\gamma_i g_i$,
+then use $[u_j-\overline u-\hat x_j\overline{u\hat x}]/r$.
+Pulling a single $\gamma$ outside that expression would be wrong.
+
+At inference, with frozen batch statistics, the derivative instead is
+$\partial y_i/\partial x_j=(\gamma/r_{\mathrm{run}})\delta_{ij}$.
+There is no dependency through other examples because the statistics are
+constants. Training and evaluation have different Jacobians too.
+
+The derivation and a finite-difference test are worked through in
+[I.8.B02](/elementa/neural-networks/normalisation/problems/b02).
+
+## What the operation removes
+
+Adding a constant to every member of a group leaves (I.8.1) unchanged.
+This shift invariance explains why the input gradients in (I.8.4) sum to zero.
+
+Positive rescaling is subtler. Replacing $x$ by $ax$ changes the denominator
+to $\sqrt{a^2v+\varepsilon}$. For $a>0$, this is equivalent to replacing
+$\varepsilon$ by $\varepsilon/a^2$ in the original computation.
+Scale invariance is exact at $\varepsilon=0$ when $v>0$, and only approximate
+when $\varepsilon$ is negligible relative to the variance. Negative scaling
+also reverses the sign of the standardised entries.
+
+These invariances change the parameterisation and its derivatives.
+They do not prove that normalisation improves every optimisation problem.
+Ioffe and Szegedy motivated batch normalisation through changing activation
+distributions. Santurkar and colleagues later challenged that explanation
+and studied its effect on optimisation smoothness. Treat the mechanism as an
+operation we can differentiate, not as a slogan that the data “stay the same.”
+
+## Reproduce the forward pass
+
+This scalar-feature example is pure Python. It uses population-divisor
+variance for the training group and explicitly supplied frozen statistics
+for evaluation. It does not estimate a running variance from one batch.
+
+~~~python
+from math import sqrt
+
+def batch_norm(x, *, stats=None, gamma=1.0, beta=0.0, eps=1e-5):
+    if stats is None:
+        mu = sum(x) / len(x)
+        var = sum((v - mu)**2 for v in x) / len(x)
+    else:
+        mu, var = stats
+    return [gamma * (v - mu) / sqrt(var + eps) + beta for v in x]
+
+print([round(v, 4) for v in batch_norm([1.0, 2.0, 3.0])])
+print([round(v, 4) for v in batch_norm([3.0], stats=(2.0, 2.0/3.0))])
+~~~
+
+It prints <code>[-1.2247, 0.0, 1.2247]</code> and <code>[1.2247]</code>.
+The complete reproduction test is attached to
+[I.8.B01](/elementa/neural-networks/normalisation/problems/b01).
+
+For a channels-first tensor of shape $(N,C,H,W)$, spatial batch
+normalisation usually reduces over $(N,H,W)$ separately per channel.
+Layer normalisation has no single universal image convention: one must
+specify which trailing dimensions, or which rearranged feature axis, form its
+group. See the shape audit in
+[I.8.B04](/elementa/neural-networks/normalisation/problems/b04) before translating
+the matrix drawing into image code.

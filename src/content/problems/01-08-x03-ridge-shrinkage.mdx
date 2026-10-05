@@ -1,0 +1,54 @@
+---
+id: "I.8.X03"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Ridge shrinks the weak direction most"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+In an eigenbasis, the averaged least-squares normal equations have diagonal
+curvatures $a=(1,4)$ and right-hand side $b=(2,8)$. Compute the unregularised
+solution and the ridge solution at $\lambda=1$. Derive the shrinkage factor.
+What coefficient on the penalty preserves the objective's relative weighting
+if the data loss is multiplied by the sample count $n$?
+
+<Hint>
+Solve one scalar equation per direction. Multiplying the whole objective by
+$n$ does not change its minimiser.
+</Hint>
+
+<SolutionToggle>
+
+Without a penalty, $w_i=b_i/a_i$, so $w=(2,2)$.
+Ridge changes the equations to $(a_i+\lambda)w_i=b_i$, giving
+
+$$
+w_{\mathrm{ridge}}=(1,8/5)=(1,1.6).
+$$
+
+The ratios relative to the original components are $1/2$ and $4/5$.
+In general the factor is $a_i/(a_i+\lambda)$. The smaller-curvature
+direction is shrunk more because the penalty contributes more relative
+curvature there.
+
+An averaged objective is
+$\|Xw-y\|^2/(2n)+\lambda\|w\|^2/2$.
+Multiplying the whole objective by $n$ gives
+$\|Xw-y\|^2/2+n\lambda\|w\|^2/2$.
+Thus the corresponding summed-loss coefficient is $n\lambda$,
+not $\lambda/n$.
+
+For positive lambda the solution is unique even if a curvature is zero.
+With least squares, a null-space direction also has zero right-hand component;
+ridge selects zero in that direction. This says nothing by itself about the
+test error of the chosen solution.
+
+</SolutionToggle>

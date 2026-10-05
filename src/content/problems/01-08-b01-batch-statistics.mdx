@@ -1,0 +1,120 @@
+---
+id: "I.8.B01"
+kind: problem
+chapter: "I.8"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One feature, two forward passes"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+<Statement>
+Compute a batch-normalisation forward pass by hand, then serve one of the same
+values using frozen statistics. Distinguish stored statistics from statistics
+computed from the current inputs.
+</Statement>
+
+<Given>
+One feature has training values $x=(1,2,3)$, learned scale $\gamma=1$,
+offset $\beta=0$, and $\varepsilon=10^{-5}$. For the evaluation calculation
+the saved statistics are explicitly $\mu_{\mathrm{run}}=2$ and
+$v_{\mathrm{run}}=2/3$. They are supplied values, not the result of a specified
+running-average update.
+</Given>
+
+<Find>
+The batch mean, population-divisor variance, standardised values, their mean
+and variance, and the evaluation output for the singleton input $x=3$.
+Then compute the output if that singleton is incorrectly treated as a training
+batch.
+</Find>
+
+<Strategy>
+Use (I.8.1) for the training group. Reuse the supplied constants, not a new
+estimate, in the evaluation branch of (I.8.2).
+</Strategy>
+
+<Solution>
+
+The mean and variance are
+
+$$
+\mu=\frac{1+2+3}{3}=2,\qquad
+v=\frac{(1-2)^2+(2-2)^2+(3-2)^2}{3}=\frac23.
+$$
+
+The denominator is $\sqrt{2/3+10^{-5}}$. The centred values are $(-1,0,1)$,
+so the outputs, rounded to four decimal places, are
+
+$$
+\hat x=(-1.2247,\ 0.0000,\ 1.2247).
+$$
+
+The mean is exactly zero by symmetry. Their variance is not exactly one:
+
+$$
+\frac13\sum_i\hat x_i^2
+=\frac{2/3}{2/3+10^{-5}}
+=0.9999850002\ldots.
+$$
+
+Evaluation with the supplied saved statistics gives
+$(3-2)/\sqrt{2/3+10^{-5}}=1.2247$.
+The other inputs do not need to be present.
+
+If the singleton instead supplies its own statistics, its mean is $3$ and
+variance is zero. Subtracting that mean yields zero, so the output becomes
+$\beta=0$. This is the algebraic singleton failure. Some frameworks reject
+such a training group rather than returning that degenerate value.
+
+The following 13-line implementation reproduces the two valid outputs:
+
+~~~python
+from math import sqrt
+
+def batch_norm(x, *, stats=None, gamma=1.0, beta=0.0, eps=1e-5):
+    if stats is None:
+        mu = sum(x) / len(x)
+        var = sum((v - mu)**2 for v in x) / len(x)
+    else:
+        mu, var = stats
+    return [gamma * (v - mu) / sqrt(var + eps) + beta for v in x]
+
+print([round(v, 4) for v in batch_norm([1.0, 2.0, 3.0])])
+print([round(v, 4) for v in batch_norm([3.0], stats=(2.0, 2.0/3.0))])
+~~~
+
+</Solution>
+
+<Answer>
+Training output $(-1.2247,0,1.2247)$; mean $0$; variance $0.9999850002$.
+Evaluation at $x=3$ gives $1.2247$. Using singleton training statistics would
+give $0$ instead.
+</Answer>
+
+<CheckSanity>
+The middle entry equals the mean and must map to zero before the affine
+transformation. The two endpoints have opposite signs. Increasing epsilon
+must reduce both magnitudes; setting epsilon to zero here would give
+$\pm\sqrt{3/2}$ because the original variance is positive.
+</CheckSanity>
+
+<Breaks>
+These saved statistics were chosen to isolate the change of mode. A real
+running average depends on its initial value, update rate, estimator convention
+and previous batches. In particular, an unbiased variance estimate for this
+batch is $1$, not $2/3$. Substituting that as the saved variance would produce
+a different evaluation output, as it should.
+</Breaks>
+
+<Variation>
+Set $\gamma=2$ and $\beta=-1$ without changing the statistics. Apply the affine
+map to each output above. The normalised values still have zero mean, but the
+layer's outputs now have mean $-1$ and four times the normalised variance.
+</Variation>

@@ -1,0 +1,45 @@
+---
+id: "I.8.X02"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "The same inputs in training and evaluation"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+A scalar-feature batch-normalisation layer receives $x=(4,6)$ with
+$\gamma=2$, $\beta=-1$. Its saved statistics are mean $2$ and variance $4$.
+For this arithmetic exercise take $\varepsilon=0$; all variances used are
+strictly positive. Compute training and evaluation outputs. Is switching to
+evaluation the same as disabling the learned affine transformation?
+
+<Hint>
+Training uses statistics of $(4,6)$. Evaluation uses the supplied saved
+statistics and still uses gamma and beta.
+</Hint>
+
+<SolutionToggle>
+
+Training mean is $5$, variance is $1$, and standardised values are $(-1,1)$.
+Applying $2\hat x-1$ gives $(-3,1)$.
+
+Evaluation standardises with the saved mean and deviation:
+$((4-2)/2,(6-2)/2)=(1,2)$. The same affine transformation gives $(1,3)$.
+
+The different outputs do not imply gamma or beta changed. The source of the
+statistics changed. Evaluation also stops updating the stored estimates in the
+ordinary running-statistics policy. Freezing those estimates and disabling
+the affine transformation are different operations.
+
+Positive epsilon would slightly change the numbers, not the distinction.
+If an implementation is configured never to track running statistics, its
+evaluation policy is different and must be tested explicitly.
+
+</SolutionToggle>

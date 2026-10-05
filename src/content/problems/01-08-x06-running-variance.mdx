@@ -1,0 +1,52 @@
+---
+id: "I.8.X06"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A saved variance has an estimator convention"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+For the batch $(1,2,3)$ compute both variance estimates, using divisors
+$m$ and $m-1$. A running variance starts at $2$ and gives the new estimate
+weight $\alpha=1/4$. Compute its next value under each convention.
+
+Then consider a frozen normaliser with mean zero, variance one, gamma one and
+beta zero, using epsilon zero only for this positive-variance example.
+A new input population is translated by ten. What happens to its mean output?
+Does this justify silently recomputing statistics on every test batch?
+
+<Hint>
+A model's running state is part of the inference function.
+Changing the state changes that function, even when no learned weight changes.
+</Hint>
+
+<SolutionToggle>
+
+The squared deviations sum to $2$. The forward, population-divisor estimate
+is $2/3$; the unbiased estimate is $2/(3-1)=1$.
+
+Updating by $(1-\alpha)v_{\mathrm{old}}+\alpha v_{\mathrm{batch}}$ gives
+$3(2)/4+(2/3)/4=5/3$ for the first convention and
+$3(2)/4+1/4=7/4$ for the second. These are about $1.6667$ and $1.7500$.
+The batch-normalisation forward formula alone does not specify which
+estimate a framework stores.
+
+For the shifted population, the frozen normaliser outputs values with mean
+ten rather than zero. It has no way to recognise that the saved statistics
+are no longer representative.
+
+Recomputing on each test batch would remove the common shift, but it would
+also make each prediction depend on its batch companions and potentially
+remove a meaningful absolute signal. Updating statistics can be an explicit
+adaptation method with its own evaluation protocol. It is not an invisible
+repair to the original inference procedure.
+
+</SolutionToggle>

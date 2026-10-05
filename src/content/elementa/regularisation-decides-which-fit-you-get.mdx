@@ -2,58 +2,182 @@
 chapter: neural-networks--normalisation
 proposition: 1
 statement: Regularisation does not improve the fit; it decides which fit you get.
-claim: "When many parameter settings explain the training data equally well, regularisation is the statement of which of them to prefer. It is an assumption about the world, expressed as a penalty."
+claim: "A penalty, a random mask and an early checkpoint express different preferences. Each can improve prediction on new data, and each can suppress a real signal."
 given:
   - generalisation-is-not-memorisation
   - optimisation-follows-the-gradient
 figure: FigRegularisation
 status: published
-updated: 2026-08-22
+updated: 2026-10-05
 sources:
+  - title: "Ridge Regression: Biased Estimation for Nonorthogonal Problems"
+    url: https://doi.org/10.1080/00401706.1970.10488634
   - title: "Dropout: A Simple Way to Prevent Neural Networks from Overfitting"
     url: https://jmlr.org/papers/v15/srivastava14a.html
-  - title: "Understanding Deep Learning Requires Rethinking Generalization"
-    url: https://arxiv.org/abs/1611.03530
+  - title: "Decoupled Weight Decay Regularization"
+    url: https://arxiv.org/abs/1711.05101
+  - title: "Early Stopping - But When?"
+    url: https://doi.org/10.1007/3-540-49430-8_3
 ---
 
-## Demonstration
+## The training loss cannot choose for you
 
-A modern network has more parameters than training examples, so the system is
-underdetermined: many settings of *θ* fit the data exactly. Training will return
-one of them. Regularisation is how you say which.
+Two predictors can agree on every training example and disagree on the next
+one. An optimiser sees the agreement. It has no evidence about the disagreement
+until we supply more data or a preference.
 
-Each technique is a different preference, and it is clearer to read them as
-assumptions than as tricks.
+The figure is a schematic of that choice, not a theorem that the smoother
+curve wins. If the true function oscillates, suppressing its oscillations costs
+accuracy. Regularisation is useful precisely when its preference suits the
+problem.
 
-**Weight decay** — prefer small weights. The assumption is that the function
-should be smooth, that a small change in input should not produce a large change
-in output. It is a statement about the world, and it is wrong for problems where
-the truth genuinely is sharp.
+An explicit regulariser changes the quantity being minimised:
 
-**Dropout** — prefer functions that survive the loss of any given unit. Zeroing
-units at random during training makes co-adaptation between them costly, so the
-representation is pushed toward redundancy. At inference nothing is dropped and
-the activations are rescaled to match.
+<Eq id="I.8.5" gloss="The fit and the preference are separate terms.">
 
-**Early stopping** — prefer the function reachable in *k* steps from the
-initialisation. Under some conditions this is provably close to an L2 penalty,
-which is a satisfying fact: stopping early and shrinking weights are the same
-preference expressed twice.
+$$
+\mathcal{J}(\vec w)=\mathcal{L}_{\mathrm{data}}(\vec w)
+  +\frac{\lambda}{2}\|\vec w\|_2^2,\qquad \lambda\geq0.
+$$
 
-**Data augmentation** — prefer functions invariant to transformations you know
-do not change the label. A rotated retinal photograph is the same eye. This is
-the strongest form of regularisation available, because it encodes a true fact
-about the domain rather than a generic preference for simplicity.
+</Eq>
 
-The framing matters because it makes the failure mode predictable. If the
-assumption is false — if the target really is spiky, if the augmentation changes
-the label, if the informative signal really does live in a few large weights —
-then the regulariser is not a safety net but a source of bias, and it will cost
-accuracy in a way that no amount of additional data repairs.
+Here $\vec w$ contains the weights we choose to penalise, not automatically
+every parameter in the model. Biases and normalisation scales are separate
+choices. A soft penalty does not remove functions from the hypothesis class;
+it makes some of them more expensive.
 
-## Corollary
+## L2 and weight decay coincide in one particular update
 
-Augmentation is worth more than any generic penalty when a genuine invariance
-is available, because it is the only one carrying information about the specific
-problem. Everything else on the list is a preference for simplicity, and
-simplicity is a guess.
+Differentiating the penalty in (I.8.5) gives $\lambda\vec w$. Plain gradient
+descent therefore takes the step
+
+<Eq id="I.8.6" gloss="The same plain-gradient step can be read as a gradient plus shrinkage.">
+
+$$
+\vec w_{t+1}
+=\vec w_t-\eta(\vec g_t+\lambda\vec w_t)
+=(1-\eta\lambda)\vec w_t-\eta\vec g_t.
+$$
+
+</Eq>
+
+For $0\leq\eta\lambda\leq1$, the first term shrinks the old weights without
+reversing their sign. This is the algebra behind the familiar equivalence
+between an L2 penalty and weight decay.
+
+Keep the qualifier: **plain gradient descent**. With Adam, adding
+$\lambda\vec w$ to the gradient changes the first and second moments. AdamW
+forms those moments from the data gradient and applies the shrinkage separately:
+
+$$
+\vec w_{t+1}=(1-\eta_t\lambda)\vec w_t
+  -\eta_t\frac{\hat{\vec m}_t}{\sqrt{\hat{\vec v}_t}+\varepsilon}.
+$$
+
+The operations do not commute. Even momentum without adaptive scaling can
+break the equivalence when the penalty enters its accumulator but decoupled
+decay does not. The comparison in (I.8.6) is not a licence to copy a coefficient
+between arbitrary optimiser implementations.
+
+Small weights also do not guarantee a smooth predictor independently of
+architecture. In a multilayer network, sensitivities involve products of
+weights and activation derivatives. A rescaling of one layer may be cancelled
+by another. The penalty is a preference in a chosen parameterisation.
+
+## A case where the preference can be solved exactly
+
+For a linear model, take
+$\mathcal{L}_{\mathrm{data}}=\|\mat X\vec w-\vec y\|_2^2/(2n)$.
+Setting the derivative of (I.8.5) to zero gives
+
+<Eq id="I.8.7" gloss="Positive lambda supplies curvature in directions the data do not identify.">
+
+$$
+\left(\frac{\mat X^{\mathsf T}\mat X}{n}+\lambda\mat I\right)
+\vec w_{\mathrm{ridge}}
+=\frac{\mat X^{\mathsf T}\vec y}{n}.
+$$
+
+</Eq>
+
+For any nonzero $\vec u$, the quadratic form of the matrix on the left is
+$\|\mat X\vec u\|_2^2/n+\lambda\|\vec u\|_2^2>0$ when $\lambda>0$.
+It is invertible even when the columns of $\mat X$ are dependent.
+
+In an eigendirection with curvature $a>0$ and right-hand component $b$,
+least squares gives $b/a$ while ridge gives $b/(a+\lambda)$.
+The ratio is $a/(a+\lambda)$. Weakly identified directions shrink most.
+That is the whole mechanism, including its cost: a genuine component in a
+weak direction is shrunk too.
+
+Equation (I.8.7) uses an averaged data loss. Replacing it with a summed loss
+while leaving $\lambda$ unchanged makes the penalty relatively weaker as the
+dataset grows.
+
+## Dropout changes the training problem by adding noise
+
+Let $h$ be a fixed activation and let $M$ be an independent Bernoulli mask,
+equal to one with keep probability $q\in(0,1]$. Inverted dropout uses
+
+<Eq id="I.8.8" gloss="Surviving activations are enlarged to compensate for the missing ones.">
+
+$$
+\widetilde h=\frac{Mh}{q},\qquad
+\mathbb E[\widetilde h\mid h]=h,\qquad
+\operatorname{Var}(\widetilde h\mid h)=\frac{1-q}{q}h^2.
+$$
+
+</Eq>
+
+There are only two outcomes: zero with probability $1-q$, and $h/q$ with
+probability $q$. Multiplying each by its probability proves the mean in
+(I.8.8); doing the same for the squares gives
+$\mathbb E[\widetilde h^2\mid h]=h^2/q$, from which the variance follows.
+
+Training minimises an expected loss over masks as well as examples.
+This discourages a representation from depending too heavily on a particular
+activation being present. At inference inverted dropout is the identity.
+There is no second multiplication by $q$.
+
+Preserving the mean is a smaller promise than reproducing the masked
+networks' average prediction. If a later operation squares the activation,
+the two results differ by the variance term above. The exact counterexample
+is [I.8.B05](/elementa/neural-networks/normalisation/problems/b05).
+
+## Stopping is also a preference
+
+On one quadratic eigendirection,
+$\mathcal L(w)=aw^2/2-bw+\text{constant}$, start at zero and apply gradient
+descent. The recurrence $w_{t+1}=(1-\eta a)w_t+\eta b$ sums to
+
+<Eq id="I.8.9" gloss="Finite training time acts as a direction-dependent filter.">
+
+$$
+w_t=\left[1-(1-\eta a)^t\right]\frac{b}{a},
+\qquad a>0,\quad w_0=0.
+$$
+
+</Eq>
+
+For $0<\eta a\leq1$, the bracket grows from zero towards one. Directions
+with smaller curvature grow more slowly. Stopping early therefore suppresses
+them, much as ridge does, but its filter in (I.8.9) is not ridge's
+$a/(a+\lambda)$. A single $\lambda$ generally cannot match all directions.
+For a non-convex network this calculation is an analogy with a specified
+boundary, not an identity.
+
+Choose the checkpoint on validation data. Keep the test set for the final
+evaluation. Looking at test loss every epoch and selecting its minimum is
+training a selection rule on the test set, even if no gradient passes through it.
+
+## Augmentation spends domain knowledge
+
+A label-preserving transformation states something stronger than a generic
+penalty: these two inputs ought to receive the same target. The statement can
+be wrong. Rotating a digit can change which digit it is; cropping an image can
+remove the object whose class was retained.
+
+Neither the regularisation strength nor the augmentation policy comes with
+a guarantee. Compare them on held-out data, keep the evaluation protocol
+fixed, and report the preference that was actually tested.

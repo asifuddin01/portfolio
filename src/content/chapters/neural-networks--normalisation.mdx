@@ -3,19 +3,89 @@ id: "I.8"
 book: neural-networks
 order: 8
 title: "Normalisation and Regularisation"
-summary: "Normalisation conditions the optimisation; regularisation constrains the hypothesis class."
-claim: "Normalisation and regularisation do two different jobs, and keeping them adjacent is what makes the difference visible."
+summary: "Batch and layer normalisation, their backward pass, and the preferences built into weight decay, dropout and early stopping."
+claim: "Normalisation changes the computation the optimiser differentiates; regularisation changes which fit training prefers."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "The reduction axes are part of the definition"
+  - "Batch statistics, learned scale and learned offset"
+  - "Training and inference are different batch-normalisation computations"
+  - "Layer normalisation without neighbours in the batch"
+  - "The backward pass through a mean and a variance"
+  - "What epsilon preserves, and what it changes"
+  - "L2 penalties, ridge regression and shrinkage"
+  - "Why AdamW separates decay from the gradient"
+  - "Inverted dropout: expectation is preserved, variance is not"
+  - "Early stopping and label-preserving augmentation"
+definitions:
+  - n: 1
+    term: "Normalisation group"
+    statement: "The entries used together to compute a mean and a variance. For a matrix with examples in rows and features in columns, dense batch normalisation uses a column; layer normalisation over features uses a row. Changing the group changes the function even when the formula is unchanged."
+    introduces: []
+  - n: 2
+    term: "Batch normalisation"
+    statement: "For each feature during training, subtract the minibatch mean and divide by the square root of the minibatch variance plus a positive epsilon. Then apply a learned scale gamma and offset beta. The variance in this forward computation divides by the group size, not by one less."
+    introduces: []
+  - n: 3
+    term: "Learned affine parameters"
+    statement: "The scale gamma and offset beta applied after standardisation. They let training choose the useful output scale and location; they are parameters learned by gradients, unlike the mean and variance computed from activations."
+    introduces: []
+  - n: 4
+    term: "Running statistics"
+    statement: "Stored estimates of a feature's activation mean and variance, collected during training and used by ordinary batch normalisation at inference. They are model state, not parameters with gradients. The estimator convention and averaging rule must be recorded with the checkpoint."
+    introduces: []
+  - n: 5
+    term: "Layer normalisation"
+    statement: "Standardisation over specified features of one example, followed by learned affine parameters. In the dense case each row supplies its own statistics. The layer uses the same rule during training and inference and needs no running estimates."
+    introduces: []
+  - n: 6
+    term: "Regularised objective"
+    statement: "The data loss plus a preference term: J(theta) = L_data(theta) + lambda R(theta), with lambda non-negative. A soft penalty discourages some parameter settings; it need not remove them from the hypothesis class or improve the training fit."
+    introduces: []
+  - n: 7
+    term: "L2 penalty"
+    statement: "One half the squared Euclidean norm of the penalised weights, multiplied by lambda. Its gradient is lambda times those weights. Which parameters are included matters: biases and normalisation scales need not share the same penalty."
+    introduces: []
+  - n: 8
+    term: "Decoupled weight decay"
+    statement: "A separate subtraction of eta times lambda times the current weights, outside the optimiser's gradient transformation. It equals an L2-penalised update for plain gradient descent with a matched coefficient. The identity does not generally survive momentum or adaptive moments."
+    introduces: []
+  - n: 9
+    term: "Inverted dropout"
+    statement: "Multiply an activation by an independent Bernoulli mask with keep probability q, then divide by q during training. At inference use the activation unchanged. For a fixed activation its conditional mean is preserved but its variance increases."
+    introduces: []
+  - n: 10
+    term: "Early stopping"
+    statement: "Select an earlier checkpoint using held-out validation performance. This limits how far training follows the data, rather than adding an explicit penalty. Selecting the checkpoint on the test set spends the independence needed for a final evaluation."
+    introduces: []
 beforeYouStart:
   - "I.7"
   - "I.6"
   - "0.ST.01"
 conceptFigure: FigRegularisation
-problemStatement: "Two mechanisms are routinely confused because both are switched on late and both make the curve look better. One changes the geometry the optimiser walks; the other changes which solution is preferred among those that fit."
-formalResults: []
-assumptions: []
+problemStatement: "Chapter I.7 chose a step from a gradient. That gradient still depends on how activations are scaled, and reducing training loss still does not choose a good prediction rule for new data. This chapter separates those problems. Normalisation can also have a regularising effect, but that overlap does not make the mechanisms interchangeable."
+formalResults:
+  - id: "I.8.T1"
+    name: "The normalisation Jacobian couples every entry in a group"
+    statement: "For a group of m scalars, variance v computed with divisor m, r = sqrt(v + epsilon), and standardised values xhat, the derivative is J_ij = (delta_ij - 1/m - xhat_i xhat_j/m)/r. Thus J times the all-ones vector is zero. For batch normalisation with one shared gamma, an upstream gradient g gives dx_i = (gamma/r)(g_i - mean(g) - xhat_i mean(g xhat)). I.8.B02 derives every term."
+    doesNotPromise: "This is a derivative of the training computation, not a proof that training converges or generalises. With positive epsilon the centred scaling direction is not exactly removed. Layer normalisation may have a different gamma for each feature, so multiply each upstream entry by its own gamma before applying this Jacobian."
+  - id: "I.8.T2"
+    name: "Ridge has a unique minimiser even when the design is rank deficient"
+    statement: "For J(w) = ||Xw - y||²/(2n) + lambda ||w||²/2 and lambda > 0, the Hessian XᵀX/n + lambda I is positive definite. The unique minimiser solves (XᵀX/n + lambda I)w = Xᵀy/n. Each positive-curvature eigendirection is shrunk relative to least squares by a/(a + lambda), where a is its eigenvalue."
+    doesNotPromise: "The result is for a linear predictor with a quadratic penalty on all coordinates shown. It does not make a neural-network objective convex, and it does not say that shrinking a genuine signal improves test error. The scale of lambda changes if the data loss is summed rather than averaged."
+  - id: "I.8.T3"
+    name: "Inverted dropout preserves the first moment, not the function"
+    statement: "For a fixed activation h, independent mask M with probability q of being one, and htilde = Mh/q, E[htilde | h] = h and Var(htilde | h) = h²(1 - q)/q. These follow by enumerating the two possible mask values."
+    doesNotPromise: "A nonlinear downstream function need not satisfy E[f(htilde)] = f(h). The deterministic inference network is not an exact average of all masked networks, and preserving the activation's mean is not a generalisation guarantee."
+assumptions:
+  - statement: "The normalisation group contains variation worth retaining. A dense batch-normalisation group of one scalar has zero variance and loses that scalar's input dependence."
+    testedBy: "I.8.X05"
+  - statement: "Frozen running statistics describe the activations encountered at inference. A changed input distribution can break that agreement without producing a runtime error."
+    testedBy: "I.8.X06"
+  - statement: "A dropout mask is sampled independently of the activation, with a strictly positive keep probability. Otherwise the stated conditional expectation need not hold."
+    testedBy: "I.8.X07"
+  - statement: "An augmentation declared label-preserving actually preserves the target."
+    testedBy: "I.8.X09"
 owns:
   - "batch-normalisation"
   - "layer-normalisation"
@@ -25,9 +95,48 @@ borrows:
   - "gradient-descent"
   - "backpropagation"
   - "generalisation-gap"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "For a dense batch-normalisation layer receiving one example per group, subtracting the mean subtracts the input itself. The standardised activation is zero, the output is beta, and the input gradient is zero. A spatial batch-normalisation group may still contain many pixels with batch size one, so the relevant count is the reduction size, not the batch label alone."
+  - "Inverted dropout at q = 0.5 keeps an activation h as either zero or 2h during training. Applying the same random mask at inference makes repeated predictions differ; multiplying the inference activation by q as well incorrectly halves its expected scale."
+  - "Normalising over the last dimension of a channels-first image tensor standardises width, not channels. The code may run and return the expected shape while implementing a different model. I.8.B04 makes the axes explicit before counting any parameters."
+  - "L2 inside Adam changes both moment estimates. A separate shrinkage after the adaptive step does not. Copying a decay coefficient between the two names does not reproduce the same training rule; I.8.X04 gives a coordinate-level counterexample."
+references:
+  - title: "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift"
+    url: https://proceedings.mlr.press/v37/ioffe15.html
+    authors: "Ioffe and Szegedy"
+    year: 2015
+    venue: "International Conference on Machine Learning, PMLR 37"
+  - title: "Layer Normalization"
+    url: https://arxiv.org/abs/1607.06450
+    authors: "Ba, Kiros and Hinton"
+    year: 2016
+    venue: "arXiv:1607.06450"
+  - title: "How Does Batch Normalization Help Optimization?"
+    url: https://arxiv.org/abs/1805.11604
+    authors: "Santurkar, Tsipras, Ilyas and Madry"
+    year: 2018
+    venue: "Advances in Neural Information Processing Systems 31"
+  - title: "Ridge Regression: Biased Estimation for Nonorthogonal Problems"
+    url: https://doi.org/10.1080/00401706.1970.10488634
+    authors: "Hoerl and Kennard"
+    year: 1970
+    venue: "Technometrics 12(1)"
+  - title: "Dropout: A Simple Way to Prevent Neural Networks from Overfitting"
+    url: https://jmlr.org/papers/v15/srivastava14a.html
+    authors: "Srivastava, Hinton, Krizhevsky, Sutskever and Salakhutdinov"
+    year: 2014
+    venue: "Journal of Machine Learning Research 15(56)"
+  - title: "Decoupled Weight Decay Regularization"
+    url: https://arxiv.org/abs/1711.05101
+    authors: "Loshchilov and Hutter"
+    year: 2019
+    venue: "International Conference on Learning Representations"
+  - title: "Early Stopping - But When?"
+    url: https://doi.org/10.1007/3-540-49430-8_3
+    authors: "Prechelt"
+    year: 1998
+    venue: "Neural Networks: Tricks of the Trade, LNCS 1524"
 notation:
   - "lambda"
   - "Var"
@@ -38,6 +147,33 @@ apparatus:
   - "0.PR.03"
   - "0.ST.01"
   - "0.NU.03"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.8.1"
+    formula: "mu = mean(x),   v = mean((x - mu)²),   xhat = (x - mu)/sqrt(v + epsilon)"
+    gloss: "The reduction group decides which entries share their statistics."
+  - id: "I.8.2"
+    formula: "y = gamma xhat + beta;   y_eval = gamma (x - mu_run)/sqrt(v_run + epsilon) + beta"
+    gloss: "Batch normalisation changes its source of statistics at inference."
+  - id: "I.8.3"
+    formula: "J_ij = (delta_ij - 1/m - xhat_i xhat_j/m)/sqrt(v + epsilon)"
+    gloss: "Differentiating the statistics couples the whole normalisation group."
+  - id: "I.8.4"
+    formula: "dx_i = (gamma/r)[g_i - mean(g) - xhat_i mean(g xhat)]"
+    gloss: "Batch normalisation subtracts two shared components of the upstream gradient."
+  - id: "I.8.5"
+    formula: "J(w) = L_data(w) + (lambda/2)||w||²"
+    gloss: "An L2 penalty pays for parameter magnitude as well as data error."
+  - id: "I.8.6"
+    formula: "w_next = w - eta(g + lambda w) = (1 - eta lambda)w - eta g"
+    gloss: "Plain gradient descent makes an L2 penalty and matched weight decay identical."
+  - id: "I.8.7"
+    formula: "(XᵀX/n + lambda I)w_ridge = Xᵀy/n"
+    gloss: "The penalty makes the linear normal equations nonsingular for positive lambda."
+  - id: "I.8.8"
+    formula: "htilde = Mh/q;   E[htilde | h] = h;   Var(htilde | h) = h²(1 - q)/q"
+    gloss: "Inverted dropout keeps the mean by increasing the surviving activations."
+  - id: "I.8.9"
+    formula: "w_t = [1 - (1 - eta a)^t] b/a,   w_0 = 0,   a > 0"
+    gloss: "Early stopping shrinks slowly learned eigendirections in a quadratic problem."
+status: published
 ---

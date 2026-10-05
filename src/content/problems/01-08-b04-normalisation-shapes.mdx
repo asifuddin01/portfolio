@@ -1,0 +1,109 @@
+---
+id: "I.8.B04"
+kind: problem
+chapter: "I.8"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "Count the groups before counting the parameters"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+<Statement>
+Audit the axes, statistics and parameter shapes of batch and layer
+normalisation. An output tensor with the expected shape is not sufficient
+evidence that the intended axes were used.
+</Statement>
+
+<Given>
+First a dense matrix of shape $(N,D)=(2,3)$.
+Then a channels-first image tensor of shape $(N,C,H,W)=(2,3,4,4)$.
+Use learned affine parameters. Compare spatial batch normalisation, layer
+normalisation over all $(C,H,W)$, and channel-only layer normalisation
+performed separately at each spatial position.
+</Given>
+
+<Find>
+The number of groups, entries per group, learned parameters and stored
+running-statistic scalars. Identify an implementation that silently normalises
+the wrong axis.
+</Find>
+
+<Strategy>
+Statistics have one value per reduction group. Learned affine parameters have
+one value per specified feature position and need not have the same shape as
+the statistics. Count mean and variance separately from gamma and beta.
+</Strategy>
+
+<Solution>
+
+For the dense matrix:
+
+| Rule | Groups | Entries per group | Gamma and beta | Running mean and variance |
+|---|---|---|---|---|
+| Batch normalisation | $3$ columns | $2$ | $3+3=6$ scalars | $3+3=6$ scalars |
+| Layer normalisation over $D$ | $2$ rows | $3$ | $3+3=6$ scalars | none |
+
+Both return shape $(2,3)$. Their identical parameter counts hide different
+dependencies.
+
+For the image tensor:
+
+| Rule | Reduced axes | Groups | Entries per group | Learned scalars | Running scalars |
+|---|---|---|---|---|---|
+| Spatial batch normalisation | $N,H,W$ | $3$ | $2\cdot4\cdot4=32$ | $2C=6$ | $2C=6$ |
+| Layer normalisation over $C,H,W$ | $C,H,W$ | $2$ | $3\cdot4\cdot4=48$ | $2CHW=96$ | $0$ |
+| Channel-only layer normalisation | $C$ at each location | $2\cdot4\cdot4=32$ | $3$ | $2C=6$ | $0$ |
+
+These layer-normalisation counts use an independent affine parameter for each
+position of the normalised shape, shared over the non-normalised axes.
+A deliberately tied affine parameterisation would have different counts.
+
+The broadcast shapes of the spatial batch statistics and affine parameters
+are $(1,C,1,1)$. For full-example layer normalisation, the computed statistics
+have shape $(N,1,1,1)$, but gamma and beta each have shape $(C,H,W)$.
+For channel-only layer normalisation, move channels to the last axis, normalise
+that axis with shape $C$, then restore the original axis order.
+
+Applying a last-axis normalisation of width $W$ directly to channels-first
+data instead computes a mean across each row of pixels. It returns the same
+overall tensor shape. Nothing about that successful return makes it
+channel normalisation.
+
+Every entry participates in a constant number of reductions and elementwise
+operations, so forward and efficient backward arithmetic are $O(NCHW)$.
+The full dense Jacobian is unnecessary.
+
+</Solution>
+
+<Answer>
+All three image rules return $(2,3,4,4)$. They have respectively
+$6$, $96$, and $6$ learned scalars, with $6$, $0$, and $0$ running-statistic
+scalars. Their group sizes are $32$, $48$, and $3$.
+</Answer>
+
+<CheckSanity>
+Groups multiplied by entries per group must equal the tensor's $96$ entries
+for each rule. Running-statistic buffers are not learned parameters, and
+a framework's bookkeeping counter is separate from the mean and variance
+counted here.
+</CheckSanity>
+
+<Breaks>
+“Layer normalisation on an image” does not uniquely specify a reduction or an
+affine parameterisation. A model may normalise channels, channels and spatial
+dimensions, or a reshaped token dimension. The API arguments and layout must
+be read together.
+</Breaks>
+
+<Variation>
+Change the image to shape $(2,3,4,5)$. Spatial batch normalisation still has
+six learned scalars, full-example layer normalisation has $120$, and
+channel-only layer normalisation still has six. Explain which rule ties its
+parameter count to the spatial resolution.
+</Variation>

@@ -1,0 +1,55 @@
+---
+id: "I.8.X04"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "An adaptive denominator changes a penalty"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+Consider the fixed diagonal preconditioner
+$P=\operatorname{diag}(1,0.01)$, weights $w=(1,1)$, data gradient
+$g=(1,100)$, step size $\eta=0.01$, and $\lambda=0.1$.
+Compare $w-\eta P(g+\lambda w)$ with $(1-\eta\lambda)w-\eta Pg$.
+State what this example proves, and what it leaves out of Adam.
+
+<Hint>
+In the first expression the penalty is multiplied by $P$. In the second it
+is not.
+</Hint>
+
+<SolutionToggle>
+
+The coupled gradient is $(1.1,100.1)$. Preconditioning gives $(1.1,1.001)$,
+so the first update is
+
+$$
+w_{\mathrm{coupled}}=(0.989,\ 0.98999).
+$$
+
+For the decoupled expression, $Pg=(1,1)$ and
+$(1-\eta\lambda)w=(0.999,0.999)$, giving
+
+$$
+w_{\mathrm{decoupled}}=(0.989,\ 0.989).
+$$
+
+The first coordinate agrees because its preconditioner equals one.
+The second does not. The coupled penalty displacement there is
+$0.00001$, one hundredth of the decoupled displacement $0.001$.
+
+This is an exact counterexample for a fixed preconditioned update.
+It isolates one reason the plain-gradient identity (I.8.6) fails.
+Actual Adam does more: a penalty included in the gradient also changes the
+history-dependent first and second moments, so its denominator is not
+a fixed $P$ shared by both algorithms. Do not present this frozen-preconditioner
+calculation as a complete Adam trajectory.
+
+</SolutionToggle>

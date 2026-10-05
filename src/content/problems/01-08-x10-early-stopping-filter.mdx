@@ -1,0 +1,53 @@
+---
+id: "I.8.X10"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "One stopping time is not one ridge coefficient"
+depends:
+  - "I.8.P01"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+Consider two independent quadratic directions with curvatures $a_1=1$ and
+$a_2=2$. Both have unregularised optimum one. Start at zero, use
+$\eta=1/4$, and stop after two updates.
+Compute the two shrinkage factors from (I.8.9). Can one ridge coefficient
+produce both? Explain how the stopping time should be chosen without using
+the test set.
+
+<Hint>
+For each direction solve $a/(a+\lambda)=1-(1-\eta a)^t$ for lambda.
+</Hint>
+
+<SolutionToggle>
+
+At $t=2$, the factors are
+
+$$
+f_1=1-(3/4)^2=7/16,\qquad f_2=1-(1/2)^2=3/4.
+$$
+
+Matching a ridge factor separately gives
+$\lambda_i=a_i(1-f_i)/f_i$.
+The first direction requires $\lambda_1=9/7$ and the second
+$\lambda_2=2/3$. They differ. A single scalar ridge coefficient cannot
+reproduce this early-stopped solution in both directions.
+
+Both methods attenuate weakly learned directions, which explains the
+analogy. Their spectral filters differ, which prevents a general identity.
+The calculation assumes a fixed quadratic, zero initialisation and a
+specified scalar step size. A neural network adds changing curvature and
+a dependence on the initial point.
+
+Choose a stopping rule or checkpoint using validation performance. Preserve
+the test set for evaluation after selection. If many stopping rules are tried
+against the same validation set, that selection also needs to be accounted
+for; calling it “validation” does not make repeated tuning free.
+
+</SolutionToggle>

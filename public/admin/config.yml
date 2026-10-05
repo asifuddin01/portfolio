@@ -120,6 +120,7 @@ collections:
           - FigComputationalGraph
           - FigDescentStep
           - FigRegularisation
+          - FigNormalisationAxes
           - FigTokenBoundary
           - FigBPEMerge
           - FigEmbeddingSpace
@@ -469,6 +470,7 @@ collections:
           - FigComputationalGraph
           - FigDescentStep
           - FigRegularisation
+          - FigNormalisationAxes
           - FigTokenBoundary
           - FigBPEMerge
           - FigEmbeddingSpace
@@ -1119,6 +1121,7 @@ collections:
           - FigComputationalGraph
           - FigDescentStep
           - FigRegularisation
+          - FigNormalisationAxes
           - FigTokenBoundary
           - FigBPEMerge
           - FigEmbeddingSpace
@@ -2521,4 +2524,3 @@ collections:
                 widget: string
                 required: false
                 hint: "The page that proves it, e.g. /works/hierarchiretina. Defaults to the Summa."
-

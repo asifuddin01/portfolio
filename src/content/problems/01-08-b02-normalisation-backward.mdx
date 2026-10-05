@@ -1,0 +1,140 @@
+---
+id: "I.8.B02"
+kind: problem
+chapter: "I.8"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Differentiate the statistics, not just the numerator"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+<Statement>
+Derive the batch-normalisation backward pass including epsilon. Check it
+against finite differences, and identify the term lost by treating the
+variance as a constant.
+</Statement>
+
+<Given>
+A group of $m$ scalars, $\mu=m^{-1}\sum_i x_i$,
+$v=m^{-1}\sum_i(x_i-\mu)^2$, $r=\sqrt{v+\varepsilon}$,
+$\hat x_i=(x_i-\mu)/r$, and $y_i=\gamma\hat x_i+\beta$.
+The upstream derivative is $g_i=\partial\mathcal L/\partial y_i$.
+For a numerical check take $x=(-1,0,1)$, $\varepsilon=1/3$,
+$\gamma=2$, $\beta=0$, and $g=(1,-1,2)$.
+</Given>
+
+<Find>
+The full Jacobian of the standardisation, input gradients, affine-parameter
+gradients, and the reason the input gradients sum to zero. Decide whether the
+gradient is also orthogonal to the centred input when epsilon is positive.
+</Find>
+
+<Strategy>
+Differentiate the mean first, then the variance, then the inverse standard
+deviation. Only then contract the Jacobian with the upstream derivative.
+</Strategy>
+
+<Solution>
+
+Write $c_i=x_i-\mu$. Since $\sum_i c_i=0$,
+
+$$
+\frac{\partial c_i}{\partial x_j}=\delta_{ij}-\frac1m,\qquad
+\frac{\partial v}{\partial x_j}
+=\frac2m\sum_i c_i\left(\delta_{ij}-\frac1m\right)
+=\frac{2c_j}{m}.
+$$
+
+Consequently $\partial r/\partial x_j=c_j/(mr)$.
+The product rule applied to $c_i r^{-1}$ gives
+
+$$
+J_{ij}=\frac{\delta_{ij}-1/m}{r}-\frac{c_i c_j}{mr^3}
+=\frac1r\left(\delta_{ij}-\frac1m-\frac{\hat x_i\hat x_j}{m}\right),
+$$
+
+which is (I.8.3). Omitting the derivative of the variance loses the last term.
+
+Contract with $\gamma g_i$ and sum over $i$:
+
+$$
+\frac{\partial\mathcal L}{\partial x_j}
+=\frac\gamma r\left(g_j-\overline g-\hat x_j\overline{g\hat x}\right).
+$$
+
+This is (I.8.4). The parameter derivatives are
+
+$$
+\frac{\partial\mathcal L}{\partial\gamma}=\sum_i g_i\hat x_i,\qquad
+\frac{\partial\mathcal L}{\partial\beta}=\sum_i g_i.
+$$
+
+For the supplied check, $\mu=0$, $v=2/3$, and $r=1$ exactly. Thus
+$\hat x=(-1,0,1)$, $\overline g=2/3$, and
+$\overline{g\hat x}=1/3$. Substitution gives
+
+$$
+\nabla_x\mathcal L=(4/3,-10/3,2),\qquad
+\partial_\gamma\mathcal L=1,\qquad \partial_\beta\mathcal L=2.
+$$
+
+To check an input derivative numerically, define
+$F(x)=\sum_i g_i y_i(x)$ and recompute **all** statistics after each perturbation:
+
+$$
+d_j^{\mathrm{FD}}
+=\frac{F(x+h e_j)-F(x-h e_j)}{2h}.
+$$
+
+The reproduction script uses $h=10^{-5}$ and asserts a maximum absolute
+disagreement below $10^{-8}$. It also tests a non-symmetric input, so the check
+does not rely only on $r=1$.
+
+Summing the analytic gradients cancels both mean terms because
+$\sum_j\hat x_j=0$. Their sum is zero. A common shift in every input cannot
+change the normalised output.
+
+The centred input is different. Direct multiplication gives
+
+$$
+J\vec c=\frac{\varepsilon}{r^3}\vec c.
+$$
+
+For nonzero centred data this vanishes only when epsilon is zero.
+In the numerical example $\vec c^{\mathsf T}\nabla_x\mathcal L=2/3$,
+not zero. Exact scale invariance would predict the wrong answer.
+
+</Solution>
+
+<Answer>
+The Jacobian is (I.8.3), and the efficient input derivative is (I.8.4).
+The checked gradient is $(1.333333,-3.333333,2.000000)$.
+Its sum is zero, but its dot product with the centred input is $2/3$.
+</Answer>
+
+<CheckSanity>
+A constant upstream gradient produces zero input gradient when gamma is shared
+over the batch group: it asks to change a sum that normalisation has fixed.
+The computation needs two reductions and one elementwise pass, not storage of
+an $m$-by-$m$ matrix.
+</CheckSanity>
+
+<Breaks>
+This is the training derivative. Frozen evaluation statistics yield only the
+diagonal derivative $\gamma/r_{\mathrm{run}}$. For layer normalisation,
+feature-specific gamma values must multiply the upstream gradient before
+the group reductions.
+</Breaks>
+
+<Variation>
+Derive the layer-normalisation input derivative with distinct $\gamma_i$.
+Set $u_i=\gamma_i g_i$ and replace the expression by
+$(u_j-\overline u-\hat x_j\overline{u\hat x})/r$.
+Test why substituting the average gamma instead is generally wrong.
+</Variation>

@@ -1,0 +1,47 @@
+---
+id: "I.8.X08"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "An axis bug that preserves every tensor dimension"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+A channels-first image tensor has shape $(2,3,4,5)$. A programmer applies
+layer normalisation over its last dimension of length five but intends
+to normalise channels at each pixel. Name the actual groups, the intended
+groups, and the shapes and counts of gamma and beta. Explain why a test
+that checks only the output shape passes.
+
+<Hint>
+The last dimension is width in the given layout.
+</Hint>
+
+<SolutionToggle>
+
+The actual rule reduces width. There are $2\cdot3\cdot4=24$ groups of
+five entries. Gamma and beta each have shape $(5)$, for ten learned scalars.
+Each group is a row of pixels within one channel.
+
+The intended rule reduces channels. There should be $2\cdot4\cdot5=40$
+groups of three entries, with gamma and beta each shaped $(3)$, for six
+learned scalars. A channels-last view with shape $(2,4,5,3)$ makes that
+last-axis operation explicit; restore the original layout afterwards.
+
+Both operations preserve the external shape $(2,3,4,5)$, which is why a
+shape-only assertion misses the bug. A better test changes a different
+channel at the same pixel and checks which outputs change. Under the intended
+rule it affects that pixel's group; changing a remote pixel does not.
+
+These counts assume standard elementwise affine parameters over the chosen
+normalised dimension. A channel-shared scalar gamma would define another
+parameterisation.
+
+</SolutionToggle>

@@ -1,0 +1,45 @@
+---
+id: "I.8.X05"
+kind: exercise
+chapter: "I.8"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Batch size is not the reduction size"
+depends:
+  - "I.8.P02"
+rounding: "Exact expressions first; four decimal places unless stated otherwise."
+hasSolution: true
+verified: true
+snippet: "i-8-normalisation-checks.py"
+status: published
+---
+Using (I.8.1), show what happens to a training normalisation group with one
+scalar $x$. Find the output and its derivative with respect to $x$.
+Explain why “batch normalisation fails at batch size one” is too broad,
+and why a large batch does not rescue layer normalisation over width one.
+
+<Hint>
+Count entries per group, including any spatial axes being reduced.
+</Hint>
+
+<SolutionToggle>
+
+For $m=1$, the mean is $x$ and the variance is zero. With
+$\varepsilon>0$, $\hat x=0$ and $y=\beta$ for every $x$.
+Therefore $\partial y/\partial x=0$ and $\partial y/\partial\gamma=0$.
+Only beta receives an upstream gradient from this scalar output.
+Substituting $m=1$ and $\hat x=0$ into (I.8.3) also gives zero.
+
+For dense batch normalisation on a matrix, batch size one means one value
+per feature group. In spatial batch normalisation, the group instead contains
+$NHW$ values per channel. With $N=1$ and multiple spatial positions, it need
+not be a singleton. Highly correlated positions may still give poor
+statistics, but that is a different failure.
+
+Layer normalisation over a feature width of one has the same algebraic
+degeneracy regardless of how many examples are in the batch: examples do
+not share its statistics. A framework may reject a degenerate training
+configuration before performing this calculation.
+
+</SolutionToggle>
