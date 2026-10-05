@@ -80,6 +80,45 @@ const json = (body, status = 200) =>
 
 const oops = (status, error, message) => json({ error, message }, status);
 
+/** Files a browser streams and seeks within, rather than reads whole. */
+const MEDIA = /\.(mp4|m4v|webm|mov|mp3|m4a|ogg|wav)$/i;
+
+/**
+ * Byte ranges for media, which the static-asset layer does not answer.
+ *
+ * Asked for "bytes=0-1", the asset layer returns 200 and the whole file.
+ * Chrome copes; Safari, every iPhone included, refuses to play a video from a
+ * server that does that, and nobody can seek. So for media the Worker asks for
+ * the whole file and answers the range itself: 206 with Content-Range, or 416
+ * when the range starts past the end. Everything that is not media, and any
+ * response that is not a plain 200, passes through untouched. A multi-range
+ * or malformed header gets the whole file, which the standard allows.
+ */
+async function withByteRanges(request, response, pathname) {
+  if (!MEDIA.test(pathname) || response.status !== 200) return response;
+  const headers = new Headers(response.headers);
+  headers.set('Accept-Ranges', 'bytes');
+
+  const m = /^bytes=(\d*)-(\d*)$/.exec((request.headers.get('range') ?? '').trim());
+  if (request.method !== 'GET' || !m || (m[1] === '' && m[2] === '')) {
+    return new Response(response.body, { status: 200, headers });
+  }
+
+  const body = await response.arrayBuffer();
+  const size = body.byteLength;
+  const start = m[1] === '' ? Math.max(0, size - Number(m[2])) : Number(m[1]);
+  const end = m[1] === '' || m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+
+  if (start >= size || start > end) {
+    headers.set('Content-Range', `bytes */${size}`);
+    headers.delete('Content-Length');
+    return new Response(null, { status: 416, headers });
+  }
+  headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+  headers.set('Content-Length', String(end - start + 1));
+  return new Response(body.slice(start, end + 1), { status: 206, headers });
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -101,7 +140,7 @@ export default {
         return await api(request, env, pathname, who);
       }
 
-      return env.ASSETS.fetch(request);
+      return await withByteRanges(request, await env.ASSETS.fetch(request), pathname);
     } catch (err) {
       if (err?.status) return oops(err.status, 'bad-request', err.message);
       console.error(err);

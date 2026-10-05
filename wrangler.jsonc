@@ -3,7 +3,8 @@
   //
   // The site is prerendered pages with no server code. The exceptions are
   // the private archive at /artifacts/private, whose data and files come from
-  // edge/index.js, and Officina AI's tutor at /api/tutor — and only the paths
+  // edge/index.js, Officina AI's tutor at /api/tutor, and media in /uploads,
+  // which needs byte ranges answered — and only the paths
   // listed in `run_worker_first` ever reach it. Every other request is served from ./dist by Cloudflare's edge without
   // running a line of script, exactly as before.
   //
@@ -26,7 +27,9 @@
     "html_handling": "drop-trailing-slash",
     // The archive's data, its files, and the add-only inbox. The archive's
     // page and the public door at /artifacts are static assets like any other.
-    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*", "/api/tutor"]
+    // And /uploads, for media: the asset layer ignores Range, and Safari will
+    // not play a video from a server that does (edge/index.js, withByteRanges).
+    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*", "/api/tutor", "/uploads/*"]
   },
   // Officina AI's tutor: the model it asks (edge/tutor.js). Billed to this
   // account's Workers AI allowance — 10,000 neurons a day free.

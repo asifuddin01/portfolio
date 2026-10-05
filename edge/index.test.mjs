@@ -511,3 +511,52 @@ test('without the AI binding the tutor says it is off', async () => {
 test('the tutor answers POST only', () => withTutor(async () => {
   assert.equal((await call('/api/tutor', {}, null)).status, 405);
 }));
+
+/* ---- Byte ranges for media ------------------------------------------------
+   Safari will not play a video unless the server answers Range with 206, and
+   the static-asset layer answers it with the whole file. The Worker slices. */
+test('media: a range gets 206 with exactly those bytes', async () => {
+  const assets = env.ASSETS;
+  env.ASSETS = { fetch: async () => new Response('0123456789', { status: 200, headers: { 'Content-Type': 'video/mp4' } }) };
+  try {
+    const first = await call('/uploads/demo.mp4', { headers: { Range: 'bytes=0-1' } }, null);
+    assert.equal(first.status, 206);
+    assert.equal(first.headers.get('content-range'), 'bytes 0-1/10');
+    assert.equal(first.headers.get('content-length'), '2');
+    assert.equal(await first.text(), '01');
+
+    const open = await call('/uploads/demo.mp4', { headers: { Range: 'bytes=7-' } }, null);
+    assert.equal(open.headers.get('content-range'), 'bytes 7-9/10');
+    assert.equal(await open.text(), '789');
+
+    const suffix = await call('/uploads/demo.mp4', { headers: { Range: 'bytes=-3' } }, null);
+    assert.equal(await suffix.text(), '789');
+
+    const clipped = await call('/uploads/demo.mp4', { headers: { Range: 'bytes=8-999' } }, null);
+    assert.equal(clipped.headers.get('content-range'), 'bytes 8-9/10');
+
+    const past = await call('/uploads/demo.mp4', { headers: { Range: 'bytes=50-60' } }, null);
+    assert.equal(past.status, 416);
+    assert.equal(past.headers.get('content-range'), 'bytes */10');
+
+    const whole = await call('/uploads/demo.mp4', {}, null);
+    assert.equal(whole.status, 200);
+    assert.equal(whole.headers.get('accept-ranges'), 'bytes', 'a browser is told it may seek');
+    assert.equal(await whole.text(), '0123456789');
+  } finally {
+    env.ASSETS = assets;
+  }
+});
+
+test('media ranges: anything that is not media passes through untouched', async () => {
+  const assets = env.ASSETS;
+  env.ASSETS = { fetch: async () => new Response('0123456789', { status: 200 }) };
+  try {
+    const res = await call('/uploads/notes.pdf', { headers: { Range: 'bytes=0-1' } }, null);
+    assert.equal(res.status, 200);
+    assert.equal(await res.text(), '0123456789');
+    assert.equal(res.headers.get('accept-ranges'), null);
+  } finally {
+    env.ASSETS = assets;
+  }
+});
