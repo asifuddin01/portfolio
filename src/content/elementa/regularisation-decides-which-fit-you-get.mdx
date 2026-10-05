@@ -123,9 +123,11 @@ equal to one with keep probability $q\in(0,1]$. Inverted dropout uses
 <Eq id="I.8.8" gloss="Surviving activations are enlarged to compensate for the missing ones.">
 
 $$
-\widetilde h=\frac{Mh}{q},\qquad
-\mathbb E[\widetilde h\mid h]=h,\qquad
-\operatorname{Var}(\widetilde h\mid h)=\frac{1-q}{q}h^2.
+\begin{aligned}
+\widetilde h&=\frac{Mh}{q},\\
+\mathbb E[\widetilde h\mid h]&=h,\\
+\operatorname{Var}(\widetilde h\mid h)&=\frac{1-q}{q}h^2.
+\end{aligned}
 $$
 
 </Eq>

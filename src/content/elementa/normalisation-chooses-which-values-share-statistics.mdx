@@ -37,9 +37,11 @@ For any group of $m$ scalar entries, define
 <Eq id="I.8.1" gloss="The mean and variance are computed over the same explicitly chosen group.">
 
 $$
-\mu=\frac1m\sum_{i=1}^m x_i,\qquad
-v=\frac1m\sum_{i=1}^m(x_i-\mu)^2,\qquad
-\hat x_i=\frac{x_i-\mu}{\sqrt{v+\varepsilon}}.
+\begin{aligned}
+\mu&=\frac1m\sum_{i=1}^m x_i,\\
+v&=\frac1m\sum_{i=1}^m(x_i-\mu)^2,\\
+\hat x_i&=\frac{x_i-\mu}{\sqrt{v+\varepsilon}}.
+\end{aligned}
 $$
 
 </Eq>
@@ -63,9 +65,11 @@ training and frozen running estimates at inference:
 <Eq id="I.8.2" gloss="Evaluation stops asking the neighbouring examples how to scale this one.">
 
 $$
-y_i^{\mathrm{train}}=\gamma\hat x_i+\beta,\qquad
-y_i^{\mathrm{eval}}=
+\begin{aligned}
+y_i^{\mathrm{train}}&=\gamma\hat x_i+\beta,\\
+y_i^{\mathrm{eval}}&=
 \gamma\frac{x_i-\mu_{\mathrm{run}}}{\sqrt{v_{\mathrm{run}}+\varepsilon}}+\beta.
+\end{aligned}
 $$
 
 </Eq>
@@ -98,9 +102,11 @@ Let $c_i=x_i-\mu$ and $r=\sqrt{v+\varepsilon}$. Since
 $\sum_i c_i=0$, differentiation gives
 
 $$
-\frac{\partial\mu}{\partial x_j}=\frac1m,\qquad
-\frac{\partial v}{\partial x_j}=\frac{2c_j}{m},\qquad
-\frac{\partial r}{\partial x_j}=\frac{c_j}{mr}.
+\begin{aligned}
+\frac{\partial\mu}{\partial x_j}&=\frac1m,\\
+\frac{\partial v}{\partial x_j}&=\frac{2c_j}{m},\\
+\frac{\partial r}{\partial x_j}&=\frac{c_j}{mr}.
+\end{aligned}
 $$
 
 Applying the quotient rule to $\hat x_i=c_i/r$ now gives the whole Jacobian:
