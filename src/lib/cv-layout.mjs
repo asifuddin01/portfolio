@@ -58,7 +58,17 @@ const STYLES = {
   },
 };
 
-const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
+/**
+ * Every string drawn on the PDF passes through here.
+ *
+ * The PDF's standard font encodes WinAnsi only, and an arrow is the one
+ * character a before-and-after result naturally reaches for ("0.581 → 0.740")
+ * that WinAnsi has no slot for — so it is read out as "to", which is what it
+ * means there. Anything else the font cannot draw still stops the build, as
+ * it should: loudly, rather than drawn as something it is not. The .docx keeps
+ * the arrow, since its fonts have one.
+ */
+const clean = (v) => String(v ?? '').replace(/\s*→\s*/g, ' to ').replace(/\s+/g, ' ').trim();
 
 /** @returns {Promise<{bytes: Uint8Array, pages: number}>} */
 export async function renderCv(cv) {
