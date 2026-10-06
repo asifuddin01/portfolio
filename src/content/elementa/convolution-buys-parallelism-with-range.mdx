@@ -1,51 +1,120 @@
 ---
 chapter: neural-networks--recurrence
 proposition: 3
-statement: A convolution over a sequence buys parallelism and pays for range with depth.
-claim: "Every position is computed at once, but the window is fixed. Widening it needs more layers, so range becomes a depth budget rather than a running state."
+statement: A convolution over a sequence pays for range with depth and dilation.
+claim: "A convolutional layer evaluates known input positions in parallel. Its receptive field is finite; increasing the dilation schedule extends that field without a recurrent state."
 given:
   - recurrence-compresses-a-sequence-into-a-state
 figure: FigDilation
+figureType: D
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
   - title: "WaveNet: A Generative Model for Raw Audio"
     url: https://arxiv.org/abs/1609.03499
-  - title: "Convolutional Sequence to Sequence Learning"
-    url: https://arxiv.org/abs/1705.03122
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+  - title: "Neural Machine Translation by Jointly Learning to Align and Translate"
+    url: https://arxiv.org/abs/1409.0473
+  - title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+    url: https://arxiv.org/abs/2205.14135
 ---
 
-## Demonstration
+## Replace the running state with a window
 
-Apply a one-dimensional convolution along the sequence axis. Each output
-position is a function of a fixed window of inputs around it, and because no
-output depends on another output, they are all computable simultaneously. The
-sequential bottleneck of Proposition 1 disappears.
+A recurrent cell reads the previous state. A sequence convolution reads a
+window from the preceding layer. If that layer's inputs are already known,
+all positions in the next layer can be evaluated together.
 
-What is given up is unbounded range. A kernel of width *k* sees *k* positions;
-stacking *L* such layers sees about *L(k − 1) + 1*. Range grows linearly with
-depth, which is expensive. Dilation fixes that: skip positions in the kernel by
-a factor that doubles each layer, and the receptive field grows exponentially
-instead — three layers of width three at dilations 1, 2, 4 see fifteen
-positions. That is WaveNet's construction, and it is what made autoregressive
-audio at sample rate feasible.
+For a causal kernel of width $k$ and dilation $d$, the output at position $t$
+reads $t,t-d,\ldots,t-(k-1)d$. No later input enters.
+Left padding supplies the boundary convention. A centred window instead
+reads both sides and is suitable only when that future context is allowed.
 
-So the three architectures line up on two axes, and the table in the figure is
-the whole comparison:
+The diagram is a centred-window view of receptive-field growth, not a causal
+language-model mask. The span calculation is the same; the alignment differs.
 
-- **Recurrence** — path length *O(n)*, sequential.
-- **Convolution** — path length *O(log n)* with dilation, fully parallel.
-- **Attention** — path length *O(1)*, fully parallel, quadratic in memory.
+Let $R_\ell$ be the receptive-field span after layer $\ell$, with stride one
+and no pooling. Each layer extends the span by $(k-1)d_\ell$.
+Starting at $R_0=1$ and adding the increments gives
 
-Convolution is the intermediate step in both senses: chronologically it came
-between, and in its trade-offs it sits between. It is still the right choice
-when the useful structure is genuinely local and the sequences are long, which
-is why it survives in audio front-ends and in the patch-embedding stem of vision
-models.
+<Eq id="I.9.8" gloss="This is the span in original input positions, for a stride-one stack.">
 
-## Corollary
+$$
+\begin{aligned}
+R_L&=1+(k-1)\sum_{\ell=1}^L d_\ell,\\
+d_\ell=2^{\ell-1}
+ &\implies R_L=1+(k-1)(2^L-1).
+\end{aligned}
+$$
 
-Notice what each of the three spends to shorten the path. Recurrence spends
-nothing and gets a long path. Convolution spends depth. Attention spends memory,
-quadratically. There is no arrangement here that shortens the path for free, and
-the choice between them is a choice about which resource is scarce.
+</Eq>
+
+Equation (I.9.8) gives $R_L=1+L(k-1)$ with no dilation.
+At width three and dilations $1,2,4$, the spans are $3,7,15$.
+This schedule covers every offset inside the span. An arbitrary dilation
+schedule need not: using only even dilations leaves odd offsets unseen.
+[I.9.X10](/elementa/neural-networks/recurrence/problems/x10) distinguishes
+span from actual coverage.
+
+The full convolution operation belongs to
+[Chapter I.11](/elementa/neural-networks/convolution). Here it is a comparison
+of routes by which distant inputs can affect one another.
+
+## Path length is not the same as total work
+
+For a length-$T$ sequence and hidden width $H$, the following comparison fixes
+the model and asks what happens as $T$ grows.
+
+| Computation | Sequential stages with known inputs | How distant positions communicate |
+| --- | --- | --- |
+| Dense nonlinear RNN | $T$ cell steps | A chain with length proportional to separation |
+| Width-$k$ dilated convolution | $L$ layers | Through a receptive field that can grow exponentially in $L$ |
+| Dense self-attention | One attention layer, apart from internal reductions | A direct allowed query-key connection |
+
+A recurrent hidden-to-hidden multiplication costs $O(TH^2)$ over the sequence.
+A width-$k$, $H$-channel convolution costs $O(TkH^2)$ per layer, with $L$ such
+layers in a stack. Dense attention's pairwise interaction costs $O(T^2H)$,
+in addition to its projections. Parallel stages do not remove this work.
+
+A straightforward dense attention implementation materialises a $T$ by $T$
+score array. Implementations that tile the computation can avoid retaining
+that whole array, so “attention always uses quadratic memory” is too broad.
+The dense pairwise arithmetic remains quadratic in $T$ in this comparison.
+
+These are architectural costs, not a speed benchmark. Dimensions, kernels,
+batching and hardware determine the observed runtime.
+
+## Training parallelism does not mean parallel generation
+
+In teacher-forced next-token training, all preceding ground-truth tokens are
+already available. A causal convolution or masked-attention layer can process
+positions together without reading a future target.
+
+During ordinary autoregressive generation, token $t+1$ depends on the token
+sampled at $t$. The next input is not yet available. This dependency remains
+for recurrent, convolutional and attention-based decoders.
+Caching reduces repeated computation; it does not remove the sampling order.
+
+A bidirectional recurrent encoder is another distinction. It can use both
+past and future context for a fully observed sequence, but cannot be inserted
+unchanged into a causal predictor. Check the leakage in
+[I.9.X09](/elementa/neural-networks/recurrence/problems/x09).
+
+## Why this leads to attention
+
+A fixed-state encoder makes the decoder retrieve source information from one
+vector. Bahdanau and colleagues let the decoder select among a collection of
+encoder states instead. That addressed the access bottleneck without requiring
+the encoder itself to stop being recurrent.
+
+The Transformer then used attention without recurrent sequence transitions.
+It changed both information access and the number of sequential training
+stages. Those are concrete differences; neither is a theorem that attention
+is the best model for every sequence.
+
+For a streaming sensor with a small sufficient state, carrying that state can
+be exactly the useful constraint. For a task requiring selective access to
+many earlier positions, storing and retrieving separate representations may
+be worth its cost. First name what must be remembered and when it must be
+available. Then count the work.

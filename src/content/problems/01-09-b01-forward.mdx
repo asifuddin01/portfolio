@@ -1,0 +1,113 @@
+---
+id: "I.9.B01"
+kind: problem
+chapter: "I.9"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Run a shared cell through three inputs"
+depends:
+  - "I.9.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+<Statement>
+Compute a recurrent forward pass without inventing a new weight for each step.
+</Statement>
+
+<Given>
+The scalar linear cell $h_t=ux_t+wh_{t-1}+b$ has $u=1$, $w=1/2$,
+$b=0$ and $h_0=0$. Inputs are $(1,2,0)$. The final readout is
+$z_3=vh_3+c$, with $v=2$, $c=0$, and target $y=1$.
+Use $\mathcal L=(z_3-y)^2/2$.
+</Given>
+
+<Find>
+All three states, the final prediction, loss, and number of trainable scalars.
+</Find>
+
+<Strategy>
+Keep one copy of each parameter. Substitute the preceding state at every step,
+then apply the readout only to the last state.
+</Strategy>
+
+<Solution>
+
+This is (I.9.1) with an identity activation instead of tanh:
+
+$$
+\begin{aligned}
+h_1&=1+(1/2)0=1,\\
+h_2&=2+(1/2)1=5/2,\\
+h_3&=0+(1/2)(5/2)=5/4,\\
+z_3&=2(5/4)=5/2,\\
+\mathcal L&=\tfrac12(5/2-1)^2=9/8.
+\end{aligned}
+$$
+
+There are five trainable scalars: $u,w,b,v,c$. The initial state is specified
+as a constant, not learned. Sequence length changes the number of operations,
+not this parameter count.
+
+A short implementation reproduces the arithmetic:
+
+~~~python
+xs = [1.0, 2.0, 0.0]
+u, w, b, v, c = 1.0, 0.5, 0.0, 2.0, 0.0
+h = 0.0
+history = []
+for x in xs:
+    h = u*x + w*h + b
+    history.append(h)
+prediction = v*h + c
+loss = 0.5*(prediction - 1.0)**2
+print(history)
+print(prediction, loss)
+~~~
+
+It prints <code>[1.0, 2.5, 1.25]</code> and <code>2.5 1.125</code>.
+The reproduction script also runs the tanh example from the proposition,
+so the identity activation is not silently treated as a nonlinear RNN.
+
+</Solution>
+
+<Answer>
+The states are $(1,2.5,1.25)$, the prediction is $2.5$, the loss is $1.125$,
+and the model has five trainable scalars.
+</Answer>
+
+<CheckSanity>
+The third input is zero, but the third state is not zero: the recurrent term
+carries half the preceding state forward. With $w=0$, this cell would forget
+the preceding input at each step.
+</CheckSanity>
+
+<CheckNumeric snippet="i-9-recurrence-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-9-recurrence-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-9-recurrence-checks.py
+~~~
+
+It checks all fifteen problems, including analytic derivatives against
+central finite differences. The first line reports the three states above
+and loss $1.125000$. The nonlinear forward example ends with states
+$0$, $0.462117$, $0.842886$ and $0.398145$.
+
+</CheckNumeric>
+
+<Breaks>
+Putting tanh back into the cell changes these numbers. It also introduces
+activation derivatives into the backward pass; the linear example is a
+controlled special case, not a replacement for those factors.
+</Breaks>
+
+<Variation>
+Reverse the first two inputs. The states become $(2,2,1)$, giving prediction
+$2$ and loss $1/2$. Shared parameters do not imply order invariance.
+</Variation>

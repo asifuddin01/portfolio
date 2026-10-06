@@ -1,0 +1,53 @@
+---
+id: "I.9.X04"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "Small does not mean rounded to zero"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+A scalar terminal gradient starts at one and is transported through thirty
+identical Jacobian factors. Compute the result for factors $0.7$, $1$ and
+$1.3$. Is the first numerically zero? Then consider thirty alternating
+factors $2,1/2$.
+
+<Hint>
+The constant-factor example is $r^{30}$. Pair the alternating factors
+before evaluating the second product.
+</Hint>
+
+<SolutionToggle>
+
+The three magnitudes are
+
+$$
+\begin{aligned}
+0.7^{30}&\approx0.00002253934,\\
+1^{30}&=1,\\
+1.3^{30}&\approx2619.995644.
+\end{aligned}
+$$
+
+The first is representable in ordinary float32 and float64 arithmetic.
+It may be small relative to other gradient contributions, but “small”
+and “underflowed to zero” are different claims.
+
+As the gap tends to infinity, a constant factor with magnitude below one
+tends to zero; magnitude above one grows without bound; magnitude one
+preserves magnitude. A negative factor can reverse signs.
+
+The alternating product is $(2\cdot1/2)^{15}=1$.
+It disproves the blanket statement that every long product of factors
+different from one must vanish or explode. In real recurrent cells the
+factors vary with the trajectory; this exercise isolates only the
+constant-scalar mechanism.
+
+</SolutionToggle>

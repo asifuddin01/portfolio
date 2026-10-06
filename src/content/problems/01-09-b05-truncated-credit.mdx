@@ -1,0 +1,104 @@
+---
+id: "I.9.B05"
+kind: problem
+chapter: "I.9"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "Same prediction, different backward graph"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+<Statement>
+Compare full backpropagation with a one-step truncation that detaches the state
+after the second input.
+</Statement>
+
+<Given>
+Use I.9.B01's linear scalar model:
+$(u,w,b,v,c)=(1,1/2,0,2,0)$, inputs $(1,2,0)$, initial state zero,
+and final target one. The full forward states are $(1,5/2,5/4)$.
+There is only a final output loss.
+</Given>
+
+<Find>
+The prediction and loss in both computations, and their derivatives with
+respect to $w$ and $u$. Explain the correct finite-difference check for each.
+</Find>
+
+<Strategy>
+After detaching $h_2$, replace its computation by the constant $5/2$.
+Differentiate the remaining one-step function and compare it with I.9.B02.
+</Strategy>
+
+<Solution>
+
+The full graph has $h_3=u(w^2+2w)$ at $b=0$.
+At the stated parameters its gradients are
+$\partial_w\mathcal L=9$ and $\partial_u\mathcal L=15/4$.
+
+The detached graph instead evaluates
+
+$$
+\begin{aligned}
+h_3&=u\cdot0+w\cdot(5/2)+b,\\
+z_3&=vh_3+c.
+\end{aligned}
+$$
+
+At the original parameters this gives the same $h_3=5/4$, $z_3=5/2$
+and loss $9/8$. Its last-state derivative is still $\delta_3=3$, but
+there is no earlier parameter path:
+
+$$
+\begin{aligned}
+\partial_w\mathcal L_{\mathrm{trunc}}&=3(5/2)=15/2,\\
+\partial_u\mathcal L_{\mathrm{trunc}}&=3\cdot0=0.
+\end{aligned}
+$$
+
+The derivative with respect to the boundary value itself would be
+$w\delta_3=3/2$. Detachment stops it from propagating into the calculation
+that produced that value.
+
+To finite-difference the full graph, perturb $w$ or $u$ and recompute every
+state. To finite-difference the truncated graph, first compute the boundary
+state at the original parameters, freeze it at $5/2$, then perturb the
+parameters only in the final chunk.
+
+Recomputing the boundary during the truncated check reattaches the dependency
+you intended to remove. Its result would be the full gradient, not a failure
+of the truncated backward implementation.
+
+</Solution>
+
+<Answer>
+Both predictions are $2.5$ and both losses are $1.125$.
+Full $(\partial_w,\partial_u)=(9,3.75)$;
+truncated $(\partial_w,\partial_u)=(7.5,0)$.
+</Answer>
+
+<CheckSanity>
+Resetting instead of detaching would set the boundary to zero.
+Because $x_3=b=c=0$, that would give prediction zero and loss $1/2$,
+a different forward computation. Detach preserves the value; reset replaces it.
+</CheckSanity>
+
+<Breaks>
+This comparison uses one fixed parameter setting and one final loss.
+Chunk-wise updates may also change parameters between chunks; they are
+not identical to a single full-sequence update even if boundary derivatives
+happen to be small.
+</Breaks>
+
+<Variation>
+Keep the final two time steps after detaching $h_1$. The $w$ gradient happens
+to remain nine because the removed first-step contribution is zero, but the
+$u$ gradient drops from $3.75$ to $3$. Matching one parameter's derivative
+does not establish that the whole backward graph matches.
+</Variation>

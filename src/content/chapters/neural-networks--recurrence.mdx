@@ -3,26 +3,94 @@ id: "I.9"
 book: neural-networks
 order: 9
 title: "Recurrent Neural Networks"
-summary: "One layer applied over and over, carrying a summary forward."
-claim: "A recurrent network compresses everything it has read into one fixed-width state, and the gradient through that compression is a long product."
+summary: "Shared state, backpropagation through time, gradient transport, and the cost of remembering a sequence."
+claim: "A recurrent network carries a fixed-width state through a sequence. Learning what to remember requires differentiating every use of the shared weights."
 mathTier: M3
 topics:
-  - "Sequences"
-  - "RNNs"
-  - "LSTMs"
-  - "GRUs"
-  - "CNNs for sequences"
-  - "Long-range dependencies"
-  - "Why transformers emerged"
-definitions: []
+  - "One transition, shared across time"
+  - "Sequence outputs, final-state outputs and causal prediction"
+  - "Unrolling the graph without copying the parameters"
+  - "Backpropagation through time and summed parameter gradients"
+  - "Products of state-dependent Jacobians"
+  - "Vanishing gradients, saturation and transient amplification"
+  - "Gradient norm clipping and truncated backpropagation"
+  - "Padding masks, state resets and sequence boundaries"
+  - "Parameter counts, training memory and streaming inference"
+  - "Dilated convolutions and the path to attention"
+definitions:
+  - n: 1
+    term: "Sequence"
+    statement: "An ordered list of inputs x_1 through x_T. Position affects meaning, and examples may have different lengths. The input width D is fixed even when T varies."
+    introduces: []
+  - n: 2
+    term: "Hidden state"
+    statement: "A vector h_t in R^H carried from one time step to the next, computed from the preceding state and current input. Its width H does not grow with the number of inputs read."
+    introduces: []
+  - n: 3
+    term: "Parameter sharing"
+    statement: "Reusing the same trainable matrices and biases at every time step. Unrolling creates multiple uses of each parameter, not independent copies. Their gradient contributions must be added."
+    introduces: []
+  - n: 4
+    term: "Unrolling"
+    statement: "Drawing a finite recurrence as an acyclic computation graph with one cell application per time step. Ordinary reverse-mode differentiation on this graph is backpropagation through time."
+    introduces: []
+  - n: 5
+    term: "Backpropagation through time"
+    statement: "The backward sweep through the unrolled graph. At each state, the gradient combines the local output loss with the signal returned from later states, then differentiates the cell and accumulates shared-parameter gradients."
+    introduces: []
+  - n: 6
+    term: "Temporal Jacobian"
+    statement: "The derivative of h_t with respect to h_(t-1), holding input and parameters fixed. For a tanh cell it is diag(1 - h_t²) W, so shared W still gives different Jacobians along a trajectory."
+    introduces: []
+  - n: 7
+    term: "Vanishing or exploding gradient"
+    statement: "Attenuation or amplification of a backward signal through many temporal Jacobians. This describes a derivative, not necessarily the magnitude of the hidden states. Bounded tanh states can coexist with large gradients."
+    introduces: []
+  - n: 8
+    term: "Truncated backpropagation through time"
+    statement: "Carrying a state's value into the next chunk while stopping its derivative at the boundary. This reduces the retained graph and omits cross-boundary credit assignment. Detaching is different from resetting to zero."
+    introduces: []
+  - n: 9
+    term: "Global norm clipping"
+    statement: "Rescaling the concatenated parameter-gradient vector when its Euclidean norm exceeds a positive threshold. Its direction is preserved. Clipping coordinates or tensors separately is a different operation."
+    introduces: []
+  - n: 10
+    term: "Padding mask"
+    statement: "An indicator distinguishing real positions from padding. It can exclude padded losses and stop padded steps from changing the state. A zero input alone does neither."
+    introduces: []
+  - n: 11
+    term: "Causal computation"
+    statement: "An output at time t that depends only on inputs available through t. For next-token prediction the target is x_(t+1). A bidirectional encoder reads later inputs and is not a causal next-token predictor."
+    introduces: []
 beforeYouStart:
   - "I.6"
   - "I.3"
+  - "I.5"
   - "0.LA.04"
 conceptFigure: FigRecurrentState
-problemStatement: "An MLP takes a fixed-size input. Sequences are not fixed-size, and padding them wastes the structure that makes them sequences. Sharing one layer across time is the first answer, and it introduces the failure that motivates everything after it."
-formalResults: []
-assumptions: []
+problemStatement: "A dense layer over a flattened sequence assigns different weights to different positions and requires a chosen input length. A recurrent cell reuses one transition at every position. That buys variable-length processing and a compact streaming state, but introduces a long dependency chain. We build that chain, differentiate it and test where the backward signal is lost."
+formalResults:
+  - id: "I.9.T1"
+    name: "Shared weights receive the sum of their temporal contributions"
+    statement: "For a_t = Ux_t + Wh_(t-1) + b, h_t = tanh(a_t), z_t = Vh_t + c, and a sum of per-step losses, let e_t = d ell_t/d z_t. Then delta_t = (Vᵀ e_t + Wᵀ delta_(t+1)) elementwise-multiplied by (1 - h_t²), with delta_(T+1) = 0. The recurrent-weight gradient is the sum of delta_t h_(t-1)ᵀ over all t. I.9.B02 derives the rule."
+    doesNotPromise: "This assumes the full unrolled graph, fixed inputs, and no extra parameter dependence in the loss. Truncation drops paths, regularisation adds its own derivative, and a learned initial state receives a gradient too."
+  - id: "I.9.T2"
+    name: "Uniform contraction bounds distant sensitivity"
+    statement: "Writing A_t = d h_t/d h_(t-1), the derivative d h_T/d h_s is A_T A_(T-1) ... A_(s+1). Its spectral norm is bounded by the product of the factor norms. If each is at most r < 1, the bound is r^(T-s)."
+    doesNotPromise: "A large upper bound does not prove growth. Factors may contract different directions, and the incoming gradient may miss an amplified direction. Eigenvalues of W alone do not determine finite-horizon behaviour; I.9.B03 and I.9.X05 give counterexamples."
+  - id: "I.9.T3"
+    name: "Finite-precision state has finite distinguishable histories"
+    statement: "If an H-coordinate state has at most 2^p representable values per coordinate, it has at most 2^(pH) states. There are 2^T binary histories of length T. If T > pH, at least two histories map to the same state. A future computation given only that state cannot distinguish them."
+    doesNotPromise: "This finite-state counting argument does not say every task needs the entire history. Parity needs only two states. With ideal infinite-precision reals the finite-state premise no longer holds."
+assumptions:
+  - statement: "State is carried only between chunks of the same stream, with batch rows preserving stream identity. Independent examples receive independent initial states."
+    testedBy: "I.9.X06"
+  - statement: "A local Jacobian bound holds along the actual trajectory. A large norm or an eigenvalue calculation alone does not establish exploding gradients."
+    testedBy: "I.9.X05"
+  - statement: "A causal predictor cannot access inputs later than the prediction time."
+    testedBy: "I.9.X09"
+  - statement: "A fixed-width storage argument assumes finitely many representable states, not arbitrary-precision real encoding."
+    testedBy: "I.9.X08"
 owns:
   - "recurrence"
   - "backpropagation-through-time"
@@ -31,9 +99,49 @@ borrows:
   - "backpropagation"
   - "activation-function"
   - "eigendecomposition"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "Assigning rather than accumulating a shared-weight gradient keeps only one time step. In I.9.B02 the recurrent contributions are 0, 1.5 and 7.5; keeping only the last reports 7.5 instead of 9."
+  - "Masking the loss but reading the state after padding changes a representation. For h_next = 0.5 h + x, state 2 becomes 1 after zero padding. Freeze the padded state, pack the sequence, or gather the last valid output."
+  - "Carrying state between shuffled, unrelated examples leaks one example into another. Detaching prevents a gradient crossing the boundary but leaves the leaked value unchanged."
+  - "Clipping a finite gradient limits its norm; it does not restore vanished components or undo NaNs already created. Check finiteness before relying on clipping."
+  - "One-step truncation in I.9.B05 keeps the full pass's prediction and loss while changing dL/dw from 9 to 7.5 and dL/du from 3.75 to zero. Forward equality is not a gradient test."
+references:
+  - title: "Finding Structure in Time"
+    url: https://doi.org/10.1207/s15516709cog1402_1
+    authors: "Elman"
+    year: 1990
+    venue: "Cognitive Science 14(2)"
+  - title: "On the difficulty of training recurrent neural networks"
+    url: https://proceedings.mlr.press/v28/pascanu13.html
+    authors: "Pascanu, Mikolov and Bengio"
+    year: 2013
+    venue: "International Conference on Machine Learning, PMLR 28"
+  - title: "Sequence to Sequence Learning with Neural Networks"
+    url: https://arxiv.org/abs/1409.3215
+    authors: "Sutskever, Vinyals and Le"
+    year: 2014
+    venue: "Advances in Neural Information Processing Systems 27"
+  - title: "Neural Machine Translation by Jointly Learning to Align and Translate"
+    url: https://arxiv.org/abs/1409.0473
+    authors: "Bahdanau, Cho and Bengio"
+    year: 2015
+    venue: "International Conference on Learning Representations"
+  - title: "Long Short-Term Memory"
+    url: https://doi.org/10.1162/neco.1997.9.8.1735
+    authors: "Hochreiter and Schmidhuber"
+    year: 1997
+    venue: "Neural Computation 9(8)"
+  - title: "WaveNet: A Generative Model for Raw Audio"
+    url: https://arxiv.org/abs/1609.03499
+    authors: "van den Oord and colleagues"
+    year: 2016
+    venue: "arXiv:1609.03499"
+  - title: "Attention Is All You Need"
+    url: https://arxiv.org/abs/1706.03762
+    authors: "Vaswani and colleagues"
+    year: 2017
+    venue: "Advances in Neural Information Processing Systems 30"
 notation:
   - "T"
   - "d"
@@ -45,6 +153,30 @@ apparatus:
   - "0.LA.04"
   - "0.MC.03"
   - "0.NU.01"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.9.1"
+    formula: "a_t = Ux_t + Wh_(t-1) + b; h_t = tanh(a_t); z_t = Vh_t + c"
+    gloss: "The same parameters define every time step."
+  - id: "I.9.2"
+    formula: "L = sum_t ell_t(z_t, y_t); L_masked = sum_t m_t ell_t / sum_t m_t"
+    gloss: "The reduction decides which positions contribute and with what scale."
+  - id: "I.9.3"
+    formula: "delta_t = (Vᵀ e_t + Wᵀ delta_(t+1)) elementwise (1 - h_t²)"
+    gloss: "A state's derivative combines present and future losses."
+  - id: "I.9.4"
+    formula: "dL/dW = sum_t delta_t h_(t-1)ᵀ; dL/dU = sum_t delta_t x_tᵀ"
+    gloss: "Shared parameters accumulate contributions from every use."
+  - id: "I.9.5"
+    formula: "A_t = diag(1 - h_t²) W; d h_T/d h_s = A_T ... A_(s+1)"
+    gloss: "Identical weights can produce different temporal Jacobians."
+  - id: "I.9.6"
+    formula: "||d h_T/d h_s||₂ ≤ product_(k=s+1)^T ||A_k||₂ ≤ r^(T-s)"
+    gloss: "The last inequality needs the bound ||A_k||₂ ≤ r."
+  - id: "I.9.7"
+    formula: "g_clip = g min(1, tau/||g||₂), with g_clip = 0 when g = 0"
+    gloss: "Global clipping changes a finite gradient's length, not its direction."
+  - id: "I.9.8"
+    formula: "R_L = 1 + (k - 1) sum_(l=1)^L d_l"
+    gloss: "A stride-one convolution stack pays for span with width and dilation."
+status: published
 ---

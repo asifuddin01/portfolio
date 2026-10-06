@@ -1,0 +1,46 @@
+---
+id: "I.9.X06"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Padding and a new stream are different boundaries"
+depends:
+  - "I.9.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+Use $h_t=0.5h_{t-1}+x_t$, initially zero.
+An example has one real input $2$ followed by one zero padding input.
+Compare the final state with and without a state mask.
+A new independent example then begins with input $1$.
+Compare resetting its initial state with wrongly carrying the previous
+valid state. Does detaching the carried value fix the latter?
+
+<Hint>
+A zero input still applies the recurrent matrix.
+</Hint>
+
+<SolutionToggle>
+
+After the real input, $h=2$.
+An ordinary zero-input update yields $0.5(2)+0=1$.
+Freezing the state at the padding position keeps it at two.
+Masking only the padded loss does not change that unmasked update.
+
+For the new independent example, resetting gives
+$h=0.5(0)+1=1$.
+Wrongly carrying the valid state two gives
+$h=0.5(2)+1=2$.
+The result depends on an unrelated example.
+
+Detaching retains the number two. It stops a derivative, not a
+contaminating forward value, so the new example still produces two.
+Reset at independent-sequence boundaries. Carry and detach only when
+the next chunk continues the same stream and truncated training is intended.
+
+</SolutionToggle>

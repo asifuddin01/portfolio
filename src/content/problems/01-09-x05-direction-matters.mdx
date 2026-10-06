@@ -1,0 +1,49 @@
+---
+id: "I.9.X05"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Two large norms can make a contraction"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+Let $A=\operatorname{diag}(2,1/4)$ and
+$B=\operatorname{diag}(1/4,2)$. Compute their spectral norms and the norm
+of the two-step product $BA$. What happens after $n$ repetitions of this
+pair? Explain why the upper bound in (I.9.6) is not an equality.
+
+<Hint>
+Each diagonal matrix expands a different coordinate.
+</Hint>
+
+<SolutionToggle>
+
+Both factor norms are two, since the spectral norm of a real diagonal
+matrix is its largest absolute diagonal entry.
+But
+
+$$
+BA=\operatorname{diag}(1/2,1/2)=\tfrac12 I.
+$$
+
+The actual product norm is $1/2$, while the product of the factor norms
+is four. After $n$ pairs, every vector is multiplied by $2^{-n}$.
+There is uniform contraction despite every individual factor having
+norm above one.
+
+The first factor's most expanded direction is contracted by the second.
+Multiplying norms forgets this alignment and gives an upper bound.
+A bound that permits growth does not prove growth.
+
+These two diagonal matrices are an abstract Jacobian counterexample.
+It is enough to refute an inference made solely from their norms; no claim
+is made that every tanh trajectory realises this exact pair.
+
+</SolutionToggle>

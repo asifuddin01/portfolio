@@ -1,0 +1,56 @@
+---
+id: "I.9.X03"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Expand the memory of a linear cell"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+For $h_t=wh_{t-1}+ux_t$ with fixed $h_0$, derive a closed form for $h_T$
+and for $\partial h_T/\partial w$. Verify the derivative at
+$T=3$, $h_0=0$, $u=1$, $w=1/2$, and $(x_1,x_2,x_3)=(1,2,0)$.
+
+<Hint>
+Expand two steps, identify the coefficient of each input, and differentiate
+the resulting polynomial.
+</Hint>
+
+<SolutionToggle>
+
+Each earlier input is multiplied by $w$ once for every remaining step:
+
+$$
+h_T=w^Th_0+u\sum_{s=1}^T w^{T-s}x_s.
+$$
+
+The formula follows by induction: multiplying the expression for $T-1$
+by $w$ raises each exponent, and adding $ux_T$ supplies the final term.
+
+For integer $T\geq1$,
+
+$$
+\frac{\partial h_T}{\partial w}
+=Tw^{T-1}h_0+
+u\sum_{s=1}^{T-1}(T-s)w^{T-s-1}x_s.
+$$
+
+The last input's derivative is omitted rather than written as zero times
+a negative power. This polynomial formula is valid at $w=0$ too, using
+the ordinary constant monomial $w^0=1$.
+
+For the specified values, $h_3=w^2+2w=1.25$ and its derivative is
+$2w+2=3$. With readout $z=2h_3$ and target one, multiplying by
+$(z-1)2=3$ gives the loss derivative nine from I.9.B02.
+
+The closed form relies on a linear transition with constant parameters.
+Tanh prevents this distributive expansion.
+
+</SolutionToggle>

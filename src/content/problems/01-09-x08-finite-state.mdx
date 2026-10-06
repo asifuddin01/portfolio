@@ -1,0 +1,44 @@
+---
+id: "I.9.X08"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Count histories before promising perfect recall"
+depends:
+  - "I.9.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+An implementation stores eight hidden coordinates, each with at most
+256 possible values. Show that it cannot uniquely encode every binary
+history of length 65 using only this state.
+Does the same argument prevent it from remembering parity?
+
+<Hint>
+Compare the number of representable states with the number of histories.
+</Hint>
+
+<SolutionToggle>
+
+The state has at most $256^8=(2^8)^8=2^{64}$ distinct configurations.
+There are $2^{65}$ binary histories.
+At least two histories must reach the same state by the pigeonhole
+principle. Given the same future inputs, a deterministic transition and
+readout cannot subsequently distinguish those two histories.
+
+Parity has only two possible answers. A two-state update can retain it
+exactly, switching state whenever the next bit is one.
+Thus the counting proof rules out lossless recall of all histories,
+not every task on histories.
+
+The premise is an upper bound on representable states. It does not claim
+all such states are reachable or reliably distinguishable in practice.
+For arbitrary-precision ideal real numbers, this finite counting argument
+does not apply.
+
+</SolutionToggle>

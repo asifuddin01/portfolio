@@ -1,56 +1,206 @@
 ---
 chapter: neural-networks--recurrence
 proposition: 2
-statement: A gradient carried through many steps is a long product, and long products do not survive.
-claim: "Backpropagating through a recurrence multiplies the same Jacobian repeatedly. Below one it decays to nothing; above one it grows without bound. Only exactly one is stable, and nothing holds it there."
+statement: Backpropagation through time accumulates shared gradients through a product of temporal Jacobians.
+claim: "The recurrent matrix is shared, but each activation changes its local derivative. Long products can attenuate or amplify the backward signal; their norms and directions both matter."
 given:
   - recurrence-compresses-a-sequence-into-a-state
   - backpropagation-is-the-chain-rule-over-a-graph
 figure: FigVanishingGradient
+figureType: G
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
-  - title: "On the Difficulty of Training Recurrent Neural Networks"
-    url: https://arxiv.org/abs/1211.5063
-  - title: "Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)"
+  - title: "On the difficulty of training recurrent neural networks"
+    url: https://proceedings.mlr.press/v28/pascanu13.html
+  - title: "Long Short-Term Memory"
     url: https://doi.org/10.1162/neco.1997.9.8.1735
 ---
 
-## Demonstration
+## Start at the loss, not at a product sign
 
-Unroll the recurrence and apply the chain rule from Proposition 3 of Chapter II.
-The gradient of the loss at step *T* with respect to the state at step *t* is a
-product of Jacobians, one per intervening step:
+Use the tanh cell of (I.9.1) and the summed loss of (I.9.2).
+Write $\vec e_t=\partial\ell_t/\partial\vec z_t$ and
+$\vec\delta_t=\partial\mathcal L/\partial\vec a_t$.
+If position $t$ has no local loss, set $\vec e_t=0$.
 
-```
-∂L_T/∂h_t  =  ∏(k = t..T−1)  ∂h_{k+1}/∂h_k
-```
+Two arrows leave $\vec h_t$: one to its readout, one to the next recurrent
+step. Reverse mode adds both returns. Since
+$\tanh'(a)=1-\tanh^2(a)$,
 
-If the magnitude of each factor is around *r*, the product is around *r^(T−t)*.
-For *r* = 0.7 and a gap of thirty steps that is about 2 × 10⁻⁵ — the gradient
-reaching the early steps is numerically indistinguishable from zero. For *r* =
-1.3 it is about 2600, and the update is large enough to destroy the parameters
-in a single step.
+<Eq id="I.9.3" gloss="The current loss and the future loss meet before the activation derivative.">
 
-The exponent is the distance. This is why the failure is specifically about
-*long-range* dependence: the model learns local structure perfectly well, and
-its inability to connect a pronoun to an antecedent forty words back is not a
-lack of capacity but a lack of gradient reaching that far.
+$$
+\begin{aligned}
+\vec q_t&=\mat V^{\mathsf T}\vec e_t+
+          \mat W^{\mathsf T}\vec\delta_{t+1},\\
+\vec\delta_t&=\vec q_t\odot(1-\vec h_t^2),\\
+\vec\delta_{T+1}&=0.
+\end{aligned}
+$$
 
-Nothing about this is peculiar to recurrence. It is a fact about repeated
-multiplication, and it is the same fact that made very deep feed-forward
-networks untrainable before residual connections gave the gradient an additive
-path — Chapter VII, Proposition 3, is the same argument in the other direction.
+</Eq>
 
-The two ends of the failure are not symmetric in practice. Exploding gradients
-are loud: the loss becomes `NaN`, and clipping the gradient norm fixes them
-directly. Vanishing gradients are silent. The loss decreases, the model trains,
-and the only symptom is that some dependency is never learned — which looks like
-a property of the problem rather than of the optimisation.
+Squares and $\odot$ are coordinatewise. The backward sweep evaluates (I.9.3)
+from $T$ down to $1$. A mean loss or a fixed padding mask is already included
+in the definition of $\vec e_t$; do not average the gradients a second time.
 
-## Corollary
+At one cell, a perturbation of $\mat W$ produces
+$d\vec a_t=d\mat W\,\vec h_{t-1}$. The local contribution is the outer product
+$\vec\delta_t\vec h_{t-1}^{\mathsf T}$. Because all cells use the same matrix,
 
-Whenever a model handles the near and fails at the far, ask about path length
-before asking about capacity. The question is how many multiplications separate
-the two positions in the computational graph, and the answer is a property of
-the architecture, available before any training is run.
+<Eq id="I.9.4" gloss="Each occurrence contributes to one shared parameter gradient.">
+
+$$
+\begin{aligned}
+\nabla_{\mat W}\mathcal L
+ &=\sum_t\vec\delta_t\vec h_{t-1}^{\mathsf T},\\
+\nabla_{\mat U}\mathcal L
+ &=\sum_t\vec\delta_t\vec x_t^{\mathsf T},\\
+\nabla_{\vec b}\mathcal L&=\sum_t\vec\delta_t.
+\end{aligned}
+$$
+
+</Eq>
+
+The readout derivatives are
+$\nabla_{\mat V}\mathcal L=\sum_t\vec e_t\vec h_t^{\mathsf T}$ and
+$\nabla_{\vec c}\mathcal L=\sum_t\vec e_t$.
+The input derivative is $\mat U^{\mathsf T}\vec\delta_t$.
+For a learned initial state, its derivative is
+$\mat W^{\mathsf T}\vec\delta_1$.
+Regularisation would add another term to the parameter gradients.
+
+Equations (I.9.3) and (I.9.4) prove I.9.T1. There is no extra learning rule
+peculiar to time. There is a graph, reused parameters, and the chain rule.
+[I.9.B02](/elementa/neural-networks/recurrence/problems/b02) works every scalar
+contribution by hand.
+
+## Now isolate a distant loss
+
+Let $\mat A_t$ be the state-to-state Jacobian, holding inputs fixed:
+
+<Eq id="I.9.5" gloss="The earliest Jacobian acts first, on the right of the forward product.">
+
+$$
+\begin{aligned}
+\mat A_t&=\operatorname{diag}(1-\vec h_t^2)\mat W,\\
+\frac{\partial\vec h_T}{\partial\vec h_s}
+ &=\mat A_T\mat A_{T-1}\cdots\mat A_{s+1}.
+\end{aligned}
+$$
+
+</Eq>
+
+For a loss only at $T$, the column gradient at $s$ is the transpose of the
+product in (I.9.5) times $\nabla_{\vec h_T}\ell_T$.
+For losses at many positions, add the contribution of each later loss.
+A locally supervised position can therefore receive a useful gradient even
+when a much later loss has almost no influence on it.
+
+The weights repeat. The Jacobians generally do not: their diagonal activation
+factors depend on the actual inputs and states.
+
+By applying $\|AB\|_2\leq\|A\|_2\|B\|_2$ repeatedly,
+
+<Eq id="I.9.6" gloss="A uniform bound below one proves contraction; a bound above one does not prove explosion.">
+
+$$
+\begin{aligned}
+\left\|\frac{\partial\vec h_T}{\partial\vec h_s}\right\|_2
+ &\leq\prod_{k=s+1}^T\|\mat A_k\|_2,\\
+\|\mat A_k\|_2\leq r\ \text{for all }k
+ &\implies
+ \left\|\frac{\partial\vec h_T}{\partial\vec h_s}\right\|_2
+ \leq r^{T-s}.
+\end{aligned}
+$$
+
+</Eq>
+
+This proves I.9.T2. Since the tanh derivative is at most one,
+$\|\mat W\|_2<1$ is a sufficient uniform contraction condition for this cell.
+It is not necessary: saturation may contract a trajectory even with a larger
+weight norm.
+
+The figure shows a deliberately scalar special case with a constant multiplier.
+Across thirty steps, $0.7^{30}\approx2.2539\times10^{-5}$ and
+$1.3^{30}\approx2.6200\times10^3$.
+The first is small, not numerically identical to zero. Whether it is useful
+depends on the other gradients, numerical precision and optimiser.
+
+A matrix needs more care than a scalar. Large singular values indicate
+directions of amplification, but the next matrix may contract those directions.
+Even eigenvalues strictly inside the unit circle do not exclude large
+finite-time amplification for a non-normal matrix.
+[I.9.B03](/elementa/neural-networks/recurrence/problems/b03) constructs one.
+And alternating scalar factors $2$ and $1/2$ have a unit product every two
+steps, despite neither factor being one.
+
+## What clipping repairs
+
+For a finite concatenated parameter gradient $\vec g$ and threshold $\tau>0$,
+
+<Eq id="I.9.7" gloss="One common scale factor preserves the direction across all parameter tensors.">
+
+$$
+\vec g_{\mathrm{clip}}
+=\vec g\min\left(1,\frac{\tau}{\|\vec g\|_2}\right).
+$$
+
+</Eq>
+
+Define the zero-gradient case separately as zero. Equation (I.9.7) bounds the
+norm by $\tau$. With plain gradient descent, the update norm is at most
+$\eta\tau$. That does not directly bound an Adam update or a step containing
+momentum, weight decay or other terms.
+
+Accumulate the intended gradient first, then clip, then apply the optimiser.
+Clipping each time step separately changes the sum. Clipping each tensor
+separately changes the direction of the concatenated gradient.
+[I.9.X07](/elementa/neural-networks/recurrence/problems/x07) makes the difference
+numerical.
+
+Clipping can control a finite oversized gradient. It cannot reconstruct
+information that already vanished, and it cannot make a non-finite
+computation reliable. A NaN needs a diagnosis, not a smaller threshold.
+
+## Truncation changes credit assignment
+
+Full backpropagation retains the whole unrolled dependency.
+Truncated backpropagation detaches a carried state at a chunk boundary:
+the next chunk receives the same value, but treats it as a constant for that
+backward pass.
+
+That omits cross-boundary derivatives. The forward model may still remember
+earlier inputs, but a later loss cannot teach the detached earlier computations
+what to retain across that boundary. The truncated gradient is generally not
+the full-sequence gradient.
+
+In [I.9.B05](/elementa/neural-networks/recurrence/problems/b05), the prediction
+stays $2.5$ and the loss stays $1.125$, while a one-step truncation changes
+$\partial\mathcal L/\partial w$ from $9$ to $7.5$.
+For a finite-difference check of the truncated computation, freeze the boundary
+state. Recomputing it under every parameter perturbation checks the full graph
+instead.
+
+A practical chunk loop starts with the correct stream's state, runs the chunk,
+computes the valid-position loss, backpropagates, clips if required, and updates
+the parameters. Before the next chunk, detach the state; when the stream ends,
+reset it. If weights change between chunks, the carried value was computed
+with earlier weights. That is part of this training procedure, not exact
+full-sequence differentiation at one fixed parameter setting.
+
+## A different cell is a different path
+
+LSTMs and GRUs learn gates controlling what to retain and replace.
+For the modern LSTM carry expression
+$c_t=f_t\odot c_{t-1}+i_t\odot\tilde c_t$, holding the gate and candidate
+values fixed leaves a direct derivative $\operatorname{diag}(f_t)$.
+The total derivative can also include paths through those values.
+
+This direct path explains the motivation, not a promise of perfect memory:
+forget factors below one can still attenuate information.
+[Chapter I.10](/elementa/neural-networks/gating) owns the gate equations and their
+full backward pass. Here the requirement is to understand the failure they
+were designed to address.

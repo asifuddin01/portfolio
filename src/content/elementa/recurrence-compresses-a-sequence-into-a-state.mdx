@@ -1,58 +1,182 @@
 ---
 chapter: neural-networks--recurrence
 proposition: 1
-statement: A recurrent network compresses everything it has read into one fixed-width state.
-claim: "A recurrence carries a vector forward one step at a time. Its width does not grow with the sequence, so the whole of the past has to fit through it at every step."
+statement: A recurrent network carries its past in a fixed-width state.
+claim: "One transition is reused at every position. The state changes as inputs arrive; the parameters do not change until the optimiser updates them."
 given:
   - a-tensor-carries-its-meaning-in-its-shape
 figure: FigRecurrentState
+figureType: C
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
   - title: "Finding Structure in Time (Elman, 1990)"
     url: https://doi.org/10.1207/s15516709cog1402_1
   - title: "Sequence to Sequence Learning with Neural Networks"
     url: https://arxiv.org/abs/1409.3215
+  - title: "RNN: shapes and bias conventions"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.RNN.html
 ---
 
-## Demonstration
+## The state changes; the rule is shared
 
-The recurrence, in full:
+Read a sentence one word at a time. After each word, the model needs something
+to carry into the next step. A recurrent neural network makes that something
+a vector. It does not allocate a new parameter matrix for the next word.
 
-```
-hₜ = f(hₜ₋₁, xₜ)
-```
+For one sequence, use column vectors $\vec x_t\in\mathbb R^D$ and
+$\vec h_t\in\mathbb R^H$. Let the output have $C$ coordinates:
 
-One function, applied repeatedly. The same weights at every step, which is what
-lets the model handle sequences of any length: there is no per-position
-parameter to run out of.
+<Eq id="I.9.1" gloss="The parameters are shared across time; the activations are not.">
 
-Two properties fall out, and they are the two that decided the field.
+$$
+\begin{aligned}
+\vec a_t&=\mat U\vec x_t+\mat W\vec h_{t-1}+\vec b,\\
+\vec h_t&=\tanh(\vec a_t),\\
+\vec z_t&=\mat V\vec h_t+\vec c.
+\end{aligned}
+$$
 
-**The state is a bottleneck of fixed width.** Whatever the model has read —
-three tokens or three thousand — is represented in a vector of the same size.
-Early sequence-to-sequence translation systems encoded an entire source sentence
-into one such vector and decoded from it, and their quality degraded with
-sentence length in exactly the way this predicts. Attention was introduced,
-originally, as a way around this specific bottleneck rather than as a general
-architecture.
+</Eq>
 
-**The path between distant positions is long.** For position *t* to be
-influenced by position *s*, the signal must pass through *t − s* applications of
-*f*. Path length grows with distance, and the next proposition is about what
-happens to a gradient travelling along it.
+Here $\mat U$ is $H$ by $D$, $\mat W$ is $H$ by $H$, and $\mat V$ is $C$ by $H$.
+The biases have widths $H$ and $C$. The initial state $\vec h_0$ is specified
+separately, usually zero for an independent sequence. A learned initial state
+is also possible, but then it is another parameter.
 
-There is a third property that is about hardware rather than mathematics, and it
-turned out to matter most. Because *hₜ* requires *hₜ₋₁*, the steps cannot be
-computed in parallel. On a processor built for thousands of simultaneous
-multiplications, a model that insists on doing one thing at a time is using a
-small fraction of the machine. This is the constraint that attention removes,
-and removing it is most of why transformers won.
+The figure unrolls (I.9.1). Each box is an application of the same cell,
+not a separately trained layer. Backpropagation sees several uses of one
+matrix and adds their contributions.
 
-## Corollary
+A scalar linear version makes the distinction visible. Set the activation
+to the identity, $u=1$, $w=1/2$, $b=0$, and $h_0=0$.
+Inputs $(1,2,0)$ produce states $(1,5/2,5/4)$.
+There are three states but still only one $w$.
+[I.9.B01](/elementa/neural-networks/recurrence/problems/b01) completes the
+readout and loss.
 
-Recurrence is not obsolete; it is differently priced. Constant memory per step
-and no quadratic term make it attractive for streaming and for very long
-sequences, which is why state-space models revisit the same structure with
-parallel-scan training. What was abandoned was the sequential training loop, not
-the idea of a carried state.
+## Which outputs are supervised?
+
+For a sequence classifier, the readout can use the last valid state.
+For a tagger, each position has an output. For next-token prediction,
+the output after reading $x_t$ predicts $x_{t+1}$, not the token it has just seen.
+
+The chosen objective matters:
+
+<Eq id="I.9.2" gloss="A mask removes padded loss terms; dividing by valid positions fixes the reduction.">
+
+$$
+\begin{aligned}
+\mathcal L_{\mathrm{sum}}&=\sum_{t=1}^T\ell_t(\vec z_t,\vec y_t),\\
+\mathcal L_{\mathrm{masked}}&=
+\frac{\sum_t m_t\ell_t(\vec z_t,\vec y_t)}
+{\sum_t m_t}.
+\end{aligned}
+$$
+
+</Eq>
+
+In (I.9.2), $m_t$ is one for a real position and zero for padding, and the
+denominator must be positive. For a batch, the sums can include both examples
+and positions. Averaging each sequence first instead gives each sequence equal
+weight regardless of length. Neither reduction can be silently substituted
+for the other.
+
+A final-state loss is the sum form with only the final valid term present.
+For categorical outputs, $\vec z_t$ contains logits and the loss is
+cross-entropy, as in I.4. A regression readout needs a different loss.
+Recurrence does not choose it for you.
+
+## Padding is an operation, not an empty space
+
+A zero input still applies $\mat W\vec h+\vec b$. It can change the state.
+Masking the padded loss alone therefore does not make the padded state safe
+to use as the sequence representation.
+
+For a right-padded independent sequence, one possible update is
+
+$$
+\begin{aligned}
+\tilde{\vec h}_t&=\tanh(\mat U\vec x_t+\mat W\vec h_{t-1}+\vec b),\\
+\vec h_t&=m_t\tilde{\vec h}_t+(1-m_t)\vec h_{t-1}.
+\end{aligned}
+$$
+
+The inactive branch copies the previous state. Alternatively, process only
+valid positions with a packed representation or gather the last valid output.
+These choices must agree with the task; a missing observation in a real
+time series is not automatically equivalent to end-of-sequence padding.
+
+Reset states between unrelated examples. Carry them between chunks only
+when the chunks continue the same stream, with batch rows preserving that
+identity. Detaching a carried state changes its derivative, not its value.
+The next proposition explains why that distinction affects training.
+
+## What fixed width does and does not imply
+
+A final-state encoder asks one vector to retain everything useful for the
+decoder. The word *useful* matters. Computing parity of a binary history needs
+one bit of state; reconstructing every bit needs much more.
+
+For a finite-precision state with at most $p$ bits per coordinate, there are at
+most $2^{pH}$ distinct states. More than $pH$ binary inputs give more histories
+than states. By counting, two histories must collide. If all future processing
+receives only this state, it cannot distinguish that pair under identical future
+inputs. This proves I.9.T3 under its finite-precision premise, not a universal
+impossibility theorem for ideal real-valued computation.
+
+An encoder exposing all its intermediate states to attention no longer asks
+the decoder to use only the final one. That is a change in accessible memory.
+The original sequence-to-sequence system of Sutskever and colleagues is a useful
+example of a fixed-vector encoder; it is not evidence that every long sentence
+must fail.
+
+## Compute and storage are different budgets
+
+For a dense single-layer cell with all time-step readouts, the main matrix
+products cost $O(T(HD+H^2+CH))$ per sequence. The parameter count is
+
+$$
+HD+H^2+H+CH+C,
+$$
+
+independent of $T$. Ordinary nonlinear recurrence still has $T$ dependent
+forward steps. Operations within one step and across batch examples can run
+in parallel; the claim is not that an RNN uses only one processor.
+
+Streaming inference can retain only the current $H$-wide state, apart from
+parameters, buffers and any outputs the application stores. Ordinary full
+backpropagation keeps activations across time, using memory proportional to
+$TH$ for the hidden states alone. Checkpointing trades some storage for
+recomputation. Do not advertise constant training memory using an inference
+calculation.
+
+[I.9.B04](/elementa/neural-networks/recurrence/problems/b04) gives a shape and
+cost audit. Framework conventions need a second check: PyTorch's documented
+RNN uses separate input and recurrent biases. Equation (I.9.1) combines them
+into one $\vec b$, so its parameter count is not the framework's two-bias count.
+
+## Reproduce a small nonlinear forward pass
+
+This example uses one scalar tanh state. Nothing is trained yet.
+
+~~~python
+from math import tanh
+
+def states(xs, u=0.5, w=0.5, b=0.0, h0=0.0):
+    hs = [h0]
+    for x in xs:
+        hs.append(tanh(u*x + w*hs[-1] + b))
+    return hs
+
+h = states([1.0, 2.0, 0.0])
+for t, value in enumerate(h):
+    print(t, f"{value:.6f}")
+assert all(-1.0 < value < 1.0 for value in h)
+~~~
+
+The test script attached to
+[I.9.B01](/elementa/neural-networks/recurrence/problems/b01) runs this same
+recurrence. It also checks a nonlinear backward pass against finite differences,
+including multiple output losses. A plausible-looking sequence of states is
+not enough to validate the gradient.

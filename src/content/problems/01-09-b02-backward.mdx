@@ -1,0 +1,124 @@
+---
+id: "I.9.B02"
+kind: problem
+chapter: "I.9"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Every use of a weight contributes"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+<Statement>
+Derive backpropagation through time and compute every parameter gradient for
+the forward pass in I.9.B01.
+</Statement>
+
+<Given>
+Use (I.9.1) and a sum of per-step losses for the derivation. For the numerical
+case use the linear scalar cell, inputs $(1,2,0)$, $h_0=0$,
+$(u,w,b,v,c)=(1,1/2,0,2,0)$, and final target one.
+</Given>
+
+<Find>
+The recurrent backward rule, the shared-weight accumulation rule, all five
+scalar parameter gradients, input derivatives and initial-state derivative.
+</Find>
+
+<Strategy>
+First add the two incoming backward signals at each state. Differentiate
+the activation, then accumulate the local parameter contributions.
+Specialise to the identity activation only after deriving the tanh rule.
+</Strategy>
+
+<Solution>
+
+The readout at time $t$ contributes $\mat V^{\mathsf T}\vec e_t$ to its state.
+The next cell contributes $\mat W^{\mathsf T}\vec\delta_{t+1}$.
+Multiplying their sum by the coordinatewise tanh derivative gives (I.9.3).
+
+For a shared recurrent-weight entry $W_{ij}$, the local differential is
+$d a_{t,i}=h_{t-1,j}\,dW_{ij}$. Summing all uses gives
+
+$$
+\frac{\partial\mathcal L}{\partial W_{ij}}
+=\sum_t\delta_{t,i}h_{t-1,j}.
+$$
+
+This is the entrywise derivation of (I.9.4), not an average over time.
+If the objective is an average, its factor is already in $\vec e_t$.
+
+In the linear example, $z_3-y=3/2$ and the activation derivative is one.
+Only the final readout has a loss. Starting from the end,
+
+$$
+\begin{aligned}
+\delta_3&=v(z_3-y)=3,\\
+\delta_2&=w\delta_3=3/2,\\
+\delta_1&=w\delta_2=3/4.
+\end{aligned}
+$$
+
+The local contributions to $w$ are therefore $0$, $3/2$ and $15/2$:
+
+$$
+\begin{aligned}
+\partial_w\mathcal L
+ &=\delta_1h_0+\delta_2h_1+\delta_3h_2=9,\\
+\partial_u\mathcal L
+ &=\delta_1x_1+\delta_2x_2+\delta_3x_3=15/4,\\
+\partial_b\mathcal L&=\delta_1+\delta_2+\delta_3=21/4,\\
+\partial_v\mathcal L&=(z_3-y)h_3=15/8,\\
+\partial_c\mathcal L&=z_3-y=3/2.
+\end{aligned}
+$$
+
+Input derivatives are $u\delta_t$, giving $(3/4,3/2,3)$.
+The initial-state derivative is $w\delta_1=3/8$.
+We compute the latter even though this example does not optimise $h_0$.
+
+For an independent algebraic check, with $b=c=h_0=0$ the final state is
+$h_3=u(w^2+2w)$. Thus
+$\partial_w z_3=vu(2w+2)=6$, and
+$\partial_w\mathcal L=(3/2)6=9$.
+
+The reproduction script perturbs each parameter by $10^{-6}$, recomputes the
+full forward loss and compares central differences with the analytic
+derivative. It additionally checks tanh cells with losses at multiple steps
+and a two-coordinate state with non-symmetric recurrent weights. The latter
+catches transpose errors that a scalar example cannot.
+
+The script and run command are in the numeric check on
+[I.9.B01](/elementa/neural-networks/recurrence/problems/b01).
+
+</Solution>
+
+<Answer>
+In the order $(u,w,b,v,c)$ the gradient is
+$(3.75,9,5.25,1.875,1.5)$. All three time steps contribute to the same
+parameter objects.
+</Answer>
+
+<CheckSanity>
+Since $h_0=0$, the first local $w$ contribution is zero, but the first input
+still receives a nonzero derivative. “This use contributes zero” does not
+mean “this time step is disconnected.”
+</CheckSanity>
+
+<Breaks>
+Updating parameters inside the backward sweep would mix derivatives of
+different forward computations. Accumulate first, then take one optimiser
+step. A detached boundary also removes terms and must be tested as a
+different graph.
+</Breaks>
+
+<Variation>
+If all three time steps had local output losses, replace each zero local
+readout derivative by its actual value in (I.9.3). The future term remains;
+local supervision does not replace it.
+</Variation>

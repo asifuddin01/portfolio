@@ -1,0 +1,17 @@
+B01 states: 1.000000 2.500000 1.250000; loss: 1.125000
+B02 du dw db dv dc: 3.750000 9.000000 5.250000 1.875000 1.500000
+Finite differences: linear/tanh, local/final losses, inputs, h0, matrix W PASS
+B03 norms: 4.031129 4.007805; step-10 first: 0.078125
+B04 parameters: 57; MACs: 1200; hidden bytes: 480
+B05 full dw/du: 9.000000 3.750000; detached: 7.500000 0.000000
+X01 final states: 2.500000 2.000000
+X02 delta/returned: 3.200000 1.600000; 0.099500 0.049750
+X03 h3: 1.250000; dh3/dw: 3.000000
+X04 products: 0.0000225393 1.000000 2619.995644; alternating: 1.000000
+X05 factor norms: 2 2; product norm: 0.5; upper bound: 4
+X06 padded/masked: 1 2; reset/carried: 1 2
+X07 clipped: 3 4; step norm: 0.5; coordinate norm: 7.071068
+X08 state bits: 64; history bits: 65; parity states: 2
+X09 position-one states: 2.750000 3.750000
+X10 spans: 15 63 127; even-only span/count: 13 7
+Tanh forward: 0.000000 0.462117 0.842886 0.398145

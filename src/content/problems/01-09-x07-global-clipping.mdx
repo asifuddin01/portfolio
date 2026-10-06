@@ -1,0 +1,42 @@
+---
+id: "I.9.X07"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Clip the whole gradient once"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+A two-parameter gradient is $g=(6,8)$.
+Use global norm threshold $\tau=5$ and plain gradient-descent step size
+$\eta=0.1$. Find the clipped gradient and update norm.
+Compare clipping each coordinate to the interval $[-5,5]$.
+
+<Hint>
+The original Euclidean norm is ten. Global clipping uses one scale
+factor for both entries.
+</Hint>
+
+<SolutionToggle>
+
+Equation (I.9.7) scales both coordinates by $5/10$.
+The clipped gradient is $(3,4)$, with norm five.
+The update is $(-0.3,-0.4)$, with norm $0.5=\eta\tau$.
+
+Coordinate clipping instead gives $(5,5)$, whose norm is
+$\sqrt{50}\approx7.071068$. It changes direction and exceeds the proposed
+global threshold. It is a valid different rule, not an implementation of
+global norm clipping.
+
+When the original norm is already below five, the global rule leaves it
+unchanged. A zero vector also stays zero; handle that case without dividing
+by zero. Neither rule repairs a non-finite gradient.
+
+</SolutionToggle>

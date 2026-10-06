@@ -1,0 +1,112 @@
+---
+id: "I.9.B03"
+kind: problem
+chapter: "I.9"
+scope: chapter
+variant: counterexample
+difficulty: 3
+title: "Small eigenvalues can hide a large transient"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+<Statement>
+Disprove the claim that recurrent eigenvalues below one prevent every
+finite-time amplification.
+</Statement>
+
+<Given>
+Consider the linear state update $\vec h_t=\mat W\vec h_{t-1}$ with
+
+$$
+\mat W=\begin{bmatrix}1/2&4\\0&1/2\end{bmatrix}.
+$$
+
+Both eigenvalues are $1/2$. Use Euclidean vector norms and let
+$\vec e_2=(0,1)^{\mathsf T}$.
+</Given>
+
+<Find>
+A formula for $\mat W^n$, its effect on $\vec e_2$, and why this does not
+contradict eventual decay or the norm bound (I.9.6).
+</Find>
+
+<Strategy>
+Write $\mat W=(1/2)\mat I+\mat N$. Since $\mat N^2=0$, only two terms
+survive in the binomial expansion.
+</Strategy>
+
+<Solution>
+
+For integer $n\geq1$,
+
+$$
+\begin{aligned}
+\mat W^n
+ &=2^{-n}\mat I+n\,2^{-(n-1)}\mat N\\
+ &=\begin{bmatrix}
+ 2^{-n}&4n\,2^{-(n-1)}\\
+ 0&2^{-n}
+ \end{bmatrix}.
+\end{aligned}
+$$
+
+It follows that
+
+$$
+\begin{aligned}
+\mat W\vec e_2&=(4,1/2)^{\mathsf T},\\
+\mat W^2\vec e_2&=(4,1/4)^{\mathsf T}.
+\end{aligned}
+$$
+
+Their norms are approximately $4.031129$ and $4.007805$,
+although the initial vector has norm one.
+At ten steps the first coordinate is $0.078125$ and the second is
+$0.0009765625$.
+
+The matrix is non-normal: it does not commute with its transpose.
+Its eigenvalue magnitudes describe the eventual exponential rate, not a
+uniform bound on every finite power. The off-diagonal term introduces a
+factor of $n$ before the exponential decay wins.
+Both $2^{-n}$ and $n2^{-(n-1)}$ tend to zero, so $\mat W^n$ eventually
+tends to the zero matrix.
+
+Backward propagation uses $(\mat W^n)^{\mathsf T}$. Its spectral norm equals
+that of $\mat W^n$, so a backward direction can be amplified too. For example,
+$\mat W^{\mathsf T}(1,0)^{\mathsf T}=(1/2,4)^{\mathsf T}$.
+
+There is no conflict with (I.9.6).
+Indeed $\|\mat W\|_2\geq\|\mat W\vec e_2\|_2>4$.
+The eigenvalue $1/2$ is not a valid replacement for the factor norm in that
+inequality.
+
+</Solution>
+
+<Answer>
+Eigenvalues inside the unit circle permit substantial transient
+amplification. Here a unit perturbation grows by more than four in one step,
+then ultimately decays.
+</Answer>
+
+<CheckSanity>
+At $n=1$ the power formula returns the supplied matrix. At $n=2$ its
+off-diagonal entry is four, matching direct multiplication.
+</CheckSanity>
+
+<Breaks>
+For a nonlinear cell the temporal Jacobians can change at every step.
+A formula for powers of one fixed matrix is then insufficient.
+Even a large product norm only guarantees an amplified direction, not that
+the actual loss gradient points along it.
+</Breaks>
+
+<Variation>
+Set the off-diagonal entry to zero. The matrix becomes $(1/2)\mat I$,
+and every vector contracts by $2^{-n}$ after $n$ steps. Identify the term
+responsible for the transient in the original example.
+</Variation>

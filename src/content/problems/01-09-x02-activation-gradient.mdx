@@ -1,0 +1,46 @@
+---
+id: "I.9.X02"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: gradient
+difficulty: 1
+title: "Do not forget the activation derivative"
+depends:
+  - "I.9.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+A scalar tanh cell has current output $h_t=0.6$, recurrent weight $w=0.5$,
+and total upstream state derivative $q_t=5$. Compute $\delta_t$ and the
+backward contribution to $h_{t-1}$. Repeat for $h_t=0.99$.
+
+<Hint>
+Use $1-h_t^2$, then multiply by $w$ to cross the recurrent edge.
+</Hint>
+
+<SolutionToggle>
+
+For $h_t=0.6$,
+
+$$
+\begin{aligned}
+\delta_t&=5(1-0.6^2)=3.2,\\
+\partial_{h_{t-1}}\mathcal L\big|_{\text{via }t}
+ &=0.5(3.2)=1.6.
+\end{aligned}
+$$
+
+For $h_t=0.99$, the activation factor is $0.0199$.
+Thus $\delta_t=0.0995$ and the returned contribution is $0.04975$.
+The weight and upstream signal are unchanged; saturation alone
+greatly reduces what travels back.
+
+If the earlier state has its own local loss, that separate derivative
+must also be added. These numbers describe the path through step $t$,
+not every possible contribution to the earlier state.
+
+</SolutionToggle>

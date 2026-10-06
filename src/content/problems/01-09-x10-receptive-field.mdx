@@ -1,0 +1,57 @@
+---
+id: "I.9.X10"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "A wide span can still contain holes"
+depends:
+  - "I.9.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+A stride-one causal convolution stack uses width three and dilations
+$1,2,4,\ldots$. Compute the receptive-field span after three layers.
+How many such layers are needed for a span of at least 100?
+Now replace the first three dilations by $(2,2,2)$. Does its span equal
+its number of distinct visible input positions?
+
+<Hint>
+Use (I.9.8), then enumerate sums of offsets in $\{0,d,2d\}$.
+</Hint>
+
+<SolutionToggle>
+
+For doubling dilations,
+
+$$
+R_L=1+2(2^L-1)=2^{L+1}-1.
+$$
+
+Three layers give $R_3=15$.
+Five give $63$, which is too small; six give $127$, which is sufficient.
+For this schedule all integer offsets from zero through $R_L-1$ are
+reachable: adding offsets $0,d,2d$ to the previous contiguous range
+produces overlapping ranges at each layer.
+
+For $(2,2,2)$ the span is $1+2(2+2+2)=13$.
+But only even offsets are reachable:
+
+$$
+\{0,2,4,6,8,10,12\}.
+$$
+
+That is seven positions inside a span of thirteen.
+Every path adds even offsets, so odd offsets cannot appear, however the
+weights are trained.
+
+These counts describe structural access for an interior output with enough
+history. Near the sequence start, part of the field is padding. Zero learned
+weights can further reduce actual influence. A receptive field is a set of
+possible dependencies, not a guarantee of information use.
+
+</SolutionToggle>

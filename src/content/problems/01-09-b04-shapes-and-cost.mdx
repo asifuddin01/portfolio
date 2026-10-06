@@ -1,0 +1,103 @@
+---
+id: "I.9.B04"
+kind: problem
+chapter: "I.9"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "Separate parameters, states and matrix products"
+depends:
+  - "I.9.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+<Statement>
+Audit a batched recurrent model before confusing sequence length with model size.
+</Statement>
+
+<Given>
+A single-layer, unidirectional tanh RNN uses batch size $N=4$, sequence length
+$T=6$, input width $D=3$, hidden width $H=5$ and output width $C=2$.
+Use (I.9.1), one combined hidden bias, a fixed zero initial state,
+and a readout at every step. Store a batch of inputs as $(N,T,D)$.
+</Given>
+
+<Find>
+Tensor shapes, trainable parameter count, main matrix-product
+multiply-accumulates, and storage for the $T$ hidden states in float32.
+</Find>
+
+<Strategy>
+Keep the column-vector mathematical convention for a single example.
+For batched rows, transpose the weight matrices in the implementation.
+Count each shared matrix once.
+</Strategy>
+
+<Solution>
+
+| Quantity | Shape |
+| --- | --- |
+| Inputs | $(4,6,3)$ |
+| One input slice $X_t$ | $(4,3)$ |
+| $U$, $W$, $b$ | $(5,3)$, $(5,5)$, $(5)$ |
+| One state batch $H_t$ | $(4,5)$ |
+| All hidden outputs | $(4,6,5)$ |
+| $V$, $c$ | $(2,5)$, $(2)$ |
+| All readouts | $(4,6,2)$ |
+
+The row-batch form of the preactivation is
+$X_tU^{\mathsf T}+H_{t-1}W^{\mathsf T}+b$.
+Writing $X_tU$ would try to multiply $(4,3)$ by $(5,3)$, whose inner
+dimensions disagree.
+
+The parameter count is
+
+$$
+\begin{aligned}
+HD+H^2+H+CH+C
+ &=15+25+5+10+2\\
+ &=57.
+\end{aligned}
+$$
+
+Each example-step needs $HD+H^2+CH=50$ multiply-accumulates for the main
+matrix products. There are $NT=24$ example-steps, giving $1200$ such
+multiply-accumulates. Counting each multiplication and addition separately
+gives about $2400$ operations for those products only. Bias additions,
+activations, losses and backward work are excluded.
+
+The hidden outputs contain $NTH=120$ scalars. Four bytes each gives $480$
+bytes. This is not total training memory: inputs, readouts, other saved
+values, parameters, gradients and optimiser state also need storage.
+Streaming inference can instead retain the current $NH=20$ state scalars,
+or $80$ bytes for that state alone.
+
+</Solution>
+
+<Answer>
+There are $57$ parameters, $1200$ main-product multiply-accumulates,
+and $480$ bytes of hidden-output storage under the stated conventions.
+All output logits have shape $(4,6,2)$.
+</Answer>
+
+<CheckSanity>
+Doubling $T$ doubles these products and stored hidden outputs, but leaves
+the parameter count unchanged. Doubling $H$ makes the recurrent matrix
+four times as large.
+</CheckSanity>
+
+<Breaks>
+A two-bias implementation adds another $H=5$ parameters, giving $62$.
+A learned initial state adds its own parameters. Bidirectionality and
+additional layers change the calculation again; the number 57 is not a
+universal RNN count.
+</Breaks>
+
+<Variation>
+Suppose only the final state is read out. The recurrent products still cost
+$NT(HD+H^2)=960$ multiply-accumulates, but readout products cost only
+$NCH=40$, for a total of $1000$. The parameter count is unchanged.
+</Variation>

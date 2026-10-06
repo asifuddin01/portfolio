@@ -1,0 +1,44 @@
+---
+id: "I.9.X09"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "A backward encoder can see the answer"
+depends:
+  - "I.9.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+A backward linear encoder obeys
+$\overleftarrow h_t=x_t+0.5\overleftarrow h_{t+1}$ with terminal state
+$\overleftarrow h_4=0$. Compute its state at position one for
+$(1,2,3)$, then for $(1,2,7)$.
+Could a representation containing that state be used unchanged to predict
+the next token causally after reading only position one?
+
+<Hint>
+Evaluate from position three to position one.
+</Hint>
+
+<SolutionToggle>
+
+For $(1,2,3)$ the backward states at positions three, two and one are
+$3$, $3.5$ and $2.75$.
+For $(1,2,7)$ they are $7$, $5.5$ and $3.75$.
+
+Position one's representation changes even though the observed prefix
+$(1)$ is identical. It depends on the future.
+Using it unchanged for causal next-token prediction leaks information that
+would be unavailable at generation time.
+
+A bidirectional encoder is appropriate when the full input is already
+observed, such as tagging a completed sentence. The objection is to
+using future context for a task whose information boundary forbids it,
+not to bidirectional encoding itself.
+
+</SolutionToggle>

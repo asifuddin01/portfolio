@@ -1,45 +1,45 @@
 ---
-/**
- * Book I, Ch. IV, Prop. 2 — the same product, three multipliers. A gradient
- * carried back through many steps is a product of many factors, and a product
- * of many factors is almost never near one.
- */
+/** I.9.P02: scalar constant-factor examples, not a general matrix theorem. */
 const SERIES = [
-  { r: 0.7, cls: 's1', lab: '0.7 — vanishes', col: 'var(--lesion-ves)' },
-  { r: 1.0, cls: 's4', lab: '1.0 — steady',   col: 'var(--lesion-cws)' },
-  { r: 1.3, cls: 's2', lab: '1.3 — explodes', col: 'var(--lesion-ma)' },
+  { r: 0.7, cls: 's1', lab: 'r = 0.7', col: 'var(--lesion-ves)' },
+  { r: 1.0, cls: 's4', lab: 'r = 1.0', col: 'var(--lesion-cws)' },
+  { r: 1.3, cls: 's2', lab: 'r = 1.3', col: 'var(--lesion-ma)' },
 ];
 const N = 16;
-const y = (v: number) => 210 - (84 * Math.log10(Math.max(v, 1e-6))) / 1.6;
+const x = (k: number) => 72 + k * 26;
+const y = (logValue: number) => 146 - 30 * logValue;
 ---
-<svg class="fig" viewBox="0 0 720 320" role="img" aria-labelledby="vg-t vg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 620px">
-  <title id="vg-t">A gradient carried back through many steps</title>
+<svg class="fig" viewBox="0 0 520 310" role="img" aria-labelledby="vg-t vg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 300px">
+  <title id="vg-t">Constant scalar Jacobian factors over sixteen steps</title>
   <desc id="vg-d">
-    Three curves on a logarithmic scale showing a repeated multiplication over
-    sixteen steps. A factor below one falls away to nothing, a factor above one
-    grows without bound, and only a factor of exactly one holds steady.
+    Three curves show r to the power k, from zero through sixteen steps.
+    On a logarithmic vertical scale, a fixed factor 0.7 decays, 1 stays
+    constant, and 1.3 grows. All curves are shown without clipping.
+    Varying factors and matrix Jacobians require the product analysis in the text.
   </desc>
-
-  <text x="0" y="22" class="t-lab">magnitude after k steps, log scale</text>
-
-  <line x1="60" y1="266" x2="540" y2="266" class="axis" />
-  <line x1="60" y1="266" x2="60" y2="52" class="axis" />
-  <text x="540" y="288" class="t-sm" text-anchor="end">steps back</text>
-
-  {SERIES.map((s) => {
-    const pts = Array.from({ length: N }, (_, k) => {
-      const v = Math.pow(s.r, k);
-      return `${60 + k * 30},${Math.min(264, Math.max(56, y(v)))}`;
-    }).join(' ');
-    return <polyline points={pts} class={s.cls} stroke-width="1.6" />;
-  })}
-
-  {SERIES.map((s, i) => (
+  <text x="0" y="22" class="t-lab">constant scalar factors · magnitude rᵏ</text>
+  {[-3, -2, -1, 0, 1, 2, 3].map((power) => (
     <g>
-      <line x1="576" y1={104 + i * 30} x2="606" y2={104 + i * 30} stroke={s.col} stroke-width="1.8" />
-      <text x="614" y={108 + i * 30} class="t-sm">{s.lab}</text>
+      <line x1="72" y1={y(power)} x2={x(N)} y2={y(power)} class="wire-soft" opacity="0.45" />
+      <text x="62" y={y(power) + 5} class="t-sm" style="font-size: 15px" text-anchor="end">{['0.001', '0.01', '0.1', '1', '10', '100', '1000'][power + 3]}</text>
     </g>
   ))}
-
-  <text x="0" y="312" class="t-sm">Not specific to recurrence: this is what happens to any long product of numbers that are not exactly one.</text>
+  <line x1="72" y1="236" x2={x(N)} y2="236" class="axis" />
+  <line x1="72" y1="236" x2="72" y2="56" class="axis" />
+  {[0, 4, 8, 12, 16].map((k) => (
+    <text x={x(k)} y="257" class="t-sm" style="font-size: 15px" text-anchor="middle">{k}</text>
+  ))}
+  <text x="285" y="277" class="t-sm" style="font-size: 15px" text-anchor="middle">steps back, k</text>
+  {SERIES.map((s) => (
+    <polyline
+      points={Array.from({ length: N + 1 }, (_, k) => x(k) + ',' + y(k * Math.log10(s.r))).join(' ')}
+      class={s.cls} stroke-width="1.8" fill="none"
+    />
+  ))}
+  {SERIES.map((s, i) => (
+    <g>
+      <line x1={35 + i * 168} y1="300" x2={60 + i * 168} y2="300" stroke={s.col} stroke-width="1.8" />
+      <text x={68 + i * 168} y="305" class="t-sm" style="font-size: 16px">{s.lab}</text>
+    </g>
+  ))}
 </svg>

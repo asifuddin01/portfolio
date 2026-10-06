@@ -1,0 +1,45 @@
+---
+id: "I.9.X01"
+kind: exercise
+chapter: "I.9"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Shared weights do not erase order"
+depends:
+  - "I.9.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-9-recurrence-checks.py"
+status: published
+---
+For $h_t=x_t+wh_{t-1}$ with $h_0=0$ and $w=1/2$, compare the final
+states for inputs $(1,2)$ and $(2,1)$. Derive when two inputs $(a,b)$
+can be swapped without changing the final state.
+
+<Hint>
+Write the two final states in terms of $a$, $b$ and $w$ before substituting.
+</Hint>
+
+<SolutionToggle>
+
+The forward order gives $h_2=2+(1/2)1=2.5$.
+The reverse gives $h_2=1+(1/2)2=2$.
+
+Generally the difference is
+
+$$
+(b+wa)-(a+wb)=(1-w)(b-a).
+$$
+
+It is zero when $a=b$ or $w=1$. With $w=1$, this particular linear
+cell sums its inputs, so order is lost. For other $w$, sharing the
+transition does not make the representation permutation-invariant.
+Even $w=0$ retains the final input and therefore distinguishes these
+two orders.
+
+A nonlinear recurrent cell has a different equality condition; do not
+transfer the special sum-cell result to every RNN.
+
+</SolutionToggle>

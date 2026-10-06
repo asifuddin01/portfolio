@@ -292,13 +292,13 @@ export const FIGURES = {
     component: FigRecurrentState,
     caption:
       'A recurrence unrolled. Every step passes a fixed-width state to the next, so the path between two distant positions is as long as the distance between them.',
-    source: 'Book I, Ch. IV, Prop. 1',
+    source: 'Book I, Ch. IX, Prop. 1',
   },
   FigVanishingGradient: {
     component: FigVanishingGradient,
     caption:
-      'A repeated multiplication over sixteen steps. Nothing here is peculiar to recurrence: it is what happens to any long product of numbers that are not exactly one.',
-    source: 'Book I, Ch. IV, Prop. 2',
+      'Constant scalar Jacobian factors over sixteen steps, on a logarithmic scale. These examples isolate decay and growth; varying factors and matrices also depend on their order and direction.',
+    source: 'Book I, Ch. IX, Prop. 2',
   },
   FigGating: {
     component: FigGating,
@@ -309,8 +309,8 @@ export const FIGURES = {
   FigDilation: {
     component: FigDilation,
     caption:
-      'Receptive field growth under stacked dilated convolutions. Range grows exponentially with depth and every position is computed at once — attention buys the same range at depth one.',
-    source: 'Book I, Ch. IV, Prop. 4',
+      'Paths from fifteen inputs to one selected output through width-three centred convolutions with dilations 1, 2 and 4. A causal stack shifts this window into the past. Positions within each layer can be evaluated in parallel when the preceding layer is available.',
+    source: 'Book I, Ch. IX, Prop. 3',
   },
   FigSequenceLineage: {
     component: FigSequenceLineage,
