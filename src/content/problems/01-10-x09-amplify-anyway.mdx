@@ -1,0 +1,46 @@
+---
+id: "I.10.X09"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A forget gate of one half can still amplify"
+depends:
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A scalar LSTM has constant gates $f=i=1/2$ and $o=3/4$, zero input, and a
+candidate $\tilde c_t=\tanh(3h_{t-1})$. The state $c=h=0$ is a fixed point.
+Linearise around it, find the factor by which a small perturbation of $c$
+grows per step, and estimate a perturbation of $10^{-6}$ after twenty steps.
+Does gating remove the need for gradient clipping?
+
+<Hint>
+Near zero, $\tanh u\approx u$. Then $h=\tfrac34\tanh c\approx\tfrac34c$.
+</Hint>
+
+<SolutionToggle>
+
+Near the fixed point, $h_{t-1}\approx\tfrac34c_{t-1}$ and
+$\tilde c_t\approx3h_{t-1}$, so
+
+$$
+c_t\approx\tfrac12c_{t-1}+\tfrac12\cdot3\cdot\tfrac34c_{t-1}=1.625\,c_{t-1}.
+$$
+
+The carry line contributes $0.5$; the path through $h_{t-1}$ and the candidate
+contributes $1.125$. A perturbation of $10^{-6}$ grows to about
+$10^{-6}\cdot1.625^{20}=0.016484$ after twenty steps; the script's nonlinear
+run gives $0.016480$, slightly less because tanh begins to bend.
+
+The same factor multiplies the backward signal, so the gradient through this
+cell grows like $1.625^n$ while the trajectory stays near the origin.
+A forget gate below one does not bound the total Jacobian. Clipping (I.9.7)
+remains a standard part of training gated networks.
+
+</SolutionToggle>

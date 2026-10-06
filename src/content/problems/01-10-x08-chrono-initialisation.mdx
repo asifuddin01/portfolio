@@ -1,0 +1,48 @@
+---
+id: "I.10.X08"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Chrono initialisation"
+depends:
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+Show that the forget bias $b_f=\ln(m-1)$, with all forget weights zero, gives
+$1/(1-f)=m$ exactly. Show that $b_i=-b_f$ then makes each cell coordinate an
+exponential moving average of its candidates. Give $b_f$ for $m=2$, $10$ and
+$100$, and say what goes wrong at $m=1$.
+
+<Hint>
+$\sigma(\ln a)=a/(1+a)$ and $\sigma(-a)=1-\sigma(a)$.
+</Hint>
+
+<SolutionToggle>
+
+With $b_f=\ln(m-1)$, $f=\sigma(\ln(m-1))=(m-1)/m$, so $1-f=1/m$ and
+$1/(1-f)=m$. Equivalently, (I.10.5) gives $1+e^{\ln(m-1)}=m$.
+
+With $b_i=-b_f$, $i=\sigma(-b_f)=1-f$, so
+
+$$
+c_t=f\,c_{t-1}+(1-f)\,\tilde c_t,
+$$
+
+a weighted average whose weights sum to one: an exponential moving average
+of the candidates, with horizon set by $m$.
+
+The biases are $\ln1=0$, $\ln9=2.197225$ and $\ln99=4.595120$. At $m=1$ the
+formula needs $\ln0$: a horizon of one step would require $f=0$, which no
+finite bias produces.
+
+Tallec and Ollivier draw $b_f=\ln u$ with $u$ uniform between $1$ and
+$T_{\max}-1$, so the initial horizons spread from two steps up to the longest
+dependency the task is expected to need.
+
+</SolutionToggle>

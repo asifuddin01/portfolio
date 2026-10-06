@@ -1,0 +1,197 @@
+---
+chapter: neural-networks--gating
+proposition: 3
+statement: A GRU keeps one state and interpolates between keeping it and rewriting it.
+claim: "The update gate weighs the old state against a candidate, so the direct derivative is a diagonal of gate values, as in the LSTM, with fewer parts. Papers and libraries write it two ways: which side the update gate multiplies is a relabelling, but where the reset gate acts changes the function."
+given:
+  - gating-is-a-learned-memory
+figure: FigGruUpdate
+figureType: E
+status: published
+updated: 2026-10-06
+sources:
+  - title: "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation"
+    url: https://arxiv.org/abs/1406.1078
+  - title: "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling"
+    url: https://arxiv.org/abs/1412.3555
+  - title: "GRU: equations, gate order and initialisation"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.GRU.html
+  - title: "Keras GRU: reset_after"
+    url: https://keras.io/api/layers/recurrent_layers/gru/
+  - title: "LSTM: A Search Space Odyssey"
+    url: https://doi.org/10.1109/TNNLS.2016.2582924
+  - title: "Training Very Deep Networks"
+    url: https://arxiv.org/abs/1507.06228
+---
+
+## One state, two gates
+
+The gated recurrent unit, or GRU, was introduced by Cho and colleagues in 2014
+for an encoder–decoder translation model. It drops the separate cell state and
+the output gate. In the form PyTorch documents,
+
+<Eq id="I.10.7" gloss="PyTorch's convention: z near one keeps the old state, and the reset gate acts after the recurrent matrix.">
+
+$$
+\begin{aligned}
+\vec r_t&=\sigma(\mat U_r\vec x_t+\mat W_r\vec h_{t-1}+\vec b_r),\\
+\vec z_t&=\sigma(\mat U_z\vec x_t+\mat W_z\vec h_{t-1}+\vec b_z),\\
+\vec n_t&=\tanh\big(\mat U_n\vec x_t+\vec b_n
+ +\vec r_t\odot(\mat W_n\vec h_{t-1}+\vec b_{hn})\big),\\
+\vec h_t&=(1-\vec z_t)\odot\vec n_t+\vec z_t\odot\vec h_{t-1}.
+\end{aligned}
+$$
+
+</Eq>
+
+The candidate $\vec n_t$ plays the part of the LSTM's $\tilde{\vec c}_t$. The
+update gate $\vec z_t$ splits each coordinate between the old state and the
+candidate. The reset gate $\vec r_t$ decides how much of the old state the
+candidate may read: with $\vec r_t$ near zero, the candidate is computed almost
+as if the sequence had just begun.
+
+Hold the gates and candidate fixed. The direct derivative is
+$\partial\vec h_t/\partial\vec h_{t-1}=\operatorname{diag}(\vec z_t)$, the GRU's
+carry line. It is the LSTM's carry line with two constraints. The amount
+written is tied to the amount kept: $1-\vec z_t$ plays the input gate and
+$\vec z_t$ the forget gate. Greff and colleagues tested this coupling as one
+of their LSTM variants. And there is no output gate, so the carried state is
+the visible state.
+
+That second constraint bounds the state. Each coordinate of $\vec h_t$ is a
+convex combination of the old value and a candidate in $(-1,1)$, so
+$|h_t|\leq\max(|h_{t-1}|,|n_t|)$. A state that starts in $[-1,1]$ stays there.
+That is the GRU half of I.10.T3, proved in
+[I.10.X07](/elementa/neural-networks/gating/problems/x07). The bound concerns
+values; the full derivative has other paths, through $\mat W_r$, $\mat W_z$ and
+$\mat W_n$, exactly as in (I.10.4).
+
+## Read the equation, not the letter
+
+Cho and colleagues wrote $h_t=z\,h_{t-1}+(1-z)\,\tilde h_t$, which is PyTorch's
+convention. Chung and colleagues, comparing gated units later the same year,
+wrote $h_t=(1-z)\,h_{t-1}+z\,\tilde h_t$. In one, $z$ near one keeps; in the
+other, it overwrites.
+
+The two describe the same family of functions. Since
+$1-\sigma(a)=\sigma(-a)$, negating the update gate's weights and bias turns
+one convention into the other exactly. Weights trained under one convention
+and loaded under the other, without that conversion, do something else: with
+$z=0.9$ for ten steps, one reading keeps $0.348678$ of the old state and the
+other $10^{-10}$
+([I.10.X06](/elementa/neural-networks/gating/problems/x06)).
+A diagram labelled “update gate” does not say which. The equation does.
+
+## Where the reset gate acts
+
+The original paper applies the reset gate before the recurrent matrix:
+$\tilde{\vec h}_t=\tanh\big(\mat U\vec x_t+\mat W(\vec r_t\odot\vec h_{t-1})\big)$.
+PyTorch applies it after, as in (I.10.7). Keras offers both through
+`reset_after`, whose default is the after form, described as cuDNN compatible.
+
+The two candidates are $\mat W\operatorname{diag}(\vec r)\vec h$ and
+$\operatorname{diag}(\vec r)\mat W\vec h$. They agree for every $\vec h$ exactly
+when $\mat W$ commutes with $\operatorname{diag}(\vec r)$. Entry by entry,
+that means $W_{jk}(r_k-r_j)=0$: every weight connecting two coordinates with
+different reset values must be zero. A uniform reset satisfies the condition
+for any $\mat W$, and a diagonal $\mat W$ satisfies it for any reset. Otherwise
+the functions differ.
+[I.10.B04](/elementa/neural-networks/gating/problems/b04) gives a two-unit case
+where the same weights, state and gates produce mirror-image candidates.
+
+The after form has a practical reason. The product $\mat W_n\vec h_{t-1}$ no
+longer waits for $\vec r_t$, so all three recurrent products can be computed as
+one $3H$ by $H$ matrix multiplication. It also has a cost in the count: the
+recurrent bias $\vec b_{hn}$ sits inside the reset and cannot be merged with
+$\vec b_n$, which adds $H$ parameters.
+
+## What the parts cost
+
+Count with one bias per gate, the convention of (I.9.1) and (I.10.1):
+
+<Eq id="I.10.8" gloss="Each gated block repeats the cost of a plain recurrent layer.">
+
+$$
+\begin{aligned}
+\text{tanh RNN}&: H(D+H+1),\\
+\text{GRU}&: 3H(D+H+1),\ \text{plus }H\text{ in the reset-after form},\\
+\text{LSTM}&: 4H(D+H+1).
+\end{aligned}
+$$
+
+</Eq>
+
+For $D=3$ and $H=5$ these are $45$, $135$ or $140$, and $180$. PyTorch keeps two
+bias vectors per block, giving $50$, $150$ and $200$. The multiply–accumulate
+count per step scales the same way, $4H(D+H)$ for the LSTM against $H(D+H)$
+for the plain cell.
+
+Equal width is therefore not an equal comparison. At $D=3$ a GRU of width six
+has $3\cdot6\cdot10=180$ parameters, exactly the LSTM's at width five.
+Backpropagation through time also stores more per step: every gate value is
+needed again in (I.10.6).
+[I.10.B05](/elementa/neural-networks/gating/problems/b05) audits shapes, counts
+and storage, and
+[I.10.X10](/elementa/neural-networks/gating/problems/x10) scales the storage to
+a realistic batch.
+
+## Which one to use
+
+The evidence does not crown either. Chung and colleagues found both gated
+units better than a tanh RNN on their polyphonic music and speech-signal
+tasks, and the GRU comparable to the LSTM. Jozefowicz, Zaremba and Sutskever
+evaluated over ten thousand architectures. They found one that beat both on
+some tasks but not all, and found that a forget bias of one closed the LSTM's
+gap to the GRU. Greff and colleagues compared eight LSTM variants and found
+none significantly better than the standard cell; the forget gate and the
+output activation were its most critical parts.
+
+The defensible procedure is a measured one. Compare at matched parameters or
+matched compute, with the forget bias set deliberately, over several seeds,
+on a validation split the comparison did not tune. Choose the GRU when its
+smaller cost matters and it holds its own; choose neither by reputation.
+
+## The same idea across depth
+
+The GRU update is an interpolation between keeping a vector and replacing it.
+Nothing in that idea needs time. Srivastava, Greff and Schmidhuber applied it
+across layers:
+
+$$
+\vec y=\vec g(\vec x)\odot F(\vec x)+(1-\vec g(\vec x))\odot\vec x,
+$$
+
+where $F$ is a layer and $\vec g$ a learned gate. With the gate near zero, a
+highway layer passes its input through, and its Jacobian is close to the
+identity. A residual connection, $\vec y=\vec x+F(\vec x)$, drops the gate and
+keeps the identity path unconditionally: its Jacobian is
+$\mat I+\partial F/\partial\vec x$.
+
+The question this chapter answered for time is the general one. When a deep
+computation trains badly, look for a path from the loss back to the early
+parameters along which the derivative is near the identity. Gating, highway
+layers and residual connections are three answers. The transformer takes the
+third.
+
+## Reproduce the reset counterexample
+
+~~~python
+from math import tanh
+
+W = [[0.0, 1.0], [1.0, 0.0]]
+h, r, z = [0.5, -0.5], [0.75, 0.25], 0.5
+
+def matvec(m, v):
+    return [sum(a*b for a, b in zip(row, v)) for row in m]
+
+before = [tanh(a) for a in matvec(W, [ri*hi for ri, hi in zip(r, h)])]
+after = [tanh(ri*a) for ri, a in zip(r, matvec(W, h))]
+for n in (before, after):
+    new = [(1 - z)*nj + z*hj for nj, hj in zip(n, h)]
+    print(" ".join(f"{v:.6f}" for v in n), "|",
+          " ".join(f"{v:.6f}" for v in new))
+~~~
+
+The first line is the reset-before candidate and new state,
+$(-0.124353,0.358357)$ and $(0.187823,-0.070821)$. The second is the
+reset-after pair, $(-0.358357,0.124353)$ and $(0.070821,-0.187823)$.

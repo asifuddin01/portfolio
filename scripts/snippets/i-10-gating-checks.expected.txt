@@ -1,0 +1,17 @@
+B01 cells: 0.400000 0.300000 0.225000 ; hidden: 0.284962 0.218484 0.165959 ; f=0.99 cell: 0.392040
+Finite differences: 4 gates x (U, W, b), c0 and h0 on a two-unit cell PASS
+B02 factors: 1.221326 1.078827; full dc3/dc1: 1.317600; carry line alone: 0.562500
+B03 f^100, f^1000: 0.366032 4.317125e-05; e-fold 99.499162; half-life 68.967564; f for 100 steps 0.990050, bias 4.600166
+B04 n before: -0.124353 0.358357 ; after: -0.358357 0.124353
+B04 h before: 0.187823 -0.070821 ; after: 0.070821 -0.187823
+B05 one-bias counts RNN/GRU/GRU-after/LSTM: 45 135 140 180; PyTorch: 50 150 200; GRU H=6: 180 / 198
+X01 f: 0.9999546; 1-f: 4.539787e-05; after 1e5 steps: 0.010675; e-fold steps: 22026.97
+X02 sigma(1), sigma(2): 0.731059 0.880797; horizons 3.718282 8.389056; PyTorch bias bound 0.447214
+X03 c200: 20.000000; naive 1-tanh^2: 0.0; sech^2(20): 1.699342e-17; with f=0.9: c200 1.000000, sech^2 0.419974
+X04 gap in h, gate 0.01: 0.009242; next step, gate 0.99: 0.907188
+X05 c after padding: 0.800000; next h leaked/frozen: 0.284962 0.346588
+X06 kept by 0.9^10: 0.348678; by 0.1^10: 1.0e-10
+X07 outside start: 3 1.5 0.75 0.375; inside starts stay inside
+X08 biases for m = 2, 10, 100: 0.000000 2.197225 4.595120
+X09 linear factor: 1.625000; 20 steps from 1e-6: 0.016480; linear prediction 0.016484
+X10 stored bytes RNN/LSTM: 65536000 393216000; MiB 62.5 375.0

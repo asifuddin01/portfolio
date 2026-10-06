@@ -2,52 +2,206 @@
 chapter: neural-networks--gating
 proposition: 1
 statement: A gate gives the gradient a road home that no weight matrix stands on.
-claim: "The LSTM cell state passes through multiplication and addition only. With the forget gate near one, the path is close to the identity, and a gradient crossing it is barely attenuated."
+claim: "The LSTM carries a second state, the cell state, along a line with one multiplication and one addition. Holding the gates fixed, the derivative from one step of that line to the next is a diagonal of forget-gate values."
 given:
   - long-recurrences-vanish-or-explode
 figure: FigGating
+figureType: E
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
   - title: "Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)"
     url: https://doi.org/10.1162/neco.1997.9.8.1735
-  - title: "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling"
-    url: https://arxiv.org/abs/1412.3555
+  - title: "Learning to Forget: Continual Prediction with LSTM (Gers, Schmidhuber and Cummins, 2000)"
+    url: https://doi.org/10.1162/089976600300015015
+  - title: "LSTM: equations, gate order and initialisation"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LSTM.html
 ---
 
-## Demonstration
+## What the last chapter left broken
 
-The LSTM's contribution is not complexity but a particular *shape*. Alongside
-the hidden state it carries a second vector, the cell state *c*, and the only
-operations on the line that carries it are these:
+In I.9 the temporal Jacobian of a tanh cell was
+$\mat A_t=\operatorname{diag}(1-\vec h_t^2)\mat W$.
+A distant loss reaches an early state only through a product of such factors.
+Every factor contains the recurrent matrix, and every factor contains a tanh
+derivative no larger than one. When their norms stay below some $r<1$, the
+signal shrinks at least as fast as $r^{T-s}$.
 
-```
-cₜ = fₜ ⊙ cₜ₋₁  +  iₜ ⊙ c̃ₜ
-```
+A better initialisation of $\mat W$ cannot remove the tanh factor, and it
+cannot keep the trajectory in the unsaturated region. A repair has to change
+the path itself: give the state a route from one step to the next on which
+neither factor appears. The long short-term memory, or LSTM, is that route
+plus the machinery to decide what travels on it.
 
-An elementwise multiply by the forget gate, and an elementwise add of what the
-input gate admits. No matrix multiplication anywhere on that path.
+## Two states and four vectors
 
-Now take the derivative along the carry line: ∂cₜ/∂cₜ₋₁ = *fₜ*. The Jacobian
-of the long product from the previous proposition is a diagonal of gate values
-rather than a full weight matrix. With the gates near one the product is near
-one, and the gradient reaches back across hundreds of steps essentially intact.
-With the gates near zero the model has deliberately discarded that history, and
-the gradient stopping there is correct rather than pathological.
+The LSTM carries two vectors of width $H$: the hidden state $\vec h_t$, as
+before, and a cell state $\vec c_t$. At each step it computes three gates and
+one candidate from the same two inputs:
 
-That is the whole idea, and it is why the initialisation of the forget-gate bias
-to a positive value is a standard trick: it starts the network in the
-remembering regime and lets it learn to forget, rather than the reverse.
+<Eq id="I.10.1" gloss="Each gate reads the current input and the preceding hidden state through its own weights.">
 
-The GRU reaches the same place with fewer parts — one gate interpolating between
-the old state and a candidate, no separate cell line. Empirically the two
-perform comparably on most tasks, which suggests the specific arrangement
-matters less than the presence of a multiplicative path that can be set near
-one.
+$$
+\begin{aligned}
+\vec i_t&=\sigma(\mat U_i\vec x_t+\mat W_i\vec h_{t-1}+\vec b_i),\\
+\vec f_t&=\sigma(\mat U_f\vec x_t+\mat W_f\vec h_{t-1}+\vec b_f),\\
+\vec o_t&=\sigma(\mat U_o\vec x_t+\mat W_o\vec h_{t-1}+\vec b_o),\\
+\tilde{\vec c}_t&=\tanh(\mat U_c\vec x_t+\mat W_c\vec h_{t-1}+\vec b_c).
+\end{aligned}
+$$
 
-## Corollary
+</Eq>
 
-The lesson generalises past recurrence. Whenever a deep computation trains
-badly, ask whether there is an additive or near-identity path from the loss back
-to the early parameters. Gating, residual connections and highway networks are
-three answers to that one question, and the transformer takes the second.
+Each $\mat U$ is $H$ by $D$, each $\mat W$ is $H$ by $H$, and each bias has
+$H$ entries. The logistic function $\sigma$ of I.3 puts every gate coordinate
+strictly between zero and one; the candidate lies strictly between minus one
+and one. The state update is
+
+<Eq id="I.10.2" gloss="The cell state changes by one elementwise multiply and one elementwise add.">
+
+$$
+\begin{aligned}
+\vec c_t&=\vec f_t\odot\vec c_{t-1}+\vec i_t\odot\tilde{\vec c}_t,\\
+\vec h_t&=\vec o_t\odot\tanh(\vec c_t).
+\end{aligned}
+$$
+
+</Eq>
+
+Read the four vectors by what they do. The forget gate $\vec f_t$ decides how
+much of each coordinate of the old cell state survives. The candidate
+$\tilde{\vec c}_t$ proposes new content, and the input gate $\vec i_t$ decides
+how much of it is written. The output gate $\vec o_t$ decides how much of the
+squashed cell state becomes visible as $\vec h_t$, which is what a readout and
+the next step's gates see. Both $\vec c_0$ and $\vec h_0$ must be specified;
+for an independent sequence both are usually zero.
+
+PyTorch writes the candidate as $\vec g_t$ and stacks the four blocks in the
+order input, forget, candidate, output, so its input weight matrix is
+$4H$ by $D$. It also keeps two bias vectors, one added with the input product
+and one with the recurrent product. Equation (I.10.1) uses their sum. That
+difference matters when counting parameters and when setting a bias, as the
+next proposition shows.
+
+## The carry line
+
+Now hold the gate values and the candidate fixed and differentiate the cell
+update with respect to the preceding cell state:
+
+<Eq id="I.10.3" gloss="Holding the gates fixed, the carry line's derivative is a diagonal of forget values.">
+
+$$
+\begin{aligned}
+\frac{\partial\vec c_t}{\partial\vec c_{t-1}}\bigg|_{\text{gates fixed}}
+ &=\operatorname{diag}(\vec f_t),\\
+\prod_{k=s+1}^{T}\operatorname{diag}(\vec f_k)
+ &=\operatorname{diag}(\vec f_{s+1}\odot\cdots\odot\vec f_T).
+\end{aligned}
+$$
+
+</Eq>
+
+Compare this with (I.9.5). Two things have gone. There is no weight matrix on
+the path, so its norm and direction play no part. There is no tanh derivative
+either, because the cell state is not squashed before it is passed on.
+What remains is one number per coordinate per step, between zero and one, and
+the coordinates do not mix: the signal returning along coordinate $j$ is
+scaled only by that coordinate's own forget values.
+
+The figure draws this path. A forget value near one passes the signal almost
+unchanged. A forget value near zero stops it, and that is not a pathology: the
+network has decided that this coordinate's past is no longer needed, and a
+gradient that does not reach a discarded memory is the correct gradient.
+
+The qualifier *gates fixed* matters. The gates themselves depend on
+$\vec h_{t-1}$, and $\vec h_{t-1}$ depends on $\vec c_{t-1}$, so the full
+derivative has further terms. The carry line is a path that exists in every
+LSTM, not the whole derivative. The next proposition counts the rest.
+
+## The constant error carousel
+
+The 1997 LSTM had no forget gate. Its cell kept a self-connection with weight
+fixed at one, so the update was
+$\vec c_t=\vec c_{t-1}+\vec i_t\odot\tilde{\vec c}_t$ and the carry-line
+derivative was exactly one. Hochreiter and Schmidhuber called this the
+constant error carousel: an error signal travelling along it is neither
+attenuated nor amplified, however many steps it crosses. The input gate
+protected the stored value from irrelevant writes; the output gate protected
+the rest of the network from irrelevant reads. Their training procedure also
+truncated the gradient leaving the cell through its gate and input
+connections, so the long-range signal travelled along the carousel alone.
+
+The price was that nothing ever erased the cell. Gers, Schmidhuber and Cummins
+found that on long continual input streams, presented without resets
+between subsequences, the cell state could grow without bound and the network
+broke down. Their remedy was the forget gate, which turned the fixed factor of
+one into a learned factor $f_t$. Every LSTM in current use descends from that
+version. [I.10.X03](/elementa/neural-networks/gating/problems/x03) measures the
+growth they were fixing.
+
+## Write, keep, read
+
+A scalar example shows the three roles separately. Set every recurrent weight
+to zero and make the gates constants through their biases:
+$b_i=0$, $b_f=b_o=\ln3$, so $i=1/2$ and $f=o=3/4$. Let the candidate be
+$\tanh(x_t\ln3)$, so an input of one proposes $0.8$ and an input of zero
+proposes nothing.
+
+Feed the inputs $(1,0,0)$ from zero states. The first step writes half of
+$0.8$, giving $c_1=0.4$. The next two steps write nothing and keep three
+quarters each time: $c_2=0.3$ and $c_3=0.225$. The visible states are
+$h_t=0.75\tanh(c_t)$, or $0.284962$, $0.218484$ and $0.165959$.
+With $f=0.99$ instead, the third cell state is $0.4\cdot0.99^2=0.39204$.
+The value was written once; the forget gate alone decides how long it lasts.
+[I.10.B01](/elementa/neural-networks/gating/problems/b01) works the example.
+
+## Gates are soft, and they read the input
+
+Three consequences of (I.10.1) are easy to lose.
+
+A sigmoid never reaches zero or one. A forget bias of ten gives
+$f=0.9999546$, which still loses about ninety-nine per cent of the carry-line
+signal over a hundred thousand steps
+([I.10.X01](/elementa/neural-networks/gating/problems/x01)). A gate is a
+multiplier the network can push close to an extreme, not a switch.
+
+The gates are recomputed at every step from the input and the visible state.
+The network can therefore keep a coordinate through one stretch of a sequence
+and clear it at a particular event. That decision is learned through the
+same backward pass as everything else.
+
+The output gate can hide the cell. If $\vec o_t$ is small, $\vec h_t$ says
+little about $\vec c_t$, yet the cell still carries its value forward.
+A readout of $\vec h_t$ is therefore not a readout of everything the network
+remembers ([I.10.X04](/elementa/neural-networks/gating/problems/x04)).
+For the same reason a padded step must freeze both states. Freezing
+$\vec h_t$ alone lets the cell move
+([I.10.X05](/elementa/neural-networks/gating/problems/x05)).
+
+## Reproduce three steps
+
+~~~python
+from math import exp, log, tanh
+
+def sig(a):
+    return 1/(1 + exp(-a))
+
+def lstm_step(x, c, h, u, w, b):
+    a = {k: u[k]*x + w[k]*h + b[k] for k in "ifoc"}
+    i, f, o = sig(a["i"]), sig(a["f"]), sig(a["o"])
+    c = f*c + i*tanh(a["c"])
+    return c, o*tanh(c)
+
+u = {"i": 0.0, "f": 0.0, "o": 0.0, "c": log(3)}
+w = dict.fromkeys("ifoc", 0.0)
+b = {"i": 0.0, "f": log(3), "o": log(3), "c": 0.0}
+c = h = 0.0
+for x in (1.0, 0.0, 0.0):
+    c, h = lstm_step(x, c, h, u, w, b)
+    print(f"{c:.6f} {h:.6f}")
+~~~
+
+It prints the three cell and hidden states above. The chapter's reproduction
+script, attached to
+[I.10.B01](/elementa/neural-networks/gating/problems/b01), runs the same cell
+and then checks a full two-unit LSTM backward pass against finite differences.

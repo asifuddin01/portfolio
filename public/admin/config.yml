@@ -128,6 +128,8 @@ collections:
           - FigRecurrentState
           - FigVanishingGradient
           - FigGating
+          - FigForgetDecay
+          - FigGruUpdate
           - FigDilation
           - FigSequenceLineage
           - FigAttentionWeights
@@ -478,6 +480,8 @@ collections:
           - FigRecurrentState
           - FigVanishingGradient
           - FigGating
+          - FigForgetDecay
+          - FigGruUpdate
           - FigDilation
           - FigSequenceLineage
           - FigAttentionWeights
@@ -1129,6 +1133,8 @@ collections:
           - FigRecurrentState
           - FigVanishingGradient
           - FigGating
+          - FigForgetDecay
+          - FigGruUpdate
           - FigDilation
           - FigSequenceLineage
           - FigAttentionWeights

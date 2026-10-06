@@ -1,0 +1,45 @@
+---
+id: "I.10.X07"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "The GRU state stays in the box"
+depends:
+  - "I.10.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+Prove that a GRU in the form (I.10.7) keeps every coordinate of $\vec h_t$ in
+$[-1,1]$ for all $t$ if $\vec h_0$ starts there. Then show the premise
+matters: start a coordinate at $h_0=3$ with $z=0.5$ and candidate $0$.
+
+<Hint>
+A convex combination of two numbers lies between them.
+</Hint>
+
+<SolutionToggle>
+
+Fix a coordinate and write $h_t=z\,h_{t-1}+(1-z)n$ with $z\in(0,1)$ and
+$n=\tanh(\cdot)\in(-1,1)$. By the triangle inequality,
+
+$$
+|h_t|\leq z|h_{t-1}|+(1-z)|n|\leq\max(|h_{t-1}|,|n|).
+$$
+
+If $|h_{t-1}|\leq1$, the right-hand side is at most one, so $|h_t|\leq1$.
+Induction on $t$ from $|h_0|\leq1$ completes the proof. In fact $|h_t|<1$ for
+$t\geq1$, since $1-z>0$ and $|n|<1$.
+
+The argument uses the starting value. With $h_0=3$, $z=0.5$ and $n=0$ the
+states are $3$, $1.5$, $0.75$, $0.375$: outside the box for one step, then
+inside. The same inequality shows $|h_t|\leq\max(|h_0|,1)$ in general.
+
+An LSTM has no such bound on $\vec c_t$, which is why I.10.T3 needs
+forget values below one for the cell.
+
+</SolutionToggle>

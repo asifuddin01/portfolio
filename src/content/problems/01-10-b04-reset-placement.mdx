@@ -1,0 +1,112 @@
+---
+id: "I.10.B04"
+kind: problem
+chapter: "I.10"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "The same weights, two GRUs"
+depends:
+  - "I.10.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+<Statement>
+Show that applying the reset gate before or after the recurrent matrix gives
+different GRUs, and find exactly when the two agree.
+</Statement>
+
+<Given>
+A two-unit GRU step with zero input contribution and zero candidate biases.
+The recurrent candidate matrix swaps coordinates,
+$\mat W_n=\begin{bmatrix}0&1\\1&0\end{bmatrix}$. The preceding state is
+$\vec h_{t-1}=(0.5,-0.5)$. The reset pre-activations are $(\ln3,-\ln3)$ and the
+update pre-activations are zero. Use PyTorch's update,
+$\vec h_t=(1-\vec z_t)\odot\vec n_t+\vec z_t\odot\vec h_{t-1}$, for both.
+</Given>
+
+<Find>
+The gates, both candidates and both new states; then a condition on
+$\mat W_n$ and $\vec r_t$ under which the two placements agree for every state.
+</Find>
+
+<Strategy>
+Compute $\mat W(\vec r\odot\vec h)$ and $\vec r\odot(\mat W\vec h)$ separately.
+For the general condition, write both as products with $\operatorname{diag}(\vec r)$
+and compare entries.
+</Strategy>
+
+<Solution>
+
+The gates are $\vec r=(\sigma(\ln3),\sigma(-\ln3))=(0.75,0.25)$ and
+$\vec z=(0.5,0.5)$. The update gate is the same in both models, so any
+difference comes from the candidate.
+
+**Reset before the matrix,** as in Cho and colleagues:
+$\vec r\odot\vec h=(0.375,-0.125)$, and the swap gives $(-0.125,0.375)$. Hence
+
+$$
+\vec n^{\text{before}}=(\tanh(-0.125),\tanh(0.375))=(-0.124353,0.358357).
+$$
+
+**Reset after the matrix,** as in PyTorch: $\mat W\vec h=(-0.5,0.5)$, then
+$\vec r\odot\mat W\vec h=(-0.375,0.125)$, and
+
+$$
+\vec n^{\text{after}}=(-0.358357,0.124353).
+$$
+
+With $z=1/2$, the new states are the averages of candidate and old state:
+$(0.187823,-0.070821)$ before and $(0.070821,-0.187823)$ after. Same weights,
+same state, same gates, and every coordinate differs by more than $0.1$.
+
+**When they agree.** The candidates' recurrent parts are
+$\mat W\operatorname{diag}(\vec r)\vec h$ and $\operatorname{diag}(\vec r)\mat W\vec h$.
+They agree for every $\vec h$ exactly when the matrices are equal. Their
+$(j,k)$ entries are $W_{jk}r_k$ and $r_jW_{jk}$, so the condition is
+
+$$
+W_{jk}(r_k-r_j)=0\quad\text{for all }j,k.
+$$
+
+A weight joining two coordinates may be nonzero only if their reset values
+are equal. A uniform reset, $\vec r=\rho\vec 1$, satisfies it for every
+$\mat W$; a diagonal $\mat W$ satisfies it for every $\vec r$. The swap matrix
+with unequal resets satisfies neither, which is why this example separates them.
+
+Biases add a second difference. In the after form the recurrent bias
+$\vec b_{hn}$ is inside the reset, $\vec r\odot(\mat W\vec h+\vec b_{hn})$,
+so the reset scales it. In the before form a bias added outside is not scaled.
+Even scalar models differ when that bias is nonzero.
+
+</Solution>
+
+<Answer>
+$\vec r=(0.75,0.25)$, $\vec z=(0.5,0.5)$. Before: candidate $(-0.124353,0.358357)$,
+state $(0.187823,-0.070821)$. After: candidate $(-0.358357,0.124353)$, state
+$(0.070821,-0.187823)$. They agree for all states exactly when
+$W_{jk}(r_k-r_j)=0$ for all $j,k$.
+</Answer>
+
+<CheckSanity>
+The swap matrix moves each coordinate's reset to the other side. Reset before:
+coordinate one's value, scaled by $0.75$, lands in coordinate two. Reset after:
+coordinate two's value lands in coordinate one and is scaled there by
+$0.75$. The mirror-image answers are what that bookkeeping predicts.
+</CheckSanity>
+
+<Breaks>
+The commutation test is for one step with fixed gates. Over a sequence the
+two models also produce different gates, because the gates read states that
+have already diverged. Load a checkpoint into the placement it was trained
+with. The update-gate convention can be converted by negating weights; this
+example gives no such conversion for the reset placement.
+</Breaks>
+
+<Variation>
+Make the reset uniform at $(0.5,0.5)$ and keep the swap matrix. Both forms now
+give the candidate $(\tanh(-0.25),\tanh(0.25))=(-0.244919,0.244919)$.
+</Variation>

@@ -1,0 +1,53 @@
+---
+/** I.10.P02: the carry line's own factor fⁿ for constant forget values. */
+const SERIES = [
+  { f: 0.9, cls: 's1', lab: 'f = 0.9', col: 'var(--lesion-ves)' },
+  { f: 0.99, cls: 's4', lab: 'f = 0.99', col: 'var(--lesion-cws)' },
+  { f: 0.999, cls: 's2', lab: 'f = 0.999', col: 'var(--lesion-ma)' },
+];
+const N = 1000;
+const FLOOR = -4;
+const x = (k: number) => 72 + k * 0.416;
+const y = (logValue: number) => 56 - 45 * logValue;
+// A constant factor is a straight line on a log scale: two points, cut at the floor.
+const end = (f: number) => Math.min(N, FLOOR / Math.log10(f));
+const E_LINE = y(-Math.LOG10E);
+---
+<svg class="fig" viewBox="0 0 520 310" role="img" aria-labelledby="fd-t fd-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 300px">
+  <title id="fd-t">The carry line's factor for three constant forget values</title>
+  <desc id="fd-d">
+    Three straight lines on a logarithmic scale show f to the power n over a
+    thousand steps. With f equal to 0.9 the factor falls below one ten-thousandth
+    before step ninety. With 0.99 it crosses the dashed 1/e line near step one
+    hundred and falls below one ten-thousandth a little after step nine hundred.
+    With 0.999 it reaches 1/e at the right-hand edge.
+  </desc>
+  <text x="0" y="22" class="t-lab">carry-line factor · constant forget value</text>
+  {[0, -1, -2, -3, -4].map((power) => (
+    <g>
+      <line x1="72" y1={y(power)} x2={x(N)} y2={y(power)} class="wire-soft" opacity="0.45" />
+      <text x="62" y={y(power) + 5} class="t-sm" style="font-size: 15px" text-anchor="end">{['1', '0.1', '0.01', '0.001', '10⁻⁴'][-power]}</text>
+    </g>
+  ))}
+  <line x1="72" y1={E_LINE} x2={x(N)} y2={E_LINE} class="dash" />
+  <text x={x(N) + 6} y={E_LINE + 5} class="t-sm" style="font-size: 14px">1/e</text>
+  <line x1="72" y1={y(FLOOR)} x2={x(N)} y2={y(FLOOR)} class="axis" />
+  <line x1="72" y1={y(FLOOR)} x2="72" y2={y(0)} class="axis" />
+  {[0, 250, 500, 750, 1000].map((k) => (
+    <text x={x(k)} y="257" class="t-sm" style="font-size: 15px" text-anchor="middle">{k}</text>
+  ))}
+  <text x="280" y="277" class="t-sm" style="font-size: 15px" text-anchor="middle">steps along the carry line, n</text>
+  {SERIES.map((s) => (
+    <line
+      x1={x(0)} y1={y(0)}
+      x2={x(end(s.f))} y2={y(end(s.f) * Math.log10(s.f))}
+      class={s.cls} stroke-width="1.8"
+    />
+  ))}
+  {SERIES.map((s, i) => (
+    <g>
+      <line x1={35 + i * 168} y1="300" x2={60 + i * 168} y2="300" stroke={s.col} stroke-width="1.8" />
+      <text x={68 + i * 168} y="305" class="t-sm" style="font-size: 16px">{s.lab}</text>
+    </g>
+  ))}
+</svg>

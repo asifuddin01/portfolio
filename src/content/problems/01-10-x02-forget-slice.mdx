@@ -1,0 +1,45 @@
+---
+id: "I.10.X02"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "Which slice is the forget gate?"
+depends:
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A PyTorch `nn.LSTM` has hidden width $H=5$. You want the forget bias to start
+at one. Which entries of `bias_ih_l0` hold the forget gate? What effective
+bias results if you set that slice to one in both `bias_ih_l0` and
+`bias_hh_l0`, and what horizons $1/(1-f)$ do the intended and the actual
+settings give? What range does PyTorch's default leave each bias in?
+
+<Hint>
+PyTorch stacks the gates as input, forget, candidate, output. The two bias
+vectors are added inside every gate.
+</Hint>
+
+<SolutionToggle>
+
+Each bias vector has $4H=20$ entries in four blocks of five. The forget block is
+the second: entries $5$ to $9$, counting from zero. Entries $0$ to $4$ are
+the input gate, so setting them would raise the input gate instead.
+
+The gate computes $\sigma(\cdots+b_{if}+b_{hf})$. Setting both slices to one
+gives an effective bias of two: $f=\sigma(2)=0.880797$ instead of
+$\sigma(1)=0.731059$. By (I.10.5) the horizons are
+$1+e^2=8.389056$ and $1+e=3.718282$ steps. Set one slice to one and the other
+to zero, or split the target between them.
+
+By default PyTorch draws every bias from $U(-1/\sqrt5,1/\sqrt5)$, that is,
+within $\pm0.447214$. The effective forget bias is the sum of two such
+draws, so it lies within $\pm0.894427$, centred on zero: $f$ starts near
+one half. Keras, by contrast, adds one to the forget bias by default.
+
+</SolutionToggle>

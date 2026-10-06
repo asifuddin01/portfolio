@@ -1,0 +1,149 @@
+---
+id: "I.10.B02"
+kind: problem
+chapter: "I.10"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Backpropagation through one LSTM cell"
+depends:
+  - "I.10.P01"
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+<Statement>
+Derive the backward pass of an LSTM step, identify the carry line in it, and
+measure how much of a real derivative the carry line accounts for.
+</Statement>
+
+<Given>
+The cell of (I.10.1) and (I.10.2), with a loss that may read any $\vec h_t$.
+For the numerical part, use the scalar cell of
+[I.10.B01](/elementa/neural-networks/gating/problems/b01) with one change:
+the candidate also reads the hidden state, $\tilde c_t=\tanh(x_t\ln3+2h_{t-1})$.
+Inputs are $(1,0,0)$ from zero states.
+</Given>
+
+<Find>
+The recursions for $\bar{\vec g}_{c,t}$ and the four pre-activation
+derivatives; the derivatives sent to $\vec h_{t-1}$ and $\vec c_{t-1}$; the
+parameter gradients; and, in the scalar case, $\partial c_3/\partial c_1$
+compared with its carry-line term.
+</Find>
+
+<Strategy>
+Draw the arrows leaving $\vec c_t$ and $\vec h_t$, add the returns, and only
+then differentiate the activations. For the scalar part, notice that a
+constant output gate makes $h_t$ a function of $c_t$.
+</Strategy>
+
+<Solution>
+
+**Arrows out of the cell.** The cell state $\vec c_t$ is used twice: by
+$\vec h_t=\vec o_t\odot\tanh(\vec c_t)$, and by the next cell update, where it
+is multiplied by $\vec f_{t+1}$. Reverse mode adds the two returns:
+
+$$
+\bar{\vec g}_{c,t}=\bar{\vec g}_{h,t}\odot\vec o_t\odot(1-\tanh^2\vec c_t)
+ +\bar{\vec g}_{c,t+1}\odot\vec f_{t+1},
+\qquad\bar{\vec g}_{c,T+1}=0.
+$$
+
+Here $\bar{\vec g}_{h,t}$ is already the total for $\vec h_t$: its readout term
+plus everything step $t+1$ returned through its gates.
+
+**Pre-activations.** Write $\vec a_{k,t}$ for the argument of the gate or
+candidate $k$. Differentiating
+$\vec h_t=\vec o_t\odot\tanh\vec c_t$ with respect to $\vec a_{o,t}$, and
+$\vec c_t=\vec f_t\odot\vec c_{t-1}+\vec i_t\odot\tilde{\vec c}_t$ with
+respect to the other three,
+
+$$
+\begin{aligned}
+\vec\delta_{o,t}&=\bar{\vec g}_{h,t}\odot\tanh(\vec c_t)\odot\vec o_t\odot(1-\vec o_t),\\
+\vec\delta_{f,t}&=\bar{\vec g}_{c,t}\odot\vec c_{t-1}\odot\vec f_t\odot(1-\vec f_t),\\
+\vec\delta_{i,t}&=\bar{\vec g}_{c,t}\odot\tilde{\vec c}_t\odot\vec i_t\odot(1-\vec i_t),\\
+\vec\delta_{c,t}&=\bar{\vec g}_{c,t}\odot\vec i_t\odot(1-\tilde{\vec c}_t^2).
+\end{aligned}
+$$
+
+This is (I.10.6). The output gate is the only one that reads
+$\bar{\vec g}_{h,t}$ directly; the other three see the cell's total.
+
+**What goes back one step.** Every pre-activation contains
+$\mat W_k\vec h_{t-1}$, so the recurrent return to $\vec h_{t-1}$ is
+$\sum_{k\in\{i,f,o,c\}}\mat W_k^{\mathsf T}\vec\delta_{k,t}$. The cell one step
+back receives $\bar{\vec g}_{c,t}\odot\vec f_t$, the carry line, which is the
+second term of the next $\bar{\vec g}_{c,t-1}$. At $t=1$ these two quantities
+are the derivatives with respect to $\vec h_0$ and $\vec c_0$.
+
+**Parameters.** Each block is used at every step, so its gradients are sums,
+as in (I.9.4):
+
+$$
+\nabla_{\mat W_k}\mathcal L=\sum_t\vec\delta_{k,t}\vec h_{t-1}^{\mathsf T},\quad
+\nabla_{\mat U_k}\mathcal L=\sum_t\vec\delta_{k,t}\vec x_t^{\mathsf T},\quad
+\nabla_{\vec b_k}\mathcal L=\sum_t\vec\delta_{k,t}.
+$$
+
+**The scalar case.** With constant gates $i=1/2$, $f=o=3/4$, the hidden state
+$h_t=\tfrac34\tanh c_t$ is a function of $c_t$, so the state is $c$ alone and
+the one-step derivative is
+
+$$
+k_t=\frac{\partial c_t}{\partial c_{t-1}}
+=\underbrace{f}_{\text{carry line}}
+ +\underbrace{i\,(1-\tilde c_t^2)\cdot2\cdot o\,(1-\tanh^2c_{t-1})}_{\text{through }h_{t-1}}.
+$$
+
+The forward pass gives $c_1=0.4$, $h_1=0.284962$, then
+$\tilde c_2=\tanh(0.569924)$ and onwards. Evaluating along that trajectory,
+$k_2=1.221326$ and $k_3=1.078827$, so
+
+$$
+\frac{\partial c_3}{\partial c_1}=k_3k_2=1.317600,
+\qquad\text{carry line alone: }f^2=0.5625.
+$$
+
+Expanding $k_3k_2$ gives four terms. Only $f\cdot f$ avoids the recurrent
+weight; the other three each contain it at least once, as I.10.T1 says.
+Here they contribute $0.755100$, more than the carry line.
+
+The reproduction script perturbs $c_1$ by $10^{-6}$, reruns steps two and three,
+and matches $1.317600$ by central differences. It then checks the vector
+recursions above on a two-unit cell with non-symmetric recurrent weights,
+losses at three of four steps and nonzero initial states. All twelve parameter
+blocks, $\vec c_0$ and $\vec h_0$ agree with finite differences.
+
+</Solution>
+
+<Answer>
+$\bar{\vec g}_{c,t}=\bar{\vec g}_{h,t}\odot\vec o_t\odot(1-\tanh^2\vec c_t)+\bar{\vec g}_{c,t+1}\odot\vec f_{t+1}$,
+with the four $\vec\delta$ above, a return of $\sum_k\mat W_k^{\mathsf T}\vec\delta_{k,t}$
+to $\vec h_{t-1}$ and $\bar{\vec g}_{c,t}\odot\vec f_t$ to $\vec c_{t-1}$.
+In the scalar case $\partial c_3/\partial c_1=1.317600$, of which the carry
+line accounts for $0.5625$.
+</Answer>
+
+<CheckSanity>
+Set every recurrent weight to zero. Then $\mat M_t=0$, the hidden-state return
+vanishes, and the derivative between cell states is exactly the product of
+forget values. In the scalar case $k_t=f$ and $\partial c_3/\partial c_1=0.5625$.
+</CheckSanity>
+
+<Breaks>
+Treating $\vec o_t$ as a function of $\vec c_t$ would add a false term:
+the output gate reads $\vec h_{t-1}$ and $\vec x_t$, not the cell. A peephole
+LSTM, which does let gates read the cell, adds genuine terms of that kind and
+needs its own derivation.
+</Breaks>
+
+<Variation>
+Replace the candidate weight two with zero. Both factors become $3/4$ and the
+derivative falls to $0.5625$. The weight did not change the carry line; it
+changed how much signal reached the cell by other routes.
+</Variation>

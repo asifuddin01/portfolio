@@ -33,6 +33,8 @@ import FigContextualisation from '../components/figures/FigContextualisation.ast
 import FigRecurrentState from '../components/figures/FigRecurrentState.astro';
 import FigVanishingGradient from '../components/figures/FigVanishingGradient.astro';
 import FigGating from '../components/figures/FigGating.astro';
+import FigForgetDecay from '../components/figures/FigForgetDecay.astro';
+import FigGruUpdate from '../components/figures/FigGruUpdate.astro';
 import FigDilation from '../components/figures/FigDilation.astro';
 import FigSequenceLineage from '../components/figures/FigSequenceLineage.astro';
 /* Book I, Chapter V — Attention */
@@ -303,8 +305,20 @@ export const FIGURES = {
   FigGating: {
     component: FigGating,
     caption:
-      'A gated cell. The carry line crosses only a multiplication and an addition, so with the forget gate near one the gradient has a route home that no weight matrix attenuates.',
-    source: 'Book I, Ch. IV, Prop. 3',
+      'An LSTM cell. The carry line crosses only a multiplication by the forget gate and an addition of what the input gate admits, so with the forget gate near one the gradient has a route home that no weight matrix attenuates. The output gate decides how much of the cell becomes visible.',
+    source: 'Book I, Ch. X, Prop. 1',
+  },
+  FigForgetDecay: {
+    component: FigForgetDecay,
+    caption:
+      'The carry line\'s own factor for constant forget values 0.9, 0.99 and 0.999 over a thousand steps, on a logarithmic scale. Each crosses the dashed 1/e line within one step of 1/(1 − f). A forget value near one slows the decay; it does not stop it.',
+    source: 'Book I, Ch. X, Prop. 2',
+  },
+  FigGruUpdate: {
+    component: FigGruUpdate,
+    caption:
+      'A GRU in PyTorch\'s convention. The update gate keeps a share z of the old state and writes 1 − z of the candidate, so the direct derivative along the state line is diag(z). Other descriptions swap z and 1 − z, or apply the reset gate before the recurrent matrix.',
+    source: 'Book I, Ch. X, Prop. 3',
   },
   FigDilation: {
     component: FigDilation,

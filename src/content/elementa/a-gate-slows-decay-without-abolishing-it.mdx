@@ -1,0 +1,214 @@
+---
+chapter: neural-networks--gating
+proposition: 2
+statement: A gate slows the decay of a distant gradient; it does not abolish it.
+claim: "The carry line is one path among many. Its own factor is a product of forget values, which still decays geometrically. The other paths bring the recurrent weights back, and can shrink the signal or amplify it."
+given:
+  - gating-is-a-learned-memory
+  - long-recurrences-vanish-or-explode
+figure: FigForgetDecay
+figureType: G
+status: published
+updated: 2026-10-06
+sources:
+  - title: "Learning to Forget: Continual Prediction with LSTM"
+    url: https://doi.org/10.1162/089976600300015015
+  - title: "An Empirical Exploration of Recurrent Network Architectures"
+    url: https://proceedings.mlr.press/v37/jozefowicz15.html
+  - title: "Can Recurrent Neural Networks Warp Time?"
+    url: https://arxiv.org/abs/1804.11188
+  - title: "Keras LSTM: unit_forget_bias"
+    url: https://keras.io/api/layers/recurrent_layers/lstm/
+---
+
+## The state is a pair
+
+The LSTM's state at step $t$ is the pair $(\vec c_t,\vec h_t)$. A perturbation of
+either changes the next step, so the one-step Jacobian has four blocks.
+Differentiate (I.10.1) and (I.10.2) with $\sigma'=\sigma(1-\sigma)$ and
+$\tanh'=1-\tanh^2$:
+
+<Eq id="I.10.4" gloss="Only the top-left block is free of recurrent weights.">
+
+$$
+\begin{aligned}
+\mat J_t&=
+\begin{bmatrix}
+\operatorname{diag}(\vec f_t) & \mat M_t\\
+\mat D_t\operatorname{diag}(\vec f_t) & \mat N_t
+\end{bmatrix},\\[4pt]
+\mat M_t&=\operatorname{diag}\big(\vec c_{t-1}\odot\vec f_t\odot(1-\vec f_t)\big)\mat W_f\\
+&\quad+\operatorname{diag}\big(\tilde{\vec c}_t\odot\vec i_t\odot(1-\vec i_t)\big)\mat W_i\\
+&\quad+\operatorname{diag}\big(\vec i_t\odot(1-\tilde{\vec c}_t^2)\big)\mat W_c,\\[4pt]
+\mat D_t&=\operatorname{diag}\big(\vec o_t\odot(1-\tanh^2\vec c_t)\big),\\
+\mat N_t&=\operatorname{diag}\big(\tanh(\vec c_t)\odot\vec o_t\odot(1-\vec o_t)\big)\mat W_o
+ +\mat D_t\mat M_t.
+\end{aligned}
+$$
+
+</Eq>
+
+The rows are $\vec c_t$ and $\vec h_t$; the columns are $\vec c_{t-1}$ and
+$\vec h_{t-1}$. The top-left block is the carry line of (I.10.3). The block
+$\mat M_t=\partial\vec c_t/\partial\vec h_{t-1}$ collects the three ways the
+preceding hidden state reaches the cell: through the forget gate, the input
+gate and the candidate. The bottom row passes the cell through the output
+nonlinearity and adds the output gate's own dependence on $\vec h_{t-1}$.
+
+Now multiply $\mat J_T\cdots\mat J_{s+1}$ and read the top-left block, which is
+$\partial\vec c_T/\partial\vec c_s$. Expanding the product of block matrices
+gives a sum over paths, one block chosen per step. The path that stays in the
+top-left block at every step contributes
+$\operatorname{diag}(\vec f_{s+1}\odot\cdots\odot\vec f_T)$. Any other path
+leaves the cell row at some step. Since it must end on the cell row, it has
+to return, and the only block from the hidden state to the cell is some
+$\mat M_k$. Every other term therefore contains at least one recurrent matrix.
+That proves I.10.T1.
+
+The theorem guarantees that a weight-free path exists. It does not say that
+path dominates. When the gates and candidate are saturated, the factors
+$\vec f\odot(1-\vec f)$, $\vec i\odot(1-\vec i)$ and $1-\tilde{\vec c}^2$ are
+small, $\mat M_t$ is small, and the carry line carries most of the signal.
+That is the regime the 1997 truncation assumed. Away from it, the other paths
+can be as large as the carry line or larger.
+
+## The carry line still multiplies
+
+Even on its own, the carry line is a product. Suppose a coordinate's forget
+value is the same number $f$ at every step. After $n$ steps its factor is
+$f^n=e^{n\ln f}$. Define the memory horizon $m=-1/\ln f$, the number of steps
+over which the factor falls by $e$.
+
+Apply $\ln x\leq x-1$, with equality only at $x=1$, at $x=f$ and at $x=1/f$.
+The first gives $-\ln f>1-f$; the second gives $-\ln f<(1-f)/f$. Inverting,
+
+<Eq id="I.10.5" gloss="A forget value sets a horizon within one step of 1/(1−f); a bias sets the forget value.">
+
+$$
+\begin{aligned}
+f^n&=e^{-n/m},\qquad
+\frac{f}{1-f}<m<\frac{1}{1-f},\\
+f=\sigma(b)&\implies\frac{1}{1-f}=1+e^{b}.
+\end{aligned}
+$$
+
+</Eq>
+
+The second line uses $1-\sigma(b)=\sigma(-b)=1/(1+e^{b})$. With $b=\ln(m-1)$
+the right-hand side is exactly $m$. That proves I.10.T2.
+
+The figure plots $f^n$ for $f=0.9$, $0.99$ and $0.999$ over a thousand steps.
+The first is gone below $10^{-4}$ before step ninety. The second keeps
+$0.366032$ of its signal after a hundred steps and $4.3\times10^{-5}$ after a
+thousand. The third reaches $1/e$ near the right-hand edge. Each curve is
+still a straight line on the logarithmic scale: the decay is geometric, as
+in I.9. What changed is the rate. It is a learned quantity, set coordinate by
+coordinate, which can sit close to one without asking a weight matrix to have
+norm close to one and without asking any unit to stay unsaturated.
+[I.10.B03](/elementa/neural-networks/gating/problems/b03) works the limit.
+
+## Where the forget bias starts
+
+At initialisation the weights are small, so a forget gate's value is close to
+$\sigma(b_f)$. A zero bias gives $f=1/2$: a horizon of $1/\ln2\approx1.44$
+steps, which forgets almost everything before training has started.
+A bias of one gives $f=0.731059$ and $1/(1-f)=1+e\approx3.72$.
+
+Jozefowicz, Zaremba and Sutskever found that adding a bias of one to the
+forget gate closed the gap they had measured between the LSTM and the GRU.
+Keras adds one to the forget bias by default through `unit_forget_bias`.
+PyTorch does not: it draws every weight and bias uniformly from
+$(-1/\sqrt H,1/\sqrt H)$, and its two bias vectors both have a forget slice,
+so the effective bias is their sum
+([I.10.X02](/elementa/neural-networks/gating/problems/x02)).
+
+Tallec and Ollivier went further. Their chrono initialisation sets
+$b_f=\ln u$ with $u$ drawn uniformly between $1$ and $T_{\max}-1$, and
+$b_i=-b_f$. By (I.10.5) the initial horizons then range from two steps to
+the longest dependency expected, and $i=1-f$ makes each cell coordinate an
+exponential moving average of its candidates
+([I.10.X08](/elementa/neural-networks/gating/problems/x08)).
+All of these choices set where training starts, not where it ends.
+
+## Growth is still possible
+
+The other paths of (I.10.4) can amplify. Take a scalar cell whose gates are
+constants, $i=1/2$ and $f=o=3/4$, and whose candidate reads the hidden state
+through a weight of two. Then $h_t$ is a function of $c_t$ alone, and each
+step's total factor is
+$f+i(1-\tilde c_t^2)\,w_c\,o(1-\tanh^2c_{t-1})$. Along the trajectory of
+[I.10.B02](/elementa/neural-networks/gating/problems/b02) the factors are
+$1.221326$ and $1.078827$, so $\partial c_3/\partial c_1=1.317600$. The
+carry line alone contributes $0.75^2=0.5625$. More than half the derivative
+came from paths through $w_c$, and the total exceeds one although every
+forget value is three quarters.
+
+The same mechanism can make a small perturbation grow.
+In [I.10.X09](/elementa/neural-networks/gating/problems/x09) a cell with forget
+value one half amplifies a perturbation of the zero state by $1.625$ per step.
+Gating changes which paths exist; it does not bound their sum. Gradient norm
+clipping, (I.9.7), remains a standard part of training gated networks.
+
+The cell value itself is not bounded by a squashing function. Since
+$|i\,\tilde c|<1$, each coordinate satisfies
+$|c_t|\leq f_t|c_{t-1}|+1$. If every forget value is at most $\varphi<1$,
+summing the geometric series gives
+
+$$
+|c_t|\leq\varphi^t|c_0|+\frac{1-\varphi^t}{1-\varphi},
+$$
+
+and with $\varphi=1$ the bound is $|c_0|+t$. That is the LSTM half of I.10.T3,
+and the reason for the forget gate. A large cell value also saturates
+$\tanh(c_t)$, which makes $\mat D_t$ small: the gradient from the output into
+the cell vanishes while the carry line remains open.
+
+## Backward through one cell
+
+Write $\bar{\vec g}_{h,t}$ for the total derivative of the loss with respect to
+$\vec h_t$, including the local readout and everything returned from step
+$t+1$, and $\bar{\vec g}_{c,t}$ for the total derivative with respect to
+$\vec c_t$. Then
+
+<Eq id="I.10.6" gloss="The cell's gradient adds what it showed at this step to what it carried forward.">
+
+$$
+\begin{aligned}
+\bar{\vec g}_{c,t}&=\bar{\vec g}_{h,t}\odot\vec o_t\odot(1-\tanh^2\vec c_t)
+ +\bar{\vec g}_{c,t+1}\odot\vec f_{t+1},\\
+\vec\delta_{o,t}&=\bar{\vec g}_{h,t}\odot\tanh(\vec c_t)\odot\vec o_t\odot(1-\vec o_t),\\
+\vec\delta_{f,t}&=\bar{\vec g}_{c,t}\odot\vec c_{t-1}\odot\vec f_t\odot(1-\vec f_t),\\
+\vec\delta_{i,t}&=\bar{\vec g}_{c,t}\odot\tilde{\vec c}_t\odot\vec i_t\odot(1-\vec i_t),\\
+\vec\delta_{c,t}&=\bar{\vec g}_{c,t}\odot\vec i_t\odot(1-\tilde{\vec c}_t^2),
+\end{aligned}
+$$
+
+</Eq>
+
+with $\bar{\vec g}_{c,T+1}=0$. Each $\vec\delta$ is the derivative with respect
+to a gate's pre-activation. The hidden state one step back receives
+$\sum_k\mat W_k^{\mathsf T}\vec\delta_{k,t}$ over the four blocks, plus its own
+readout term; the cell one step back receives
+$\bar{\vec g}_{c,t}\odot\vec f_t$. Shared weights accumulate exactly as in
+(I.9.4): $\nabla_{\mat W_k}\mathcal L=\sum_t\vec\delta_{k,t}\vec h_{t-1}^{\mathsf T}$,
+and likewise for $\mat U_k$ with $\vec x_t$.
+
+The first line of (I.10.6) is the carry line in the backward direction: the
+future's cell gradient arrives multiplied by a forget value, with no matrix in
+between. [I.10.B02](/elementa/neural-networks/gating/problems/b02) derives
+every line, and its script checks all twelve parameter blocks and both initial
+states of a two-unit cell against finite differences.
+
+## Reproduce the horizons
+
+~~~python
+from math import log
+
+for f in (0.9, 0.99, 0.999):
+    horizon = -1/log(f)
+    print(f"{f}: f^100 = {f**100:.6f}, horizon {horizon:.3f},"
+          f" bounds {f/(1-f):.1f} to {1/(1-f):.1f}")
+~~~
+
+It prints horizons $9.491$, $99.499$ and $999.500$, each just under
+$1/(1-f)$, with hundred-step factors $0.000027$, $0.366032$ and $0.904792$.

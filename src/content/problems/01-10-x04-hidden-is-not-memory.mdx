@@ -1,0 +1,40 @@
+---
+id: "I.10.X04"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "The hidden state is not the memory"
+depends:
+  - "I.10.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+Two runs of an LSTM coordinate reach $c_t=0.5$ and $c_t=-0.5$. At step $t$ the
+output gate is $0.01$. At step $t+1$ the gates are $f=0.99$, $i=0.01$, with
+candidate $0$ and output gate $0.99$. How far apart are the two hidden states
+at $t$, and at $t+1$? What does this say about reading the memory from $h_t$?
+
+<Hint>
+The cell update at $t+1$ writes nothing, so $c_{t+1}=0.99\,c_t$.
+</Hint>
+
+<SolutionToggle>
+
+At $t$, $h=0.01\tanh(\pm0.5)$, a gap of
+$0.01\cdot2\tanh(0.5)=0.009242$. A readout of $h_t$ sees runs that are almost
+identical.
+
+At $t+1$ the cells are $\pm0.495$, and $h=0.99\tanh(\pm0.495)$, a gap of
+$0.907188$. The difference was in the cell all along. The output gate hid it
+for one step and then exposed it.
+
+So $h_t$ is a view of the cell through a gate, not the memory itself. A probe
+or classifier trained on $h_t$ can miss information the network will use one
+step later. To ask what an LSTM remembers, look at $\vec c_t$.
+
+</SolutionToggle>

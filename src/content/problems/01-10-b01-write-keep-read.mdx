@@ -1,0 +1,112 @@
+---
+id: "I.10.B01"
+kind: problem
+chapter: "I.10"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Write once, then keep"
+depends:
+  - "I.10.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+<Statement>
+Run a scalar LSTM through three inputs and separate what the input gate writes
+from what the forget gate keeps.
+</Statement>
+
+<Given>
+A scalar cell follows (I.10.1) and (I.10.2) with every recurrent weight zero.
+The gates read only their biases: $b_i=0$, $b_f=\ln3$, $b_o=\ln3$, and
+$u_i=u_f=u_o=0$. The candidate is $\tilde c_t=\tanh(x_t\ln3)$, so
+$u_c=\ln3$ and $b_c=0$. Start from $c_0=h_0=0$ and feed $(1,0,0)$.
+</Given>
+
+<Find>
+The three gate values, the candidates, all three cell and hidden states, the
+third cell state when $b_f=\ln99$ instead, and the number of trainable scalars.
+</Find>
+
+<Strategy>
+Evaluate the gates first; they are constants here. Then apply the cell update
+one step at a time and read each hidden state through the output gate.
+</Strategy>
+
+<Solution>
+
+Since $\sigma(\ln a)=a/(1+a)$, the gates are $i=\sigma(0)=1/2$ and
+$f=o=\sigma(\ln3)=3/4$. The first candidate is
+
+$$
+\tanh(\ln3)=\frac{3-1/3}{3+1/3}=\frac45,
+$$
+
+and the later candidates are $\tanh(0)=0$.
+
+The cell update writes once and then only keeps:
+
+$$
+\begin{aligned}
+c_1&=\tfrac34\cdot0+\tfrac12\cdot\tfrac45=0.4,\\
+c_2&=\tfrac34\cdot0.4+\tfrac12\cdot0=0.3,\\
+c_3&=\tfrac34\cdot0.3=0.225.
+\end{aligned}
+$$
+
+The hidden states are $h_t=\tfrac34\tanh(c_t)$:
+$0.284962$, $0.218484$ and $0.165959$.
+
+With $b_f=\ln99$ the forget gate is $0.99$, and
+$c_3=0.4\cdot0.99^2=0.39204$. The input gate decided how much was written;
+the forget gate alone decided how much of it survived two silent steps.
+
+Each of the four blocks has one input weight, one recurrent weight and one
+bias, so the scalar cell has $12$ trainable scalars. The plain scalar cell of
+[I.9.B01](/elementa/neural-networks/recurrence/problems/b01) had three before
+its readout.
+
+</Solution>
+
+<Answer>
+Gates $(i,f,o)=(1/2,3/4,3/4)$; candidates $(0.8,0,0)$; cell states
+$(0.4,0.3,0.225)$; hidden states $(0.284962,0.218484,0.165959)$; with
+$f=0.99$, $c_3=0.39204$; twelve trainable scalars.
+</Answer>
+
+<CheckSanity>
+Each hidden state is smaller than its cell state. For $c>0$,
+$\tanh c<c$, and the output gate multiplies by a further three quarters.
+The hidden state is a view of the cell, not a copy of it.
+</CheckSanity>
+
+<CheckNumeric snippet="i-10-gating-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-10-gating-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-10-gating-checks.py
+~~~
+
+It checks all fifteen problems of the chapter. Its first line reports the
+cell states $0.4$, $0.3$, $0.225$, the hidden states above and the
+$f=0.99$ cell state $0.392040$. Its second line confirms that a full two-unit
+LSTM backward pass matches central finite differences for every parameter.
+
+</CheckNumeric>
+
+<Breaks>
+Nonzero recurrent weights make the gates depend on $h_{t-1}$, so they change
+from step to step and the cell states are no longer a geometric sequence.
+The write-then-keep reading survives; the clean numbers do not.
+</Breaks>
+
+<Variation>
+Feed $(1,1,0)$ instead. The second step keeps $0.3$ and writes another $0.4$,
+so $c_2=0.7$ and $c_3=0.525$. The cell accumulates; it does not overwrite
+unless the forget gate is small.
+</Variation>

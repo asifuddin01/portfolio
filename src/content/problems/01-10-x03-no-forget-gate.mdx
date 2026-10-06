@@ -1,0 +1,46 @@
+---
+id: "I.10.X03"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "No forget gate, no bound"
+depends:
+  - "I.10.P01"
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A cell without a forget gate, as in 1997, has $f=1$. Its input gate and
+candidate are constant at $i=1$ and $\tilde c=0.1$, its output gate at $o=1$,
+and $c_0=0$. Find $c_{200}$ and the derivative $\partial h/\partial c$ there,
+both by the formula $1-\tanh^2c$ evaluated in float64 and by
+$\operatorname{sech}^2c$. Repeat with $f=0.9$.
+
+<Hint>
+Without forgetting, the cell adds the same amount every step. With $f<1$ it
+approaches $i\tilde c/(1-f)$.
+</Hint>
+
+<SolutionToggle>
+
+With $f=1$, $c_t=0.1\,t$, so $c_{200}=20$. Mathematically
+$\partial h/\partial c=1-\tanh^2(20)=\operatorname{sech}^2(20)=1.699342\times10^{-17}$.
+In float64, $\tanh(20)$ rounds to exactly one, because it differs from one by
+about $8.5\times10^{-18}$, less than half the spacing of doubles below one.
+The formula $1-\tanh^2c$ then returns exactly $0.0$.
+
+Either way the output path into the cell is closed. The carry line still
+passes gradients from cell to cell with factor one, but no loss on $h$ can send
+anything into the cell. On a long unsegmented stream the cell keeps growing,
+which is the failure Gers, Schmidhuber and Cummins identified.
+
+With $f=0.9$, $c_t=0.1(1-0.9^t)/(1-0.9)=1-0.9^t$, so $c_{200}=1.000000$ to
+six places, and $\operatorname{sech}^2(1)=0.419974$. The bound of I.10.T3,
+$1/(1-\varphi)=10$, is not tight here, but it is finite.
+
+</SolutionToggle>

@@ -1,0 +1,88 @@
+---
+id: "I.10.B03"
+kind: problem
+chapter: "I.10"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "How long a forget gate remembers"
+depends:
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+<Statement>
+Turn a constant forget value into a number of steps, bound that number, and
+find the forget value and bias a given horizon requires.
+</Statement>
+
+<Given>
+One coordinate's forget value is $f\in(0,1)$ at every step. The carry-line
+factor after $n$ steps is $f^n$. The memory horizon is $m=-1/\ln f$.
+</Given>
+
+<Find>
+(a) $f^{100}$ and $f^{1000}$ for $f=0.99$, with its horizon and half-life.
+(b) Bounds on $m$ in terms of $f$. (c) The smallest $f$ with $m\geq100$, and
+the bias that produces it when the gate's other inputs are zero.
+(d) The behaviour of $m$ as $f\to1$ and as the bias grows.
+</Find>
+
+<Strategy>
+Write $f^n=e^{n\ln f}$ and use $\ln x\leq x-1$ twice. For the bias, invert the
+sigmoid.
+</Strategy>
+
+<Solution>
+
+**(a)** Directly, $0.99^{100}=0.366032$ and $0.99^{1000}=4.317125\times10^{-5}$.
+The horizon is $-1/\ln0.99=99.499162$ steps. The half-life solves
+$f^n=1/2$, so $n_{1/2}=\ln2/(-\ln f)=m\ln2=68.967564$ steps.
+
+**(b)** The inequality $\ln x\leq x-1$ is strict for $x\neq1$. At $x=f$ it
+gives $-\ln f>1-f$. At $x=1/f$ it gives $\ln(1/f)<1/f-1$, that is,
+$-\ln f<(1-f)/f$. Taking reciprocals,
+
+$$
+\frac{f}{1-f}<m<\frac{1}{1-f}.
+$$
+
+The two bounds differ by exactly one, so $1/(1-f)$ gives the horizon to within
+a step. For $f=0.99$ they are $99$ and $100$.
+
+**(c)** The condition $m\geq100$ is $-\ln f\leq1/100$, so
+$f\geq e^{-1/100}=0.990050$. A gate with only its bias has $f=\sigma(b)$, so
+$b=\ln\big(f/(1-f)\big)=4.600166$.
+
+**(d)** As $f\to1$, $-\ln f\to0^+$ and $m\to\infty$; by (b), $m$ grows like
+$1/(1-f)$. With $f=\sigma(b)$, (I.10.5) gives $1/(1-f)=1+e^b$. Each extra unit
+of bias multiplies the horizon by about $e$, but no finite bias reaches $f=1$.
+
+</Solution>
+
+<Answer>
+(a) $0.366032$, $4.317125\times10^{-5}$; horizon $99.499162$; half-life
+$68.967564$. (b) $f/(1-f)<m<1/(1-f)$. (c) $f\geq0.990050$, bias at least
+$4.600166$. (d) $m\to\infty$ like $1/(1-f)=1+e^b$, never infinite at finite $b$.
+</Answer>
+
+<CheckSanity>
+At $f=1/2$ the bounds give $1<m<2$, and indeed $m=1/\ln2\approx1.44$. A zero
+forget bias forgets most of a value within two steps.
+</CheckSanity>
+
+<Breaks>
+A trained gate's value changes with the input, so the horizon of a real cell
+is a distribution over steps, not a constant. The bound also concerns the
+carry line only; I.10.B02 shows the full derivative can be several times
+larger or smaller.
+</Breaks>
+
+<Variation>
+For a horizon of exactly $m$ in the sense of $1/(1-f)=m$, set $b=\ln(m-1)$.
+For $m=100$ that is $\ln99=4.595120$, slightly below the answer to (c), because
+$1/(1-f)$ exceeds $-1/\ln f$.
+</Variation>

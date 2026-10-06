@@ -1,0 +1,41 @@
+---
+id: "I.10.X05"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Masking a padded step freezes two states"
+depends:
+  - "I.10.P01"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+An LSTM coordinate has $c=1$ before a padded step. During padding the input is
+zero and the gates are $f=0.5$, $i=0.5$, $o=0.75$ with candidate $0.6$. The
+next real step has $f=0.5$, $i=0.5$, candidate $0$ and $o=0.75$. Compare the
+next real hidden state when the padded step updates $c$ but freezes $h$, and
+when it freezes both.
+
+<Hint>
+Freezing $h$ alone still runs the cell update.
+</Hint>
+
+<SolutionToggle>
+
+Freezing only $h$: the padded step computes $c=0.5\cdot1+0.5\cdot0.6=0.8$.
+The next real step gives $c=0.5\cdot0.8=0.4$ and
+$h=0.75\tanh(0.4)=0.284962$.
+
+Freezing both: the cell stays at $1$, the next step gives $c=0.5$ and
+$h=0.75\tanh(0.5)=0.346588$.
+
+The masked update of I.9 applied to $\vec h$ alone is not enough for an LSTM.
+Mask both states: if $\vec c_t^{\,\text{new}}$ is the cell update the step
+computed, keep $m_t\vec c_t^{\,\text{new}}+(1-m_t)\vec c_{t-1}$, and apply the
+same rule to $\vec h_t$. Or pack the sequence so padded steps never run.
+
+</SolutionToggle>

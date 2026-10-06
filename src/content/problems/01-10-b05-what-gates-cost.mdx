@@ -1,0 +1,108 @@
+---
+id: "I.10.B05"
+kind: problem
+chapter: "I.10"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "What four gates cost"
+depends:
+  - "I.10.P01"
+  - "I.10.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+<Statement>
+Audit the shapes, parameter counts, arithmetic and training storage of a
+tanh RNN, a GRU and an LSTM, then find a fair width for comparing two of them.
+</Statement>
+
+<Given>
+Input width $D=3$, hidden width $H=5$. Count one bias per gate as in (I.10.8),
+then PyTorch's two bias vectors per block. For storage, take $N=4$ sequences of
+length $T=6$ in float32, as in
+[I.9.B04](/elementa/neural-networks/recurrence/problems/b04). Assume the plain
+cell stores $\vec h_t$ for the backward pass and the LSTM stores
+$\vec i_t,\vec f_t,\vec o_t,\tilde{\vec c}_t,\vec c_t,\vec h_t$.
+</Given>
+
+<Find>
+(a) PyTorch's LSTM weight and bias shapes, and the rows of the forget gate.
+(b) Parameter counts for all three cells under both bias conventions, with the
+GRU's reset-after form. (c) Multiply–accumulates per step for one sequence.
+(d) Stored activation bytes. (e) The GRU width whose one-bias count equals the
+LSTM's at $H=5$.
+</Find>
+
+<Strategy>
+Each gated block is a plain recurrent layer's affine map with its own
+weights. Count one block, then multiply.
+</Strategy>
+
+<Solution>
+
+**(a)** PyTorch stacks the four LSTM blocks in the order input, forget,
+candidate, output. The input weights are $4H\times D=20\times3$, the recurrent
+weights $4H\times H=20\times5$, and each bias vector has $4H=20$ entries.
+Counting from zero, the forget gate occupies rows $5$ to $9$. Rows $0$ to $4$
+are the input gate. For a GRU the order is reset, update, new, so the blocks
+are $3H$ rows tall.
+
+**(b)** One block has $H(D+H+1)=5\cdot9=45$ parameters with one bias. So
+
+$$
+\text{RNN }45,\qquad\text{GRU }3\cdot45=135,\qquad\text{LSTM }4\cdot45=180.
+$$
+
+The reset-after GRU keeps $\vec b_{hn}$ inside the reset, which cannot be merged
+with $\vec b_n$: $135+5=140$. PyTorch keeps two bias vectors per block,
+$H(D+H)+2H$ each: $40+10=50$, then $150$ and $200$.
+
+**(c)** One affine map from $(\vec x_t,\vec h_{t-1})$ costs $H(D+H)=40$
+multiply–accumulates. The LSTM computes four, $160$ per step; the GRU three,
+$120$; the plain cell one, $40$. The elementwise gate products add $O(H)$ per
+step and do not change the leading count.
+
+**(d)** The plain cell stores $NTH=120$ numbers, $480$ bytes. The LSTM, under
+the stated scheme, stores six vectors per step: $6\cdot120=720$ numbers,
+$2880$ bytes. Other schemes store $\tanh\vec c_t$ or recompute gates in the
+backward pass. Name the scheme before quoting a ratio.
+
+**(e)** A GRU of width $H'$ at $D=3$ has $3H'(H'+4)$ parameters. Setting this
+to $180$ gives $H'^2+4H'-60=0$, whose positive root is $H'=6$:
+$3\cdot6\cdot10=180$ exactly. Its arithmetic is $3\cdot6\cdot9=162$
+multiply–accumulates per step, against the LSTM's $160$. In PyTorch's
+convention the two counts are $198$ and $200$.
+
+A plain RNN cannot match exactly: $H'(H'+4)=180$ has no integer root, and
+widths $11$ and $12$ give $165$ and $192$.
+
+</Solution>
+
+<Answer>
+(a) $20\times3$, $20\times5$, two biases of $20$; forget rows $5$–$9$.
+(b) One bias: $45$, $135$ ($140$ reset-after), $180$. PyTorch: $50$, $150$, $200$.
+(c) $40$, $120$, $160$ per step. (d) $480$ and $2880$ bytes.
+(e) $H'=6$, $180$ parameters, $162$ multiply–accumulates.
+</Answer>
+
+<CheckSanity>
+Setting $D=0$ removes every input weight: the one-bias LSTM count becomes
+$4H(H+1)=120$, four copies of a plain recurrent map with bias. Counts should
+always factor this way.
+</CheckSanity>
+
+<Breaks>
+Multiply–accumulate counts are not runtimes. Fused kernels compute all four
+LSTM blocks as one $4H$-row product, and memory traffic often decides speed.
+Projection layers, peepholes and bidirectional stacks change every count above.
+</Breaks>
+
+<Variation>
+At $D=H=512$, a common width, the one-bias LSTM block count is
+$4\cdot512\cdot1025=2{,}099{,}200$ parameters, and the GRU's is
+$1{,}574{,}400$.
+</Variation>

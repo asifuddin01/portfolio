@@ -6,15 +6,86 @@ title: "Gated Recurrence: LSTM and GRU"
 summary: "Add a path along which information travels unchanged unless something explicitly erases it."
 claim: "A gate gives the gradient a road home that no weight matrix stands on, which slows the decay without abolishing it."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "Gates as learned, input-dependent multipliers"
+  - "The LSTM cell state and its carry line"
+  - "Forget, input and output gates, and the candidate"
+  - "The constant error carousel and why the forget gate was added"
+  - "The full Jacobian of a gated cell, block by block"
+  - "Forget values, memory horizons and bias initialisation"
+  - "Growth that gating does not prevent"
+  - "Backpropagation through an LSTM cell"
+  - "The GRU, its two conventions and its cost"
+  - "Gated paths across depth: highway and residual connections"
+definitions:
+  - n: 1
+    term: "Gate"
+    statement: "A vector of values in (0, 1), computed by a sigmoid from the current input and preceding state, that multiplies another vector coordinate by coordinate. It is a learned soft multiplier, never exactly zero or one, and it changes with the input."
+    introduces: []
+  - n: 2
+    term: "Cell state"
+    statement: "The LSTM's second state vector c_t in R^H, carried from step to step alongside h_t. It is not exposed directly: the network's output reads h_t = o_t elementwise tanh(c_t). Its coordinates are not confined to (-1, 1)."
+    introduces: []
+  - n: 3
+    term: "Candidate"
+    statement: "The proposed new content, a tanh of an affine function of x_t and h_(t-1). In the LSTM the input gate scales it before it is added to the cell state; in the GRU the update gate weighs it against the old state."
+    introduces: []
+  - n: 4
+    term: "Forget gate"
+    statement: "The gate f_t that multiplies the preceding cell state. A value near one keeps that coordinate; a value near zero discards it. It was added to the LSTM by Gers, Schmidhuber and Cummins in 2000."
+    introduces: []
+  - n: 5
+    term: "Input and output gates"
+    statement: "The input gate i_t scales the candidate before it is written into the cell state. The output gate o_t scales the squashed cell state before it becomes the visible hidden state. Neither changes what the forget gate keeps."
+    introduces: []
+  - n: 6
+    term: "Carry line"
+    statement: "The path from c_(t-1) to c_t through one elementwise multiplication and one addition. Holding the gate values and the candidate fixed, its Jacobian is diag(f_t). No weight matrix lies on it."
+    introduces: []
+  - n: 7
+    term: "Constant error carousel"
+    statement: "The 1997 LSTM's self-connected cell with weight fixed at one and no forget gate. Along it the error signal is neither scaled up nor down. With a forget gate, the factor at each step becomes f_t."
+    introduces: []
+  - n: 8
+    term: "Memory horizon"
+    statement: "For a constant forget value f in (0, 1), the number of steps -1/ln f over which the carry line's sensitivity falls by a factor of e. It lies between f/(1-f) and 1/(1-f)."
+    introduces: []
+  - n: 9
+    term: "Update gate"
+    statement: "The GRU gate z_t that interpolates between the preceding state and the candidate. Which side it multiplies is a convention: PyTorch and Cho and colleagues keep the old state when z is near one, Chung and colleagues write the candidate."
+    introduces: []
+  - n: 10
+    term: "Reset gate"
+    statement: "The GRU gate r_t that scales the preceding state's contribution to the candidate. It may act before the recurrent matrix, as in the 2014 paper, or after it, as in PyTorch and cuDNN-compatible layers. The two forms are different functions."
+    introduces: []
 beforeYouStart:
   - "I.9"
+  - "I.6"
   - "I.3"
 conceptFigure: FigGating
-problemStatement: "The vanishing gradient of I.9 is a property of repeated multiplication. The repair is not a better initialisation but a different architecture: an additive path whose derivative is a gate value rather than a Jacobian product."
-formalResults: []
-assumptions: []
+problemStatement: "The vanishing gradient of I.9 is a property of repeated multiplication. The repair is not a better initialisation but a different architecture: an additive path whose derivative is a gate value rather than a Jacobian product. We build the LSTM and the GRU, differentiate them fully, and measure how much of the problem the gate actually removes."
+formalResults:
+  - id: "I.10.T1"
+    name: "The carry line is the only path free of recurrent weights"
+    statement: "Treat (c_t, h_t) as the LSTM's state. In the block Jacobian of one step, the cell-to-cell block is diag(f_t). Expand d c_T/d c_s as a sum over paths through these blocks. The path that stays on the cell line at every step contributes diag(f_(s+1) elementwise ... elementwise f_T). Every other path passes through at least one block M_k = d c_k/d h_(k-1), which contains W_f, W_i and W_c."
+    doesNotPromise: "This does not bound the full derivative by the carry-line term. The other terms can add to it, cancel it or amplify it. In I.10.B02 the carry line alone gives 0.5625 while the full derivative is 1.3176."
+  - id: "I.10.T2"
+    name: "A constant forget value sets a memory horizon"
+    statement: "If f_t = f in (0, 1) at every step, the carry-line sensitivity after n steps is f^n = exp(-n/m) with m = -1/ln f, and f/(1-f) < m < 1/(1-f). If f = sigma(b), then 1/(1-f) = 1 + e^b, and b = ln(m - 1) makes 1/(1-f) exactly m."
+    doesNotPromise: "Real forget values depend on the input and the state, so a bias fixes only the initial regime. The horizon of the carry line is not the horizon of the task; the output gate can hide a memory and the input gate can overwrite it."
+  - id: "I.10.T3"
+    name: "The gates, not a squashing function, bound the state"
+    statement: "If every forget value is at most phi < 1 and |i_t tilde-c_t| < 1, then |c_t| <= phi^t |c_0| + (1 - phi^t)/(1 - phi) coordinatewise. With phi = 1 the bound is |c_0| + t. A GRU written as a convex combination of its old state and a tanh candidate keeps every coordinate in [-1, 1] when it starts there."
+    doesNotPromise: "A bounded state does not make the gradient bounded. Gradients still multiply through recurrent weights, and a large cell state saturates tanh(c_t), which shrinks the gradient into the cell through the output path."
+assumptions:
+  - statement: "Forget-gate biases start in the remembering regime when long memory is needed. PyTorch's default initialisation does not do this, and its two bias vectors must be counted together."
+    testedBy: "I.10.X02"
+  - statement: "The GRU equations in the text match the implementation whose weights are loaded: which side z multiplies, and whether r acts before or after the recurrent matrix."
+    testedBy: "I.10.X06"
+  - statement: "Unbounded streams processed without reset have forget values bounded away from one, or the cell state can grow without limit."
+    testedBy: "I.10.X03"
+  - statement: "A padded or skipped step freezes both h and c. Freezing h alone lets the cell state change."
+    testedBy: "I.10.X05"
 owns:
   - "gating"
   - "constant-error-carousel"
@@ -22,18 +93,89 @@ borrows:
   - "recurrence"
   - "vanishing-exploding-gradient"
   - "activation-function"
-implementation: false
-failureModes: []
-references: []
+  - "backpropagation-through-time"
+implementation: true
+failureModes:
+  - "Initialising the forget bias through the wrong slice. PyTorch orders LSTM gates (i, f, g, o), so for H = 5 the forget rows are 5 to 9; rows 0 to 4 set the input gate. Setting the forget slice of both bias_ih and bias_hh to one makes the effective bias two: sigma(2) = 0.880797, a horizon of 8.389 rather than 3.718."
+  - "Loading GRU weights trained with the reset gate after the matrix into a layer that applies it before. In I.10.B04 the same weights, state and gates give candidate (-0.124353, 0.358357) one way and (-0.358357, 0.124353) the other."
+  - "Reading the update gate with the wrong convention. With z = 0.9 for ten steps, one convention keeps 0.348678 of the old state and the other keeps 1e-10."
+  - "Running an LSTM without a forget gate over an unbroken stream. A constant write of 0.1 drives the cell to 20 after 200 steps; float64 then rounds tanh(20) to one, and the derivative of h with respect to c computed as 1 - tanh² is exactly zero."
+  - "Masking a padded step by freezing only h. In I.10.X05 the cell state moves from 1 to 0.8 during padding, and the next real step reads the wrong memory."
+  - "Dropping gradient clipping because the network is gated. In I.10.X09 a forget gate of one half still lets a perturbation grow by a factor 1.625 per step."
+references:
+  - title: "Long Short-Term Memory"
+    url: https://doi.org/10.1162/neco.1997.9.8.1735
+    authors: "Hochreiter and Schmidhuber"
+    year: 1997
+    venue: "Neural Computation 9(8)"
+  - title: "Learning to Forget: Continual Prediction with LSTM"
+    url: https://doi.org/10.1162/089976600300015015
+    authors: "Gers, Schmidhuber and Cummins"
+    year: 2000
+    venue: "Neural Computation 12(10)"
+  - title: "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation"
+    url: https://arxiv.org/abs/1406.1078
+    authors: "Cho, van Merriënboer, Gulcehre, Bahdanau, Bougares, Schwenk and Bengio"
+    year: 2014
+    venue: "Conference on Empirical Methods in Natural Language Processing"
+  - title: "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling"
+    url: https://arxiv.org/abs/1412.3555
+    authors: "Chung, Gulcehre, Cho and Bengio"
+    year: 2014
+    venue: "NIPS 2014 Deep Learning and Representation Learning Workshop"
+  - title: "An Empirical Exploration of Recurrent Network Architectures"
+    url: https://proceedings.mlr.press/v37/jozefowicz15.html
+    authors: "Jozefowicz, Zaremba and Sutskever"
+    year: 2015
+    venue: "International Conference on Machine Learning, PMLR 37"
+  - title: "LSTM: A Search Space Odyssey"
+    url: https://doi.org/10.1109/TNNLS.2016.2582924
+    authors: "Greff, Srivastava, Koutník, Steunebrink and Schmidhuber"
+    year: 2017
+    venue: "IEEE Transactions on Neural Networks and Learning Systems 28(10)"
+  - title: "Can Recurrent Neural Networks Warp Time?"
+    url: https://arxiv.org/abs/1804.11188
+    authors: "Tallec and Ollivier"
+    year: 2018
+    venue: "International Conference on Learning Representations"
+  - title: "Training Very Deep Networks"
+    url: https://arxiv.org/abs/1507.06228
+    authors: "Srivastava, Greff and Schmidhuber"
+    year: 2015
+    venue: "Advances in Neural Information Processing Systems 28"
 notation:
   - "T"
-  - "d"
   - "W"
+  - "J"
   - "sigma"
   - "nabla"
 apparatus:
   - "0.MC.03"
   - "0.NU.01"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.10.1"
+    formula: "i_t, f_t, o_t = sigma(U x_t + W h_(t-1) + b) per gate; tilde-c_t = tanh(U_c x_t + W_c h_(t-1) + b_c)"
+    gloss: "Every gate reads the same two vectors through its own weights."
+  - id: "I.10.2"
+    formula: "c_t = f_t elementwise c_(t-1) + i_t elementwise tilde-c_t; h_t = o_t elementwise tanh(c_t)"
+    gloss: "The cell state is updated by a multiply and an add, then read through a gate."
+  - id: "I.10.3"
+    formula: "partial c_t/partial c_(t-1) with gates fixed = diag(f_t); carry line from s to T = diag(f_(s+1) ... f_T)"
+    gloss: "The carry line's Jacobian is a diagonal of gate values."
+  - id: "I.10.4"
+    formula: "J_t = [[diag(f_t), M_t], [D_t diag(f_t), N_t]] for the state (c, h)"
+    gloss: "The other three blocks carry the recurrent weights."
+  - id: "I.10.5"
+    formula: "f^n = exp(-n/m), m = -1/ln f, f/(1-f) < m < 1/(1-f); 1/(1 - sigma(b)) = 1 + e^b"
+    gloss: "A forget value sets a horizon; a bias sets a forget value."
+  - id: "I.10.6"
+    formula: "g_c,t = g_h,t elementwise o_t elementwise (1 - tanh² c_t) + g_c,t+1 elementwise f_(t+1)"
+    gloss: "The cell's gradient adds what it shows now to what it carries forward."
+  - id: "I.10.7"
+    formula: "h_t = (1 - z_t) elementwise n_t + z_t elementwise h_(t-1); n_t = tanh(U_n x_t + b_n + r_t elementwise (W_n h_(t-1) + b_hn))"
+    gloss: "The GRU interpolates; this is PyTorch's convention, not the only one."
+  - id: "I.10.8"
+    formula: "RNN H(D+H+1); GRU 3H(D+H+1); LSTM 4H(D+H+1)"
+    gloss: "With one bias per gate, gating multiplies the parameter count by three or four."
+status: published
 ---

@@ -1,0 +1,40 @@
+---
+id: "I.10.X06"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Which side does z multiply?"
+depends:
+  - "I.10.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A GRU's update gate sits at $z=0.9$ for ten steps while the candidate is zero.
+How much of the starting state survives under PyTorch's convention,
+$h_t=(1-z)n_t+z\,h_{t-1}$, and under Chung and colleagues',
+$h_t=(1-z)h_{t-1}+z\,n_t$? How do you convert trained weights from one
+convention to the other?
+
+<Hint>
+With a zero candidate, each step multiplies the state by whichever factor
+sits next to $h_{t-1}$.
+</Hint>
+
+<SolutionToggle>
+
+Under PyTorch's convention each step keeps $z$: after ten steps
+$0.9^{10}=0.348678$ of the starting state remains. Under the other, each step
+keeps $1-z$: $0.1^{10}=10^{-10}$. The direct Jacobians are $\operatorname{diag}(\vec z)$
+and $\operatorname{diag}(1-\vec z)$ respectively.
+
+The two conventions describe the same functions. Since
+$1-\sigma(a)=\sigma(-a)$, negating the update gate's input weights, recurrent
+weights and bias turns $z$ into $1-z$. Loading weights without that step
+silently swaps keeping and overwriting.
+
+</SolutionToggle>

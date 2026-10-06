@@ -1,0 +1,60 @@
+---
+/**
+ * Book I, Ch. X, Prop. 3: a GRU in PyTorch's convention. One state line; the
+ * update gate keeps a share z of it and writes 1 − z of the candidate.
+ */
+---
+<svg class="fig" viewBox="0 0 720 330" role="img" aria-labelledby="gu-t gu-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="gu-t">A GRU cell and its state line</title>
+  <desc id="gu-d">
+    A horizontal line carries the hidden state from left to right. It is
+    multiplied by the update gate z and then receives the candidate scaled by
+    one minus z. The reset gate feeds the candidate, deciding how much of the
+    preceding state it reads. Both gates and the candidate read the preceding
+    hidden state and the current input.
+  </desc>
+
+  <text x="0" y="22" class="t-lab">the state line</text>
+
+  <line x1="20" y1="70" x2="700" y2="70" class="s3" stroke-width="2" />
+  <text x="20" y="58" class="t-key">h(t−1)</text>
+  <text x="700" y="58" class="t-key" text-anchor="end">h(t)</text>
+
+  <circle cx="250" cy="70" r="14" class="bx-fill" />
+  <text x="250" y="76" class="t-md" text-anchor="middle">×</text>
+  <circle cx="470" cy="70" r="14" class="bx-fill" />
+  <text x="470" y="76" class="t-md" text-anchor="middle">+</text>
+
+  <rect x="180" y="200" width="140" height="48" class="bx-fill" />
+  <text x="250" y="221" class="t-md" text-anchor="middle">update gate z</text>
+  <text x="250" y="239" class="t-sm" text-anchor="middle">σ → (0, 1)</text>
+  <line x1="250" y1="198" x2="250" y2="96" class="wire" />
+  <polygon points="245,96 250,84 255,96" class="head" />
+  <text x="258" y="130" class="t-key">z: keep</text>
+
+  <circle cx="470" cy="140" r="14" class="bx-fill" />
+  <text x="470" y="146" class="t-md" text-anchor="middle">×</text>
+  <line x1="470" y1="126" x2="470" y2="96" class="wire" />
+  <polygon points="465,96 470,84 475,96" class="head" />
+  <line x1="300" y1="198" x2="458" y2="148" class="wire" />
+  <text x="322" y="156" class="t-key">1 − z: write</text>
+
+  <rect x="400" y="200" width="140" height="48" class="bx-fill" />
+  <text x="470" y="221" class="t-md" text-anchor="middle">candidate n</text>
+  <text x="470" y="239" class="t-sm" text-anchor="middle">tanh → (−1, 1)</text>
+  <line x1="470" y1="198" x2="470" y2="154" class="wire" />
+
+  <rect x="580" y="200" width="120" height="48" class="bx-fill" />
+  <text x="640" y="221" class="t-md" text-anchor="middle">reset gate r</text>
+  <text x="640" y="239" class="t-sm" text-anchor="middle">σ → (0, 1)</text>
+  <line x1="578" y1="224" x2="552" y2="224" class="wire" />
+  <polygon points="552,219 540,224 552,229" class="head" />
+
+  <line x1="20" y1="280" x2="700" y2="280" class="wire-soft" />
+  {[250, 470, 640].map((cx) => (
+    <line x1={cx} y1="280" x2={cx} y2="250" class="wire-soft" />
+  ))}
+  <text x="20" y="298" class="t-sm">h(t−1), x(t): both gates and the candidate read the same two vectors</text>
+
+  <text x="0" y="324" class="t-sm">Holding the gates fixed, the state line's derivative is diag(z). Other papers swap z and 1 − z.</text>
+</svg>

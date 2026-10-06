@@ -1,0 +1,40 @@
+---
+id: "I.10.X10"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What backpropagation through time keeps"
+depends:
+  - "I.10.P03"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A batch of $N=32$ sequences of length $T=1000$ trains a layer of width
+$H=512$ in float32. Under the storage scheme of
+[I.10.B05](/elementa/neural-networks/gating/problems/b05), how many bytes of
+activations does a plain tanh layer keep for the backward pass, and how many
+does an LSTM layer keep? How do both scale with $T$, and what does inference
+need instead?
+
+<Hint>
+The plain cell stores one $H$-vector per step and sequence; the LSTM stores six.
+</Hint>
+
+<SolutionToggle>
+
+The plain layer stores $4NTH=65{,}536{,}000$ bytes, $62.5$ MiB.
+The LSTM stores six times as much, $393{,}216{,}000$ bytes, $375$ MiB.
+Both grow linearly in $T$: doubling the sequence doubles the storage.
+
+Streaming inference keeps only the current state: $\vec h_t$ for the plain
+cell, $\vec h_t$ and $\vec c_t$ for the LSTM, about $2NH$ numbers, independent
+of $T$. The distinction of I.9 holds for gated cells too: constant inference
+memory says nothing about training memory. Truncated backpropagation or
+checkpointing reduces the training figure at the costs I.9 described.
+
+</SolutionToggle>

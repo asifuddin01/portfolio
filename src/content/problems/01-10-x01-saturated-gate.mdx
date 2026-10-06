@@ -1,0 +1,40 @@
+---
+id: "I.10.X01"
+kind: exercise
+chapter: "I.10"
+scope: chapter
+variant: limit
+difficulty: 1
+title: "A saturated gate still leaks"
+depends:
+  - "I.10.P01"
+  - "I.10.P02"
+rounding: "Exact values where possible; six decimal places for non-exact numerical results."
+hasSolution: true
+verified: true
+snippet: "i-10-gating-checks.py"
+status: published
+---
+A forget gate has bias $10$ and no other input, so $f=\sigma(10)$. Is the carry
+line lossless? Compute $f$, $1-f$, the carry-line factor after $10^5$ steps and
+the memory horizon.
+
+<Hint>
+Use $1-\sigma(b)=\sigma(-b)$, and (I.10.5) for the horizon.
+</Hint>
+
+<SolutionToggle>
+
+$f=\sigma(10)=0.9999546$ and $1-f=\sigma(-10)=4.539787\times10^{-5}$.
+After $10^5$ steps the factor is $f^{100000}=0.010675$: about one per cent of
+the signal is left.
+
+The horizon is $-1/\ln f=22026.97$ steps. By (I.10.5) it lies just below
+$1/(1-f)=1+e^{10}=22027.47$.
+
+The carry line is not lossless. A sigmoid gate can be pushed as close to one
+as the bias allows, which sets a long but finite horizon. Only the 1997
+design, with no forget gate at all, had a factor of exactly one, and
+[I.10.X03](/elementa/neural-networks/gating/problems/x03) shows what that cost.
+
+</SolutionToggle>

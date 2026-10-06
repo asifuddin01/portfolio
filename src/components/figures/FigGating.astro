@@ -1,16 +1,19 @@
 ---
 /**
- * Book I, Ch. IV, Prop. 3 — a gated cell. The cell line runs straight through
- * with only multiplication and addition on it, which is the point: the
+ * Book I, Ch. X, Prop. 1: an LSTM cell. The carry line runs straight through
+ * with only a multiplication and an addition on it, which is the point: the
  * gradient has a road home that does not pass through a weight matrix.
  */
 ---
-<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="gt-t gt-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
-  <title id="gt-t">A gated cell and its uninterrupted carry line</title>
+<svg class="fig" viewBox="0 0 720 330" role="img" aria-labelledby="gt-t gt-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 640px">
+  <title id="gt-t">An LSTM cell and its uninterrupted carry line</title>
   <desc id="gt-d">
     A horizontal line across the top carries the cell state from left to right,
-    crossed only by one multiplication and one addition. Below it, a forget gate
-    and an input gate produce the numbers that do the multiplying and adding.
+    crossed only by one multiplication, by the forget gate, and one addition,
+    of the candidate scaled by the input gate. A branch from the line passes
+    through tanh and is multiplied by the output gate to give the hidden state.
+    All three gates and the candidate read the preceding hidden state and the
+    current input.
   </desc>
 
   <text x="0" y="22" class="t-lab">the carry line</text>
@@ -19,27 +22,52 @@
   <text x="20" y="58" class="t-key">c(t−1)</text>
   <text x="700" y="58" class="t-key" text-anchor="end">c(t)</text>
 
-  <circle cx="250" cy="70" r="14" class="bx-fill" />
-  <text x="250" y="76" class="t-md" text-anchor="middle">×</text>
-  <circle cx="470" cy="70" r="14" class="bx-fill" />
-  <text x="470" y="76" class="t-md" text-anchor="middle">+</text>
+  <circle cx="200" cy="70" r="14" class="bx-fill" />
+  <text x="200" y="76" class="t-md" text-anchor="middle">×</text>
+  <circle cx="400" cy="70" r="14" class="bx-fill" />
+  <text x="400" y="76" class="t-md" text-anchor="middle">+</text>
 
-  <rect x="180" y="160" width="140" height="52" class="bx-fill" />
-  <text x="250" y="184" class="t-md" text-anchor="middle">forget gate</text>
-  <text x="250" y="202" class="t-sm" text-anchor="middle">σ → [0, 1]</text>
-  <line x1="250" y1="158" x2="250" y2="96" class="wire" />
-  <polygon points="245,96 250,84 255,96" class="head" />
+  <rect x="130" y="200" width="140" height="48" class="bx-fill" />
+  <text x="200" y="221" class="t-md" text-anchor="middle">forget gate f</text>
+  <text x="200" y="239" class="t-sm" text-anchor="middle">σ → (0, 1)</text>
+  <line x1="200" y1="198" x2="200" y2="96" class="wire" />
+  <polygon points="195,96 200,84 205,96" class="head" />
 
-  <rect x="400" y="160" width="140" height="52" class="bx-fill" />
-  <text x="470" y="184" class="t-md" text-anchor="middle">input gate</text>
-  <text x="470" y="202" class="t-sm" text-anchor="middle">what to write</text>
-  <line x1="470" y1="158" x2="470" y2="96" class="wire" />
-  <polygon points="465,96 470,84 475,96" class="head" />
+  <circle cx="400" cy="140" r="14" class="bx-fill" />
+  <text x="400" y="146" class="t-md" text-anchor="middle">×</text>
+  <line x1="400" y1="126" x2="400" y2="96" class="wire" />
+  <polygon points="395,96 400,84 405,96" class="head" />
 
-  <line x1="20" y1="250" x2="700" y2="250" class="wire-soft" />
-  <text x="20" y="244" class="t-sm">h(t−1), x(t) — both gates read the same two things</text>
-  <line x1="250" y1="248" x2="250" y2="216" class="wire-soft" />
-  <line x1="470" y1="248" x2="470" y2="216" class="wire-soft" />
+  <rect x="285" y="200" width="110" height="48" class="bx-fill" />
+  <text x="340" y="221" class="t-md" text-anchor="middle">input gate i</text>
+  <text x="340" y="239" class="t-sm" text-anchor="middle">σ → (0, 1)</text>
+  <line x1="350" y1="198" x2="390" y2="151" class="wire" />
 
-  <text x="0" y="288" class="t-sm">With the forget gate near one the carry line is near the identity, and a gradient crossing it barely decays.</text>
+  <rect x="410" y="200" width="110" height="48" class="bx-fill" />
+  <text x="465" y="221" class="t-md" text-anchor="middle">candidate c̃</text>
+  <text x="465" y="239" class="t-sm" text-anchor="middle">tanh → (−1, 1)</text>
+  <line x1="455" y1="198" x2="410" y2="151" class="wire" />
+
+  <line x1="560" y1="70" x2="560" y2="118" class="wire" />
+  <rect x="525" y="118" width="70" height="28" class="bx-fill" />
+  <text x="560" y="137" class="t-sm" text-anchor="middle">tanh</text>
+  <line x1="560" y1="146" x2="560" y2="166" class="wire" />
+  <circle cx="560" cy="180" r="14" class="bx-fill" />
+  <text x="560" y="186" class="t-md" text-anchor="middle">×</text>
+  <line x1="574" y1="180" x2="692" y2="180" class="wire" />
+  <polygon points="692,175 704,180 692,185" class="head" />
+  <text x="700" y="168" class="t-key" text-anchor="end">h(t)</text>
+
+  <rect x="585" y="200" width="115" height="48" class="bx-fill" />
+  <text x="642" y="221" class="t-md" text-anchor="middle">output gate o</text>
+  <text x="642" y="239" class="t-sm" text-anchor="middle">σ → (0, 1)</text>
+  <line x1="610" y1="198" x2="570" y2="191" class="wire" />
+
+  <line x1="20" y1="280" x2="700" y2="280" class="wire-soft" />
+  {[200, 340, 465, 642].map((cx) => (
+    <line x1={cx} y1="280" x2={cx} y2="250" class="wire-soft" />
+  ))}
+  <text x="20" y="298" class="t-sm">h(t−1), x(t): every gate and the candidate read the same two vectors</text>
+
+  <text x="0" y="324" class="t-sm">Holding the gates fixed, the carry line's derivative is diag(f). No weight matrix stands on it.</text>
 </svg>
