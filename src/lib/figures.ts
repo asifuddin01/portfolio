@@ -604,26 +604,26 @@ export const FIGURES = {
   FigKernelSlide: {
     component: FigKernelSlide,
     caption:
-      'One kernel applied at every position. Nine weights and a bias, whatever the size of the image — the reuse is the locality prior.',
-    source: 'Book II, Ch. II, Prop. 1',
+      'One kernel applied at every position. Nine shared weights and one bias produce a 4×4 map from a 6×6 input.',
+    source: 'Book I, Ch. XI, Prop. 1',
   },
   FigPaddingStride: {
     component: FigPaddingStride,
     caption:
-      'A 7×7 input under three settings. Padding and stride decide the output size and nothing else does.',
-    source: 'Book II, Ch. II, Prop. 2',
+      'A 7×7 input under three settings, holding the kernel and dilation fixed. Padding and stride change the output grid.',
+    source: 'Book I, Ch. XI, Prop. 2',
   },
   FigReceptiveGrowth: {
     component: FigReceptiveGrowth,
     caption:
       'What one unit at the top can see, opening by two positions a layer. Range is bought with depth.',
-    source: 'Book II, Ch. II, Prop. 3',
+    source: 'Book I, Ch. XI, Prop. 3',
   },
   FigPooling: {
     component: FigPooling,
     caption:
-      'Two activations differing only in position, pooled to the same value. Invariance bought, location spent.',
-    source: 'Book II, Ch. II, Prop. 4',
+      'Moving a peak inside a pooling window can preserve the output. Moving it across the boundary need not.',
+    source: 'Book I, Ch. XI, Prop. 4',
   },
   FigCnnLineage: {
     component: FigCnnLineage,

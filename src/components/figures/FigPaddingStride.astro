@@ -1,41 +1,23 @@
 ---
-/**
- * Book II, Ch. II, Prop. 2 — three settings of the same convolution, and the
- * output size each produces. The formula is the whole content.
- */
-const CASES = [
-  { lab: 'no padding, stride 1', pad: 0, st: 1, out: 5, cls: 'a1' },
-  { lab: 'padding 1, stride 1',  pad: 1, st: 1, out: 7, cls: 'a3' },
-  { lab: 'padding 1, stride 2',  pad: 1, st: 2, out: 4, cls: 'a2' },
+const cases = [
+  { p: 0, s: 1, out: 5, label: 'No padding' },
+  { p: 1, s: 1, out: 7, label: 'Keep the size' },
+  { p: 1, s: 2, out: 4, label: 'Sample every second position' },
 ];
-const S = 17;
 ---
-<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="ps2-t ps2-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
-  <title id="ps2-t">Output size under three settings</title>
-  <desc id="ps2-d">
-    A seven by seven input under three configurations of a three by three
-    kernel. Without padding the output shrinks to five. With padding of one it
-    keeps its size. With a stride of two it halves.
-  </desc>
-
-  <text x="0" y="22" class="t-lab">7×7 input, 3×3 kernel</text>
-
-  {CASES.map((c, ci) => (
-    <g>
-      <text x={ci * 240} y="56" class="t-md">{c.lab}</text>
-      {c.pad > 0 && (
-        <rect x={ci * 240 - S} y={70 - S} width={S * 9} height={S * 9} class="dash" />
-      )}
-      {Array.from({ length: 49 }, (_, i) => (
-        <rect x={ci * 240 + (i % 7) * S} y={70 + Math.floor(i / 7) * S} width={S - 2} height={S - 2} class="bx-soft" />
+<svg class="fig" viewBox="0 0 440 350" role="img" aria-labelledby="ps-t ps-d" style="--fig-min: 0px">
+  <title id="ps-t">Padding and stride change the output grid</title>
+  <desc id="ps-d">For a seven by seven input, a three by three kernel and dilation one: padding zero and stride one give five by five outputs; padding one and stride one give seven by seven; padding one and stride two give four by four.</desc>
+  <text x="8" y="23" class="t-lab">7 × 7 input · 3 × 3 kernel · dilation 1</text>
+  {cases.map((item, row) => (
+    <g transform={'translate(0,' + (42 + row * 96) + ')'}>
+      <text x="8" y="13" class="t-key">{item.label}</text>
+      <text x="8" y="35" class="t-sm">padding {item.p}, stride {item.s}</text>
+      <text x="8" y="57" class="t-sm">{item.out} × {item.out} output</text>
+      {Array.from({ length: item.out * item.out }, (_, i) => (
+        <rect x={310 + (i % item.out) * 10} y={Math.floor(i / item.out) * 10} width="8" height="8" class="bx-fill" />
       ))}
-      <text x={ci * 240} y="222" class="t-sm">output</text>
-      {Array.from({ length: c.out }, (_, i) => (
-        <rect x={ci * 240 + i * S} y="232" width={S - 2} height={S - 2} class={c.cls} />
-      ))}
-      <text x={ci * 240} y="272" class="t-key">{c.out} × {c.out}</text>
     </g>
   ))}
-
-  <text x="0" y="298" class="t-sm">out = ⌊(in + 2·pad − k) / stride⌋ + 1. Nothing else decides it, and it is the commonest shape bug.</text>
+  <text x="8" y="338" class="t-sm">Output per axis: floor((7 + 2p − 3) / s) + 1.</text>
 </svg>

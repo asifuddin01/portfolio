@@ -1,0 +1,87 @@
+---
+id: "I.11.B05"
+kind: problem
+chapter: "I.11"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What a depthwise factorisation saves"
+depends:
+  - "I.11.P01"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+<Statement>
+Compare a standard convolution with a depthwise-plus-pointwise replacement.
+</Statement>
+<Given>
+One example has 32 input channels, 64 output channels and a $28$ by $28$
+output grid. The standard kernel is $3$ by $3$.
+The replacement uses one depthwise $3$ by $3$ filter per input channel
+followed by a $1$ by $1$ pointwise layer to 64 channels.
+Ignore biases and nonlinearities in both cases.
+</Given>
+<Find>
+Weights and multiply-accumulates for both designs, the cost ratio, and a
+reason why equal shapes do not make their function classes equal.
+</Find>
+<Strategy>
+Count the depthwise and pointwise weights separately, then multiply by the
+number of output positions.
+</Strategy>
+<Solution>
+
+The standard layer has $9\cdot32\cdot64=18432$ weights.
+The factorised version has $9\cdot32=288$ depthwise weights and
+$32\cdot64=2048$ pointwise weights, for a total of $2336$.
+
+Since $28^2=784$, the main-product counts are
+
+$$
+\begin{aligned}
+M_{\mathrm{standard}}&=18432(784)\\
+ &=14450688,\\
+M_{\mathrm{factorised}}&=2336(784)\\
+ &=1831424.
+\end{aligned}
+$$
+
+The ratio is
+
+$$
+\frac{2336}{18432}=\frac1{64}+\frac19\approx0.126736.
+$$
+
+That is about $7.89$ times fewer main-product operations in this counting
+model, not a measured latency speedup.
+
+Without an intervening nonlinearity, the effective kernel has the form
+$K_{o,c,u,v}=P_{o,c}D_{c,u,v}$.
+For each input channel, all output channels use scalar multiples of its
+same spatial filter. A general convolution does not impose this restriction.
+
+</Solution>
+<Answer>
+Standard: 18,432 weights and 14,450,688 MACs.
+Factorised: 2,336 weights and 1,831,424 MACs.
+The smaller operation is a constrained model, not an exact replacement for
+every standard kernel.
+</Answer>
+<CheckSanity>
+Both weight counts and MAC counts have the same ratio because the two
+designs use the same spatial grid. Biases and intermediate activations
+were explicitly excluded.
+</CheckSanity>
+<Breaks>
+Real runtime also depends on memory traffic, kernel efficiency and hardware.
+Adding a nonlinearity between the layers changes the function again;
+it does not remove the need to evaluate accuracy after replacement.
+</Breaks>
+<Variation>
+For spatial width $k$ and output width $C_{\mathrm{out}}$, the corresponding
+ratio is $1/C_{\mathrm{out}}+1/k^2$. At $k=1$ the extra depthwise layer
+does not create the same saving.
+</Variation>

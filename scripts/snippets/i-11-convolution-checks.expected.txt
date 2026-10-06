@@ -1,0 +1,16 @@
+B01 output: [[3, 7], [0, 0]]
+B02 (dK, dX, db): ([[6, 4], [1, 6]], [[1, 2, 0], [-2, 1, 4], [1, -3, 2]], 3)
+B03 (shape, parameters, MACs): ((2, 4, 3, 3), 112, 1944)
+B04 max pooling: [[1, 0], [1, 0], [0, 1]]
+B05 (weights, MACs): ((18432, 2336), (14450688, 1831424))
+X01 (correlation, convolution): ([5, 8], [4, 7])
+X02 (size, padded origins): (4, [0, 2, 4, 6])
+X03 (original, shift input, shift output): ([3, 6, 5], [1, 3, 3], [0, 3, 6])
+X04 (R, J): [(3, 1), (5, 2), (9, 2)]
+X05 (max gradient, mean gradient): ([0, 4, 0, 0], [1.0, 1.0, 1.0, 1.0])
+X06 (mean, gradient): (4.0, [0.5, 0.5, 0.5, 0.5])
+X07 (Ax, transpose times g): ([8, 20], [2, 2, -2, -3])
+X08 (grouped parameters, depthwise parameters): (228, 160)
+X09 (residual derivative, projected shape): (0, (32, 16, 16))
+X10 (flattened head, pooled head): (31370, 650)
+Finite differences and adjoint identities: PASS (valid and padded/strided/dilated)

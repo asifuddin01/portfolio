@@ -1,53 +1,179 @@
 ---
 chapter: neural-networks--convolution
 proposition: 1
-statement: A convolution is one small filter applied at every position.
-claim: "The same weights are used at every location, so the parameter count depends on the kernel and not on the image. That reuse is the locality prior, welded into the layer rather than learned."
+statement: "A convolution reuses one local rule across a grid."
+claim: "Local connectivity and parameter sharing are separate constraints. Together they define a filter bank whose parameter count is independent of image size."
 given:
   - spatial-structure-is-information
   - a-linear-layer-is-an-affine-map
 figure: FigKernelSlide
+figureType: B
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
-  - title: "Gradient-Based Learning Applied to Document Recognition (LeNet)"
-    url: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf
+  - title: "Gradient-Based Learning Applied to Document Recognition"
+    url: https://doi.org/10.1109/5.726791
+  - title: "Conv2d: cross-correlation, channel groups and shapes"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+  - title: "MobileNets"
+    url: https://arxiv.org/abs/1704.04861
 ---
 
-## Demonstration
+## Write the window before naming the pattern
 
-Take a *k* × *k* window of weights. Place it over the top-left corner of the
-image, multiply elementwise, sum, add a bias, write the result. Move one
-position and repeat until the image is covered. The output is a **feature map**:
-one number per position, saying how strongly that window's pattern was present
-there.
+A convolutional filter is a learned linear functional on a small patch.
+At each location it multiplies patch values by weights, sums them and adds a
+bias. Applying an activation afterwards makes a nonlinear block; convolution
+alone is affine.
 
-Two consequences follow immediately, and they are the whole reason the layer
-exists.
+Use an input $X$ with shape $(C_{\mathrm{in}},H,W)$ for one example, and weights
+$K$ with shape $(C_{\mathrm{out}},C_{\mathrm{in}},k_h,k_w)$.
+All indices below start at zero. Define the input coordinates first:
 
-**The parameters do not scale with the image.** A 3 × 3 kernel over three input
-channels producing sixty-four output channels has 3·3·3·64 + 64 = 1,792
-parameters, whether the image is 64 pixels across or 4,000. A dense layer on
-even a small image needs millions, and would have to learn separately that an
-edge in the corner is the same thing as an edge in the middle.
+<Eq id="I.11.1" gloss="The output channel chooses a filter bank; the input channels are summed.">
 
-**Every output is a local function of the input.** Position *(i, j)* of the
-feature map depends only on a *k* × *k* neighbourhood. Nothing distant can
-reach it in one layer, which is the subject of Proposition 3.
+$$
+\begin{aligned}
+r&=is_h-p_{\mathrm{top}}+ud_h,\\
+t&=js_w-p_{\mathrm{left}}+vd_w,\\
+Y_{o,i,j}&=b_o+\sum_{c,u,v}
+ K_{o,c,u,v}X_{c,r,t}.
+\end{aligned}
+$$
 
-Two details that trip people:
+</Eq>
 
-*It is technically a cross-correlation.* True convolution flips the kernel.
-Since the weights are learned, the flip is absorbed and every framework
-implements the unflipped version while calling it convolution.
+Here $s$ is stride and $d$ is dilation, separately for the two spatial axes.
+The indexed $X$ uses the declared boundary extension; zero padding makes
+out-of-range entries zero. Inside the sum, $r$ and $t$ are the input
+coordinates defined in the first two lines; they change with the kernel
+indices $u$ and $v$. The scalar $b_o$ is the output channel's bias.
 
-*Channels are summed, not convolved separately.* A convolution over *C* input
-channels has a *k* × *k* × *C* kernel per output channel and reduces the channel
-axis away. A "3 × 3 convolution" is really 3 × 3 × C.
+Equation (I.11.1) is cross-correlation: the kernel is not reversed.
+Mathematical convolution reverses its spatial axes. A learned kernel can
+represent either orientation, but a supplied numerical kernel must follow
+one convention. [I.11.X01](/elementa/neural-networks/convolution/problems/x01)
+shows different answers when the convention changes.
 
-## Corollary
+An output channel sums contributions from all input channels in an ordinary
+layer. It does not slide across the channel axis.
+A $1$ by $1$ convolution mixes channels separately at each position; it has
+no neighbouring spatial inputs.
 
-The parameter count of a convolutional layer is a fact about the architecture
-and the parameter count of a dense layer is a fact about the input size. That
-difference is why convolutional networks were trainable on the hardware of 1998
-and dense ones were not.
+## Locality does not imply sharing
+
+A locally connected layer could use a different kernel at every location.
+A convolution uses the same kernel at each one. Locality restricts which
+inputs connect; sharing ties the weights of those connections.
+
+For $g$ channel groups, both channel counts must be divisible by $g$.
+Each output channel reads only $C_{\mathrm{in}}/g$ input channels:
+
+<Eq id="I.11.2" gloss="Count each shared weight once, but count its use at every output position.">
+
+$$
+\begin{aligned}
+P_{\mathrm{weights}}&=
+ C_{\mathrm{out}}\frac{C_{\mathrm{in}}}{g}k_hk_w,\\
+P_{\mathrm{with\ bias}}&=P_{\mathrm{weights}}+C_{\mathrm{out}},\\
+\mathrm{MACs}&=NH_{\mathrm{out}}W_{\mathrm{out}}
+ P_{\mathrm{weights}}.
+\end{aligned}
+$$
+
+</Eq>
+
+The multiply-accumulate count in (I.11.2) excludes bias additions and
+activations. A $3$ by $3$ layer from three channels to 64 has $1728$ weights
+and $64$ biases, or $1792$ parameters. Enlarging the image keeps those
+parameters and increases the number of windows.
+
+Depthwise convolution sets $g=C_{\mathrm{in}}$; with one output filter per
+input channel it learns $C_{\mathrm{in}}k_hk_w$ weights.
+A following pointwise convolution mixes channels.
+[I.11.B05](/elementa/neural-networks/convolution/problems/b05) counts this
+factorisation and states the expressivity restriction it introduces.
+
+## Differentiate every window
+
+For the derivative, take one channel, stride one, no padding and no dilation.
+Let $G_{i,j}=\partial\mathcal L/\partial Y_{i,j}$.
+A weight $K_{u,v}$ is used at every output location, so
+
+<Eq id="I.11.3" gloss="Shared weights and overlapping windows require addition, not replacement.">
+
+$$
+\begin{aligned}
+\frac{\partial\mathcal L}{\partial K_{u,v}}
+ &=\sum_{i,j}G_{i,j}X_{i+u,j+v},\\
+\frac{\partial\mathcal L}{\partial b}
+ &=\sum_{i,j}G_{i,j},\\
+\frac{\partial\mathcal L}{\partial X_{a,b}}
+ &=\sum_{\substack{i+u=a\\j+v=b}}
+ G_{i,j}K_{u,v}.
+\end{aligned}
+$$
+
+</Eq>
+
+To derive (I.11.3), differentiate one product in the forward sum, multiply
+by its upstream $G_{i,j}$, and add every occurrence of the same variable.
+The input derivative can be implemented by scattering each output gradient
+through its kernel window. Where windows overlap, contributions accumulate.
+This is I.11.T2.
+
+For several channels, sum the input derivative over output channels and sum
+the parameter derivative over the batch. For stride, dilation and padding,
+scatter to the coordinates in (I.11.1), ignoring padded constants when
+differentiating the real input.
+[I.11.B02](/elementa/neural-networks/convolution/problems/b02) checks both
+derivatives numerically.
+
+## What moves when the image moves?
+
+On an unrestricted integer grid with stride one, define
+$(T_{\vec a}X)_{i,j}=X_{i-a_1,j-a_2}$. Substituting into the forward sum gives
+
+$$
+\begin{gathered}
+F_K(T_{\vec a}X)_{i,j}\\
+ =\sum_{c,u,v}K_{c,u,v}X_{c,i+u-a_1,j+v-a_2}\\
+ =F_K(X)_{i-a_1,j-a_2}.
+\end{gathered}
+$$
+
+That proves translation equivariance, I.11.T1. A constant bias and a
+pointwise activation preserve the identity. The output moves; it does not
+stay unchanged.
+
+The unrestricted-grid premise matters. A finite crop can discard values
+after a shift, and zero padding can introduce different edge windows.
+A strided layer samples only part of the output grid, so an arbitrary
+one-pixel shift need not correspond to an integer shift of the sampled output.
+The boundary counterexample is
+[I.11.X03](/elementa/neural-networks/convolution/problems/x03).
+
+## A forward pass small enough to inspect
+
+This valid, single-channel implementation uses the stored kernel orientation:
+
+~~~python
+def correlate(x, k):
+    oh = len(x) - len(k) + 1
+    ow = len(x[0]) - len(k[0]) + 1
+    assert oh > 0 and ow > 0
+    return [[sum(x[i+u][j+v]*k[u][v]
+                 for u in range(len(k))
+                 for v in range(len(k[0])))
+             for j in range(ow)] for i in range(oh)]
+
+x = [[1, 2, 0], [0, 1, 3], [2, 1, 0]]
+k = [[1, 0], [-1, 2]]
+print(correlate(x, k))
+~~~
+
+It prints <code>[[3, 7], [0, 0]]</code>.
+The reproduction script on
+[I.11.B01](/elementa/neural-networks/convolution/problems/b01)
+also implements the backward scatter-add and checks every input and kernel
+entry by central finite differences.

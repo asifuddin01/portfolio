@@ -1,48 +1,32 @@
 ---
-/**
- * Book II, Ch. II, Prop. 3 — one output unit's window, opening layer by layer.
- * The animation traces the cone rather than describing it.
- */
-const N = 15, S = 26, X0 = 150;
-const LAYERS = [
-  { y: 230, lab: 'input',   r: 0 },
-  { y: 176, lab: 'layer 1', r: 1 },
-  { y: 122, lab: 'layer 2', r: 2 },
-  { y: 68,  lab: 'layer 3', r: 3 },
+const rows = [
+  { y: 66, lo: 3, hi: 3, label: 'layer 3', span: 'R = 7' },
+  { y: 124, lo: 2, hi: 4, label: 'layer 2', span: 'R = 5' },
+  { y: 182, lo: 1, hi: 5, label: 'layer 1', span: 'R = 3' },
+  { y: 240, lo: 0, hi: 6, label: 'input', span: 'R = 1' },
 ];
-const C = 7;
-const cx = (i: number) => X0 + i * S;
+const x = (i: number) => 105 + i * 36;
 ---
-<svg class="fig" viewBox="0 0 720 300" role="img" aria-labelledby="rg-t rg-d" preserveAspectRatio="xMidYMid meet" style="--fig-min: 660px">
-  <title id="rg-t">Receptive field growth with depth</title>
-  <desc id="rg-d">
-    Four rows of positions. One unit at the top depends on three positions in
-    the layer below, seven two layers down, and fifteen three layers down. A
-    3 by 3 kernel widens the window by two positions per layer, so range is
-    bought with depth.
-  </desc>
-
-  <text x="0" y="22" class="t-lab">what one unit at the top can see</text>
-
-  {LAYERS.map((L, li) => (
+<svg class="fig" viewBox="0 0 440 323" role="img" aria-labelledby="rg-t rg-d" style="--fig-min: 0px">
+  <title id="rg-t">Three width-three layers reach seven input positions</title>
+  <desc id="rg-d">A single top unit depends on three units below, then five, then seven input positions. All three kernels have width three, stride one and dilation one. Each layer adds two to the receptive-field span.</desc>
+  <text x="8" y="23" class="t-lab">Width 3 · stride 1 · dilation 1</text>
+  {rows.slice(0, 3).map((row, r) =>
+    Array.from({ length: row.hi - row.lo + 1 }, (_, n) => n + row.lo).map(i =>
+      [-1, 0, 1].map(d => (
+        <line x1={x(i)} y1={row.y + 6} x2={x(i + d)} y2={rows[r + 1].y - 6} class="wire-soft" />
+      ))
+    )
+  )}
+  {rows.map(row => (
     <g>
-      <text x="130" y={L.y + 4} class="t-sm" text-anchor="end">{L.lab}</text>
-      {Array.from({ length: N }, (_, i) => (
-        <circle cx={cx(i)} cy={L.y} r="4"
-                class={Math.abs(i - C) <= 2 * L.r ? 'a1' : 'a4'}
-                opacity={Math.abs(i - C) <= 2 * L.r ? 1 : 0.26} />
+      <text x="8" y={row.y + 4} class="t-sm">{row.label}</text>
+      {Array.from({ length: 7 }, (_, i) => (
+        <circle cx={x(i)} cy={row.y} r="6" class={i >= row.lo && i <= row.hi ? 'bx-fill' : 'bx-soft'} opacity={i >= row.lo && i <= row.hi ? 1 : 0.25} />
       ))}
-      {li > 0 && (
-        <g class="anim-fade" style={`--i: ${li - 1}; --dur: 5.4s`}>
-          <path d={`M${cx(C - 2 * L.r)},${L.y + 8} L${cx(C - 2 * LAYERS[li - 1].r)},${LAYERS[li - 1].y - 8}
-                    L${cx(C + 2 * LAYERS[li - 1].r)},${LAYERS[li - 1].y - 8} L${cx(C + 2 * L.r)},${L.y + 8} Z`}
-                class="a3" opacity="0.18" />
-        </g>
-      )}
-      <text x={cx(N - 1) + 22} y={L.y + 4} class="t-key">{L.r === 0 ? '' : `sees ${4 * L.r + 1}`}</text>
+      <text x="370" y={row.y + 4} class="t-key">{row.span}</text>
     </g>
   ))}
-
-  <text x="0" y="276" class="t-sm">A 3×3 kernel adds two positions per layer, so the window grows linearly with depth — which is why deep stacks</text>
-  <text x="0" y="294" class="t-sm">and dilation both exist. Attention reaches the whole image at layer one, and pays a square for it.</text>
+  <text x="8" y="285" class="t-sm">R is the input span of one unit at that depth.</text>
+  <text x="8" y="306" class="t-sm">Overlapping paths widen the span: 1 → 3 → 5 → 7.</text>
 </svg>

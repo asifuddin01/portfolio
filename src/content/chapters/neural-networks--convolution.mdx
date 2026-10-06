@@ -3,31 +3,94 @@ id: "I.11"
 book: neural-networks
 order: 11
 title: "Convolutional Neural Networks"
-summary: "Weight sharing plus locality: one small detector slid everywhere."
-claim: "A convolution applies one small filter at every position, because a feature's meaning does not depend on where it sits."
+summary: "Local filters, shared gradients, spatial shapes, receptive fields and the information lost in downsampling."
+claim: "A convolution reuses one local rule across a grid. Its efficiency comes from restricting connectivity and sharing parameters, not from ignoring spatial structure."
 mathTier: M3
 topics:
-  - "kernels"
-  - "convolution"
-  - "padding"
-  - "stride"
-  - "pooling"
-  - "feature maps"
-  - "CNN architectures"
-  - "LeNet"
-  - "AlexNet"
-  - "VGG"
-  - "ResNet"
-  - "EfficientNet"
-definitions: []
+  - "Cross-correlation, kernels and feature maps"
+  - "Input channels, output channels and groups"
+  - "Parameter counts and multiply-accumulates"
+  - "Padding, stride, dilation and exact output shapes"
+  - "Backpropagation as accumulation over overlapping windows"
+  - "Transposed convolution is an adjoint, not an inverse"
+  - "Translation equivariance and its boundary conditions"
+  - "Receptive-field size, spacing and effective influence"
+  - "Max pooling, average pooling and their derivatives"
+  - "LeNet, AlexNet, VGG, ResNet and EfficientNet"
+definitions:
+  - n: 1
+    term: "Kernel"
+    statement: "A small array of shared weights. In an ordinary two-dimensional layer, each output channel has one spatial kernel for each input channel; their responses are added."
+    introduces: []
+  - n: 2
+    term: "Cross-correlation"
+    statement: "Multiplying a window by the kernel in its stored orientation and summing. Common CNN layers call this convolution. Mathematical convolution reverses the kernel along each spatial axis."
+    introduces: []
+  - n: 3
+    term: "Feature map"
+    statement: "The spatial array of activations in one channel. A convolutional layer normally returns several feature maps; an activation function is a separate operation."
+    introduces: []
+  - n: 4
+    term: "Stride"
+    statement: "The spacing between successive kernel origins in the input grid. A stride above one samples fewer output locations and changes which translations preserve the output sampling grid."
+    introduces: []
+  - n: 5
+    term: "Padding"
+    statement: "The boundary extension applied before evaluating windows. Zero, reflection and circular padding are different functions. The number of added positions can differ on the two sides."
+    introduces: []
+  - n: 6
+    term: "Dilation"
+    statement: "The spacing between adjacent kernel taps. A kernel of width k and dilation d spans d(k - 1) + 1 input positions while retaining k weights along that axis."
+    introduces: []
+  - n: 7
+    term: "Receptive field"
+    statement: "The input positions that can influence a chosen output through the computation graph. Its bounding span may contain holes, and possible influence need not mean a large learned derivative."
+    introduces: []
+  - n: 8
+    term: "Translation equivariance"
+    statement: "Shifting an input shifts its output by the corresponding amount. This differs from invariance, where the output stays unchanged. Boundaries and subsampling restrict an equivariance claim."
+    introduces: []
+  - n: 9
+    term: "Pooling"
+    statement: "A fixed reduction over a spatial window, often its maximum or mean. Pooling usually operates independently per channel. Window size, stride and padding remain part of its definition."
+    introduces: []
+  - n: 10
+    term: "Grouped and depthwise convolution"
+    statement: "A grouped layer splits input and output channels into disjoint groups. Depthwise convolution uses one group per input channel, optionally with several output filters per channel. A following pointwise layer can mix channels."
+    introduces: []
+  - n: 11
+    term: "Transposed convolution"
+    statement: "The linear adjoint of a chosen convolutional map, implemented with its transposed connectivity. It distributes input values into overlapping output windows. It does not generally reconstruct the input of the original map."
+    introduces: []
 beforeYouStart:
   - "I.6"
   - "I.5"
+  - "I.3"
   - "0.LA.01"
 conceptFigure: FigKernelSlide
-problemStatement: "A fully connected layer over a 224x224 image has fifty million parameters per unit and learns each corner of the image separately. Locality and weight sharing remove both problems at once, and the derivation is identical for any signal with a grid."
-formalResults: []
-assumptions: []
+problemStatement: "A 224 by 224 RGB image has 150,528 scalar inputs. One dense output unit would require that many weights, and separate units would not share a detector between locations. A local shared kernel imposes a different hypothesis class. We compute its output, differentiate its shared weights, and track precisely what it sees and what downsampling discards."
+formalResults:
+  - id: "I.11.T1"
+    name: "Stride-one convolution commutes with translation on an unrestricted grid"
+    statement: "For F_K(X)[i,j] = sum_(c,u,v) K[c,u,v] X[c,i+u,j+v] and translation T_a X[i,j] = X[i-a_1,j-a_2], substitution gives F_K(T_a X) = T_a F_K(X). A spatially constant bias and pointwise activation preserve this property."
+    doesNotPromise: "A finite crop with boundary padding may break the identity near its edges. Stride s preserves the correspondence only for translations aligned with that sampling lattice. Equivariance does not imply an unchanged classification output."
+  - id: "I.11.T2"
+    name: "Shared-kernel gradients sum over every window"
+    statement: "For one stride-one valid channel, Y[i,j] = sum_(u,v) K[u,v] X[i+u,j+v] + b and upstream G, dL/dK[u,v] = sum_(i,j) G[i,j] X[i+u,j+v]. The input derivative accumulates G[i,j] K[u,v] at each participating input entry. I.11.B02 derives both and checks them by finite differences."
+    doesNotPromise: "No additional kernel flip belongs in this scatter-add rule. A different convolution convention, stride, dilation or padding changes the index map. Padding constants are not trainable input values."
+  - id: "I.11.T3"
+    name: "Receptive-field span follows the preceding sampling jump"
+    statement: "For a sequential stack, start with R_0 = J_0 = 1. At layer l, effective kernel width is e_l = d_l(k_l - 1) + 1; then R_l = R_(l-1) + (e_l - 1)J_(l-1) and J_l = s_l J_(l-1). Apply separately to height and width."
+    doesNotPromise: "This gives a bounding span and sampling jump for local layers, not the learned strength of influence. Dilation may leave holes. Global operations, branching and boundary alignment need their own dependency accounting."
+assumptions:
+  - statement: "The declared boundary extension and stride are compatible with the translation being tested."
+    testedBy: "I.11.X03"
+  - statement: "A max-pooling window has a unique maximum when using the one-hot derivative."
+    testedBy: "I.11.X05"
+  - statement: "Both channel counts are divisible by the group count, and tensor layouts match the implementation."
+    testedBy: "I.11.X08"
+  - statement: "A residual addition joins tensors with identical shapes; an identity path is not a universal lower bound on the total derivative."
+    testedBy: "I.11.X09"
 owns:
   - "convolution"
   - "receptive-field"
@@ -37,9 +100,59 @@ borrows:
   - "backpropagation"
   - "affine-layer"
   - "tensor-shape"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "For input width 7, kernel 3, padding 1 and stride 2, the output is floor((7 + 2 - 3)/2) + 1 = 4, not 5. The explicit floor-mode layer does not silently add a fifth window."
+  - "A zero-filled boundary can break translation equivariance. I.11.X03 shifts a finite three-value input and gets a different edge response from shifting the original output."
+  - "A response moved within one pooling window may leave its maximum unchanged. Moving it across a window boundary changes the pooled map. Pooling does not guarantee invariance to every small translation."
+  - "Assigning an input gradient instead of adding contributions loses derivatives where convolution windows overlap. The centre entry in I.11.B02 receives four contributions."
+  - "Reducing spatial resolution can alias high-frequency patterns. Low-pass filtering before subsampling can reduce this sensitivity, but cannot guarantee recovery of information already discarded."
+references:
+  - title: "Gradient-Based Learning Applied to Document Recognition"
+    url: https://doi.org/10.1109/5.726791
+    authors: "LeCun, Bottou, Bengio and Haffner"
+    year: 1998
+    venue: "Proceedings of the IEEE 86(11)"
+  - title: "A guide to convolution arithmetic for deep learning"
+    url: https://arxiv.org/abs/1603.07285
+    authors: "Dumoulin and Visin"
+    year: 2016
+    venue: "arXiv:1603.07285"
+  - title: "ImageNet Classification with Deep Convolutional Neural Networks"
+    url: https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
+    authors: "Krizhevsky, Sutskever and Hinton"
+    year: 2012
+    venue: "Advances in Neural Information Processing Systems 25"
+  - title: "Very Deep Convolutional Networks for Large-Scale Image Recognition"
+    url: https://arxiv.org/abs/1409.1556
+    authors: "Simonyan and Zisserman"
+    year: 2015
+    venue: "International Conference on Learning Representations"
+  - title: "Deep Residual Learning for Image Recognition"
+    url: https://arxiv.org/abs/1512.03385
+    authors: "He, Zhang, Ren and Sun"
+    year: 2016
+    venue: "IEEE Conference on Computer Vision and Pattern Recognition"
+  - title: "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
+    url: https://proceedings.mlr.press/v97/tan19a.html
+    authors: "Tan and Le"
+    year: 2019
+    venue: "International Conference on Machine Learning, PMLR 97"
+  - title: "Understanding the Effective Receptive Field in Deep Convolutional Neural Networks"
+    url: https://arxiv.org/abs/1701.04128
+    authors: "Luo, Li, Urtasun and Zemel"
+    year: 2016
+    venue: "Advances in Neural Information Processing Systems 29"
+  - title: "Making Convolutional Networks Shift-Invariant Again"
+    url: https://proceedings.mlr.press/v97/zhang19a.html
+    authors: "Zhang"
+    year: 2019
+    venue: "International Conference on Machine Learning, PMLR 97"
+  - title: "MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications"
+    url: https://arxiv.org/abs/1704.04861
+    authors: "Howard and colleagues"
+    year: 2017
+    venue: "arXiv:1704.04861"
 notation:
   - "H"
   - "W_spatial"
@@ -51,6 +164,30 @@ apparatus:
   - "0.MC.03"
   - "0.MC.07"
   - "0.LA.03"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.11.1"
+    formula: "Y[o,i,j] = b[o] + sum_(c,u,v) K[o,c,u,v] X[c,is_h - p_t + ud_h,js_w - p_l + vd_w]"
+    gloss: "One shared kernel bank is applied to explicitly indexed windows."
+  - id: "I.11.2"
+    formula: "P = C_out (C_in/g) k_h k_w + C_out; MACs = N H_out W_out C_out (C_in/g) k_h k_w"
+    gloss: "Parameters do not grow with image size; computation does."
+  - id: "I.11.3"
+    formula: "dK[u,v] = sum_(i,j) G[i,j] X[i+u,j+v]; dX[i+u,j+v] += G[i,j] K[u,v]"
+    gloss: "Every use of a shared weight or overlapping input contributes."
+  - id: "I.11.4"
+    formula: "e = d(k - 1) + 1; out = floor((in + p_left + p_right - e)/s) + 1"
+    gloss: "Count valid kernel origins, including dilation and both boundaries."
+  - id: "I.11.5"
+    formula: "out_transpose = (in - 1)s - 2p + d(k - 1) + output_padding + 1"
+    gloss: "Output padding selects a compatible shape, not missing information."
+  - id: "I.11.6"
+    formula: "R_l = R_(l-1) + d_l(k_l - 1) J_(l-1); J_l = s_l J_(l-1)"
+    gloss: "The preceding jump converts a local window into original input coordinates."
+  - id: "I.11.7"
+    formula: "maxpool(x) = max_i x_i; avgpool(x) = (1/m) sum_i x_i"
+    gloss: "The reductions lose different information and have different backward rules."
+  - id: "I.11.8"
+    formula: "y = x + F(x); dy/dx = I + J_F(x)"
+    gloss: "An identity path adds to the branch derivative, but does not prevent cancellation."
+status: published
 ---

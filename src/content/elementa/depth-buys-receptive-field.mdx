@@ -1,51 +1,132 @@
 ---
 chapter: neural-networks--convolution
 proposition: 3
-statement: A convolutional network buys range with depth.
-claim: "One layer sees a small window. Stacking layers widens it by a fixed amount each time, so how far a unit can see is a fact about the architecture, computable before any training."
+statement: "Depth grows a receptive field, but does not guarantee that the model uses it."
+claim: "Track each layer's kernel span and sampling jump. Then distinguish architectural access from the learned influence of each input."
 given:
   - a-convolution-is-one-filter-everywhere
   - convolution-buys-parallelism-with-range
 figure: FigReceptiveGrowth
+figureType: C
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
-  - title: "Understanding the Effective Receptive Field in Deep CNNs"
+  - title: "Understanding the Effective Receptive Field in Deep Convolutional Neural Networks"
     url: https://arxiv.org/abs/1701.04128
+  - title: "Very Deep Convolutional Networks for Large-Scale Image Recognition"
+    url: https://arxiv.org/abs/1409.1556
+  - title: "Deep Residual Learning for Image Recognition"
+    url: https://arxiv.org/abs/1512.03385
+  - title: "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
+    url: https://proceedings.mlr.press/v97/tan19a.html
+  - title: "Gradient-Based Learning Applied to Document Recognition"
+    url: https://doi.org/10.1109/5.726791
+  - title: "ImageNet Classification with Deep Convolutional Neural Networks"
+    url: https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
 ---
 
-## Demonstration
+## Keep a ruler in input coordinates
 
-The **receptive field** of a unit is the set of input pixels that can influence
-it. For a stack of 3 × 3 convolutions at stride 1 it grows by two positions per
-layer: 3, 5, 7, 9. Linear in depth, which is slow.
+Let $R_\ell$ be the receptive-field span of an output after layer $\ell$,
+and $J_\ell$ the distance in original input coordinates between neighbouring
+outputs. Initially $R_0=J_0=1$.
 
-Stride and pooling accelerate it, because they multiply the step size of
-everything above them. That is most of why classification networks downsample
-so aggressively — not to save compute alone, but so that a unit near the top
-can see the whole object.
+A width-$k_\ell$, dilation-$d_\ell$ window reaches
+$d_\ell(k_\ell-1)$ previous-layer jumps beyond its first position.
+Each of those jumps spans $J_{\ell-1}$ original positions.
+Stride then changes the spacing between neighbouring outputs:
 
-Two things follow that matter more than the arithmetic.
+<Eq id="I.11.6" gloss="Grow the field using the old jump, then update the jump using the stride.">
 
-**A dependency wider than the receptive field cannot be learned.** If your
-lesion is defined by its relation to a structure 400 pixels away, and the
-network's receptive field at the head is 200, no amount of data will help. That
-is a property you can check with a formula before training anything, and it is
-checked far less often than it should be.
+$$
+\begin{aligned}
+R_\ell&=R_{\ell-1}
+ +d_\ell(k_\ell-1)J_{\ell-1},\\
+J_\ell&=s_\ell J_{\ell-1}.
+\end{aligned}
+$$
 
-**The effective receptive field is much smaller than the theoretical one.**
-Luo and colleagues showed the influence of input pixels on an output decays
-roughly like a Gaussian from the centre, and the *effective* field grows only
-as the square root of the number of layers. So the nominal number on paper
-overstates what the unit actually uses, often by a large factor.
+</Eq>
 
-This is the point where the comparison with attention becomes concrete. A
-transformer's first layer already reaches every position — path length one,
-whatever the distance — and pays quadratically for the privilege. A convolution
-pays with depth and a decaying influence, and gets linear cost in return.
+This derivation proves I.11.T3 for a sequential stack of local layers.
+Equation (I.11.6) gives $R=3,5,7$ for three ordinary width-three,
+stride-one layers. The diagram traces one top output back through three,
+five and seven positions in successively earlier rows.
 
-## Corollary
+Striding increases the jump used by later layers.
+For width-three layers with strides $1,2,1$, the pairs $(R,J)$ are
+$(3,1)$, $(5,2)$ and $(9,2)$.
+Using the new jump too early would incorrectly enlarge the field of the
+striding layer itself.
 
-Before adding capacity, compute the receptive field. If it does not cover the
-structure the task depends on, more parameters are the wrong repair; dilation,
-downsampling or attention are the right ones.
+Dilation can leave holes inside the span. Branches require the union of
+their dependency sets. A global average, global attention layer or dense
+flattened head can make a final prediction depend on positions beyond the
+field of an individual earlier feature. Name the output whose field you
+are calculating.
+
+## Accessible is not influential
+
+A nonzero derivative cannot arrive through a path that does not exist.
+The converse fails: a path may exist while its weights are zero, its
+activation is inactive, or contributions cancel.
+
+Luo and colleagues distinguished the theoretical field from the distribution
+of effective influence. Their analysis and experiments found concentrated,
+often approximately Gaussian influence within the wider field.
+This is not a theorem that every trained CNN has the same Gaussian profile
+or one universal square-root growth law. Architecture, weights, inputs and
+the quantity used to measure influence matter.
+
+For a local dense-prediction head with no other route to a distant region,
+increasing channel count alone does not add that missing route. Increasing
+depth, changing dilation or adding a global operation changes the dependency
+graph. Downsampling also changes access, but spends spatial resolution.
+
+## Read the architectures as design choices
+
+**LeNet** combined learned local filters with subsampling for document
+recognition. Its lesson is a composed spatial hierarchy, not that every later
+CNN must use exactly its subsampling operator.
+
+**AlexNet** demonstrated a larger learned visual hierarchy on ImageNet using
+ReLU activations, GPU training and regularisation including dropout.
+Its historical architecture is not a prescription for today's implementation.
+
+**VGG** stacked small $3$ by $3$ filters to gain depth.
+Three such stride-one layers have a $7$ by $7$ field.
+At equal input, hidden and output width $C$ and ignoring biases, they use
+$27C^2$ weights versus $49C^2$ for one $7$ by $7$ layer.
+The intermediate nonlinearities make them different functions, not interchangeable
+factorisations of one linear filter.
+
+**ResNet** learns a residual branch. When the shapes agree, its pre-activation
+sum has the form
+
+<Eq id="I.11.8" gloss="The identity route adds a derivative term; the branch can still cancel it.">
+
+$$
+\begin{aligned}
+\vec y&=\vec x+F(\vec x),\\
+\frac{\partial\vec y}{\partial\vec x}
+ &=I+J_F(\vec x).
+\end{aligned}
+$$
+
+</Eq>
+
+Equation (I.11.8) explains the identity route, not guaranteed non-vanishing
+gradients: $F(\vec x)=-\vec x$ makes the sum zero.
+A following activation supplies another Jacobian factor.
+If resolution or channel width changes, a projection shortcut must make the
+shapes compatible. [I.11.X09](/elementa/neural-networks/convolution/problems/x09)
+checks both issues.
+
+**EfficientNet** studied coordinated scaling of depth, width and resolution.
+A rough convolutional cost model is proportional to depth times width
+squared times resolution squared. Its compound-scaling idea allocates a
+larger budget across all three rather than changing one in isolation.
+That approximation is a planning tool, not a latency guarantee.
+
+These papers answer different questions. Counting layers alone does not
+compare their compute, training setup, accuracy or suitability for a new task.

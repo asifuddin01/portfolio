@@ -1,0 +1,46 @@
+---
+id: "I.11.X04"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Update the receptive field before the jump"
+depends:
+  - "I.11.P03"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+Track receptive-field span and sampling jump through three width-three
+layers with strides $(1,2,1)$ and dilation one. All use symmetric padding one.
+What are the first-output centre and final jump if original pixel centres
+start at $1/2$?
+
+<Hint>
+Use the preceding layer's jump when growing the span.
+</Hint>
+<SolutionToggle>
+
+Starting from $(R_0,J_0)=(1,1)$, (I.11.6) gives
+
+$$
+\begin{aligned}
+(R_1,J_1)&=(3,1),\\
+(R_2,J_2)&=(5,2),\\
+(R_3,J_3)&=(9,2).
+\end{aligned}
+$$
+
+Every layer's centre increment is
+$((3-1)/2-1)J_{\mathrm{previous}}=0$.
+The first centre remains $1/2$; neighbouring final outputs are two original
+pixels apart. At the boundary, part of the nominal nine-position span is padding.
+
+Updating the second jump before computing its span would give seven
+instead of five at layer two. The stride changes spacing between outputs,
+not the taps inside that layer's first window.
+
+</SolutionToggle>

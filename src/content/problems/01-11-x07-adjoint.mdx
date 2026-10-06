@@ -1,0 +1,51 @@
+---
+id: "I.11.X07"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Transpose the operator, not its information loss"
+depends:
+  - "I.11.P02"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+A one-dimensional cross-correlation uses kernel $(1,2,3)$, stride two,
+padding one and input length four. Write its matrix $A$. For
+$x=(1,2,3,4)^{\mathsf T}$ and $g=(1,-1)^{\mathsf T}$,
+verify $\langle Ax,g\rangle=\langle x,A^{\mathsf T}g\rangle$.
+Choose output padding to return length four with (I.11.5).
+Is $A^{\mathsf T}$ an inverse?
+
+<Hint>
+The two padded windows are $(0,x_0,x_1)$ and $(x_1,x_2,x_3)$.
+</Hint>
+<SolutionToggle>
+
+The matrix and products are
+
+$$
+A=\begin{bmatrix}2&3&0&0\\0&1&2&3\end{bmatrix},
+\qquad Ax=\begin{bmatrix}8\\20\end{bmatrix},
+$$
+
+$$
+A^{\mathsf T}g=\begin{bmatrix}2\\2\\-2\\-3\end{bmatrix}.
+$$
+
+Both dot products equal $-12$:
+$8-20=-12$ and $2+4-6-12=-12$.
+That is the adjoint identity behind the backward scatter-add.
+
+The transposed output length is
+$(2-1)2-2+2+o+1=3+o$.
+Choose $o=1$ to return length four.
+The original matrix has rank at most two, so it cannot distinguish all
+four-dimensional inputs. Its transpose cannot be a two-sided inverse.
+Matching the original length is not evidence of inversion.
+
+</SolutionToggle>

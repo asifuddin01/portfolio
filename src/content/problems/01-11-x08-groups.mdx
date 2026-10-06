@@ -1,0 +1,39 @@
+---
+id: "I.11.X08"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "Count channels inside each group"
+depends:
+  - "I.11.P01"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+A $3$ by $3$ convolution has eight input channels, twelve output channels,
+four groups and one bias per output channel. Give the weight shape and
+parameter count. Is a group count of three valid?
+Then count a depthwise layer with eight input channels and multiplier two.
+
+<Hint>
+Each output channel reads only the input channels assigned to its group.
+</Hint>
+<SolutionToggle>
+
+With four groups, each output channel reads $8/4=2$ inputs.
+The weight shape is $(12,2,3,3)$, with $216$ weights and $12$ biases,
+or $228$ parameters. Each group has two input and three output channels.
+
+Three groups are invalid because eight is not divisible by three,
+even though twelve is.
+
+Depthwise multiplier two produces sixteen output channels in eight groups.
+The weight shape is $(16,1,3,3)$, giving $144$ weights plus sixteen
+biases, or $160$ parameters. Two independent spatial filters are learned
+for each input channel; this layer still does not mix different input channels.
+
+</SolutionToggle>

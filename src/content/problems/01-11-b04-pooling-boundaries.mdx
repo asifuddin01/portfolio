@@ -1,0 +1,76 @@
+---
+id: "I.11.B04"
+kind: problem
+chapter: "I.11"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A one-pixel shift can cross a pooling boundary"
+depends:
+  - "I.11.P04"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+<Statement>
+Identify exactly which location changes a pooled representation forgets.
+</Statement>
+<Given>
+Use one-dimensional width-two max pooling with stride two, no padding.
+Consider $a=(1,0,0,0)$, $b=(0,1,0,0)$ and $c=(0,0,1,0)$.
+Also consider width-two average pooling with the same stride.
+</Given>
+<Find>
+All pooled outputs. Decide whether the operation is invariant under every
+one-position right shift and whether its output determines the original input.
+</Find>
+<Strategy>
+Write the two disjoint windows explicitly. Distinguish a permutation inside
+one window from movement into another window.
+</Strategy>
+<Solution>
+
+Max pooling yields
+
+$$
+\begin{aligned}
+P_{\max}(a)&=(1,0),\\
+P_{\max}(b)&=(1,0),\\
+P_{\max}(c)&=(0,1).
+\end{aligned}
+$$
+
+The shift from $a$ to $b$ stays within the first window and leaves its
+maximum unchanged. The equally small shift from $b$ to $c$ crosses a
+window boundary and changes the output.
+
+Average pooling gives $(1/2,0)$, $(1/2,0)$ and $(0,1/2)$.
+The same boundary distinction remains.
+
+Both maps are many-to-one: $a$ and $b$ have different locations but
+identical pooled outputs. No deterministic inverse receiving only that
+output can reconstruct both correctly. This proves loss of information for
+these maps, without claiming that every downsampling transform is lossy.
+
+</Solution>
+<Answer>
+Pooling is invariant to these within-window rearrangements, not to every
+small translation of the whole signal. It cannot recover the lost location
+from the pooled values alone.
+</Answer>
+<CheckSanity>
+A two-position shift aligned to the stride moves the pooled response by
+one position, provided the signal and boundaries are treated consistently.
+That is an equivariance relation, not an unchanged output.
+</CheckSanity>
+<Breaks>
+The argument depends on the window partition. Changing stride, padding or
+the reduction changes the equivalence classes of inputs. Extra side
+information, such as stored argmax indices, also changes what a decoder receives.
+</Breaks>
+<Variation>
+The vectors $(1,1)$ and $(0,2)$ have the same mean but different maxima.
+Max and average pooling discard different information even in one window.
+</Variation>

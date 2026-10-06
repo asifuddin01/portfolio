@@ -1,0 +1,36 @@
+---
+id: "I.11.X02"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Count the fourth window, not a fifth"
+depends:
+  - "I.11.P02"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+Compute the output length for input seven, kernel three, dilation one,
+padding one on each side and stride two. List padded-coordinate origins.
+Then choose padding for a width-four, stride-one kernel to retain length seven.
+
+<Hint>
+Use the effective span, and require the last tap to stay inside the padded input.
+</Hint>
+<SolutionToggle>
+
+Equation (I.11.4) gives
+$\lfloor(7+2-3)/2\rfloor+1=4$.
+In a padded input of length nine, origins $0,2,4,6$ end at $2,4,6,8$.
+Origin eight would end at ten and does not fit.
+
+For width four at stride one, total padding must be three.
+Splits $(1,2)$ and $(2,1)$ both preserve length but shift alignment
+differently. Equal integer padding cannot sum to three.
+The phrase 'same size' does not determine which side gets the extra value.
+
+</SolutionToggle>

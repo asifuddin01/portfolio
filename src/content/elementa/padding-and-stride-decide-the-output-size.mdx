@@ -1,46 +1,116 @@
 ---
 chapter: neural-networks--convolution
 proposition: 2
-statement: Padding and stride decide the output size, and nothing else does.
-claim: "One formula gives the spatial size of every convolution's output. Most shape errors in a vision pipeline are that formula applied without being read."
+statement: "Output size is a count of valid kernel origins."
+claim: "Kernel span, both padding widths, stride and the boundary convention determine the output grid. Dilation belongs in the calculation."
 given:
   - a-convolution-is-one-filter-everywhere
 figure: FigPaddingStride
+figureType: D
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
-  - title: "A Guide to Convolution Arithmetic for Deep Learning"
+  - title: "A guide to convolution arithmetic for deep learning"
     url: https://arxiv.org/abs/1603.07285
+  - title: "Conv2d documentation"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
 ---
 
-## Demonstration
+## Count the last window that fits
 
-```
-out = ⌊(in + 2·pad − k) / stride⌋ + 1
-```
+Work along one axis. The unpadded input has length $n$, the left and right
+padding widths are $p_L,p_R$, kernel width is $k$, dilation is $d$,
+and stride is $s$. The effective kernel span is $e=d(k-1)+1$.
 
-That is the entire content of the proposition. Everything else is reading it.
+A window with origin $qs$ in padded coordinates occupies positions
+$qs$ through $qs+e-1$. It fits exactly when
+$qs+e-1\leq n+p_L+p_R-1$. Therefore
+$q\leq(n+p_L+p_R-e)/s$. Counting integer origins starting at zero yields
 
-**Without padding the image shrinks.** A 3 × 3 kernel loses one position at
-each edge, so 7 becomes 5. Stack twenty such layers and a 224-pixel image is
-184 pixels, and the corners have been seen by fewer windows than the middle.
+<Eq id="I.11.4" gloss="The floor comes from counting complete windows, not from a rounding preference.">
 
-**Padding of (k−1)/2 keeps the size.** For k = 3 that is 1, which is why almost
-every modern network uses 3 × 3 with padding 1: shapes stay put and the
-architecture becomes composable.
+$$
+\begin{aligned}
+e&=d(k-1)+1,\\
+n_{\mathrm{out}}
+ &=\left\lfloor\frac{n+p_L+p_R-e}{s}\right\rfloor+1.
+\end{aligned}
+$$
 
-**Stride subsamples.** Stride 2 halves each spatial axis and quarters the
-number of positions. It is the cheap way to downsample, and it is why
-resolutions in a network go 224, 112, 56, 28, 14, 7.
+</Eq>
 
-The floor is where the surprises live. With `in = 7`, `k = 3`, `pad = 1`,
-`stride = 2`, the output is ⌊8/2⌋ + 1 = 5, and the last window hangs off the
-edge — some frameworks silently drop it, some pad again. The two disagree by a
-row, and in a segmentation network that disagreement surfaces at the decoder as
-a shape mismatch several layers later.
+Equation (I.11.4) assumes positive integer kernel, stride and dilation,
+non-negative padding, and at least one fitting window.
+A padded input smaller than the effective kernel is not a valid positive-sized
+output for this convention. Apply the same derivation independently to height
+and width.
 
-## Corollary
+For $n=7$, $k=3$, $d=1$, $p_L=p_R=1$ and $s=2$,
+the result is $\lfloor(7+2-3)/2\rfloor+1=4$.
+The padded origins are $0,2,4,6$.
+Origin eight would overrun the padded length nine and is not evaluated.
 
-Compute the shapes on paper before writing the model. Most "the tensors do not
-line up" bugs are this formula, applied by the framework and not by the author,
-and they are cheaper to prevent than to trace back from the exception.
+The diagram compares this with the stride-one outputs of widths five and
+seven. [I.11.B03](/elementa/neural-networks/convolution/problems/b03) adds
+channels, batches and dilation.
+
+## “Same” must name an alignment convention
+
+At stride one, keeping the input size requires total padding $e-1$.
+If $e$ is odd this can be split equally. If $e$ is even, equal integer
+padding cannot give exactly that total.
+
+A common stride-$s$ convention chooses output length $\lceil n/s\rceil$
+and total padding
+
+$$
+P=\max\left(0,(\lceil n/s\rceil-1)s+e-n\right).
+$$
+
+When $P$ is odd, assigning the extra element to the left rather than the
+right changes alignment even though the shape is identical.
+Frameworks do not all support the same named modes for every stride;
+the documented PyTorch Conv2d string mode 'same', for example, requires
+stride one. Record actual padding widths when reproducing a model.
+
+Two arrays can have equal shapes and refer to different input centres.
+For a feature whose preceding input-centre jump is $J$, a layer shifts the
+first centre by $((e-1)/2-p_L)J$. With even kernels this may be a half-grid
+offset. Shape equality alone is not sufficient evidence that decoder and
+skip-connection features align spatially.
+
+## A transposed convolution follows the backward connectivity
+
+Flatten a bias-free convolution into a matrix $A$ so that $y=Ax$.
+Then a linear objective with upstream vector $g$ has input gradient
+$A^{\mathsf T}g$. A transposed convolution computes this adjoint connectivity,
+summing contributions wherever output windows overlap.
+
+For symmetric padding, its common one-axis shape formula is
+
+<Eq id="I.11.5" gloss="A shape choice resolves stride ambiguity; it cannot reverse information loss.">
+
+$$
+\begin{aligned}
+n_{\mathrm{transposed}}
+ ={}&(n_{\mathrm{in}}-1)s-2p\\
+ &+d(k-1)+o+1.
+\end{aligned}
+$$
+
+</Eq>
+
+Here $o$ is the output-padding shape parameter. In the usual stride-ambiguity
+case choose $0\leq o<s$; consult the operator's documented constraints for
+other dilation combinations.
+Different input sizes can have the same forward output size because of the
+floor in (I.11.4). The parameter $o$ selects a compatible output shape.
+
+It does not mean that the operator pads missing observations back into
+existence. A map from four coordinates to two cannot have a two-sided inverse.
+[I.11.X07](/elementa/neural-networks/convolution/problems/x07) writes its
+matrix, verifies the adjoint identity and chooses the output shape explicitly.
+
+For segmentation, upsampling restores the size of a prediction grid.
+Whether it restores useful detail depends on the representations available
+to the decoder. Equal image dimensions do not prove reconstruction.

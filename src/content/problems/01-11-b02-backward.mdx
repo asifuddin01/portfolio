@@ -1,0 +1,111 @@
+---
+id: "I.11.B02"
+kind: problem
+chapter: "I.11"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Overlapping windows add their gradients"
+depends:
+  - "I.11.P01"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+<Statement>
+Derive and check the kernel, input and bias gradients of I.11.B01.
+</Statement>
+<Given>
+Use I.11.B01's $X$ and $K$. The upstream derivative is
+
+$$
+G=\begin{bmatrix}1&2\\-1&1\end{bmatrix}.
+$$
+
+Define the scalar objective $F=\sum_{i,j}G_{i,j}Y_{i,j}$.
+Treat $G$ as fixed during differentiation.
+</Given>
+<Find>
+The gradient formulas and their complete numerical arrays.
+</Find>
+<Strategy>
+Differentiate one forward product, then sum every occurrence of each shared
+weight or overlapping input. Confirm the result using central differences.
+</Strategy>
+<Solution>
+
+The differential of one output is
+
+$$
+\begin{aligned}
+ &dY_{i,j}=db\\
+ &\quad+\sum_{u,v}X_{i+u,j+v}\,dK_{u,v}\\
+ &\quad+\sum_{u,v}K_{u,v}\,dX_{i+u,j+v}.
+\end{aligned}
+$$
+
+Multiplying by $G_{i,j}$ and summing gives (I.11.3).
+For the kernel entries, the sums are
+
+$$
+\begin{aligned}
+dK_{0,0}&=1(1)+2(2)\\
+ &\quad-1(0)+1(1)=6,\\
+dK_{0,1}&=1(2)+2(0)\\
+ &\quad-1(1)+1(3)=4,\\
+dK_{1,0}&=1(0)+2(1)\\
+ &\quad-1(2)+1(1)=1,\\
+dK_{1,1}&=1(1)+2(3)\\
+ &\quad-1(1)+1(0)=6.
+\end{aligned}
+$$
+
+The bias derivative is $1+2-1+1=3$.
+For the input, scatter each $G_{i,j}K$ into its corresponding window
+and add overlaps:
+
+$$
+dX=\begin{bmatrix}1&2&0\\-2&1&4\\1&-3&2\end{bmatrix}.
+$$
+
+The centre illustrates why assignment is wrong.
+Its four contributions are $2$, $-2$, $0$ and $1$, whose sum is one.
+
+The forward objective is $F=1(3)+2(7)-1(0)+1(0)=17$.
+With zero bias, the map is linear in $X$ while $K$ is fixed,
+and linear in $K$ while $X$ is fixed. Consequently,
+
+$$
+\begin{aligned}
+\langle dX,X\rangle&=17,\\
+\langle dK,K\rangle&=17.
+\end{aligned}
+$$
+
+These dot products are useful independent checks.
+The script also perturbs every input, weight and bias by $10^{-6}$ and
+compares central differences to the analytic result within $10^{-7}$.
+Additional tests use padding, stride and dilation, where the same
+scatter-add rule must follow a different index map.
+
+</Solution>
+<Answer>
+$dK=[[6,4],[1,6]]$, $db=3$ and
+$dX=[[1,2,0],[-2,1,4],[1,-3,2]]$.
+</Answer>
+<CheckSanity>
+The input-gradient shape matches $X$ and the weight-gradient shape matches
+$K$. All three occurrences of a nonzero centre contribution are retained.
+</CheckSanity>
+<Breaks>
+This is the derivative of the stated cross-correlation. Introducing another
+kernel flip while scattering would compute a different derivative.
+A nonlinear activation after the convolution must be differentiated first.
+</Breaks>
+<Variation>
+If the loss is averaged over the four outputs rather than summed, divide
+every upstream entry by four. All three gradient arrays scale accordingly;
+do not divide the already-scaled gradients again.
+</Variation>

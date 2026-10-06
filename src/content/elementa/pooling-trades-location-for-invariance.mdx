@@ -1,50 +1,97 @@
 ---
 chapter: neural-networks--convolution
 proposition: 4
-statement: Pooling keeps the answer and throws away the address.
-claim: "Taking a maximum over a neighbourhood makes the response survive a small shift and destroys the record of where it was. Both halves of that trade are real, and one of them has to be undone for dense tasks."
+statement: "Pooling removes information within a window, but does not guarantee shift invariance."
+claim: "Max and average pooling discard different details. Their behaviour under a translation depends on which values remain inside each sampled window."
 given:
   - a-convolution-is-one-filter-everywhere
 figure: FigPooling
+figureType: G
 status: published
-updated: 2026-08-22
+updated: 2026-10-06
 sources:
-  - title: "ImageNet Classification with Deep CNNs (AlexNet)"
+  - title: "Making Convolutional Networks Shift-Invariant Again"
+    url: https://proceedings.mlr.press/v97/zhang19a.html
+  - title: "ImageNet Classification with Deep Convolutional Neural Networks"
     url: https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
 ---
 
-## Demonstration
+## A reduction needs a window and a stride
 
-Max pooling over a 2 × 2 window reports the largest activation in each
-neighbourhood. Two feature maps that differ only in *where* within a window the
-strong response sits produce the same pooled output.
+For $m$ entries in one window,
 
-**Bought:** a small translation no longer changes the answer, which is what you
-want when the question is *is there a cat* and not *exactly where is the cat*.
-Also a fourfold reduction in positions, and a doubling of everything above it in
-receptive field.
+<Eq id="I.11.7" gloss="One rule retains the largest value; the other retains the mean.">
 
-**Paid:** the position is gone, and it is gone irreversibly. Nothing downstream
-can recover it from the pooled value.
+$$
+\begin{aligned}
+p_{\max}(\vec x)&=\max_i x_i,\\
+p_{\mathrm{avg}}(\vec x)&=\frac1m\sum_i x_i.
+\end{aligned}
+$$
 
-For classification that is a clean win, and it is why the classical stack ends
-in global average pooling — collapsing every spatial position into one vector
-per channel, at which point the network is committed to a question with no
-spatial answer.
+</Eq>
 
-For segmentation and detection it is a problem, and the architectures are
-shaped by the repair. A U-Net downsamples like a classifier and then upsamples
-back, carrying skip connections across at every level *because the bottleneck
-cannot supply the detail*. The skips are not an optimisation; they are the only
-place the fine spatial information still exists.
+Equation (I.11.7) says nothing yet about how windows are placed.
+A $2$ by $2$ pooling window at stride two gives disjoint windows; stride one
+gives overlapping windows. Pooling usually operates independently per channel,
+so it need not change the channel count.
 
-Stride-2 convolution has largely replaced pooling in modern networks, and it is
-worth being clear that this changes little about the trade — it is a learnable
-downsample rather than a fixed one, and it discards position just the same.
+For an unpadded window with a unique maximum at index $r$,
+the derivative of max pooling is one at $r$ and zero elsewhere.
+An upstream scalar $g$ therefore returns $g$ only to that entry.
+Average pooling returns $g/m$ to each entry.
+Overlapping windows add their backward contributions just as convolution does.
 
-## Corollary
+A tie makes the maximum non-differentiable in the ordinary sense.
+An implementation may choose one maximising index; more generally, convex
+combinations of their one-hot gradients are valid subgradients.
+A central finite difference at a tie is not a unique analytic-gradient oracle.
+[I.11.X05](/elementa/neural-networks/convolution/problems/x05) separates these cases.
 
-Count the downsampling steps in any architecture and you know its output
-stride. A network with an output stride of 32 predicts one value per 32 × 32
-block of input, and every segmentation boundary it produces is a guess
-interpolated between those blocks.
+At padded boundaries, state the rule. Ignoring padded entries in an average
+uses a different divisor from counting them as zeros. For max pooling,
+zero padding can even exceed negative real entries; an implementation using
+negative infinity has different boundary behaviour.
+
+## Moving inside a window is not moving across the grid
+
+A window containing $(1,0)$ and one containing $(0,1)$ both have maximum one.
+The pooled scalar cannot recover which entry was nonzero. This is a real
+loss of location within that window.
+
+But a one-position shift can move the response into another window.
+Stride-two max pooling maps $(0,1,0,0)$ to $(1,0)$ and its right shift
+$(0,0,1,0)$ to $(0,1)$. The output is not invariant.
+The diagram shows both the within-window equality and this boundary crossing.
+[I.11.B04](/elementa/neural-networks/convolution/problems/b04) also compares means.
+
+Subsampling can alias fine patterns: different sampling phases may return
+very different values. Filtering before subsampling can reduce this
+sensitivity, as studied by Zhang. It does not create an exact invariance
+guarantee for arbitrary finite images and every boundary rule.
+
+## Global pooling changes the question the head can answer
+
+Global average pooling returns one number per channel by averaging all its
+spatial entries. It is invariant to a permutation of those entries at the
+feature-map level. That does not establish invariance of the entire image
+classifier to every spatial transformation: the preceding feature extractor
+and image boundaries still matter.
+
+At $64$ channels and $7$ by $7$ positions, a flattened ten-class affine head
+has $31,370$ parameters. Pooling first reduces the head to $650$.
+[I.11.X10](/elementa/neural-networks/convolution/problems/x10) derives both
+counts and identifies the information the smaller head can no longer use.
+
+For segmentation, a decoder needs spatially organised evidence.
+Upsampling increases the output grid's size but cannot uniquely undo a
+many-to-one pooling map. High-resolution skip features can carry information
+that the coarse representation discarded. They are a useful design choice,
+not a proof that every decoder must reconstruct every original pixel.
+
+A strided convolution is learned rather than fixed pooling, but its information
+loss depends on the whole mapping and channel count. It is too broad to say
+that every spatial downsampling operation must lose information:
+space-to-depth rearrangement, for example, reduces height and width while
+preserving every value in extra channels.
+Count the representation and inspect the map, not just the spatial dimensions.

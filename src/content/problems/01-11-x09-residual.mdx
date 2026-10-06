@@ -1,0 +1,37 @@
+---
+id: "I.11.X09"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "An identity path can still be cancelled"
+depends:
+  - "I.11.P03"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+For $y=x+F(x)$ take $F(x)=-x$. Compute the output and Jacobian.
+Now consider a residual branch changing shape from $(N,16,32,32)$ to
+$(N,32,16,16)$. Can it be added directly to the input?
+
+<Hint>
+Differentiate the sum, and check every axis before adding tensors.
+</Hint>
+<SolutionToggle>
+
+The output is zero and the Jacobian is $I-I=0$.
+Thus the identity term in (I.11.8) does not give a positive lower bound
+on the total gradient. It creates a route that can help training,
+but another route can cancel it.
+
+The second addition is invalid: channel and spatial dimensions differ.
+One possible shortcut is a $1$ by $1$ projection from 16 to 32 channels
+with stride two and no padding. It produces $(N,32,16,16)$.
+Its derivative is the projection's Jacobian rather than an identity.
+The alignment of the two branches still needs checking.
+
+</SolutionToggle>

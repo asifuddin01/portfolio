@@ -1,0 +1,34 @@
+---
+id: "I.11.X01"
+kind: exercise
+chapter: "I.11"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A stored kernel has an orientation"
+depends:
+  - "I.11.P01"
+rounding: "Exact integers and fractions where possible; six decimals otherwise."
+hasSolution: true
+verified: true
+snippet: "i-11-convolution-checks.py"
+status: published
+---
+For input $(1,2,3)$ and kernel $(1,2)$, compute valid stride-one
+cross-correlation, then repeat after reversing the kernel.
+
+<Hint>
+The windows are $(1,2)$ and $(2,3)$.
+</Hint>
+<SolutionToggle>
+
+Cross-correlation gives $(1+4,2+6)=(5,8)$.
+Reversing the kernel to $(2,1)$ gives $(2+2,4+3)=(4,7)$.
+The second corresponds to the flipped-kernel convention on the same valid
+windows. Neither answer is a numerical approximation to the other.
+
+A learned filter can be reversed through its learned parameters, so this
+does not restrict the family of learnable linear maps. But fixed filters,
+checkpoints and hand calculations must agree on orientation.
+
+</SolutionToggle>
