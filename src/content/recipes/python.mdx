@@ -536,7 +536,7 @@ examples:
       record = {
           "model": "HierarchiRetina",
           "stages": 3,
-          "metrics": {"macro_auc": 0.9422, "qwk": 0.8533},
+          "metrics": {"qwk": 0.804, "referral_sensitivity": 0.832},
           "datasets": ["EyePACS", "DDR", "APTOS"],
       }
 
@@ -544,7 +544,7 @@ examples:
       print(text)
 
       back = json.loads(text)
-      print(back["metrics"]["macro_auc"], type(back["stages"]).__name__)
+      print(back["metrics"]["qwk"], type(back["stages"]).__name__)
 
       with open("record.json", "w") as f:
           json.dump(record, f)

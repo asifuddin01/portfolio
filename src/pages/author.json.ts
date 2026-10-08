@@ -141,6 +141,7 @@ export const GET: APIRoute = async () => {
     preprint: 'a preprint',
     'under-review': 'under review',
     'in-preparation': 'in preparation',
+    thesis: 'a thesis',
   };
   for (const p of papers) {
     docs.push({

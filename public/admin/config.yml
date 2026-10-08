@@ -1297,6 +1297,11 @@ collections:
           - { label: "Under review — submitted, not yet accepted", value: under-review }
           - { label: "Proposal accepted", value: proposal-accepted }
           - { label: "Deposited", value: deposited }
+      - label: Venue
+        name: venue
+        widget: string
+        required: false
+        hint: "Where it is under review or published, e.g. IEEE JBHI. Shown beside the status."
       - label: Disclosure
         name: disclosure
         widget: select
@@ -1570,6 +1575,7 @@ collections:
           - { label: "Under review", value: under-review }
           - { label: "Preprint", value: preprint }
           - { label: "Published", value: published }
+          - { label: "Thesis — not publicly released", value: thesis }
       - { label: Year, name: year, widget: string, default: "2026" }
       - label: Venue
         name: venue
@@ -1585,6 +1591,12 @@ collections:
           - ^\s*$|^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?\s*$
           - Paste the address only, e.g. https://example.com/page — not a sentence.
       - { label: DOI, name: doi, widget: string, required: false }
+      - label: Code
+        name: code
+        widget: string
+        required: false
+        pattern: ["^https?://.+", "A full address, starting http:// or https://"]
+        hint: "The repository, shown as a Code link beside the citation."
       - label: One line on what it does
         name: summary
         widget: text

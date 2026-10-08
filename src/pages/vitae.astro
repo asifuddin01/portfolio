@@ -11,7 +11,8 @@ import { AUTHOR } from '../consts';
 const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
 const education = await getEducation();
 const projects = await getProjects();
-const papers = await getPapers();
+/* The thesis is under Education; see cv-data.mjs. */
+const papers = (await getPapers()).filter((p) => p.data.state !== 'thesis');
 const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
 const { email, github, linkedin, orcid, location } = await getContact();

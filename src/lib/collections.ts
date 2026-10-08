@@ -557,7 +557,7 @@ export async function countBooks(): Promise<number> {
 }
 
 export async function getPapers(): Promise<CollectionEntry<'papers'>[]> {
-  const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3 };
+  const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3, thesis: 4 };
   const all = await getCollection('papers');
   return all
     .filter(visible)

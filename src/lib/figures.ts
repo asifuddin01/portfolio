@@ -133,7 +133,7 @@ export const FIGURES = {
   FigPipelineHierarchiRetina: {
     component: FigPipelineHierarchiRetina,
     caption:
-      'The HierarchiRetina three-stage pipeline: screening, five parallel lesion segmenters, and lesion-guided grading over eight channels.',
+      'The HierarchiRetina cascade: a screening gate, lesion and vessel segmentation, and a lesion-guided grader with separate severity and gradability heads.',
     source: 'Plate I — HierarchiRetina',
   },
 

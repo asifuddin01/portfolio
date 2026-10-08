@@ -4,11 +4,11 @@
  * no hardcoded black or white so it reads in both themes.
  */
 const LESIONS = [
-  { cx: 110, label: 'MA',      method: 'HSMoE',      colour: 'var(--lesion-ma)',  full: 'microaneurysms' },
-  { cx: 280, label: 'HE',      method: 'MultiScale', colour: 'var(--lesion-he)',  full: 'haemorrhages' },
-  { cx: 450, label: 'EX',      method: 'BrightSpot', colour: 'var(--lesion-ex)',  full: 'hard exudates' },
-  { cx: 620, label: 'CWS',     method: 'warm-up',    colour: 'var(--lesion-cws)', full: 'cotton wool spots' },
-  { cx: 790, label: 'Vessels', method: 'FOV mask',   colour: 'var(--lesion-ves)', full: 'vessels' },
+  { cx: 110, label: 'MA',      method: 'HSMoE-AUNet', colour: 'var(--lesion-ma)',  full: 'microaneurysms' },
+  { cx: 280, label: 'HE',      method: 'HSMoE-AUNet', colour: 'var(--lesion-he)',  full: 'haemorrhages' },
+  { cx: 450, label: 'EX',      method: 'HSMoE-AUNet', colour: 'var(--lesion-ex)',  full: 'hard exudates' },
+  { cx: 620, label: 'CWS',     method: 'HSMoE-AUNet', colour: 'var(--lesion-cws)', full: 'cotton wool spots' },
+  { cx: 790, label: 'Vessels', method: 'SwinHRUNetPP', colour: 'var(--lesion-ves)', full: 'vessels' },
 ];
 ---
 <svg
@@ -20,12 +20,12 @@ const LESIONS = [
 >
   <title id="pipe-title">The HierarchiRetina three-stage pipeline</title>
   <desc id="pipe-desc">
-    A fundus image enters Stage I screening for referable diabetic retinopathy at
-    grade 2 or above. It then branches to five parallel lesion segmentation models —
-    microaneurysms, haemorrhages, hard exudates, cotton wool spots and vessels —
-    whose masks rejoin the raw image as eight channels into Stage III, the
-    lesion-guided grader. Stage III emits either an ordinal severity grade from one
-    to four, or an ungradable verdict routed to human review.
+    A fundus image enters the Stage I screening gate, which separates eyes with no
+    retinopathy (grade 0) from all others. Images that pass are segmented for four
+    lesion types by HSMoE-AUNet, one model per lesion, and for vessels by
+    SwinHRUNetPP. Stage III, the lesion-guided grader, reads the image with the five
+    masks through gated cross-attention, and has two heads: an ordinal severity
+    grade from one to four, and a gradability head that refers unreadable images.
   </desc>
 
   <g class="wire" fill="none" stroke="currentColor" stroke-width="1">
@@ -59,7 +59,7 @@ const LESIONS = [
     <text x="450" y="43" class="t-md">Fundus image</text>
 
     <text x="450" y="121" class="t-md">Stage I · screening</text>
-    <text x="450" y="141" class="t-sm">(referable DR, grade ≥ 2)</text>
+    <text x="450" y="141" class="t-sm">(grade 0 vs grades 1–5)</text>
 
     {LESIONS.map((l) => (
       <>
@@ -69,13 +69,13 @@ const LESIONS = [
     ))}
 
     <text x="450" y="384" class="t-md">Stage III · LG-DRG</text>
-    <text x="450" y="404" class="t-sm">(8 channels: RGB + 5 masks)</text>
+    <text x="450" y="404" class="t-sm">(image + 5 masks, gated cross-attention)</text>
 
     <text x="250" y="512" class="t-md">Severity grade</text>
-    <text x="250" y="532" class="t-sm">(CORN ordinal, 1–4)</text>
+    <text x="250" y="532" class="t-sm">(ordinal, 1–4)</text>
 
-    <text x="650" y="512" class="t-md">Ungradable</text>
-    <text x="650" y="532" class="t-sm">(routed to human review)</text>
+    <text x="650" y="512" class="t-md">Gradability</text>
+    <text x="650" y="532" class="t-sm">(unreadable images referred)</text>
   </g>
 </svg>
 

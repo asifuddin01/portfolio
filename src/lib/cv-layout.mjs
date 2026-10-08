@@ -90,6 +90,9 @@ export async function renderCv(cv) {
   let page = doc.addPage(A4);
   let y = A4[1] - M;
 
+  /** Two lines' worth: what a heading keeps with it at a page break. */
+  const KEEP = 24;
+
   function room(need) {
     if (y - need < M) {
       page = doc.addPage(A4);
@@ -97,13 +100,15 @@ export async function renderCv(cv) {
     }
   }
 
-  function wrap(text, font, size, maxWidth) {
+  /** `firstWidth` is for a first line that shares its row with a run-in label. */
+  function wrap(text, font, size, maxWidth, firstWidth = maxWidth) {
     const words = String(text).split(/\s+/).filter(Boolean);
     const lines = [];
     let line = '';
     for (const w of words) {
       const next = line ? `${line} ${w}` : w;
-      if (font.widthOfTextAtSize(next, size) > maxWidth && line) {
+      const width = lines.length ? maxWidth : firstWidth;
+      if (font.widthOfTextAtSize(next, size) > width && line) {
         lines.push(line);
         line = w;
       } else {
@@ -125,7 +130,7 @@ export async function renderCv(cv) {
   }
 
   function sectionRule(label) {
-    room(34);
+    room(34 + KEEP);
     y -= 8;
     page.drawText(String(label).toUpperCase(), {
       x: M, y: y - 7, size: 7.6, font: fonts.sans, color: BRASS, characterSpacing: 1.5,
@@ -189,7 +194,7 @@ export async function renderCv(cv) {
         /* Bold label, then the text continuing on the same line. */
         const label = title ? `${title}. ` : '';
         const labelW = fonts.serifBold.widthOfTextAtSize(label, style.size);
-        const lines = wrap(detail, fonts.serif, style.size, WIDTH - labelW);
+        const lines = wrap(detail, fonts.serif, style.size, WIDTH, WIDTH - labelW);
         room(lines.length * style.lead + 3);
         if (label) {
           page.drawText(label, { x: M, y: y - style.size, size: style.size, font: fonts.serifBold, color: INK });
@@ -210,6 +215,12 @@ export async function renderCv(cv) {
 
       if (title) {
         const t = spec(style.title);
+        /* A title alone at the foot of a page reads as a cut: keep it with
+           the start of what it introduces. */
+        const [text, s] = subtitle && style.subtitle ? [subtitle, spec(style.subtitle)]
+          : detail && style.detail ? [detail, spec(style.detail)] : ['', {}];
+        const below = text ? wrap(text, s.font, s.size ?? 9.2, WIDTH - (s.indent ?? 0)).length * (s.lead ?? 12) : 0;
+        room((t.lead ?? 12) + below); // para() moves a paragraph whole, so reserve all of it
         if (right && !style.title?.block) twoCol(title, right, t);
         else para(title, t);
       }

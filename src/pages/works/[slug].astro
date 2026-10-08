@@ -7,8 +7,6 @@ import AbstractBlock from '../../components/plate/AbstractBlock.astro';
 import CitationLine from '../../components/plate/CitationLine.astro';
 import MetricsTable from '../../components/plate/MetricsTable.astro';
 import MarginalNote from '../../components/plate/MarginalNote.astro';
-import FigureFrame from '../../components/elementa/FigureFrame.astro';
-import FigPipelineHierarchiRetina from '../../components/figures/FigPipelineHierarchiRetina.astro';
 import { toRoman } from '../../consts';
 
 export async function getStaticPaths() {
@@ -25,13 +23,11 @@ const { entry, next } = Astro.props;
 const d = entry.data;
 const { Content } = await render(entry);
 
-const HAS_PIPELINE = entry.id === 'hierarchiretina';
-
 /** Each plate closes on a marginal note in the author's own register. */
 const NOTES: Record<string, { letter: string; body: string }> = {
   'hierarchiretina': {
     letter: 'T',
-    body: 'he pipeline is three models deep, which means three chances to lose a patient. Stage I loses 3,161 of them. Everything downstream is bounded by that, and no amount of grading accuracy buys it back.',
+    body: 'he cascade is three models deep, which means three chances to lose a patient. Scored end to end, two errors in three start at the first gate, and no amount of grading accuracy buys those back.',
   },
   'hnsd-vlm': {
     letter: 'F',
@@ -68,7 +64,10 @@ if (d.datasets.length > 0) meta.push({ label: 'Datasets', value: d.datasets.join
       <p class="pl-num" data-reveal>Plate {toRoman(d.plate)}</p>
       <h1 class="pl-title" data-press>{d.title}</h1>
       <p class="pl-full" data-reveal>{d.fullTitle}</p>
-      <div class="pl-status" data-reveal><StatusMark status={d.status} /></div>
+      <div class="pl-status" data-reveal>
+        <StatusMark status={d.status} />
+        {d.venue && <span class="pl-venue">{d.venue}</span>}
+      </div>
 
       <dl class="pl-meta" data-reveal-stagger>
         {meta.map((m) => (
@@ -83,17 +82,6 @@ if (d.datasets.length > 0) meta.push({ label: 'Datasets', value: d.datasets.join
     <AbstractBlock abstract={d.abstract} />
     <CitationLine citation={d.citation} paperUrl={d.paperUrl} repoUrl={d.repoUrl} />
     <MetricsTable metrics={d.metrics} />
-
-    {HAS_PIPELINE && (
-      <div class="fig-draw" data-reveal>
-        <FigureFrame
-          n={1}
-          caption="The three-stage pipeline. Screening gates the image; five lesion models segment in parallel, each in its own colour; their masks rejoin the raw image as eight channels for grading. Ungradable images leave the pipeline rather than receive a grade."
-        >
-          <FigPipelineHierarchiRetina />
-        </FigureFrame>
-      </div>
-    )}
 
     <div class="prose pl-body"><Content /></div>
 
@@ -131,7 +119,14 @@ if (d.datasets.length > 0) meta.push({ label: 'Datasets', value: d.datasets.join
     line-height: 1.5;
     margin-bottom: 1.4rem;
   }
-  .pl-status { margin-bottom: 2rem; }
+  .pl-status { margin-bottom: 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
+  .pl-venue {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
   .pl-meta {
     margin: 0;
     border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);

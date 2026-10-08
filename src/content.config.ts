@@ -56,6 +56,8 @@ const works = defineCollection({
     fullTitle: z.string(),
     subtitle: z.string(),
     status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted']),
+    /** Where it is under review or published, e.g. "IEEE JBHI". Shown beside the status. */
+    venue: optionalText,
     disclosure: z.enum(['public', 'embargoed']),
     year: z.string(),
     /** Omitted entirely by work nobody supervised — PRISMA-Local is one. */
@@ -913,8 +915,11 @@ const papers = defineCollection({
     authors: z.array(z.string()).default([]),
     venue: z.string().optional(),
     year: z.string(),
-    state: z.enum(['published', 'preprint', 'under-review', 'in-preparation']),
+    /** `thesis` is a degree thesis that was never publicly released. */
+    state: z.enum(['published', 'preprint', 'under-review', 'in-preparation', 'thesis']),
     url: optionalUrl,
+    /** The repository, shown as "Code" beside the citation. */
+    code: optionalUrl,
     doi: z.string().optional(),
     summary: z.string(),
     status: z.enum(['draft', 'published']).default('published'),

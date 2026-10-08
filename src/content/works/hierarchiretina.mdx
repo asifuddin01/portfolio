@@ -1,18 +1,16 @@
 ---
 plate: 1
 title: HierarchiRetina
-fullTitle: 'HierarchiRetina: A Lesion-Aware Hierarchical Deep Learning Framework Enabling Interpretable Diabetic Retinopathy Severity Assessment via Multi-Stage Retinal Fundus Image Analysis'
-subtitle: Interpretable diabetic retinopathy grading from retinal photographs
-status: deposited
+fullTitle: 'HierarchiRetina: A Diabetic Retinopathy Screening and Grading Cascade with Heterogeneous Mixture-of-Experts Lesion Segmentation'
+subtitle: Diabetic retinopathy screening and grading, evaluated end to end
+status: under-review
+venue: IEEE JBHI
 disclosure: public
 year: '2026'
-supervisors:
-  - Rafeed Rahman
-  - Niloy Farhan
-  - Md. Golam Rabiul Alam
 coauthors:
-  - Hosni Rabbani
-  - Shahrin Tabassum
+  - Niloy Farhan
+  - Rafeed Rahman
+  - Md. Golam Rabiul Alam
 datasets:
   - EyePACS
   - APTOS 2019
@@ -26,134 +24,104 @@ datasets:
   - HRF
   - E-Ophtha
 abstract: |-
-  Diabetic Retinopathy (DR) is a leading cause of preventable blindness. It affects
-  millions of people with diabetes, especially where eye care is hard to reach. Most
-  deep learning systems treat DR assessment as a single end-to-end classification task.
-  This approach does not reflect how the disease is handled in the clinic. It blends
-  screening with severity staging and it produces opaque predictions that doctors find
-  hard to trust.
-  We present HierarchiRetina, a three-stage framework that mirrors the way a clini-
-  cian works. Stage I uses a ConvNeXt V2 Large model to quickly separate healthy
-  retinas from diseased ones. Stage II runs only on diseased images. It produces pixel-
-  level masks for four lesion types, microaneurysms (MA), haemorrhages (HE), hard
-  exudates (EX) and cotton-wool spots (CWS), along with the retinal vessels. Stage
-  III is LG-DRG (Lesion-Guided DR-Grader). It fuses the original image with the five
-  masks and uses two heads: one for severity (Mild, Moderate, Severe, Proliferative)
-  and one for gradability, which routes unreadable images to a human reviewer.
-  Three design choices set this work apart. The lesion model uses experts of different
-  types, not copies of one block, so each lesion shape is handled by a specialist filter.
-  The grader lets the masks guide attention through a gate that starts switched off, so
-  the model learns to trust the masks only once they become reliable. The dual-head
-  split moves unreadable images off the severity scale instead of mis-ranking them on
-  it.
-  We evaluate HierarchiRetina on six public datasets at once (EyePACS, DDR, AP-
-  TOS 2019, Messidor-2, IDRiD, FGADR), under a strict end-to-end rule that counts
-  every screening miss as a final grading error. Even with a single early-stopped fold
-  and this harder protocol, our system sets a new state-of-the-art on the official DDR
-  test split, surpassing the strong published FA+KC-Net+R2 benchmark reported by
-  Tian and colleagues [50]. The lesion masks also make the system interpretable: a
-  clinician can see which lesions were detected, where they are and how they shaped
-  the final grade. Together, these results show that a staged, lesion-aware design can
-  match clinical reasoning, deliver strong grading accuracy and earn the trust needed
-  for real-world screening.
-citation: '[SUPPLY]'
+  Clinical screening for diabetic retinopathy proceeds in stages, yet most automated systems grade fundus images with a single black-box network. Three gaps remain: (i) lesions differ widely in size and contrast, but segmenters typically apply the same blocks to all; (ii) ungradable images are usually excluded or treated as an extra class, and lesion-aware graders seldom test whether lesions drive the grade; (iii) staged systems often report each stage only on the images reaching it, leaving propagated errors unmeasured. HierarchiRetina, a screening, segmentation and grading cascade with inspectable stage outputs, addresses each gap. First, HSMoE-AUNet is a U-Net whose skip, bottleneck and decoder blocks are sparse mixtures of heterogeneous experts, with lesion-matched types, counts and losses; SwinHRUNetPP, a dual-encoder vessel segmenter, uses a field-of-view-restricted loss. Second, LG-DRG separates gradability from ordinal severity and lets lesion masks query the image through gated cross-attention. Third, an end-to-end evaluation counts screening misses as errors and traces each error to its stage. Pooled Dice ranged from 0.184 (microaneurysms) to 0.579 (exudates); vessel Dice was 0.731. On 58,689 held-out images from six datasets, end-to-end quadratic weighted kappa was 0.804, with referral sensitivity 0.832 at specificity 0.947, and the screening gate caused 66% of errors. In ablations, the grade ignored the masks, even with the cross-attention gate started open. On all 4,105 official DDR test images, six-class accuracy was 85.6%, above the best published six-class result we found (83.8%). Staged screening systems should be evaluated end-to-end, with stage attribution and mask ablation, before clinical deployment.
+citation: 'Md Asif Uddin, Niloy Farhan, Rafeed Rahman, and Md. Golam Rabiul Alam, "HierarchiRetina: A diabetic retinopathy screening and grading cascade with heterogeneous mixture-of-experts lesion segmentation," under review, IEEE Journal of Biomedical and Health Informatics, 2026.'
 paperUrl: ''
-repoUrl: ''
+repoUrl: 'https://github.com/asifuddin01/HierarchiRetina'
 metrics:
-  - label: Macro-AUC
-    value: '0.9422'
+  - label: End-to-end quadratic weighted kappa
+    value: '0.804'
+    note: 95% CI 0.798 to 0.809; every screening miss counted
+  - label: Referral sensitivity
+    value: '0.832'
+    note: at specificity 0.947
+  - label: Stage I gate, AUC
+    value: '0.929'
     note: ''
-  - label: Ungradable detection AUC
-    value: '0.9995'
+  - label: Lesion Dice, pooled
+    value: 0.184 – 0.579
+    note: microaneurysms to exudates
+  - label: Vessel Dice
+    value: '0.731'
     note: ''
-  - label: DDR 5-class QWK, 5-fold ensemble
-    value: '0.8533'
-    note: n = 3,759; published benchmark on the same split, 0.8617
-  - label: End-to-end pipeline QWK
-    value: '0.7942'
-    note: ''
-  - label: Per-dataset QWK
-    value: 0.83 – 0.93
-    note: FGADR to APTOS
+  - label: Official DDR test set, six classes, end to end
+    value: 85.6%
+    note: accuracy, against 83.8% for the best published result we found
 ---
 
-## The decision that set the number
+**Under review** at the *IEEE Journal of Biomedical and Health Informatics* (submitted October 2026).
+Md Asif Uddin, Niloy Farhan, Rafeed Rahman and Md. Golam Rabiul Alam, Department of Computer Science and Engineering, Brac University.
+[Code, trained weights and per-image predictions](https://github.com/asifuddin01/HierarchiRetina) · preprint to follow on TechRxiv or arXiv.
 
-DDR grades diabetic retinopathy on a five-point scale, and grade 5 is not a
-severity at all. It means the photograph cannot be read — the media are opaque,
-the field is wrong, the exposure failed. Treating it as an ordinal level above
-proliferative disease is arithmetically convenient and clinically false.
+![The HierarchiRetina cascade: a screening gate, lesion and vessel segmentation, and a lesion-guided grader](../../assets/images/hierarchiretina-cascade.png)
 
-Left as an ordinal class, grade 5 pushes QWK to **0.9017**. That number is not
-comparable to anything, because published work on the same split does not treat
-gradability as a severity. Splitting it out into a separate binary gradability
-head produced **0.8533** — lower, honest, and comparable to the 0.8617 benchmark
-on the identical split.
+## Why a cascade
 
-It is also the better clinical design. An ungradable photograph should be routed
-to a human, not assigned a fabricated grade. The pipeline now says \*I cannot read
-this\* instead of guessing, and that is a different and more useful failure.
+Human graders work through diabetic retinopathy in steps:
 
-## Stage I · Screening
+1. They decide whether any retinopathy is present.
+2. They look for the lesions that define the grade.
+3. They grade the eye, or refer it when the photograph cannot be read.
 
-Referable disease is grade ≥ 2. Two backbones carry this stage: **SwinV2-Large**
-at 384px and **ConvNeXtV2-Large** at 512px, trained on roughly 56,455 DDR images.
+Most automated systems compress all of that into one network that maps a photograph to a grade.
 
-Validation AUC reached 0.9475; held-out test AUC was 0.9043 across 58,689 images.
-The operating threshold was calibrated on validation only and locked before the
-test set was read once.
+Staged systems exist, but they are usually scored stage by stage, on the images each stage happens to receive. A case lost at the first step then never shows up as an error.
 
-## Stage II · Five lesions, five designs
+HierarchiRetina follows the clinical order and is scored the way a screening programme would experience it: every image enters at the first stage, and every miss counts.
 
-A microaneurysm is a handful of dark pixels. A cotton wool spot is a soft pale
-patch with no edge worth speaking of. They do not respond to the same
-architecture, and they do not respond to the same loss.
+## The three stages
 
-Each lesion class gets its own model, its own loss composition, and its own
-sampling regime — microaneurysms and haemorrhages through the sparse-lesion
-designs, hard exudates through bright-spot specialisation, vessels through the
-high-resolution hybrid under a field-of-view mask.
+**Stage I, screening gate.** A ConvNeXt V2-L classifier at 768 × 768 pixels separates eyes with no retinopathy (Grade 0) from everything else (Grades 1 to 5, where Grade 5 is an unreadable photograph). Its threshold is fixed on validation data. Images below it stop at Grade 0.
 
-### The cotton wool spot collapse
+**Stage II, segmentation.**
 
-Version 1 failed completely: `val_loss` NaN, Dice 0.0, precision 1.0, recall 0.0.
-A model predicting nothing scores perfect precision, and that is the tell.
+- HSMoE-AUNet segments four lesion types: microaneurysms, haemorrhages, hard exudates and cotton-wool spots, with one model per lesion type. Its skip, bottleneck and decoder blocks are sparse mixtures of heterogeneous experts. Each lesion gets the expert types, expert counts and losses that suit its size and contrast.
+- SwinHRUNetPP, a dual-encoder network, segments the vessels with a loss restricted to the field of view.
 
-Three causes, all real:
+**Stage III, LG-DRG grader.** The lesion-guided grader reads the photograph together with the five masks, which query the image through a gated cross-attention path. It has two heads:
 
-- `TextureExpert` computed local variance as `E[x²] − E[x]²`. Under mixed-precision
-  training that subtraction overflows in FP16 and propagates NaN through the whole
-  graph.
-- `RegionCoherenceLoss` used plain total variation. The global minimum of total
-  variation is the all-zero prediction. The model was not broken — it was
-  correctly minimising a loss that paid it to predict nothing.
-- No loss warmup and no `pos_weight` on an extremely sparse class.
+- a gradability head, which decides whether the image can be read;
+- an ordinal head, which grades severity using thresholds fitted on out-of-fold predictions.
 
-Version 2 fixed all three: mean absolute deviation in place of variance for FP16
-safety; probability-weighted total variation that returns zero loss on zero
-predictions; a three-phase loss warmup; NaN guards in both the training and
-validation loops; gradient clipping at 0.5; learning rate down to 7e-5.
+## Where the numbers come from
 
-## Stage III · Lesion-guided grading
+The end-to-end results come from a held-out test pool of 58,689 images from six public datasets: EyePACS, DDR, IDRiD, APTOS 2019, Messidor-2 and FGADR. The pool was never used for training or for choosing a model or threshold. The DDR result uses all 4,105 images of its official test split, and the Dice scores come from held-out segmentation splits.
 
-The grader takes **eight channels** — RGB plus the five lesion masks — into a
-ConvNeXtV2-Large with cross-attention lesion gating. The severity head is a CORN
-ordinal regressor over grades 1–4. Gradability is a separate binary head, for the
-reason given at the top of this page. Final results come from a 5-fold ensemble.
+## What the end-to-end view showed
 
-Because the masks are inputs rather than post-hoc explanations, the answer to
-_why did it say severe_ is a set of segmentations you can look at.
+**Most errors start at the gate.** The cascade made 10,907 errors end to end:
+
+| Source of error | Share |
+|---|---|
+| Eyes with retinopathy that the gate stopped | 22.5% |
+| Healthy eyes that the gate let through | 43.5% |
+| Grading mistakes | 34.0% |
+
+So even a perfect grader would remove only about a third of the errors.
+
+**The grade ignored the masks.** In the mask ablation (fold 0 of the cross-validation), we removed all masks, swapped in another image's masks, and dropped one mask channel at a time. None of these changed the grader's kappa by more than 0.0003. Retraining with the cross-attention gate started open did not change that.
+
+The masks still help a person reviewing the case, but they do not explain the grade. We report this negative result because lesion-aware graders seldom test whether the lesions actually drive the grade.
+
+**The best kappa is not the best screening setting.** A stricter gate (threshold 0.675) raises kappa to 0.825, because fewer healthy eyes reach the grader. But it also blocks 1,320 more eyes with retinopathy, 94% of them mild or moderate. Referral sensitivity then falls from 0.832 to 0.795.
 
 ## Limitations
 
-Stated plainly, and before a reviewer states them.
+- The evaluation is held-out, not external: the test partitions share sources with the training data.
+- EyePACS supplies 91% of the test pool.
+- Grade 5 (ungradable) occurs only in DDR.
+- Most images were graded once, without adjudication.
+- The segmenters were not compared with other architectures on the same splits.
 
-- **EyePACS dominates the pooled test set.** It is 91% of it, with Stage-A accuracy
-  0.476. The pooled figure is essentially the EyePACS figure wearing a disguise.
-  **The per-dataset table is the primary result; the pooled number is not.**
-- **EyePACS labels are single-grader** with no adjudication. There is no ceiling
-  estimate for label noise on the largest component of the evaluation.
-- **Stage I discards 3,161 true DR cases.** Whatever Stage III achieves, end-to-end
-  sensitivity is capped at 0.813 by that screening loss.
-- **FGADR specificity is not reported.** It would be computed on almost no true
-  negatives, so it is N/A rather than flattering.
+## Reproducibility
+
+The [repository](https://github.com/asifuddin01/HierarchiRetina) holds:
+
+- the code;
+- the trained weights (release v1.0);
+- per-image predictions;
+- a script that recomputes every end-to-end number in the paper (release v1.0.1, 203 checks).
+
+## Background
+
+The project began as my BSc thesis in Computer Science and Engineering at Brac University (2026).

@@ -21,6 +21,7 @@ const STATE = {
   preprint: 'Preprint',
   'under-review': 'Under review',
   'in-preparation': 'In preparation',
+  thesis: 'Thesis',
 };
 
 const PLATE_STATUS = {
@@ -82,7 +83,7 @@ export function buildCv({
         if (w.data.supervisors?.length) {
           who.push(`Supervisor${w.data.supervisors.length > 1 ? 's' : ''}: ${w.data.supervisors.join(', ')}`);
         }
-        if (w.data.status) who.push(PLATE_STATUS[w.data.status] ?? w.data.status);
+        if (w.data.status) who.push([PLATE_STATUS[w.data.status] ?? w.data.status, w.data.venue].filter(Boolean).join(', '));
         return {
           title: w.data.title ?? '',
           right: w.data.year ?? '',
@@ -94,12 +95,14 @@ export function buildCv({
   }
 
   if (papers.length) {
-    const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3 };
+    const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3, thesis: 4 };
     sections.push({
       id: 'papers',
       heading: 'Papers and manuscripts',
       style: 'paper',
-      items: [...papers]
+      // A thesis is already under Education; listed here beside the paper it
+      // became, it reads as a second publication of the same work.
+      items: papers.filter((p) => p.data.state !== 'thesis')
         .sort((a, b) =>
           (RANK[a.data.state] ?? 9) - (RANK[b.data.state] ?? 9) ||
           String(b.data.year).localeCompare(String(a.data.year)))

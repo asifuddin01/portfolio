@@ -164,7 +164,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
                 <span class="fr-res-t">{w.data.title}</span>
                 <span class="fr-res-s">{w.data.subtitle}</span>
               </span>
-              <span class="fr-res-st">{w.data.status.replace(/-/g, ' ')}</span>
+              <span class="fr-res-st">{w.data.status.replace(/-/g, ' ')}{w.data.venue && ` · ${w.data.venue}`}</span>
             </a>
           </li>
         ))}
@@ -655,7 +655,11 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
 
   @media (max-width: 620px) {
     .fr-res-link { grid-template-columns: minmax(0, 1fr) auto; }
-    .fr-res-y { grid-column: 1 / -1; }
+    /* The status shares the year's line, so a long one (with its venue)
+       never squeezes the title column. */
+    .fr-res-y { grid-row: 1; grid-column: 1; }
+    .fr-res-st { grid-row: 1; grid-column: 2; }
+    .fr-res-m { grid-column: 1 / -1; }
   }
 
   .fr-into { padding-bottom: 1rem; }

@@ -1,10 +1,15 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
+import { getCollection } from 'astro:content';
 import { getPapers, getLectiones, getReviews, getLibrary } from '../../lib/collections';
 import { AUTHOR, toRoman } from '../../consts';
 
 const papers = await getPapers();
+/* A paper whose slug matches a plate opens that plate: the plate is where the
+   work is argued, and most manuscripts have no public URL to link instead. */
+const plates = new Set((await getCollection('works')).map((w) => w.id));
+const href = (p: (typeof papers)[number]) => (plates.has(p.id) ? `/works/${p.id}` : p.data.url);
 const parts = await getLectiones();
 const lectPapers = parts.reduce((n, p) => n + p.data.readings.length, 0);
 const reviews = await getReviews();
@@ -24,6 +29,7 @@ const LABEL: Record<string, string> = {
   preprint: 'Preprint',
   'under-review': 'Under review',
   'in-preparation': 'In preparation',
+  thesis: 'Thesis',
 };
 ---
 <BaseLayout
@@ -65,8 +71,8 @@ const LABEL: Record<string, string> = {
               <span class="pp-year">{p.data.year}</span>
             </div>
             <h2 class="pp-title">
-              {p.data.url ? (
-                <a class="pp-link" href={p.data.url} rel="noopener">{p.data.title}</a>
+              {href(p) ? (
+                <a class="pp-link" href={href(p)}>{p.data.title}</a>
               ) : (
                 p.data.title
               )}
@@ -76,15 +82,17 @@ const LABEL: Record<string, string> = {
             )}
             {p.data.venue && <p class="pp-venue">{p.data.venue}</p>}
             <p class="pp-summary">{p.data.summary}</p>
-            {(p.data.url || p.data.doi) && (
+            {(p.data.url || p.data.doi || p.data.code) && (
               <p class="pp-refs">
-                {p.data.url && <a class="link" href={p.data.url} rel="noopener">Read it</a>}
-                {p.data.url && p.data.doi && <span class="pp-sep"> · </span>}
-                {p.data.doi && (
-                  <a class="link" href={`https://doi.org/${p.data.doi}`} rel="noopener">
-                    doi:{p.data.doi}
-                  </a>
-                )}
+                {[
+                  p.data.url && <a class="link" href={p.data.url} rel="noopener">Read it</a>,
+                  p.data.doi && (
+                    <a class="link" href={`https://doi.org/${p.data.doi}`} rel="noopener">
+                      doi:{p.data.doi}
+                    </a>
+                  ),
+                  p.data.code && <a class="link" href={p.data.code} rel="noopener">Code</a>,
+                ].filter(Boolean).map((a, i) => <>{i > 0 && <span class="pp-sep"> · </span>}{a}</>)}
               </p>
             )}
           </li>
