@@ -1045,6 +1045,12 @@ const projects = defineCollection({
     link: z.string().optional(),
     linkLabel: z.string().optional(),
     /**
+     * A demo recording (/uploads/….mp4 or .webm) played on the project's page,
+     * for a project whose `link` already goes somewhere else, such as a live
+     * deployment. A `link` that is itself a video is played the same way.
+     */
+    video: z.string().optional(),
+    /**
      * The source, separately from `link`.
      *
      * Two different promises, and conflating them cost the site the more

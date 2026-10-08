@@ -46,9 +46,9 @@ const pad = (x: number) => String(x).padStart(2, '0');
       <h1 class="pj-h1" data-press>{name}</h1>
       <p class="pj-line" data-reveal>{line}</p>
       <p class="pj-teaser" data-reveal>{teaser}</p>
-      {((d.link && !video) || d.repo || video) && (
+      {((d.link && d.link !== video) || d.repo || video) && (
         <p class="pj-go" data-reveal>
-          {d.link && !video && (
+          {d.link && d.link !== video && (
             <a class="pj-btn" href={d.link}>{d.linkLabel ?? 'Open'}<span aria-hidden="true"> →</span></a>
           )}
           {video && <a class="pj-btn" href="#demo">Watch the demo<span aria-hidden="true"> ↓</span></a>}
@@ -161,6 +161,18 @@ const pad = (x: number) => String(x).padStart(2, '0');
   .pj-body :global(h2) { margin-top: 2.2em; }
   .pj-body :global(h2:first-child) { margin-top: 0; }
   .pj-body :global(table) { margin-block: 1.4em; }
+  .pj-body :global(video) {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
+  }
+  /* A wide results table scrolls inside itself on a phone instead of
+     widening the page. */
+  @media (max-width: 640px) {
+    .pj-body :global(table) { display: block; overflow-x: auto; }
+  }
   .pj-body { margin-bottom: 3rem; }
 
   .pj-nav {

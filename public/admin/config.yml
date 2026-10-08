@@ -2151,6 +2151,11 @@ collections:
         widget: string
         required: false
         hint: "Wording on the button. Defaults to 'Open'."
+      - label: Demo video
+        name: video
+        widget: string
+        required: false
+        hint: "An .mp4 or .webm under /uploads, played on the project's page. Leave empty if Link is itself the video."
       - label: Source code
         name: repo
         widget: string

@@ -609,9 +609,9 @@ export function projectBrief(p: CollectionEntry<'projects'>): { name: string; li
 export const projectTeaser = (p: CollectionEntry<'projects'>) =>
   fillFacts(p.data.teaser ?? p.data.cvSummary ?? p.data.summary);
 
-/** A link to a video is a demo to play on the page, not a page to open. */
+/** The demo to play on the page: `video`, or a `link` that is itself a video. */
 export const projectVideo = (p: CollectionEntry<'projects'>) =>
-  /\.(mp4|webm|m4v)$/i.test(p.data.link ?? '') ? p.data.link! : null;
+  p.data.video ?? (/\.(mp4|webm|m4v)$/i.test(p.data.link ?? '') ? p.data.link! : null);
 
 /** Photographs, in display order. */
 export async function getImages(): Promise<CollectionEntry<'images'>[]> {
