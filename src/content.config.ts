@@ -1029,6 +1029,12 @@ const projects = defineCollection({
     order: z.number(),
     title: z.string(),
     summary: z.string(),
+    /**
+     * Three to five lines for the listings (Summa, /projects), written to make
+     * a reader open the project. The full account is the entry's body, which
+     * is the project's own page at /projects/<slug>.
+     */
+    teaser: z.string().optional(),
     /** Kept short on the CV, fuller in the Appendix. */
     cvSummary: z.string().optional(),
     /**

@@ -2115,11 +2115,19 @@ collections:
     sortable_fields: [ order, title ]
     fields:
       - { label: Title, name: title, widget: string }
+      - label: Teaser
+        name: teaser
+        widget: text
+        required: false
+        hint: >-
+          Three to five lines in the Summa and on /projects, written to make a
+          reader open the project. Placeholders such as {papers} work here.
       - label: Description
         name: summary
         widget: text
         hint: >-
-          The fuller version, shown in the Appendix. Figures about ResearchLens
+          One paragraph, used where the page itself is not shown: the site's
+          machine-readable profile, and the page while it has no text below. Figures about ResearchLens
           and LocalScholar can be written as {papers}, {passages}, {tests} or
           {localscholar.tests} — they are filled in from the last measurement
           rather than typed, so they cannot go stale in a sentence. Run
@@ -2162,6 +2170,14 @@ collections:
           For work a stranger can open and use, not just read about. These get
           their own section on the frontispiece, above the Appendix where every
           project is listed.
+      - label: Page
+        name: body
+        widget: markdown
+        required: false
+        hint: >-
+          The project's own page at /projects/<slug>: short sections under
+          ## headings, lists and tables. A link to an .mp4 in Link plays as a
+          demo above this. Measured figures are written <Fact k="papers" />.
 
   # ------------------------------------------------------------------
   - name: instrumentarium

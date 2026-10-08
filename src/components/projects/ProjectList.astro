@@ -1,0 +1,69 @@
+---
+/**
+ * The projects as records: a name, its one line, three to five lines that make
+ * the case for reading on, and the whole record opens the project's page.
+ * Shared by the Summa's Appendix and /projects so the two never drift.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { projectBrief, projectTeaser } from '../../lib/collections';
+
+interface Props { items: CollectionEntry<'projects'>[] }
+const { items } = Astro.props;
+---
+<ol class="pl" data-reveal-stagger>
+  {items.map((p) => {
+    const { name, line } = projectBrief(p);
+    return (
+      <li class="pl-i" id={p.id}>
+        <a class="pl-a" href={`/projects/${p.id}`}>
+          <span class="pl-n">{name}</span>
+          <span class="pl-l">{line}</span>
+          <span class="pl-t">{projectTeaser(p)}</span>
+          <span class="pl-go">Read the project<span class="pl-arrow" aria-hidden="true"> →</span></span>
+        </a>
+      </li>
+    );
+  })}
+</ol>
+
+<style>
+  .pl {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 46rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+  .pl-i { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .pl-a {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1.3rem 0 1.4rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .pl-n { font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.2; }
+  .pl-l { font-style: italic; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.5; }
+  .pl-t {
+    margin-top: 0.35rem;
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    max-width: 62ch;
+  }
+  .pl-go {
+    margin-top: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .pl-arrow { display: inline-block; }
+  .pl-a:hover .pl-n,
+  .pl-a:focus-visible .pl-n { color: var(--fundus); }
+  @media (prefers-reduced-motion: no-preference) {
+    .pl-n, .pl-arrow { transition: color 160ms ease, transform 160ms ease; }
+    .pl-a:hover .pl-arrow { transform: translateX(3px); }
+  }
+</style>

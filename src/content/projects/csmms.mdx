@@ -1,6 +1,19 @@
 ---
 order: 12
 title: "CSMMS — Campus Student Management and Marketplace System"
+teaser: "The backend of a campus marketplace and student services system: a filtered, paginated item API, image upload to S3 delivered through CloudFront, and service impact metrics computed live."
 summary: "FastAPI backend. Item CRUD with keyword, category, price-range and sort filtering plus pagination. Image upload to S3 with Pillow compression, delivered through CloudFront. Service priority levels and live-computed impact metrics — weighted student ratings, students served, completion rate. SQLAlchemy models, JWT auth, Alembic migrations."
 cvSummary: "FastAPI backend: REST API design, filtered and paginated marketplace, S3 and CloudFront image upload, service impact metrics, SQLAlchemy, JWT, Alembic."
 ---
+
+## What it does
+
+The FastAPI backend for a campus student management system and marketplace.
+
+- **Marketplace items.** Create, read, update and delete, with keyword, category, price-range and sort filtering, and pagination.
+- **Images.** Uploaded to S3 with Pillow compression and delivered through CloudFront.
+- **Services.** Priority levels and impact metrics computed live: weighted student ratings, students served and completion rate.
+
+## Built with
+
+FastAPI, SQLAlchemy models, JWT authentication and Alembic migrations, with images on AWS S3 and CloudFront.

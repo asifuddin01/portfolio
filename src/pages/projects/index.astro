@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LesionRule from '../../components/ornament/LesionRule.astro';
+import ProjectList from '../../components/projects/ProjectList.astro';
+import { getProjects } from '../../lib/collections';
+import { AUTHOR } from '../../consts';
+
+const projects = await getProjects();
+---
+<BaseLayout
+  title={`Projects — ${AUTHOR}`}
+  description="Systems I have built, each with its own page: what it does, how it was tested, and where it falls short."
+  folio="P"
+>
+  <div class="codex pjx">
+    <header class="pjx-head">
+      <p class="pjx-kicker" data-reveal>Scripta · the appendix</p>
+      <h1 class="pjx-h1" data-press>Projects</h1>
+      <p class="pjx-lede codex-measure" data-reveal>
+        {projects.length} things I have built, each with its own page: what it
+        does, how it was tested, the demo where there is one, and where it falls
+        short. The research papers are on their own page, under
+        <a class="link" href="/papers">Papers</a>.
+      </p>
+    </header>
+
+    <LesionRule />
+
+    <ProjectList items={projects} />
+  </div>
+</BaseLayout>
+
+<style>
+  .pjx { padding-top: clamp(2.5rem, 7vh, 5rem); padding-bottom: 3rem; }
+  .pjx-head { margin-bottom: 1.5rem; }
+  .pjx-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin-bottom: 0.9rem;
+  }
+  .pjx-h1 { font-size: var(--t-2xl); line-height: 1.05; margin-bottom: 1rem; }
+  .pjx-lede { color: var(--ink-soft); }
+</style>

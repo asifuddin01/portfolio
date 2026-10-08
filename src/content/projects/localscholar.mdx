@@ -2,9 +2,37 @@
 order: 2
 system: true
 title: "LocalScholar — a private, laptop-scale research assistant"
+teaser: "Built because two scoping reviews needed more PDFs than any hosted chatbot would take. A permanent library on the laptop that answers across every paper at once, grounds each claim in a page you can open, refuses what it cannot answer, and sends nothing off the machine."
 summary: "Built because two scoping reviews needed more PDFs than any hosted chatbot would take. Keeps a permanent local library, answers questions across all of it at once, and grounds every claim in a page you can open. Hybrid BM25 and dense retrieval fused by reciprocal rank, then a cross-encoder reranker — an ablation over 30 hand-written questions takes Recall@5 from 0.833 to 0.933 and MRR from 0.672 to 0.840. Refusal is measured too: four questions the library provably cannot answer, four correct refusals. Citations are computed by matching extracted values back against the retrieved passages rather than reported by the model, which took structured extraction from 6/15 fields to 12/15 while making every remaining value more trustworthy. Runs on an 8 GB M1 with no API key and nothing leaving the machine."
 cvSummary: "Local-first RAG research assistant (FastAPI, React, ONNX, Ollama). Hybrid BM25 + dense retrieval with RRF fusion and cross-encoder reranking; measured ablation to Recall@5 0.933, MRR 0.840; verified refusal on unanswerable questions; citations computed from passage overlap rather than self-reported. {localscholar.tests} tests, runs offline on 8 GB."
 link: "https://asifuddin01.github.io/LocalScholar/"
 linkLabel: "Open the demo"
 repo: "https://github.com/asifuddin01/LocalScholar"
 ---
+
+## Why it exists
+
+Two scoping reviews needed more PDFs than any hosted chatbot would take. LocalScholar keeps a permanent library on the laptop, answers questions across all of it at once, and grounds every claim in a page you can open.
+
+## How it answers
+
+- **Retrieval:** BM25 and dense retrieval, fused by reciprocal rank, then reranked by a cross-encoder.
+- **Citations:** computed, not reported. Extracted values are matched back against the retrieved passages instead of being taken from the model.
+- **Refusal:** when the library cannot answer, it says so.
+
+## What was measured
+
+An ablation of the retrieval pipeline over 30 hand-written questions:
+
+| Measure | From | To |
+|---|---|---|
+| Recall@5 | 0.833 | 0.933 |
+| MRR | 0.672 | 0.840 |
+
+Refusal was measured too: four questions the library provably cannot answer, and four correct refusals.
+
+Computing citations took structured extraction from 6 of 15 fields to 12 of 15, while making every remaining value more trustworthy.
+
+## Built with
+
+FastAPI, React, ONNX and Ollama, with <Fact k="localscholar.tests" /> tests. It runs on an 8 GB M1 with no API key, and nothing leaves the machine.

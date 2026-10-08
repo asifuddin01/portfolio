@@ -1,0 +1,13 @@
+---
+/**
+ * A measured figure inside a project's page body, e.g. <Fact k="papers" />.
+ * The same keys as {papers} in the frontmatter, which MDX cannot use in a body
+ * because it reads braces as code. Filled from src/data/facts.json.
+ */
+import { fillFacts, FACT_KEYS } from '../../lib/facts.mjs';
+
+interface Props { k: string }
+const { k } = Astro.props;
+if (!FACT_KEYS.includes(k)) throw new Error(`<Fact k="${k}">: no such fact. Known: ${FACT_KEYS.join(', ')}.`);
+---
+{fillFacts(`{${k}}`)}

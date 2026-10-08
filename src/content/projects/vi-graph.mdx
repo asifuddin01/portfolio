@@ -2,9 +2,73 @@
 order: 4
 system: false
 title: "Vi-Graph — diagram images turned into editable, queryable graphs"
+teaser: "Turns a picture of a diagram into an editable, queryable graph. A fine-tuned Qwen3-VL-2B lifts graph similarity from 0.581 to 0.740 on 500 held-out diagrams, and the page reports the classical OCR pipeline that ties it, and why the model struggles on the densest diagrams."
 summary: "How accurately can a compact vision-language model recover the structure of a diagram, and how does that change as diagrams get more complex? Vi-Graph takes a picture of an architecture, an ML pipeline, a flowchart or a system diagram and rebuilds it as a strict, versioned JSON graph that can be edited in the browser, exported to Mermaid, SVG, PNG, PDF or JSON, and asked questions — what feeds into this, which branches run in parallel — with the answer coming from the graph and highlighting the nodes it rests on. Qwen3-VL-2B-Instruct is fine-tuned with 4-bit QLoRA, 17.4M trainable parameters over 250 steps in 1.4 hours at 7.6 GB of peak GPU memory. Real diagrams rarely come with exact structural ground truth, so the benchmark is built: 2,800 rendered diagrams across seven types and four difficulty levels, from 3–6 nodes up to 25–40, with a test split whose layouts and themes never appear in training, plus 25,698 structural questions generated from the ground truth. On all 500 held-out test diagrams, fine-tuning takes graph similarity from 0.581 to 0.740, edge F1 from 0.499 to 0.638, structural QA from 0.437 to 0.582 and valid graphs from 72% to 91% — every metric at p < 0.001 under a paired bootstrap with Holm correction, and stable across sampling seeds at 0.748 ± 0.006. The baseline that might have beaten it was built too, and it nearly does: a classical OCR and OpenCV pipeline ties it on graph similarity, 0.738 against 0.740, and beats it on node F1 and on validity. The model leads on edges, question answering and diagram type, wins on small diagrams and falls behind on the densest. The analysis says why: on 25–40-node diagrams it sometimes keeps listing invented nodes until it runs out of tokens — runaway enumeration — and where it does return a graph it matches the baseline. An inference-time guard that stops those loops cut evaluation time by 26% with no significant change in any score; retry-and-repair turns 72.8% usable first answers into 91.0%; and resolution has a floor at 640px, with 768, 896 and 1024 scoring the same. Every inference logs the model revision, adapter, prompt hash, decoding parameters, seed, schema version and split hash. All results are on synthetic diagrams, with one model family and size, and the label-matching threshold is not yet calibrated on hand-labelled real data. 767 automated tests. Built with Claude Code as a pair programmer; designed and directed by me, with all training and GPU evaluation run on my own hardware. The demo's model outputs are replayed from the recorded evaluation run; everything after the model runs live."
 cvSummary: "Diagram-to-graph reconstruction with a fine-tuned vision-language model (PyTorch, Transformers, PEFT/QLoRA, FastAPI, Next.js, React Flow). Qwen3-VL-2B with 4-bit QLoRA: 17.4M trainable parameters, 1.4 hours, 7.6 GB peak memory. Built a 2,800-diagram synthetic benchmark with unseen test layouts and 25,698 structural questions. On 500 held-out diagrams: graph similarity 0.581 → 0.740, edge F1 from 0.499 to 0.638, structural QA 0.437 → 0.582, valid graphs 72% → 91%, all p < 0.001 (paired bootstrap, Holm). Reported an OCR + OpenCV baseline that ties on graph similarity (0.738); diagnosed runaway enumeration on dense diagrams and added a guard that cut evaluation time 26% with no significant score change. Schema-validated output with logged repair, graph-grounded QA, exports; 767 tests."
 link: "/uploads/vigraph-demo.mp4"
 linkLabel: "Watch the demo"
 repo: "https://github.com/asifuddin01/Vi-Graph"
 ---
+
+## The question
+
+How accurately can a compact vision-language model recover the structure of a diagram, and how does that change as diagrams get more complex?
+
+## What it does
+
+Vi-Graph takes a picture of an architecture, an ML pipeline, a flowchart or a system diagram and rebuilds it as a strict, versioned JSON graph. The graph can then be:
+
+- edited in the browser;
+- exported to Mermaid, SVG, PNG, PDF or JSON;
+- asked questions, such as what feeds into this or which branches run in parallel. The answer comes from the graph and highlights the nodes it rests on.
+
+## The model
+
+Qwen3-VL-2B-Instruct, fine-tuned with 4-bit QLoRA: 17.4M trainable parameters, 250 steps, 1.4 hours and 7.6 GB of peak GPU memory.
+
+## A benchmark built for the question
+
+Real diagrams rarely come with exact structural ground truth, so the benchmark was built:
+
+- 2,800 rendered diagrams across seven types and four difficulty levels, from 3–6 nodes up to 25–40;
+- a test split whose layouts and themes never appear in training;
+- 25,698 structural questions generated from the ground truth.
+
+## Results
+
+On all 500 held-out test diagrams:
+
+| Measure | Before fine-tuning | After |
+|---|---|---|
+| Graph similarity | 0.581 | 0.740 |
+| Edge F1 | 0.499 | 0.638 |
+| Structural QA | 0.437 | 0.582 |
+| Valid graphs | 72% | 91% |
+
+Every metric improves at p &lt; 0.001 under a paired bootstrap with Holm correction, and the result is stable across sampling seeds at 0.748 ± 0.006.
+
+## The baseline that nearly wins
+
+The baseline that might have beaten it was built too, and it nearly does. A classical OCR and OpenCV pipeline ties it on graph similarity, 0.738 against 0.740, and beats it on node F1 and on validity.
+
+The model leads on edges, question answering and diagram type. It wins on small diagrams and falls behind on the densest.
+
+## Why the densest diagrams are harder
+
+On 25–40-node diagrams the model sometimes keeps listing invented nodes until it runs out of tokens: runaway enumeration. Where it does return a graph, it matches the baseline.
+
+- An inference-time guard that stops those loops cut evaluation time by 26%, with no significant change in any score.
+- Retry-and-repair turns 72.8% usable first answers into 91.0%.
+- Resolution has a floor at 640 px; 768, 896 and 1024 score the same.
+
+## Traceable by design
+
+Every inference logs the model revision, adapter, prompt hash, decoding parameters, seed, schema version and split hash. There are 767 automated tests.
+
+## Limits
+
+All results are on synthetic diagrams, with one model family and size, and the label-matching threshold is not yet calibrated on hand-labelled real data.
+
+## How it was built
+
+PyTorch, Transformers, PEFT/QLoRA, FastAPI, Next.js and React Flow. Built with Claude Code as a pair programmer; designed and directed by me, with all training and GPU evaluation run on my own hardware. The demo's model outputs are replayed from the recorded evaluation run; everything after the model runs live.

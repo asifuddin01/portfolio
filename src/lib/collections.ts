@@ -4,6 +4,7 @@ import {
   APPARATUS_PARTS, TIER_RULES, COVERAGE_RULES, STRANDS,
   propositionId, type MathTier, type Strand,
 } from './elementa-spec';
+import { fillFacts } from './facts.mjs';
 
 /**
  * Draft entries are excluded from production builds, kept in dev.
@@ -590,6 +591,27 @@ export async function getEducation(): Promise<CollectionEntry<'education'>[]> {
 export async function getProjects(): Promise<CollectionEntry<'projects'>[]> {
   return (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 }
+
+/**
+ * A project in one line: most titles are "Name — what it is", so the line is
+ * the part after the dash; a plain title falls back to the first sentence of
+ * its CV line. Nothing extra to write or keep in step in /admin.
+ */
+export function projectBrief(p: CollectionEntry<'projects'>): { name: string; line: string } {
+  const [name, ...rest] = p.data.title.split(' — ');
+  const line =
+    rest.join(' — ') ||
+    (fillFacts(p.data.cvSummary ?? p.data.summary).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '');
+  return { name, line: line.charAt(0).toUpperCase() + line.slice(1) };
+}
+
+/** The listing text: the teaser, or the CV line until one is written. */
+export const projectTeaser = (p: CollectionEntry<'projects'>) =>
+  fillFacts(p.data.teaser ?? p.data.cvSummary ?? p.data.summary);
+
+/** A link to a video is a demo to play on the page, not a page to open. */
+export const projectVideo = (p: CollectionEntry<'projects'>) =>
+  /\.(mp4|webm|m4v)$/i.test(p.data.link ?? '') ? p.data.link! : null;
 
 /** Photographs, in display order. */
 export async function getImages(): Promise<CollectionEntry<'images'>[]> {

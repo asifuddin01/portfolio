@@ -51,6 +51,7 @@ export const NAV: readonly (NavLink | NavGroup)[] = [
   {
     label: 'Scripta',
     children: [
+      { href: '/projects', label: 'Projects', gloss: 'Systems I have built, each with its page' },
       { href: '/elementa', label: 'Elementa', gloss: 'A course in deep learning' },
       { href: '/marginalia', label: 'Marginalia', gloss: 'Reviews, essays and notes' },
     ],

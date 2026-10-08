@@ -188,7 +188,7 @@ export const GET: APIRoute = async () => {
       id: `project:${p.id}`,
       kind: 'project',
       title: p.data.title,
-      url: p.data.link ? abs(p.data.link) : abs('/home#appendix'),
+      url: abs(`/projects/${p.id}`),
       text: tidy(sentence(
         `${AUTHOR} built "${p.data.title}".`,
         p.data.summary

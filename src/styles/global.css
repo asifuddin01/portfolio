@@ -233,6 +233,9 @@ hr { border: 0; border-top: var(--rule) solid var(--brass); opacity: 0.6; margin
   color: var(--ink-soft);
 }
 .prose code {
+  /* A long identifier is one unbreakable word; let it wrap rather than push
+     the page wider than a phone. No effect inside <pre>, which never wraps. */
+  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: 0.82em;
   letter-spacing: 0.02em;

@@ -2,9 +2,45 @@
 order: 10
 system: false
 title: "Officina — a notebook that compiles and runs Python, C, C++ and Java in the browser"
+teaser: "A notebook that compiles and runs Python, C, C++ and Java in the browser and nowhere else. C and C++ are compiled for real by clang built to WebAssembly, Python runs with the network removed, and nothing you write is uploaded."
 summary: "A notebook that runs in the browser and nowhere else: code and prose cells in Python, C, C++, Java or assembly, a library of worked examples for each, and nothing uploaded anywhere — cells live in the browser's own storage, a file is read by the page rather than sent, and a notebook downloads as .ipynb or as source. Python is CPython 3.14 compiled to WebAssembly (Pyodide), run in a Web Worker from which fetch, XMLHttpRequest, WebSocket and the rest have been deleted, so a pasted cell cannot make a request with the site's cookies; a cell that never ends is stopped by the reader or by a 30-second limit, output stops at 256 KB, and a second interpreter waits ready so a stop is recovered from at once. C and C++ are not interpreted: clang and wasm-ld, themselves compiled to WebAssembly and served from this site, compile the cell, and the module they produce is run, so an error is clang's own, to the line and column. Java is compiled by the Eclipse compiler and run on CheerpJ's JVM — the one thing on the site loaded from another origin, because its licence allows nothing else. Assembly is written and exported rather than run, with the command to build it, because the browser is not the processor it was written for, and the page says so rather than offering a button that fails. Nothing is fetched until a reader asks to run something: Python is 13 MB and the C toolchain far more. The examples are edited from the site's CMS like everything else on it."
 cvSummary: "Browser-only notebook for Python, C, C++ and Java (Pyodide, clang and wasm-ld compiled to WebAssembly, the Eclipse compiler on CheerpJ). Python runs in a Web Worker with the network APIs removed, with Stop, a 30 s limit and a 256 KB output cap; C and C++ are genuinely compiled and run in the browser; notebooks persist locally and export as .ipynb. No server; the example library is edited from the site's CMS."
 link: "/officina"
 linkLabel: "Open Officina"
 repo: "https://github.com/asifuddin01/portfolio/blob/main/src/pages/officina.astro"
 ---
+
+## What it is
+
+A notebook that runs in the browser and nowhere else. Code and prose cells in Python, C, C++, Java or assembly, with a library of worked examples for each.
+
+Nothing is uploaded anywhere:
+
+- cells live in the browser's own storage;
+- a file is read by the page, not sent;
+- a notebook downloads as .ipynb or as source.
+
+## Python, with the network removed
+
+Python is CPython 3.14 compiled to WebAssembly (Pyodide), run in a Web Worker from which `fetch`, `XMLHttpRequest`, `WebSocket` and the rest have been deleted. A pasted cell cannot make a request with the site's cookies.
+
+- A cell that never ends is stopped by the reader, or by a 30-second limit.
+- Output stops at 256 KB.
+- A second interpreter waits ready, so a stop is recovered from at once.
+
+## C and C++, really compiled
+
+C and C++ are not interpreted. clang and wasm-ld, themselves compiled to WebAssembly and served from this site, compile the cell, and the module they produce is run. An error is clang's own, to the line and column.
+
+## Java and assembly
+
+- **Java** is compiled by the Eclipse compiler and run on CheerpJ's JVM. It is the one thing on the site loaded from another origin, because its licence allows nothing else.
+- **Assembly** is written and exported rather than run, with the command to build it. The browser is not the processor it was written for, and the page says so rather than offering a button that fails.
+
+## Loaded only when asked
+
+Nothing is fetched until a reader asks to run something: Python is 13 MB, and the C toolchain far more. The examples are edited from the site's CMS, like everything else on it.
+
+## Built with
+
+Pyodide, clang and wasm-ld compiled to WebAssembly, and the Eclipse compiler on CheerpJ. No server.

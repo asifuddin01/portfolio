@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import DescentPlate from '../components/front/DescentPlate.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getProjects } from '../lib/collections';
+import { getProjects, projectBrief } from '../lib/collections';
 import { AUTHOR, LOCATION, GITHUB } from '../consts';
 
 /**
@@ -35,21 +35,6 @@ const words = epigraph.split(' ').filter(Boolean);
 const projects = await getProjects();
 /* The two that run. Everything else on the appendix is coursework beside them. */
 const systems = projects.filter((p) => p.data.system);
-
-/**
- * A project in one line, for the frontispiece's index of the Appendix.
- *
- * Most titles are already "Name — what it is", so the line is the
- * part after the dash. The two that are plain titles fall back to the first
- * sentence of their CV line. Nothing new to write or keep in step in /admin.
- */
-const brief = (p: (typeof projects)[number]) => {
-  const [name, ...rest] = p.data.title.split(' — ');
-  const line =
-    rest.join(' — ') ||
-    (fillFacts(p.data.cvSummary ?? p.data.summary).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '');
-  return { name, line: line.charAt(0).toUpperCase() + line.slice(1) };
-};
 
 const instrumenta = (await getCollection('instrumenta'))
   .sort((a, b) => a.data.order - b.data.order);
@@ -196,7 +181,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
       <ul class="fr-sys" data-reveal-stagger>
         {systems.map((p) => (
           <li class="fr-sys-i">
-            <h3 class="fr-sys-t">{p.data.title}</h3>
+            <h3 class="fr-sys-t"><a href={`/projects/${p.id}`}>{p.data.title}</a></h3>
             <p class="fr-sys-s">{fillFacts(p.data.cvSummary ?? p.data.summary)}</p>
             <p class="fr-sys-go">
               {p.data.link && (
@@ -249,13 +234,13 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     {/* ---- Appendix: every project in a line -------------------------- */}
     <section class="fr-sec" aria-labelledby="fr-app-h">
       <h2 class="fr-h2" id="fr-app-h">Appendix</h2>
-      <p class="fr-lede">{projects.length} projects, one line each. Each opens its full entry in the Summa.</p>
+      <p class="fr-lede">{projects.length} projects, one line each. Each opens its own page.</p>
       <ol class="fr-app" data-reveal-stagger>
         {projects.map((p) => {
-          const { name, line } = brief(p);
+          const { name, line } = projectBrief(p);
           return (
             <li>
-              <a class="fr-app-a" href={`/home#${p.id}`}>
+              <a class="fr-app-a" href={`/projects/${p.id}`}>
                 <span class="fr-app-n">{name}</span>
                 <span class="fr-app-l">{line}</span>
               </a>
@@ -508,6 +493,8 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     gap: 0.7rem;
   }
   .fr-sys-t { font-size: var(--t-md); color: var(--ink); margin: 0; line-height: 1.35; }
+  .fr-sys-t a { color: inherit; }
+  .fr-sys-t a:hover, .fr-sys-t a:focus-visible { color: var(--fundus); }
   .fr-sys-s { font-size: var(--t-sm); line-height: 1.7; color: var(--ink-soft); margin: 0; }
 
   /* The row holding the button and the source link. `.fr-sys-i` is a grid, so

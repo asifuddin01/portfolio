@@ -2,9 +2,49 @@
 order: 1
 system: true
 title: "ResearchLens — evidence-grounded literature retrieval"
+teaser: "A research assistant over {papers} indexed papers that answers only from passages it actually retrieved, cites them, and refuses when the evidence is not there. Grounding is enforced in code rather than requested of the model, and it runs locally with no API key."
 summary: "A research assistant over {papers} indexed papers that answers from evidence and refuses when it has none. A PDF is not a string: headings are found by font geometry, two-column reading order is recovered from word coverage, and words are de-hyphenated against the document's own vocabulary. Retrieval is hybrid BM25 and dense, fused by reciprocal rank, then reranked by a cross-encoder. Grounding is mechanical rather than requested — retrieval runs first and the model is never called without evidence, citation markers are resolved against the passages actually retrieved, an invented one is deleted before it reaches the reader, and an answer left with nothing supported becomes a refusal. Ask across the whole corpus or confine it to papers you choose; add your own PDFs, which are parsed into an index belonging to your session alone and never merged into the shared one; ask what work exists like a paper you added. Questions about what is current reach past the corpus to arXiv, PubMed and OpenAlex, and those results are marked as abstracts rather than passages, because an abstract supports what a paper claims and not what it measured. It also reads my site and my textbook, fetched fresh, so a question about my work or about a mechanism I have written up is answered from those and cited to the page or the proposition — each labelled, because a self-description, a piece of teaching and a measured result are three different kinds of claim. Runs locally with no API key at all."
 cvSummary: "Evidence-grounded RAG over {papers} papers, {passages} passages, plus a live-fetched index of my own site and textbook (Python, FastAPI, ONNX, Gradio). Structure-preserving PDF parsing; hybrid BM25 + dense retrieval with RRF fusion and cross-encoder reranking; mechanically enforced grounding — computed citations, fabricated-marker removal, refusal when unsupported. Per-session document upload isolated from the shared index; subset-scoped retrieval; related-work discovery across arXiv, PubMed and OpenAlex; benchmark harness with hand-labelled ground truth. {tests} tests, deployed on Hugging Face, runs locally with no API key."
 link: "/researchlens"
 linkLabel: "Open ResearchLens"
 repo: "https://github.com/asifuddin01/researchlens"
 ---
+
+## What it does
+
+ResearchLens is a research assistant over <Fact k="papers" /> indexed papers, split into <Fact k="passages" /> passages. It answers from evidence, cites the passages it used, and refuses when it has none.
+
+- Ask across the whole corpus, or confine a question to papers you choose.
+- Add your own PDFs. They are parsed into an index that belongs to your session alone and is never merged into the shared one.
+- Ask what work exists like a paper you added.
+- Ask about what is current, and the search reaches past the corpus to arXiv, PubMed and OpenAlex.
+
+## Reading a PDF properly
+
+A PDF is not a string, so the parser recovers the structure a reader sees:
+
+- headings are found by font geometry;
+- two-column reading order is recovered from word coverage;
+- words broken across lines are de-hyphenated against the document's own vocabulary.
+
+## Finding the right passages
+
+Retrieval is hybrid. BM25 and dense retrieval run side by side, their rankings are fused by reciprocal rank, and a cross-encoder reranks the result.
+
+## Grounding is enforced in code
+
+The model is not asked to be faithful; the pipeline makes it so.
+
+- Retrieval runs first, and the model is never called without evidence.
+- Citation markers are resolved against the passages actually retrieved. An invented one is deleted before it reaches the reader.
+- An answer left with nothing supported becomes a refusal.
+
+## Three kinds of evidence, kept apart
+
+Results from arXiv, PubMed and OpenAlex are marked as abstracts rather than passages. An abstract supports what a paper claims, not what it measured.
+
+ResearchLens also reads this site and its textbook, fetched fresh. A question about my work, or about a mechanism I have written up, is answered from those and cited to the page or the proposition. Each source is labelled, because a self-description, a piece of teaching and a measured result are three different kinds of claim.
+
+## Built with
+
+Python, FastAPI, ONNX and Gradio, with a benchmark harness scored against hand-labelled ground truth and <Fact k="tests" /> tests. It is deployed on Hugging Face and runs locally with no API key at all.
