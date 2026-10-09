@@ -86,7 +86,7 @@ const EDGES = [0, 1].flatMap((l) =>
       <circle class="pp-ring" cx={C.x} cy={C.y} r={R} />
 
       <text class="pp-count" x={C.x} y={C.y + 6} text-anchor="middle">{count}</text>
-      <text class="pp-count-l" x={C.x} y={C.y + 20} text-anchor="middle">projects</text>
+      <text class="pp-count-l" x={C.x} y={C.y + 23} text-anchor="middle">projects</text>
 
       {/* Data: samples arriving. */}
       <g class="pp-st pp-st-a" style="--accent: var(--lesion-ex)">
@@ -205,14 +205,14 @@ const EDGES = [0, 1].flatMap((l) =>
   .pp-ring { fill: none; stroke: var(--brass); stroke-width: 1; stroke-opacity: 0.5; vector-effect: non-scaling-stroke; }
   .pp-halo { fill: none; stroke: var(--brass); stroke-width: 0.6; stroke-opacity: 0.22; stroke-dasharray: 2 7; vector-effect: non-scaling-stroke; }
   /* The count is a quiet fact, not the subject: the loop is. */
-  .pp-count { font-family: var(--font-display); font-style: italic; font-size: 26px; fill: var(--ink-soft); fill-opacity: 0.6; }
+  .pp-count { font-family: var(--font-display); font-style: italic; font-size: 32px; fill: var(--ink); fill-opacity: 0.92; }
   .pp-count-l {
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 8.5px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    fill: var(--ink-soft);
-    fill-opacity: 0.5;
+    fill: var(--brass-text);
+    fill-opacity: 0.85;
   }
   .pp-label {
     font-family: var(--font-mono);
