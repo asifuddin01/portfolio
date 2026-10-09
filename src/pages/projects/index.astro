@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import ProjectList from '../../components/projects/ProjectList.astro';
+import ProjectsPlate from '../../components/projects/ProjectsPlate.astro';
 import { getProjects } from '../../lib/collections';
 import { AUTHOR } from '../../consts';
 
@@ -13,16 +14,19 @@ const projects = await getProjects();
   folio="P"
 >
   <div class="codex pjx">
-    <header class="pjx-head">
-      <p class="pjx-kicker" data-reveal>Scripta · the appendix</p>
-      <h1 class="pjx-h1" data-press>Projects</h1>
-      <p class="pjx-lede codex-measure" data-reveal>
-        {projects.length} things I have built, each with its own page: what it
-        does, how it was tested, the demo where there is one, and where it falls
-        short. The research papers are on their own page, under
-        <a class="link" href="/papers">Papers</a>.
-      </p>
-    </header>
+    <section class="pjx-hero" aria-labelledby="pjx-title">
+      <header class="pjx-head">
+        <p class="pjx-kicker" data-reveal>Scripta · the appendix</p>
+        <h1 class="pjx-h1" id="pjx-title" data-press>Projects</h1>
+        <p class="pjx-lede codex-measure" data-reveal>
+          {projects.length} things I have built, each with its own page: what it
+          does, how it was tested, the demo where there is one, and where it falls
+          short. The research papers are on their own page, under <a class="link" href="/papers">Papers</a>.
+        </p>
+      </header>
+
+      <ProjectsPlate count={projects.length} />
+    </section>
 
     <LesionRule />
 
@@ -32,7 +36,19 @@ const projects = await getProjects();
 
 <style>
   .pjx { padding-top: clamp(2.5rem, 7vh, 5rem); padding-bottom: 3rem; }
-  .pjx-head { margin-bottom: 1.5rem; }
+  /* Header beside its plate, as on Marginalia; one column below 56rem. */
+  .pjx-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.96fr) minmax(20rem, 1.04fr);
+    gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: center;
+    min-height: clamp(26rem, 54vh, 36rem);
+    margin-bottom: 1.5rem;
+  }
+  .pjx-head { min-width: 0; max-width: 37rem; }
+  @media (max-width: 56rem) {
+    .pjx-hero { grid-template-columns: minmax(0, 1fr); gap: clamp(2rem, 7vw, 3.5rem); min-height: 0; }
+  }
   .pjx-kicker {
     font-family: var(--font-mono);
     font-size: var(--t-xs);

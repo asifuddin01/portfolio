@@ -1,0 +1,441 @@
+---
+/**
+ * The projects page's plate: the loop behind an AI project.
+ *
+ * Six stations on one ring, in the order the work goes: data is gathered, an
+ * algorithm chosen, a model built, then trained, evaluated against the line it
+ * was held to, and deployed where someone can use it. A pulse goes round and
+ * each station lights as it arrives. One bar at evaluation stops short of the
+ * target, because the pages say where their results do; and the loop closes,
+ * because what the evaluation shows decides the next turn.
+ *
+ * The count at the centre is the number of projects, read from the collection
+ * at build time, so a project added in /admin is counted on the next deploy.
+ *
+ * Pure CSS on an SVG, driven like the other plates by scripts/motion.ts:
+ * paused off-screen, off under reduced motion unless the reader asks, and
+ * complete and readable when nothing moves at all.
+ */
+import FigureMotionToggle from '../ornament/FigureMotionToggle.astro';
+
+interface Props { count: number }
+const { count } = Astro.props;
+
+/* Six stations 60° apart, starting top-left and going clockwise, so the arcs
+   between them are equal and the pulse reaches each one a sixth of a loop on. */
+const C = { x: 260, y: 210 };
+const R = 150;
+const at = (deg: number, r = R) => ({
+  x: +(C.x + r * Math.cos((deg * Math.PI) / 180)).toFixed(2),
+  y: +(C.y + r * Math.sin((deg * Math.PI) / 180)).toFixed(2),
+});
+const ANGLES = [-150, -90, -30, 30, 90, 150];
+const NODES = ANGLES.map((a) => at(a));
+const LOOP =
+  `M ${NODES[0].x} ${NODES[0].y} ` +
+  NODES.map((_, i) => NODES[(i + 1) % NODES.length])
+    .map((n) => `A ${R} ${R} 0 0 1 ${n.x} ${n.y}`)
+    .join(' ');
+
+/* Label placement: beside the node, on the outside of the ring. */
+const place = (n: { x: number; y: number }, a: number) =>
+  a === -90 ? { lx: n.x, ly: n.y - 16, anchor: 'middle' }
+  : a === 90 ? { lx: n.x, ly: n.y + 24, anchor: 'middle' }
+  : Math.abs(a) > 90 ? { lx: n.x - 14, ly: n.y + 4, anchor: 'end' }
+  : { lx: n.x + 14, ly: n.y + 4, anchor: 'start' };
+
+const STATIONS = [
+  { key: 'a', label: 'data', accent: 'var(--lesion-ex)' },
+  { key: 'b', label: 'algorithm', accent: 'var(--brass)' },
+  { key: 'c', label: 'model', accent: 'var(--lesion-he)' },
+  { key: 'd', label: 'train', accent: 'var(--fundus)' },
+  { key: 'e', label: 'evaluate', accent: 'var(--lesion-cws)' },
+  { key: 'f', label: 'deploy', accent: 'var(--lesion-ves)' },
+].map((s, i) => ({ ...s, node: NODES[i], ...place(NODES[i], ANGLES[i]) }));
+
+/* Every glyph is drawn at full size and shown at GLYPH of it, about its own
+   centre, so the ring keeps room around each station and the count. */
+const GLYPH = 0.78;
+const shrink = (x: number, y: number) => `translate(${x} ${y}) scale(${GLYPH}) translate(${-x} ${-y})`;
+
+/* Data: a three-by-three grid of samples, filling in one at a time. */
+const CELLS = Array.from({ length: 9 }, (_, i) => ({ x: 163 + (i % 3) * 13, y: 147 + Math.floor(i / 3) * 13, o: i * 60 }));
+
+/* Model: a three-three-one network, lit a layer at a time. */
+const COLS = [318, 340, 362];
+const LAYER = [[148, 164, 180], [148, 164, 180], [164]];
+const UNITS = LAYER.flatMap((ys, l) => ys.map((y) => ({ x: COLS[l], y, o: l * 300 })));
+const EDGES = [0, 1].flatMap((l) =>
+  LAYER[l].flatMap((y1) => LAYER[l + 1].map((y2) => ({ d: `M${COLS[l]} ${y1} L${COLS[l + 1]} ${y2}`, o: 100 + l * 300 })))
+);
+---
+<figure class="pp" data-motion-figure data-reveal aria-labelledby="pp-cap" style={`--loop: path('${LOOP}')`}>
+  <svg class="pp-svg" viewBox="0 0 520 420" role="img" aria-labelledby="pp-title pp-desc">
+    <title id="pp-title">The loop behind an AI project</title>
+    <desc id="pp-desc">
+      A ring with six stations: data, algorithm, model, train, evaluate and
+      deploy. A pulse travels round it. A grid of samples fills in, a small
+      flowchart draws itself, a neural network lights up layer by layer, a loss
+      curve falls, bars rise to a dashed target with one stopping short, and a
+      play button fills on a screen. The number of projects sits quietly at the
+      centre.
+    </desc>
+
+    <g aria-hidden="true">
+      <circle class="pp-halo" cx={C.x} cy={C.y} r={R + 9} />
+      <circle class="pp-ring" cx={C.x} cy={C.y} r={R} />
+
+      <text class="pp-count" x={C.x} y={C.y + 6} text-anchor="middle">{count}</text>
+      <text class="pp-count-l" x={C.x} y={C.y + 20} text-anchor="middle">projects</text>
+
+      {/* Data: samples arriving. */}
+      <g class="pp-st pp-st-a" style="--accent: var(--lesion-ex)">
+        <g transform={shrink(180, 164)}>
+          {CELLS.map((c) => (
+            <rect class="pp-cell" style={`--o: ${c.o}ms`} x={c.x} y={c.y} width="9" height="9" rx="1.2" />
+          ))}
+        </g>
+      </g>
+
+      {/* Algorithm: a start, a decision, two branches. */}
+      <g class="pp-st pp-st-b" style="--accent: var(--brass)">
+        <g transform={shrink(260, 119)}>
+          <circle class="pp-box" style="--o: 0ms" cx="260" cy="99" r="3" />
+          <path class="pp-flow" style="--o: 120ms" pathLength="1" d="M260 102 L260 109" />
+          <path class="pp-flow" style="--o: 240ms" pathLength="1" d="M260 109 L270 118 L260 127 L250 118 Z" />
+          <path class="pp-flow" style="--o: 420ms" pathLength="1" d="M250 118 L238 118 L238 132" />
+          <path class="pp-flow" style="--o: 420ms" pathLength="1" d="M270 118 L282 118 L282 132" />
+          <rect class="pp-box" style="--o: 640ms" x="231" y="132" width="14" height="9" rx="1.5" />
+          <rect class="pp-box" style="--o: 640ms" x="275" y="132" width="14" height="9" rx="1.5" />
+        </g>
+      </g>
+
+      {/* Model: the architecture, a layer at a time. */}
+      <g class="pp-st pp-st-c" style="--accent: var(--lesion-he)">
+        <g transform={shrink(340, 164)}>
+          {EDGES.map((e) => <path class="pp-edge" style={`--o: ${e.o}ms`} pathLength="1" d={e.d} />)}
+          {UNITS.map((u) => <circle class="pp-unit" style={`--o: ${u.o}ms`} cx={u.x} cy={u.y} r="3.6" />)}
+        </g>
+      </g>
+
+      {/* Train: the loss falling as the model learns. */}
+      <g class="pp-st pp-st-d" style="--accent: var(--fundus)">
+        <g transform={shrink(341, 256)}>
+          <path class="pp-axis" d="M318 236 L318 276 L364 276" />
+          <path class="pp-loss" style="--o: 0ms" pathLength="1" d="M321 239 C327 258 337 266 362 269" />
+          <circle class="pp-box" style="--o: 900ms" cx="362" cy="269" r="2.6" />
+        </g>
+      </g>
+
+      {/* Evaluate: bars rise to the line they were held to; the last stops short. */}
+      <g class="pp-st pp-st-e" style="--accent: var(--lesion-cws)">
+        <g transform={shrink(261, 303)}>
+          <line class="pp-target" x1="230" y1="284" x2="292" y2="284" />
+          <line class="pp-base" x1="232" y1="322" x2="290" y2="322" />
+          <rect class="pp-bar" style="--o: 0ms" x="236" y="286" width="9" height="36" />
+          <rect class="pp-bar" style="--o: 140ms" x="250" y="286" width="9" height="36" />
+          <rect class="pp-bar" style="--o: 280ms" x="264" y="286" width="9" height="36" />
+          <rect class="pp-bar pp-short" style="--o: 420ms" x="278" y="300" width="9" height="22" />
+        </g>
+      </g>
+
+      {/* Deploy: a screen, a play button, the thing running for someone. */}
+      <g class="pp-st pp-st-f" style="--accent: var(--lesion-ves)">
+        <g transform={shrink(180, 257)}>
+          <rect class="pp-screen" x="155" y="238" width="50" height="32" rx="3" />
+          <polygon class="pp-play" points="175,246 175,262 188,254" />
+          <line class="pp-track" x1="157" y1="277" x2="203" y2="277" />
+          <line class="pp-prog" x1="157" y1="277" x2="203" y2="277" />
+        </g>
+      </g>
+
+      {STATIONS.map((s) => (
+        <g class={`pp-station pp-st-${s.key}`} style={`--accent: ${s.accent}`}>
+          <circle class="pp-node" cx={s.node.x} cy={s.node.y} r="5" />
+          <text class="pp-label" x={s.lx} y={s.ly} text-anchor={s.anchor}>{s.label}</text>
+        </g>
+      ))}
+
+      <circle class="pp-ring-pulse" cx="0" cy="0" r="9" />
+      <circle class="pp-pulse" cx="0" cy="0" r="3" />
+    </g>
+  </svg>
+
+  <div class="pp-motion">
+    <FigureMotionToggle figure="projects illustration" />
+  </div>
+
+  <figcaption class="pp-cap" id="pp-cap">
+    <span class="pp-cap-n">Figura V</span>
+    <span class="pp-cap-t">Data, algorithm, model, train, evaluate, deploy</span>
+    <span class="pp-cap-d">
+      The loop behind an AI project. Data is gathered, an algorithm chosen and a
+      model built, then trained, evaluated against the line it was held to,
+      where one result stops short, and deployed where someone can use it. What
+      the evaluation shows decides the next turn.
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .pp {
+    width: 100%;
+    min-width: 0;
+    max-width: 34rem;
+    margin: 0 auto;
+    display: grid;
+    gap: 0.9rem;
+  }
+  .pp-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .pp-motion { display: flex; justify-content: flex-end; }
+  .pp:not([data-motion]) .pp-motion { display: none; }
+
+  .pp-cap { display: grid; gap: 0.25rem; max-width: 26rem; }
+  .pp-cap-n {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+  }
+  .pp-cap-t { font-family: var(--font-body); font-style: italic; font-size: var(--t-sm); color: var(--ink); }
+  .pp-cap-d { font-size: var(--t-xs); line-height: 1.65; color: var(--ink-soft); }
+
+  /* ---- the drawing, at rest: complete, so a still figure still reads ---- */
+  .pp-ring { fill: none; stroke: var(--brass); stroke-width: 1; stroke-opacity: 0.5; vector-effect: non-scaling-stroke; }
+  .pp-halo { fill: none; stroke: var(--brass); stroke-width: 0.6; stroke-opacity: 0.22; stroke-dasharray: 2 7; vector-effect: non-scaling-stroke; }
+  /* The count is a quiet fact, not the subject: the loop is. */
+  .pp-count { font-family: var(--font-display); font-style: italic; font-size: 26px; fill: var(--ink-soft); fill-opacity: 0.6; }
+  .pp-count-l {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    fill: var(--ink-soft);
+    fill-opacity: 0.5;
+  }
+  .pp-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    fill: var(--ink-soft);
+  }
+  .pp-node {
+    fill: var(--accent);
+    fill-opacity: 0.85;
+    stroke: color-mix(in srgb, var(--accent) 72%, var(--ink) 28%);
+    stroke-width: 1.2;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-cell, .pp-screen {
+    fill: color-mix(in srgb, var(--accent) 22%, transparent);
+    stroke: color-mix(in srgb, var(--accent) 72%, var(--ink) 28%);
+    stroke-width: 1.1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-edge {
+    fill: none;
+    stroke: color-mix(in srgb, var(--accent) 60%, var(--ink) 40%);
+    stroke-width: 0.9;
+    stroke-opacity: 0.7;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-flow, .pp-loss {
+    fill: none;
+    stroke: color-mix(in srgb, var(--accent) 75%, var(--ink) 25%);
+    stroke-width: 1.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-loss { stroke-width: 1.8; }
+  .pp-box {
+    fill: color-mix(in srgb, var(--accent) 30%, transparent);
+    stroke: color-mix(in srgb, var(--accent) 75%, var(--ink) 25%);
+    stroke-width: 1.1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-axis {
+    fill: none;
+    stroke: var(--ink-soft);
+    stroke-opacity: 0.45;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-unit {
+    fill: var(--accent);
+    stroke: color-mix(in srgb, var(--accent) 60%, var(--ink) 40%);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-bar { fill: color-mix(in srgb, var(--accent) 70%, var(--ink) 30%); fill-opacity: 0.8; }
+  .pp-short { fill: var(--lesion-ma); }
+  .pp-target {
+    stroke: var(--brass);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-base, .pp-track {
+    stroke: var(--ink-soft);
+    stroke-opacity: 0.45;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pp-play { fill: var(--accent); fill-opacity: 0.9; stroke: none; }
+  .pp-prog { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+  .pp-pulse, .pp-ring-pulse {
+    offset-path: var(--loop);
+    offset-rotate: 0deg;
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  .pp-pulse { fill: var(--fundus); }
+  .pp-ring-pulse { fill: none; stroke: var(--fundus); stroke-width: 0.8; stroke-opacity: 0.55; }
+
+  /* Each station's turn: the pulse reaches them a sixth of a loop apart. */
+  .pp-st-a { --at: 0ms; }
+  .pp-st-b { --at: 2000ms; }
+  .pp-st-c { --at: 4000ms; }
+  .pp-st-d { --at: 6000ms; }
+  .pp-st-e { --at: 8000ms; }
+  .pp-st-f { --at: 10000ms; }
+
+  /* ---- running ---------------------------------------------------------- */
+  @media all {
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-pulse {
+      animation: pp-move 12s linear infinite;
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-ring-pulse {
+      animation: pp-move 12s linear infinite, pp-breathe 2500ms ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-st {
+      animation: pp-light 12s var(--ease-ink, ease-in-out) infinite both;
+      animation-delay: var(--at);
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-node {
+      animation: pp-node 12s var(--ease-out, ease-out) infinite both;
+      animation-delay: var(--at);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-label {
+      animation: pp-label 12s ease-in-out infinite both;
+      animation-delay: var(--at);
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) :is(.pp-cell, .pp-unit, .pp-box) {
+      animation: pp-pop 12s var(--ease-out, ease-out) infinite both;
+      animation-delay: calc(var(--at) + var(--o));
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) :is(.pp-edge, .pp-flow, .pp-loss) {
+      animation: pp-write 12s var(--ease-ink, ease-in-out) infinite both;
+      animation-delay: calc(var(--at) + var(--o));
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-bar {
+      animation: pp-grow 12s var(--ease-out, ease-out) infinite both;
+      animation-delay: calc(var(--at) + var(--o));
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-play {
+      animation: pp-play 12s ease-in-out infinite both;
+      animation-delay: var(--at);
+    }
+    .pp[data-motion='running']:not([data-motion-visible='false']) .pp-prog {
+      animation: pp-prog 12s linear infinite both;
+      animation-delay: var(--at);
+      transform-box: fill-box;
+      transform-origin: 0 50%;
+    }
+
+    /* Every station lights when the pulse arrives, and stays lit for most of
+       a loop, so about three are lit at once and the ring reads as a wave. */
+    @keyframes pp-light {
+      0% { opacity: 0.22; }
+      5% { opacity: 1; }
+      50% { opacity: 1; }
+      64%, 100% { opacity: 0.22; }
+    }
+    @keyframes pp-node {
+      0% { transform: scale(1); fill-opacity: 0.15; }
+      4% { transform: scale(1.4); fill-opacity: 1; }
+      12% { transform: scale(1); fill-opacity: 0.9; }
+      50% { fill-opacity: 0.9; }
+      64%, 100% { transform: scale(1); fill-opacity: 0.15; }
+    }
+    @keyframes pp-label {
+      0% { fill-opacity: 0.45; }
+      5%, 50% { fill-opacity: 1; }
+      64%, 100% { fill-opacity: 0.45; }
+    }
+    @keyframes pp-pop {
+      0% { transform: scale(0); opacity: 0; }
+      5% { transform: scale(1.06); opacity: 1; }
+      8% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes pp-write {
+      0% { stroke-dashoffset: 1; }
+      7% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes pp-grow {
+      0% { transform: scaleY(0); }
+      11% { transform: scaleY(1); }
+      100% { transform: scaleY(1); }
+    }
+    @keyframes pp-play {
+      0% { fill-opacity: 0; }
+      6% { fill-opacity: 0.9; }
+      50% { fill-opacity: 0.9; }
+      64%, 100% { fill-opacity: 0; }
+    }
+    @keyframes pp-prog {
+      0% { transform: scaleX(0); }
+      40% { transform: scaleX(1); }
+      100% { transform: scaleX(1); }
+    }
+    @keyframes pp-move {
+      0% { offset-distance: 0%; opacity: 1; }
+      100% { offset-distance: 100%; opacity: 1; }
+    }
+    @keyframes pp-breathe {
+      0%, 100% { transform: scale(0.9); }
+      50% { transform: scale(1.15); }
+    }
+  }
+
+  /* ---- paused: the finished drawing, nothing moving ---------------------- */
+  .pp[data-motion='paused'] :is(.pp-pulse, .pp-ring-pulse, .pp-st, .pp-node, .pp-label, .pp-cell, .pp-unit, .pp-box, .pp-edge, .pp-flow, .pp-loss, .pp-bar, .pp-play, .pp-prog) {
+    animation: none !important;
+  }
+
+  /* A reader who asked for motion under reduced motion gets it. */
+  @media (prefers-reduced-motion: reduce) {
+    .pp[data-motion='running'] :is(.pp-pulse, .pp-ring-pulse) { animation: pp-move 12s linear infinite !important; }
+    .pp[data-motion='running'] .pp-st { animation: pp-light 12s ease-in-out infinite both !important; animation-delay: var(--at) !important; }
+    .pp[data-motion='running'] .pp-node { animation: pp-node 12s ease-out infinite both !important; animation-delay: var(--at) !important; }
+    .pp[data-motion='running'] .pp-label { animation: pp-label 12s ease-in-out infinite both !important; animation-delay: var(--at) !important; }
+    .pp[data-motion='running'] :is(.pp-cell, .pp-unit, .pp-box) { animation: pp-pop 12s ease-out infinite both !important; animation-delay: calc(var(--at) + var(--o)) !important; }
+    .pp[data-motion='running'] :is(.pp-edge, .pp-flow, .pp-loss) { animation: pp-write 12s ease-in-out infinite both !important; animation-delay: calc(var(--at) + var(--o)) !important; }
+    .pp[data-motion='running'] .pp-bar { animation: pp-grow 12s ease-out infinite both !important; animation-delay: calc(var(--at) + var(--o)) !important; }
+    .pp[data-motion='running'] .pp-play { animation: pp-play 12s ease-in-out infinite both !important; animation-delay: var(--at) !important; }
+    .pp[data-motion='running'] .pp-prog { animation: pp-prog 12s linear infinite both !important; animation-delay: var(--at) !important; }
+  }
+
+  .pp.is-motion-restarting :is(.pp-pulse, .pp-ring-pulse, .pp-st, .pp-node, .pp-label, .pp-cell, .pp-unit, .pp-box, .pp-edge, .pp-flow, .pp-loss, .pp-bar, .pp-play, .pp-prog) {
+    animation: none !important;
+  }
+  .pp[data-motion='running'][data-motion-visible='false'] :is(.pp-pulse, .pp-ring-pulse, .pp-st, .pp-node, .pp-label, .pp-cell, .pp-unit, .pp-box, .pp-edge, .pp-flow, .pp-loss, .pp-bar, .pp-play, .pp-prog) {
+    animation-play-state: paused !important;
+  }
+</style>
