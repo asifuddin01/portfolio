@@ -129,6 +129,10 @@ const { Content } = await render(entry);
   }
 
   .nx-body { font-size: var(--body-size); line-height: var(--body-leading); }
+  /* A tall plate (a statuette, an amulet) shown at full measure fills more
+     than a screen; at this width it still reads, and the caption keeps the
+     full line. Opt in with <figure class="is-portrait">. */
+  .nx-body :global(figure.is-portrait img) { max-width: 22rem; margin-inline: auto; }
   .nx-body :global(.footnotes) {
     margin-top: 3rem;
     padding-top: 1.5rem;
