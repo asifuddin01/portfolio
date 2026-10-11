@@ -290,6 +290,31 @@ import { AUTHOR } from '../../consts';
     border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
   }
   .av-group-name { font-size: var(--t-xl); margin: 0; line-height: 1.1; }
+  .av-group-rename {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0 0 1px;
+    cursor: pointer;
+  }
+  .av-group-rename:hover,
+  .av-group-rename:focus-visible { color: var(--fundus); border-bottom-color: var(--fundus); }
+  .av-rename { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; width: 100%; }
+  .av-rename-input {
+    flex: 1 1 16rem;
+    font-family: var(--font-display);
+    font-size: var(--t-lg);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--paper-raised) 80%, transparent);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0.35rem 0.6rem;
+  }
   .av-group-count {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -641,15 +666,79 @@ import { AUTHOR } from '../../consts';
     for (const [name, its] of shelves) {
       const section = el('section', 'av-group');
       const head = el('header', 'av-group-head');
+      const rename = el('button', 'av-group-rename', 'Rename');
+      rename.type = 'button';
+      rename.setAttribute('aria-label', `Rename ${name}`);
+      rename.addEventListener('click', () => startRename(head, name));
       head.append(
         el('h2', 'av-group-name', name),
         el('span', 'av-group-count', `${its.length} ${its.length === 1 ? 'artifact' : 'artifacts'} · updated ${date(its[0].added)}`),
+        rename,
       );
       const grid = el('ul', 'av-grid');
       for (const it of its) grid.append(card(it));
       section.append(head, grid);
       groups.append(section);
     }
+  }
+
+  /**
+   * A shelf is nothing but the research name its artifacts share, so renaming
+   * the shelf renames every artifact on it — through the same edit the Details
+   * form uses, one at a time. A name that matches another shelf joins it.
+   */
+  function startRename(head: HTMLElement, name: string): void {
+    const form = el('form', 'av-rename');
+    const input = el('input', 'av-rename-input');
+    input.value = name;
+    input.maxLength = 60;
+    input.required = true;
+    input.setAttribute('aria-label', `New name for ${name}`);
+    input.setAttribute('list', 'av-researches');
+    const save = el('button', 'av-btn', 'Save');
+    save.type = 'submit';
+    const cancel = el('button', 'av-btn', 'Cancel');
+    cancel.type = 'button';
+    cancel.addEventListener('click', () => render());
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') render();
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      void renameShelf(name, input.value.trim());
+    });
+    form.append(input, save, cancel);
+    head.replaceChildren(form);
+    input.focus();
+    input.select();
+  }
+
+  async function renameShelf(from: string, to: string): Promise<void> {
+    if (!to || to === from) return render();
+    const shelf = items.filter((i) => i.research === from);
+    let done = 0;
+    try {
+      for (const it of shelf) {
+        setStatus(`Renaming ${from}: ${done + 1} of ${shelf.length}…`);
+        const res = await api(`items/${it.id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ research: to }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+        items = items.map((i) => (i.id === body.id ? body : i));
+        done++;
+      }
+      setStatus(`Renamed ${from} to ${to}.`);
+    } catch (err) {
+      // What was renamed stays renamed; Try again picks up the rest.
+      setStatus(`Renamed ${done} of ${shelf.length}: ${(err as Error).message}`, {
+        label: 'Try again',
+        run: () => void renameShelf(from, to),
+      });
+    }
+    render();
   }
 
   function card(it: Item): HTMLLIElement {
