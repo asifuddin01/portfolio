@@ -1,0 +1,12 @@
+# Osiris and Set: image credits
+
+All four images are public-domain Open Access photographs from The Metropolitan Museum of Art. The official Collection API returned `isPublicDomain: true` for each object on 2026-10-12. Local WebP copies are resized so the longest side is at most 1400px, without cropping or retouching. Astro generates responsive sizes. No reconstructed or generated imagery is presented as an ancient object.
+
+| Local file | Object and credit | Museum original |
+| --- | --- | --- |
+| `osiris-statuette.webp` | [Osiris, 41.6.4](https://www.metmuseum.org/art/collection/search/546112), about 1080 to 664 BCE; from Egypt; Gift of Elisha Dyer, in memory of George R. Dyer, 1941 | [41.6.4_EGDP015853.jpg](https://images.metmuseum.org/CRDImages/eg/original/41.6.4_EGDP015853.jpg) |
+| `isis-marshes.webp` | [Isis nursing Horus in the marshes depicted on a fragment from a box lid or menat counterpoise, 30.8.239](https://www.metmuseum.org/art/collection/search/550777), about 1080 to 664 BCE; from Egypt; Theodore M. Davis Collection, Bequest of Theodore M. Davis, 1915 | [30.8.239_EGDP015264.jpg](https://images.metmuseum.org/CRDImages/eg/original/30.8.239_EGDP015264.jpg) |
+| `horus-stela.webp` | [Magical Stela with Horus the Child, 50.85](https://www.metmuseum.org/art/collection/search/546037), 360 to 343 BCE, reign of Nectanebo II; from Alexandria, probably originally from Heliopolis; Fletcher Fund, 1950 | [DP-38634-001.jpg](https://images.metmuseum.org/CRDImages/eg/original/DP-38634-001.jpg) |
+| `was-scepter.webp` | [Head of a *was* scepter, 25.3.284h](https://www.metmuseum.org/art/collection/search/555856), about 1859 to 1813 BCE; from the tomb of Senwosretankh (MMA 211), Deir el-Bahri, MMA excavations, 1921 to 1922; Rogers Fund, 1925 | [DP-39498-002.jpg](https://images.metmuseum.org/CRDImages/eg/original/DP-39498-002.jpg) |
+
+The Osiris figure is dated by the style of its face and has no recorded findspot. The Isis fragment is five centimetres high and its original object is uncertain; the museum offers two possibilities. The stela is the one often called the Metternich Stela; its Heliopolis origin is the museum's "probably", and older publications give a different reign and owner, as the chapter's notes say. The staff head's connection with the animal of Set is debated in the museum's own record, and the caption says so. None of the four objects narrates the death of Osiris.
