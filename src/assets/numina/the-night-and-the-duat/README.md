@@ -1,0 +1,12 @@
+# The night and the Duat: image credits
+
+All four images are public-domain Open Access photographs from The Metropolitan Museum of Art. The official Collection API returned `isPublicDomain: true` for each object on 2026-10-12. Local WebP copies are resized so the longest side is at most 1400px, without cropping or retouching. Astro generates responsive sizes. No reconstructed or generated imagery is presented as an ancient object.
+
+| Local file | Object and credit | Museum original |
+| --- | --- | --- |
+| `henettawy-amduat.webp` | ["Amduat" Papyrus of Henettawy, daughter of Isetemkheb, 25.3.28](https://www.metmuseum.org/art/collection/search/551100), about 990 to 970 BCE; from Deir el-Bahri, Tomb MMA 60, burial of Henettawy, MMA excavations, 1923 to 1924; Rogers Fund, 1925 | [25.3.28_EGDP015978-5982_Stitiched.jpg](https://images.metmuseum.org/CRDImages/eg/original/25.3.28_EGDP015978-5982_Stitiched.jpg) |
+| `wereshnefer-sarcophagus.webp` | [Sarcophagus of Wereshnefer, 14.7.1a, b](https://www.metmuseum.org/art/collection/search/549534), 380 to 300 BCE; from Saqqara, tomb of Wereshnefer; Gift of Edward S. Harkness, 1914 | [DP358740.jpg](https://images.metmuseum.org/CRDImages/eg/original/DP358740.jpg) |
+| `judgment-papyrus.webp` | [Part of a funerary papyrus showing the judgment before Osiris, 66.99.142](https://www.metmuseum.org/art/collection/search/557657), about 230 to 150 BCE; from Egypt; Purchase, Fletcher Fund and The Guide Foundation Inc. Gift, 1966 | [LC-66_99_142_EGDP028235.jpg](https://images.metmuseum.org/CRDImages/eg/original/LC-66_99_142_EGDP028235.jpg) |
+| `hatnefer-heart-scarab.webp` | [Heart Scarab of Hatnefer, 36.3.2](https://www.metmuseum.org/art/collection/search/545146), about 1491 to 1473 BCE; from Thebes, tomb of Hatnefer and Ramose, mummy of Hatnefer, MMA excavations, 1935 to 1936; Rogers Fund, 1936 | [DT535.jpg](https://images.metmuseum.org/CRDImages/eg/original/DT535.jpg) |
+
+The papyrus of Henettawy is shown whole, as a strip nearly five times as wide as it is tall, so its figures are very small on the page; the museum's image is a stitched photograph. The sarcophagus photograph is the museum's second view, of the rounded head end in the gallery, and its shallow carving cannot be read at this size. The judgment papyrus has no recorded owner or findspot. The heart scarab is shown from above; the engraved base with the spell is not visible, and the scarab was first made for someone other than Hatnefer.
