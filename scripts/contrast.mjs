@@ -38,5 +38,23 @@ for (const [name, tokens] of [['VELLUM', base], ['NOCTURNE', dark]]) {
     );
   }
 }
+/* The book sheets: every text colour on each section's paper and its raised
+   card, with the two colours the sheet re-proves swapped in. */
+const TEXT = [['ink', 7], ['ink-soft', 4.5], ['fundus', 4.5], ['brass-text', 4.5], ['oxblood-text', 4.5], ['verdigris', 4.5]];
+for (const [name, tokens] of [['VELLUM', base], ['NOCTURNE', dark]]) {
+  const onSheet = { ...tokens, 'ink-soft': tokens['sheet-ink-soft'], 'oxblood-text': tokens['sheet-oxblood-text'] };
+  for (const book of ['elementa', 'numina', 'tabulae']) {
+    console.log(`\n${name} · ${book} sheet`);
+    for (const ground of [`sheet-${book}`, `sheet-${book}-raised`]) {
+      for (const [fg, need] of TEXT) {
+        const r = ratio(onSheet[fg], tokens[ground]);
+        const ok = r >= need;
+        if (!ok) fails++;
+        console.log(`  ${ok ? '✓' : '✗'} ${fg.padEnd(13)} on ${ground.padEnd(22)} ${r.toFixed(2).padStart(6)} : 1   (need ${need})`);
+      }
+    }
+  }
+}
+
 console.log(fails === 0 ? '\n✓ all token pairs pass' : `\n✗ ${fails} failing pair(s)`);
 process.exit(fails ? 1 : 0);

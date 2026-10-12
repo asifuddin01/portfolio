@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../../components/ornament/LesionRule.astro';
+import BookReader from '../../../../components/book/BookReader.astro';
 import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
 import FigureFrame from '../../../../components/elementa/FigureFrame.astro';
 import Deps from '../../../../components/elementa/Deps.astro';
@@ -58,8 +59,9 @@ const Figure = fig?.component;
   description={d.claim ?? d.statement}
   folio={ctx.id}
   type="article"
+  book="elementa"
 >
-  <article class="codex pp">
+  <article class="codex pp sheet" data-folio={ctx.id} data-book-source>
     <Breadcrumb
       bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
       chapterN={chapterN} chapterTitle={chapter.data.title} chapterHref={chapterHref}
@@ -67,7 +69,7 @@ const Figure = fig?.component;
       tier={chapter.data.mathTier}
     />
 
-    <header class="pp-head">
+    <header class="pp-head book-chapter-head">
       <p class="pp-ref" data-reveal>
         Proposition {d.proposition}
         <span class="pp-id">{ctx.id}</span>
@@ -75,7 +77,9 @@ const Figure = fig?.component;
         {d.status !== 'published' && <span class="pp-draft">{d.status}</span>}
       </p>
       <h1 class="pp-st" data-press>{d.statement}</h1>
+      <span class="book-orn" aria-hidden="true"></span>
       {d.claim && <p class="pp-claim codex-measure" data-reveal>{d.claim}</p>}
+      <p class="pp-read"><BookReader head={`Elementa · ${chapterN}. ${chapter.data.title}`} title={`Proposition ${d.proposition}`} /></p>
     </header>
 
     {Figure && fig && (
@@ -91,7 +95,7 @@ const Figure = fig?.component;
       </div>
     )}
 
-    <div class="prose pp-body"><Content components={ELEMENTA_COMPONENTS} /></div>
+    <div class="prose pp-body book-text"><Content components={ELEMENTA_COMPONENTS} /></div>
 
     {d.sources.length > 0 && (
       <section class="pp-sources" data-reveal aria-labelledby="pp-src-h">
@@ -108,7 +112,7 @@ const Figure = fig?.component;
 
     <LesionRule />
 
-    <nav class="pp-nav" aria-label="Adjacent propositions">
+    <nav class="pp-nav" aria-label="Adjacent propositions" data-book-skip>
       <div class="pp-nav-side">
         {previous && (
           <a class="pp-nav-link" href={hrefs[previous.id]}>
@@ -128,12 +132,12 @@ const Figure = fig?.component;
 </BaseLayout>
 
 <style>
-  .pp { padding-top: clamp(2.5rem, 7vh, 5rem); }
-  .pp-head { margin-bottom: 1.6rem; }
+  .pp-read { margin: 1.4rem 0 0; }
   .pp-id { color: var(--ink-soft); letter-spacing: 0.12em; }
   .pp-ref {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.9rem;
     align-items: baseline;
     font-family: var(--font-mono);
@@ -149,12 +153,12 @@ const Figure = fig?.component;
     border: var(--rule) solid var(--oxblood);
     padding: 0.05em 0.4em;
   }
-  .pp-st { font-size: var(--t-xl); line-height: 1.15; max-width: 24ch; }
+  .pp-st { font-size: clamp(var(--t-xl), 3.6vw, 3rem); line-height: 1.12; max-width: 26ch; margin-inline: auto; font-style: italic; }
   .pp-claim {
     font-size: var(--body-size);
     line-height: var(--body-leading);
     color: var(--ink-soft);
-    margin-top: 1rem;
+    margin: 0 auto;
   }
 
   .pp-label {

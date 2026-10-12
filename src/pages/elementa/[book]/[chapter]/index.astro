@@ -6,6 +6,7 @@
  */
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import LesionRule from '../../../../components/ornament/LesionRule.astro';
+import BookReader from '../../../../components/book/BookReader.astro';
 import Breadcrumb from '../../../../components/elementa/Breadcrumb.astro';
 import MathTier from '../../../../components/elementa/MathTier.astro';
 import Quota from '../../../../components/elementa/Quota.astro';
@@ -78,19 +79,22 @@ const ConceptFigure = conceptFig?.component;
   title={`Chapter ${chapterN} · ${d.title} — Elementa`}
   description={d.claim ?? d.summary}
   folio={d.id}
+  book="elementa"
 >
-  <div class="codex ch">
+  <div class="codex ch sheet" data-folio={d.id} data-book-source>
     <Breadcrumb
       bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
       chapterN={chapterN} chapterTitle={d.title} chapterHref={here}
       tier={d.mathTier}
     />
 
-    <header class="ch-head">
+    <header class="ch-head book-chapter-head">
       <p class="ch-n" data-reveal>Chapter {chapterN} <em class="ch-id">{d.id}</em></p>
       <h1 class="ch-h1" data-press>{d.title}</h1>
+      <span class="book-orn" aria-hidden="true"></span>
       {d.claim && <p class="ch-claim codex-measure" data-reveal>{d.claim}</p>}
       <p class="ch-summary codex-measure" data-reveal>{d.summary}</p>
+      <p class="ch-read"><BookReader head={`Elementa · Book ${bookNumeral}`} title={`${chapterN}. ${d.title}`} /></p>
     </header>
 
     <section class="ch-tierblock" data-reveal aria-labelledby="ch-tier-h">
@@ -279,7 +283,7 @@ const ConceptFigure = conceptFig?.component;
 
     <LesionRule />
 
-    <nav class="ch-next" aria-label="Next chapter">
+    <nav class="ch-next" aria-label="Next chapter" data-book-skip>
       <a class="ch-next-link" href={next ? `${base}/${next.slug}` : base} data-magnet>
         <span class="ch-next-label">
           {next ? `Next — Chapter ${next.n}` : `Back to Book ${bookNumeral}`}
@@ -291,24 +295,24 @@ const ConceptFigure = conceptFig?.component;
 </BaseLayout>
 
 <style>
-  .ch { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .ch-read { margin: 1.4rem 0 0; }
   .ch-n {
     font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.2em;
+    font-size: var(--t-sm);
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--brass-text);
     margin-bottom: 0.7rem;
   }
   .ch-id { font-style: normal; color: var(--ink-soft); letter-spacing: 0.1em; margin-left: 0.6rem; }
-  .ch-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .ch-h1 { font-size: clamp(var(--t-2xl), 4.6vw, 3.8rem); line-height: 1.05; margin: 0 auto 0.4rem; }
   .ch-claim {
     font-family: var(--font-display);
     font-size: var(--t-md);
     line-height: 1.45;
-    margin-bottom: 0.8rem;
+    margin: 0 auto 0.8rem;
   }
-  .ch-summary { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
+  .ch-summary { font-size: var(--body-size); font-style: italic; line-height: var(--body-leading); color: var(--ink-soft); margin-inline: auto; }
 
   .ch-label {
     font-family: var(--font-mono);

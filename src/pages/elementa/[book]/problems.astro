@@ -42,8 +42,9 @@ const NEED_CROSS = 2;
   title={`Problem set · Book ${numeral} — ${book.data.title}`}
   description={`Cross-chapter problems for Book ${numeral}: ${book.data.title}.`}
   folio={`${numeral}.B`}
+  book="elementa"
 >
-  <div class="codex bp">
+  <div class="codex bp sheet" data-folio={`${numeral}.B`}>
     <Breadcrumb
       bookNumeral={numeral} bookTitle={book.data.title} bookHref={base}
       leaf="Problem set"

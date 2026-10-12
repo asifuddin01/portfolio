@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import LesionRule from '../../components/ornament/LesionRule.astro';
+import BookReader from '../../components/book/BookReader.astro';
 import { getTabulae } from '../../lib/collections';
 import { toRoman } from '../../consts';
 
@@ -43,122 +43,122 @@ const meta = [
   description={d.gloss || `${d.title}, ${d.artist}`}
   folio={n}
   type="article"
+  book="tabulae"
 >
-  <article class="codex tab">
-    <header class="tab-head">
-      <p class="tab-n" data-reveal>Tabula {toRoman(n)}</p>
-      <h1 class="tab-title" data-press>{d.title}</h1>
-      <p class="tab-attr" data-reveal>{[d.artist, d.date].filter(Boolean).join(', ')}</p>
-    </header>
-
-    <figure class:list={['tab-fig', `art--${d.treatment}`]} data-reveal>
+  {/* An art book's opening: the plate on the right-hand page, its text
+      facing it on the left. The plate is first in the source so that it is
+      also first in the reader and on a phone. */}
+  <article class="codex tab sheet sheet--spread" data-folio={toRoman(n).toLowerCase()} data-book-source>
+    <figure class:list={['spread-recto', 'tab-fig', `art--${d.treatment}`]} data-reveal>
       <div class="tab-frame plate-art">
         <Image
           src={d.image}
           alt={alt}
           widths={[420, 720, 1000, 1400]}
-          sizes="(max-width: 900px) 92vw, 46rem"
+          sizes="(max-width: 900px) 92vw, 42vw"
           loading="eager"
           fetchpriority="high"
           decoding="async"
           quality={74}
         />
       </div>
-      {d.gloss && <figcaption class="tab-gloss">{d.gloss}</figcaption>}
+      <figcaption class="tab-cap">
+        <span class="tab-cap-n">Tabula {toRoman(n)}</span>
+        {d.gloss && <span class="tab-gloss">{d.gloss}</span>}
+      </figcaption>
     </figure>
 
-    <dl class="tab-meta" data-reveal-stagger>
-      {meta.map((m) => (
-        <div class="tab-meta-row"><dt>{m.label}</dt><dd>{m.value}</dd></div>
-      ))}
-      <div class="tab-meta-row">
-        <dt>Source</dt>
-        <dd>
-          {d.source ? <a class="link" href={d.source} rel="noopener">{d.credit}</a> : d.credit}
-        </dd>
-      </div>
-    </dl>
+    <div class="spread-verso tab-text">
+      <p class="tab-trail book-head"><a href="/tabulae">Tabulae</a> · Tabula {toRoman(n)}</p>
+      <header class="tab-head book-chapter-head">
+        <p class="tab-n" data-reveal>Tabula {toRoman(n)}</p>
+        <h1 class="tab-title" data-press>{d.title}</h1>
+        <p class="tab-attr" data-reveal>{[d.artist, d.date].filter(Boolean).join(', ')}</p>
+        <span class="book-orn" aria-hidden="true"></span>
+        <p class="tab-read"><BookReader head="Tabulae" title={d.title} /></p>
+      </header>
 
-    <div class="prose tab-body"><Content /></div>
+      <dl class="tab-meta" data-reveal-stagger>
+        {meta.map((m) => (
+          <div class="tab-meta-row"><dt>{m.label}</dt><dd>{m.value}</dd></div>
+        ))}
+        <div class="tab-meta-row">
+          <dt>Source</dt>
+          <dd>
+            {d.source ? <a class="link" href={d.source} rel="noopener">{d.credit}</a> : d.credit}
+          </dd>
+        </div>
+      </dl>
 
-    <LesionRule />
+      <div class="prose tab-body book-text"><Content /></div>
 
-    <nav class="tab-next" aria-label="Next plate">
-      <a class="tab-next-link" href={`/tabulae/${next.id}`} data-magnet>
-        <span class="tab-next-label">Next — Tabula {toRoman(nextN)}</span>
-        <span class="tab-next-title">{next.data.title}</span>
-      </a>
-    </nav>
+      <nav class="tab-next" aria-label="Next plate" data-book-skip>
+        <a class="tab-next-link" href={`/tabulae/${next.id}`} data-magnet>
+          <span class="tab-next-label">Turn the page — Tabula {toRoman(nextN)}</span>
+          <span class="tab-next-title">{next.data.title}</span>
+        </a>
+      </nav>
+    </div>
   </article>
 </BaseLayout>
 
 <style>
-  .tab { padding-top: clamp(2.5rem, 7vh, 5rem); }
-  .tab-head { margin-bottom: 2rem; }
-  .tab-n {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-    margin-bottom: 0.9rem;
+  .tab.sheet--spread { align-items: start; }
+  .tab-fig { grid-column: 2; grid-row: 1; margin: 0; position: sticky; top: 5.5rem; display: grid; gap: 1rem; justify-items: center; }
+  .tab-text { grid-column: 1; grid-row: 1; }
+  @media (max-width: 56rem) {
+    .tab-fig, .tab-text { grid-column: 1; grid-row: auto; }
+    .tab-fig { position: static; }
   }
-  .tab-title { font-size: var(--t-2xl); line-height: 1.08; margin-bottom: 0.7rem; max-width: 22ch; }
-  .tab-attr { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
-
-  .tab-fig { margin: 0 0 2rem; max-width: 46rem; }
   .tab-frame {
-    border: var(--rule) solid color-mix(in srgb, var(--brass) 60%, transparent);
-    background: var(--paper-raised);
-    padding: clamp(1rem, 3vw, 2rem);
+    width: 100%;
+    padding: clamp(1rem, 2.4vw, 1.8rem);
+    border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
+    outline: 0.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  outline-offset: -6px;
     overflow: hidden;
   }
-  .tab-frame :global(img) { width: 100%; height: auto; display: block; }
-  .tab-gloss {
-    margin-top: 0.9rem;
-    font-family: var(--font-body);
-    font-style: italic;
-    font-size: var(--t-md);
-    color: var(--ink-soft);
-    max-width: 44ch;
-  }
+  .tab-frame :global(img) { width: 100%; height: auto; display: block; max-height: 74vh; object-fit: contain; }
+  .tab-cap { display: grid; gap: 0.4rem; justify-items: center; text-align: center; }
+  .tab-cap-n { font-size: var(--t-sm); letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass-text); }
+  .tab-gloss { font-style: italic; font-size: var(--t-md); color: var(--ink-soft); max-width: 44ch; line-height: 1.5; }
+
+  .tab-trail a { color: inherit; }
+  .tab-n { font-size: var(--t-sm); letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass-text); margin: 0 0 0.8rem; }
+  .tab-title { font-size: clamp(var(--t-xl), 3.6vw, 3.2rem); line-height: 1.08; margin: 0 auto 0.6rem; max-width: 22ch; }
+  .tab-attr { font-style: italic; font-size: var(--t-md); color: var(--ink-soft); margin: 0; }
+  .tab-read { margin: 0.4rem 0 0; }
 
   .tab-meta {
-    margin: 0 0 2.4rem;
+    margin: 0 auto 2.2rem;
     max-width: var(--measure);
-    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    border-top: 0.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
   }
   .tab-meta-row {
     display: grid;
     grid-template-columns: 7rem 1fr;
     gap: 1rem;
-    padding: 0.55rem 0;
-    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent);
+    padding: 0.5rem 0;
+    border-bottom: 0.5px solid color-mix(in srgb, var(--brass) 28%, transparent);
   }
-  .tab-meta dt {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-  }
-  .tab-meta dd { margin: 0; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .tab-meta dt { font-size: var(--t-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass-text); }
+  .tab-meta dd { margin: 0; font-size: var(--t-sm); color: var(--ink-soft); }
+  /* The body is set by .book-text; it only needs to fill the left page. */
+  .tab-body { max-width: none; }
 
-  .tab-next { margin-bottom: 2rem; }
+  .tab-next { margin: 2.6rem 0 0; padding-top: 1rem; border-top: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent); text-align: right; }
   .tab-next-link { display: inline-block; }
   .tab-next-label {
     display: block;
-    font-family: var(--font-mono);
     font-size: var(--t-xs);
-    letter-spacing: 0.16em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--brass-text);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
   }
   .tab-next-title { font-family: var(--font-display); font-size: var(--t-md); color: var(--fundus); }
 
   @media (max-width: 640px) {
-    .tab-title { font-size: var(--t-xl); }
     .tab-meta-row { grid-template-columns: 1fr; gap: 0.15rem; }
   }
 </style>

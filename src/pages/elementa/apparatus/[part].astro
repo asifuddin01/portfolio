@@ -35,8 +35,9 @@ const bodies = Object.fromEntries(
   title={`0.${part.code} · ${part.title} — Apparatus`}
   description={`${part.title}: ${part.covers}.`}
   folio={`0.${part.code}`}
+  book="elementa"
 >
-  <div class="codex pt">
+  <div class="codex pt sheet" data-folio={`0.${part.code}`}>
     <Breadcrumb leaf={`Book 0 · ${part.title}`} />
 
     <header class="pt-head">

@@ -59,8 +59,9 @@ const base = `/elementa/${book.id}`;
   title={`Book ${numeral} · Closing — ${book.data.title}`}
   description={`The closing of Book ${numeral}: the map, the equations, the vocabulary, the misconceptions, the derivations and the laboratory.`}
   folio={`${n}.omega`}
+  book="elementa"
 >
-  <div class="codex cl">
+  <div class="codex cl sheet" data-folio={`${n}.omega`}>
     <Breadcrumb bookNumeral={numeral} bookTitle={book.data.title} bookHref={base} />
 
     <header class="cl-head">

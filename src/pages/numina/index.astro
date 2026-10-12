@@ -1,10 +1,10 @@
 ---
 import { getEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import LesionRule from '../../components/ornament/LesionRule.astro';
 import BlackHole from '../../components/numina/BlackHole.astro';
 import { getNumina } from '../../lib/collections';
-import { toRoman } from '../../consts';
+import BookCover from '../../components/book/BookCover.astro';
+import { toRoman, AUTHOR } from '../../consts';
 
 /**
  * Numina — the mythology section.
@@ -44,135 +44,96 @@ const paragraphs = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim())
   title="Numina — Md. Asif Uddin"
   description="Eleven books of mythology — Mesopotamian, Egyptian, Hindu, Chinese, Greek, Roman, Mesoamerican, Celtic, Japanese, Norse and Aztec — read as literature and as evidence."
   folio="N"
+  book="numina"
 >
   <div class="codex nu">
-    <div class="nu-hero">
-      <header class="nu-head">
-        {meta?.data.kicker && <p class="nu-kicker" data-reveal>{meta.data.kicker}</p>}
-        <h1 class="nu-h1" data-press>{meta?.data.title ?? 'Numina'}</h1>
+    {/* The opening: the frontispiece on the left, facing the title page, with
+        the board closed over it on a first visit. */}
+    <section class="sheet sheet--spread nu-open" aria-labelledby="nu-title">
+      <BookCover book="numina" title={meta?.data.title ?? 'Numina'} subtitle={meta?.data.kicker} author={AUTHOR} />
+      <div class="spread-verso nu-frontis book-frontis">
+        <BlackHole />
+      </div>
+      <header class="spread-recto book-title-page nu-head">
+        {meta?.data.kicker && <p class="tp-kicker" data-reveal>{meta.data.kicker}</p>}
+        <h1 class="tp-title" id="nu-title" data-press>{meta?.data.title ?? 'Numina'}</h1>
+        <span class="book-orn" aria-hidden="true"></span>
         {paragraphs.map((text) => (
-          <p class="nu-lede" data-reveal>{text}</p>
+          <p class="tp-lede" data-reveal>{text}</p>
         ))}
-        <p class="nu-sub" data-reveal>
-          {books.length} books · {chapters} chapters · {topics} {topics === 1 ? 'topic' : 'topics'} written
+        <p class="tp-imprint" data-reveal>
+          <span class="tp-author">{AUTHOR}</span>
+          <span>{books.length} books · {chapters} chapters · {topics} {topics === 1 ? 'topic' : 'topics'} written</span>
+          <span class="tp-place">Dhaka · {toRoman(new Date().getFullYear())}</span>
         </p>
       </header>
+    </section>
 
-      <BlackHole />
-    </div>
-
-    <LesionRule />
-
-    <ol class="nu-shelf">
-      {books.map((b, i) => (
-        <li class="nu-book">
-          <a class="nu-link" href={`/numina/${b.slug}`}>
-            <span class="nu-n">Book {toRoman(i + 1)}</span>
-            <span class="nu-body">
-              <span class="nu-t">{b.entry.data.name}</span>
+    <section class="sheet nu-contents" data-folio="vii" aria-labelledby="nu-toc-h">
+      <h2 class="book-toc-h" id="nu-toc-h">Contents</h2>
+      <span class="book-orn" aria-hidden="true"></span>
+      <ol class="nu-shelf">
+        {books.map((b, i) => (
+          <li class="nu-book">
+            <a class="nu-link" href={`/numina/${b.slug}`}>
+              <span class="nu-n">Book {toRoman(i + 1)}</span>
+              <span class="nu-row toc-leader">
+                <span class="nu-t">{b.entry.data.name}</span>
+                <span class="toc-end nu-count">
+                  {b.chapters.length} {b.chapters.length === 1 ? 'chapter' : 'chapters'}
+                  {b.topics > 0 && <em> · {b.topics} written</em>}
+                </span>
+              </span>
               <span class="nu-c">{b.entry.data.region} · {b.entry.data.span}</span>
               <span class="nu-goal">{b.entry.data.gloss}</span>
-            </span>
-            <span class="nu-count">
-              {b.chapters.length} {b.chapters.length === 1 ? 'chapter' : 'chapters'}
-              <em>{b.topics === 0 ? 'nothing written yet' : `${b.topics} ${b.topics === 1 ? 'topic' : 'topics'}`}</em>
-            </span>
-          </a>
-        </li>
-      ))}
-    </ol>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
   </div>
 </BaseLayout>
 
 <style>
-  .nu { padding-top: clamp(2.5rem, 7vh, 5rem); }
-  .nu-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 0.82fr) minmax(23rem, 1.18fr);
-    gap: clamp(2rem, 5vw, 5rem);
-    align-items: center;
-    min-height: clamp(28rem, 58vh, 38rem);
-  }
-  .nu-head { min-width: 0; max-width: 35rem; }
-  .nu-kicker {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-    margin-bottom: 0.8rem;
-  }
-  .nu-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
-  .nu-lede {
-    max-width: 55ch;
-    font-size: var(--body-size);
-    line-height: var(--body-leading);
-    margin-bottom: 1em;
-  }
-  .nu-sub {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--ink-soft);
-    margin: 0.8rem 0 0;
-  }
 
-  .nu-shelf { list-style: none; margin: 1.4rem 0 2rem; padding: 0; }
-  .nu-book { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .nu-shelf {
+    list-style: none;
+    margin: clamp(1.6rem, 4vh, 2.6rem) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 clamp(2.5rem, 6vw, 6rem);
+  }
+  @media (min-width: 64rem) {
+    .nu-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .nu-book { break-inside: avoid; }
   .nu-link {
     display: grid;
-    grid-template-columns: 7rem minmax(0, 1fr) auto;
-    gap: 1.2rem;
-    align-items: baseline;
-    padding: 1.4rem 0;
+    gap: 0.15rem;
+    padding: 1.05rem 0 1.2rem;
     color: var(--ink);
     text-decoration: none;
+    border-bottom: 0.5px solid color-mix(in srgb, var(--brass) 30%, transparent);
   }
   .nu-n {
-    font-family: var(--font-mono);
     font-size: var(--t-xs);
-    letter-spacing: 0.16em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--brass-text);
   }
-  .nu-body { display: block; }
-  .nu-t { display: block; font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.2; }
+  .nu-t { font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.2; }
   .nu-link:hover .nu-t { color: var(--fundus); }
-  .nu-c {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--ink-soft);
-    margin-top: 0.25rem;
-  }
-  .nu-goal {
-    display: block;
-    font-size: var(--t-base);
-    color: var(--ink-soft);
-    line-height: 1.55;
-    margin-top: 0.45rem;
-    max-width: 52ch;
-  }
   .nu-count {
-    display: block;
-    text-align: right;
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
+    font-size: var(--t-sm);
+    font-variant-numeric: oldstyle-nums;
     color: var(--ink-soft);
-    white-space: nowrap;
   }
-  .nu-count em { display: block; font-style: normal; color: var(--brass-text); margin-top: 0.25rem; }
-
-  @media (max-width: 56rem) {
-    .nu-hero {
-      grid-template-columns: minmax(0, 1fr);
-      gap: clamp(2.2rem, 7vw, 3.8rem);
-      min-height: 0;
-    }
-    .nu-head { max-width: 38rem; }
-  }
+  .nu-count em { font-style: normal; color: var(--brass-text); }
+  .nu-c { font-style: italic; font-size: var(--t-base); color: var(--ink-soft); }
+  .nu-goal { font-size: var(--t-base); color: var(--ink-soft); line-height: 1.55; max-width: 60ch; }
 
   @media (max-width: 40rem) {
-    .nu-link { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; padding: 1.1rem 0; }
-    .nu-count { text-align: left; margin-top: 0.4rem; }
+    .nu-row { flex-wrap: wrap; }
   }
 </style>

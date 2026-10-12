@@ -73,6 +73,20 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-ink: cubic-bezier(0.65, 0, 0.35, 1);
 
+  /* ---- Book paper: the sheet under Elementa, Numina and Tabulae ----
+     Each section prints on its own stock: Elementa on clean cream, Numina on
+     aged paper, Tabulae on whiter plate paper. Text keeps the house colours;
+     only --ink-soft and --oxblood-text are re-proven per stock, and
+     scripts/contrast.mjs checks every text colour on every sheet. */
+  --sheet-elementa: #F6F1E3;
+  --sheet-elementa-raised: #ECE5D2;
+  --sheet-numina: #F1E6CB;
+  --sheet-numina-raised: #E9DCBC;
+  --sheet-tabulae: #F5F2EA;
+  --sheet-tabulae-raised: #EBE7DD;
+  --sheet-ink-soft: #4A443A;
+  --sheet-oxblood-text: #6B2230;
+
   color-scheme: light;
 }
 
@@ -87,6 +101,18 @@
   --brass:        #C0A059;
   --brass-text:   #C0A059;
   --verdigris:    #7BA292;
+
+  /* Night stock. book.css draws these at 72% over the ink wash so the
+     gradient shows through the page; every composite is darker than the
+     opaque value checked here, so the contrast proven here is a floor. */
+  --sheet-elementa: #23201B;
+  --sheet-elementa-raised: #2B2721;
+  --sheet-numina: #29231A;
+  --sheet-numina-raised: #312A1F;
+  --sheet-tabulae: #211F1C;
+  --sheet-tabulae-raised: #2A2724;
+  --sheet-ink-soft: #AAA08C;
+  --sheet-oxblood-text: #D9838F;
 
   color-scheme: dark;
 }

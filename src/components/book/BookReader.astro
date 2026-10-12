@@ -1,0 +1,32 @@
+---
+/**
+ * "Read as a book": opens the chapter it sits in as pages that turn. The
+ * reader itself is src/scripts/book-reader.ts; this is the button and the
+ * running heads it prints.
+ *
+ * Put it inside the element marked `data-book-source` (the article whose
+ * content becomes the pages). It hides itself in the book, and stays hidden
+ * without script, since there is nothing to open.
+ */
+interface Props {
+  /** Running head on the left-hand pages, e.g. "Numina · Egyptian". */
+  head?: string;
+  /** Running head on the right-hand pages: the chapter's own title. */
+  title: string;
+  /** `plates` gives each plate a page of its own (Tabulae). */
+  mode?: 'flow' | 'plates';
+  label?: string;
+}
+const { head = '', title, mode = 'flow', label = 'Read as a book' } = Astro.props;
+---
+<button type="button" class="br-open" data-book-reader data-book-skip data-head={head} data-title={title} data-mode={mode} hidden>
+  <svg viewBox="0 0 28 20" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+    <path d="M14 4.5C11 2.5 6.5 2 1.5 2.5v14c5-.5 9.5 0 12.5 2 3-2 7.5-2.5 12.5-2v-14c-5-.5-9.5 0-12.5 2Z" />
+    <path d="M14 4.5v14" />
+  </svg>
+  <span>{label}</span>
+</button>
+
+<script>
+  import '../../scripts/book-reader.ts';
+</script>

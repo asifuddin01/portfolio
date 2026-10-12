@@ -1,0 +1,875 @@
+/* ==================================================================
+   book.css — Elementa, Numina and Tabulae as printed books.
+
+   A route opts in with <BaseLayout book="numina">, which puts
+   data-book on <main>. Inside it, every .sheet is a page lying on the
+   desk: its own paper stock, stacked edges, a shadow at the binding,
+   a running head, a folio. The page-turning reader (BookReader.astro)
+   carries the same data-book, so everything below written against
+   [data-book] rather than main[data-book] reads the same in both.
+
+   Width: the sheet runs nearly to the edges of the screen, with only a
+   strip of desk showing, and the measure inside it is wider than the
+   rest of the site's. The owner asked for more words to the line and
+   less empty paper either side, so the text column is centred in the
+   page at about a hundred characters rather than parked on the left.
+
+   Night: the pages stay dark with light text and the ink-wash gradient
+   shows through them (the sheet is drawn at 72%). What makes them a book
+   at night is the edges, the binding, the heads, the initials and the
+   ornaments, not light paper.
+   ================================================================== */
+
+[data-book] {
+  --sheet: var(--sheet-elementa);
+  --sheet-raised: var(--sheet-elementa-raised);
+  --edge: #D6CBAE;
+  --edge-fill: var(--sheet);
+  --binding: rgb(70 48 14 / 0.1);
+  --drop: rgb(52 34 8 / 0.34);
+  --desk: clamp(0.5rem, 1.8vw, 1.75rem);
+  --gilt: #B8923F;
+
+  /* Labels across these routes were set in Plex Mono. In a book they are
+     letterspaced capitals in the book's own face; code, figures, tables and
+     equations keep the monospace (see the restore rule below). */
+  --font-mono: var(--font-body);
+  --t-xs: 0.875rem;
+  --body-size: clamp(19px, 0.55vw + 12.5px, 21px);
+}
+[data-book='numina'] {
+  --sheet: var(--sheet-numina);
+  --sheet-raised: var(--sheet-numina-raised);
+  --edge: #D4C29A;
+  --binding: rgb(92 58 14 / 0.13);
+}
+[data-book='tabulae'] {
+  --sheet: var(--sheet-tabulae);
+  --sheet-raised: var(--sheet-tabulae-raised);
+  --edge: #D8D2C4;
+  --binding: rgb(40 34 24 / 0.09);
+}
+[data-theme='nocturne'] [data-book] {
+  --edge: color-mix(in srgb, var(--brass) 26%, #0B0A08);
+  --binding: rgb(0 0 0 / 0.42);
+  --drop: rgb(0 0 0 / 0.6);
+  --gilt: #C9A65E;
+}
+
+[data-book] :is(pre, code, kbd, samp, svg, table, .katex, .katex-display, .fig-draw, .fig, .sm-name, [data-mono]) {
+  --font-mono: 'IBM Plex Mono', var(--fallback-mono), monospace;
+}
+
+/* The global folio sits on the desk; in a book it is printed on the page. */
+main[data-book] > .folio { display: none; }
+
+/* ------------------------------------------------------------------
+   The sheet
+   ------------------------------------------------------------------ */
+main[data-book] { padding-top: clamp(0.75rem, 2.5vh, 1.75rem); }
+/* A route with several sheets wraps them in .codex; the wrapper steps aside
+   so each sheet can take the width of the desk. */
+main[data-book] > .codex:not(.sheet) { max-width: none; padding-inline: 0; }
+
+main[data-book] .sheet {
+  --paper: var(--sheet);
+  --paper-raised: var(--sheet-raised);
+  --ink-soft: var(--sheet-ink-soft);
+  --oxblood-text: var(--sheet-oxblood-text);
+  --measure: 96ch;
+
+  position: relative;
+  width: min(100% - 2 * var(--desk), 112rem);
+  max-width: none;
+  margin: 0 auto clamp(1.25rem, 3.5vh, 2.5rem);
+  padding: clamp(2.25rem, 6vh, 4.5rem) clamp(1.25rem, 5.5vw, 6.5rem) clamp(4.5rem, 10vh, 6.5rem);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(90deg, var(--binding), transparent clamp(1.5rem, 3vw, 3rem)),
+    var(--sheet-texture, none);
+  border-radius: 2px 5px 5px 2px;
+  box-shadow:
+    0 0 0 0.5px var(--edge),
+    2px 3px 0 -0.5px var(--edge-fill), 2px 3px 0 0 var(--edge),
+    4px 6px 0 -0.5px var(--edge-fill), 4px 6px 0 0 var(--edge),
+    6px 9px 0 -0.5px var(--edge-fill), 6px 9px 0 0 var(--edge),
+    0 26px 50px -24px var(--drop),
+    0 6px 14px -8px var(--drop);
+}
+[data-theme='nocturne'] main[data-book] .sheet {
+  background-color: color-mix(in srgb, var(--paper) 72%, transparent);
+}
+main[data-book] .sheet + .sheet { margin-top: clamp(1.75rem, 5vh, 3.5rem); }
+
+/* Numina's paper has aged: foxing where hands held it, and edges that
+   browned first. Nothing at night, where the gradient is the atmosphere. */
+[data-book='numina'] :is(.sheet, .br-page) {
+  --sheet-texture:
+    radial-gradient(ellipse 120% 90% at 50% 50%, transparent 62%, rgb(120 82 30 / 0.16) 100%),
+    radial-gradient(circle at 9% 14%, rgb(140 96 40 / 0.07), transparent 14rem),
+    radial-gradient(circle at 92% 78%, rgb(140 96 40 / 0.06), transparent 18rem),
+    radial-gradient(circle at 70% 8%, rgb(140 96 40 / 0.045), transparent 10rem);
+}
+[data-theme='nocturne'] [data-book='numina'] :is(.sheet, .br-page) {
+  --sheet-texture: radial-gradient(ellipse 120% 90% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.3) 100%);
+}
+/* A ruled frame inside the margin, as an old book's page is. */
+[data-book='numina'] .sheet::before {
+  content: '';
+  position: absolute;
+  inset: clamp(0.6rem, 1.4vw, 1.1rem);
+  border: 0.5px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 3.5px color-mix(in srgb, var(--brass) 30%, transparent);
+  pointer-events: none;
+}
+
+/* The folio, printed at the foot of the page. */
+main[data-book] .sheet[data-folio]::after {
+  content: '— ' attr(data-folio) ' —';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(1.5rem, 3.2vh, 2.3rem);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  letter-spacing: 0.22em;
+  color: var(--brass-text);
+  font-variant-numeric: oldstyle-nums;
+}
+
+/* Centre the running text on the page rather than leaving the right half
+   bare. Structural pages (a chapter's apparatus, its tables) keep their own
+   left edge, so a label and the note under it stay aligned. */
+main[data-book] .sheet :is(.prose, .book-text),
+main[data-book] :is(.book-chapter-head, .book-title-page) .codex-measure { margin-inline: auto; }
+
+/* ------------------------------------------------------------------
+   An open spread: two pages either side of the binding. Below 56rem it
+   is one page, recto first.
+   ------------------------------------------------------------------ */
+main[data-book] .sheet--spread {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(3rem, 8vw, 9rem);
+  align-items: center;
+  padding-inline: clamp(1.25rem, 4.5vw, 5.5rem);
+  min-height: clamp(30rem, 74vh, 46rem);
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - 0.5px), var(--edge) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(90deg, transparent calc(50% - clamp(2rem, 4vw, 4.5rem)), var(--binding) 50%, transparent calc(50% + clamp(2rem, 4vw, 4.5rem))),
+    linear-gradient(90deg, var(--binding), transparent clamp(1.5rem, 3vw, 3rem)),
+    var(--sheet-texture, none);
+}
+main[data-book] .sheet--spread::after { content: none; }
+/* Numina's ruled frame is printed on each page of a spread, not drawn round
+   the pair: the binding runs between two frames. */
+[data-book='numina'] .sheet--spread::before { right: calc(50% + clamp(1.2rem, 2.4vw, 2.2rem)); }
+@media (min-width: 56.001rem) {
+  main[data-book='numina'] .sheet--spread::after {
+    content: '';
+    position: absolute;
+    inset: clamp(0.6rem, 1.4vw, 1.1rem);
+    left: calc(50% + clamp(1.2rem, 2.4vw, 2.2rem));
+    border: 0.5px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 3.5px color-mix(in srgb, var(--brass) 30%, transparent);
+    pointer-events: none;
+  }
+}
+@media (max-width: 56rem) {
+  [data-book='numina'] .sheet--spread::before { right: clamp(0.6rem, 1.4vw, 1.1rem); }
+}
+.spread-verso, .spread-recto { min-width: 0; position: relative; }
+@media (max-width: 56rem) {
+  main[data-book] .sheet--spread {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2.5rem;
+    min-height: 0;
+    background-image:
+      linear-gradient(90deg, var(--binding), transparent clamp(1.5rem, 3vw, 3rem)),
+      var(--sheet-texture, none);
+  }
+  .spread-recto { order: -1; }
+}
+
+/* ------------------------------------------------------------------
+   Running head
+   ------------------------------------------------------------------ */
+main[data-book] .book-head {
+  display: block;
+  margin: 0 auto clamp(2rem, 5vh, 3rem);
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  word-spacing: 0.2em;
+  color: var(--ink-soft);
+}
+main[data-book] .book-head a { color: inherit; }
+main[data-book] .book-head a:hover { color: var(--fundus); }
+
+/* Elementa's breadcrumb is its running head. */
+main[data-book] .bc {
+  justify-content: center;
+  gap: 0.35rem 0.7rem;
+  margin: 0 auto clamp(2rem, 5vh, 3rem);
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  font-size: var(--t-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+main[data-book] .bc .bc-tier { margin-left: 0.6rem; }
+
+/* ------------------------------------------------------------------
+   Title page and chapter opening
+   ------------------------------------------------------------------ */
+[data-book] .book-title-page { text-align: center; max-width: 46rem; margin-inline: auto; }
+[data-book] .tp-kicker {
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin: 0 0 1.2rem;
+}
+[data-book] .tp-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 5.6rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 1.1rem;
+}
+[data-book] .tp-lede {
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
+  text-align: justify;
+  text-align-last: center;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  margin: 0 auto 1em;
+}
+[data-book] .tp-imprint {
+  margin: 2.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  line-height: 2;
+}
+[data-book] .tp-imprint a { color: var(--fundus); }
+
+/* On an opening spread the title page is laid out the way a printed one is:
+   the title high on the page, a short argument in the middle, and the
+   author's imprint at the foot. */
+main[data-book] .sheet--spread > .book-title-page {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-block: clamp(1.5rem, 5vh, 3.5rem) clamp(0.5rem, 2vh, 1.5rem);
+}
+main[data-book] .sheet--spread > .book-title-page .tp-lede {
+  max-width: 36rem;
+  font-size: var(--t-base);
+  line-height: 1.8;
+  text-align: center;
+  text-align-last: auto;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  color: var(--ink-soft);
+}
+[data-book] .tp-imprint {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  margin-top: auto;
+  padding-top: clamp(1.8rem, 5vh, 3rem);
+  line-height: 1.6;
+}
+[data-book] .tp-imprint::before {
+  content: '';
+  width: 3.5rem;
+  height: 0.5px;
+  margin-bottom: 0.9rem;
+  background: var(--brass);
+}
+[data-book] .tp-author {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+[data-book] .tp-place { font-size: var(--t-xs); letter-spacing: 0.3em; }
+[data-book] .tp-links { margin: 1rem 0 0; font-size: var(--t-sm); letter-spacing: 0.04em; }
+[data-book] .tp-links a { color: var(--fundus); }
+
+/* The frontispiece: the section's animated figure tipped in as a plate,
+   inside a pressed plate mark, its caption centred beneath it. */
+main[data-book] .book-frontis {
+  align-self: center;
+  padding: clamp(1rem, 2.6vw, 2.2rem);
+  border: 0.5px solid color-mix(in srgb, var(--brass) 65%, transparent);
+  background: color-mix(in srgb, var(--paper-raised) 45%, transparent);
+  outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  outline-offset: -6px;
+}
+[data-theme='nocturne'] main[data-book] .book-frontis { background: rgb(0 0 0 / 0.22); }
+main[data-book] .book-frontis :is(.bh-meta) {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  min-height: 0;
+}
+main[data-book] .book-frontis :is(.np-cap) { justify-items: center; text-align: center; margin-inline: auto; }
+main[data-book] .book-frontis :is(.np-motion) { justify-content: center; order: 9; }
+main[data-book] .book-frontis .fmt {
+  border-color: color-mix(in srgb, var(--brass) 35%, transparent);
+  background: none;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.7rem;
+  opacity: 0.85;
+}
+main[data-book] .book-frontis .fmt:hover { opacity: 1; }
+
+[data-book] .book-chapter-head { text-align: center; margin: 0 auto 2.4rem; max-width: 52rem; }
+[data-book] .book-chapter-head :is(h1) { text-wrap: balance; margin-inline: auto; }
+
+/* ------------------------------------------------------------------
+   Ornaments. Drawn as masks so they take the brass of either theme.
+   ------------------------------------------------------------------ */
+[data-book] {
+  --orn-rule: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 14'%3E%3Cpath d='M0 7h62M98 7h62' stroke='%23000' stroke-width='1'/%3E%3Cpath d='M80 1.5l5.5 5.5-5.5 5.5-5.5-5.5z'/%3E%3Ccircle cx='67' cy='7' r='1.6'/%3E%3Ccircle cx='93' cy='7' r='1.6'/%3E%3C/svg%3E");
+  --orn-leaf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 24'%3E%3Cpath fill-rule='evenodd' d='M18 12C16 7 19.5 3.6 24.5 4.6 29.5 5.6 33 9 41 12 33 15 29.5 18.4 24.5 19.4 19.5 20.4 16 17 18 12ZM21 11.55H35.5V12.45H21Z'/%3E%3Cpath d='M18 12C12.5 12 8.5 9 6.6 5.2 5.6 3.1 7.2 1.4 9.3 2.6' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  --orn-tail: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M60 3l6 12-6 12-6-12z'/%3E%3Cpath d='M8 15C24 15 34 7 46 9 52 10 52 15 47 16M112 15C96 15 86 23 74 21 68 20 68 15 73 14' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/%3E%3Ccircle cx='4' cy='15' r='2'/%3E%3Ccircle cx='116' cy='15' r='2'/%3E%3C/svg%3E");
+}
+[data-book] .book-orn {
+  display: block;
+  margin: 1.4rem auto;
+  width: 9rem;
+  height: 0.9rem;
+  background: var(--brass);
+  -webkit-mask: var(--orn-rule) center / contain no-repeat;
+  mask: var(--orn-rule) center / contain no-repeat;
+}
+[data-book] .book-orn--leaf {
+  width: 3.6rem;
+  height: 1.6rem;
+  -webkit-mask-image: var(--orn-leaf);
+  mask-image: var(--orn-leaf);
+}
+[data-book] .book-orn--tail {
+  width: 8rem;
+  height: 2rem;
+  -webkit-mask-image: var(--orn-tail);
+  mask-image: var(--orn-tail);
+}
+
+/* ------------------------------------------------------------------
+   Contents: entries with dotted leaders to a count, as in a printed
+   table of contents.
+   ------------------------------------------------------------------ */
+[data-book] .book-toc-h {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(var(--t-xl), 3.4vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 0.4rem;
+}
+[data-book] .toc-leader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+[data-book] .toc-leader::after {
+  content: '';
+  order: 1;
+  flex: 1 1 2rem;
+  min-width: 1.5rem;
+  border-bottom: 1.5px dotted color-mix(in srgb, var(--ink-soft) 55%, transparent);
+  transform: translateY(-0.3em);
+}
+[data-book] .toc-leader > .toc-end { order: 2; white-space: nowrap; }
+
+/* ------------------------------------------------------------------
+   Long-form text set as a book page: justified and hyphenated, indented
+   paragraphs with no space between them, an initial, small capitals on
+   the first line, centred section heads under an ornament, and a
+   tailpiece where the text ends.
+   ------------------------------------------------------------------ */
+[data-book] .book-text { hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
+@media (min-width: 40rem) {
+  [data-book] .book-text > :is(p, ul, ol) { text-align: justify; }
+}
+[data-book] .book-text > p { margin-bottom: 0; }
+[data-book] .book-text > p + p { margin-top: 0; text-indent: 1.6em; }
+
+[data-book] .book-text > p:first-of-type::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: calc(var(--body-size) * var(--body-leading) * 2.85);
+  line-height: 0.8;
+  margin: 0.05em 0.12em 0 -0.02em;
+  color: var(--fundus);
+}
+[data-book] .book-text > p:first-of-type::first-line {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.035em;
+}
+
+/* Numina's initial is criblé: a capital in oxblood on a dotted ground in a
+   ruled box, the way sixteenth-century printers cut them. */
+[data-book='numina'] .book-text > p:first-of-type::first-letter {
+  font-size: calc(var(--body-size) * var(--body-leading) * 2.4);
+  line-height: 0.9;
+  padding: 0.1em 0.16em 0.05em;
+  margin: 0.04em 0.2em 0 0;
+  color: var(--oxblood-text);
+  border: 0.5px solid color-mix(in srgb, var(--brass) 75%, transparent);
+  outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  outline-offset: 2px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--brass) 38%, transparent) 0.9px, transparent 1.3px) 0 0 / 5px 5px,
+    var(--paper-raised);
+}
+
+[data-book] .book-text h2 {
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--t-lg);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  margin: 2.8em auto 1.2em;
+  max-width: 40ch;
+}
+[data-book] .book-text h2::before {
+  content: '';
+  display: block;
+  width: 7.5rem;
+  height: 0.8rem;
+  margin: 0 auto 1.1rem;
+  background: var(--brass);
+  -webkit-mask: var(--orn-rule) center / contain no-repeat;
+  mask: var(--orn-rule) center / contain no-repeat;
+}
+[data-book] .book-text h2 + p { text-indent: 0; }
+[data-book] .book-text h3 { text-align: center; }
+
+[data-book] .book-text hr {
+  border: 0;
+  opacity: 1;
+  width: 3.4rem;
+  height: 1.5rem;
+  margin: 2.2em auto;
+  background: var(--brass);
+  -webkit-mask: var(--orn-leaf) center / contain no-repeat;
+  mask: var(--orn-leaf) center / contain no-repeat;
+}
+
+[data-book] .book-text::after {
+  content: '';
+  display: block;
+  width: 8rem;
+  height: 2rem;
+  margin: 3rem auto 0;
+  background: var(--brass);
+  -webkit-mask: var(--orn-tail) center / contain no-repeat;
+  mask: var(--orn-tail) center / contain no-repeat;
+}
+/* With notes, the tailpiece ends the text and the notes follow it. */
+[data-book] .book-text:has(> .footnotes)::after { content: none; }
+[data-book] .book-text > .footnotes::before {
+  content: '';
+  display: block;
+  width: 8rem;
+  height: 2rem;
+  margin: 0 auto 2.4rem;
+  background: var(--brass);
+  -webkit-mask: var(--orn-tail) center / contain no-repeat;
+  mask: var(--orn-tail) center / contain no-repeat;
+}
+[data-book] .book-text > .footnotes { border-top: 0; padding-top: 0; }
+[data-book] .book-text #footnote-label {
+  text-align: center;
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.2em;
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+@media (min-width: 64rem) {
+  [data-book] .book-text > .footnotes ol { columns: 2; column-gap: 3.5rem; }
+  [data-book] .book-text > .footnotes li { break-inside: avoid; }
+}
+
+/* Plates: a double-ruled plate mark around the picture, and in daylight
+   the photograph printed into the paper rather than laid on top of it. */
+[data-book] .book-text figure {
+  margin: 2.6em auto;
+  padding: clamp(0.75rem, 1.8vw, 1.3rem);
+  border: 0.5px solid color-mix(in srgb, var(--brass) 65%, transparent);
+  outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  outline-offset: -5px;
+  text-indent: 0;
+}
+[data-book] .book-text figure.is-portrait { max-width: 30rem; }
+[data-book] .book-text figure img { border: 0; padding: 0; background: none; margin-inline: auto; }
+[data-book] .book-text figcaption {
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  line-height: 1.65;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  margin-top: 1rem;
+}
+[data-book='numina'] .book-text figure img {
+  mix-blend-mode: multiply;
+  filter: sepia(0.2) saturate(0.86) contrast(1.03);
+}
+[data-theme='nocturne'] [data-book='numina'] .book-text figure img {
+  mix-blend-mode: normal;
+  filter: sepia(0.12) saturate(0.9) brightness(0.92);
+}
+
+/* Tabulae: each plate inside a plate mark, a double rule pressed into the
+   paper around the picture, with the caption set beneath like a museum
+   catalogue's. */
+:is(main, .br)[data-book='tabulae'] .art-frame {
+  padding: clamp(0.8rem, 1.8vw, 1.3rem);
+  background: none;
+  border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
+  outline: 0.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  outline-offset: -5px;
+}
+:is(main, .br)[data-book='tabulae'] .art-cap { justify-items: center; text-align: center; max-width: none; margin-inline: auto; }
+:is(main, .br)[data-book='tabulae'] .art-n { letter-spacing: 0.24em; }
+:is(main, .br)[data-book='tabulae'] .art-title { font-family: var(--font-display); font-size: var(--t-md); }
+:is(main, .br)[data-book='tabulae'] .art-gloss { max-width: 40ch; }
+:is(main, .br)[data-book='tabulae'] .art-src { justify-self: center; }
+
+/* Reveal-on-scroll is a screen effect; a book has no reason to fade its
+   own text in, and a page opened in the reader is never scrolled to. */
+.br [data-reveal],
+.br [data-reveal-stagger] > *,
+.br [data-press],
+.br .word {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+.br .plate-art img { clip-path: none !important; transform: none !important; }
+.br [data-parallax] { transform: none !important; }
+
+/* ==================================================================
+   The page-turning reader (src/scripts/book-reader.ts)
+   ================================================================== */
+html.br-is-open { overflow: hidden; }
+html.br-is-open body { overflow: hidden; }
+
+.br {
+  --paper: var(--sheet);
+  --paper-raised: var(--sheet-raised);
+  --ink-soft: var(--sheet-ink-soft);
+  --oxblood-text: var(--sheet-oxblood-text);
+
+  /* Type sized to the page, in px so nesting never compounds. */
+  --body-size: var(--br-fs);
+  --body-leading: 1.62;
+  --t-xs: calc(var(--br-fs) * 0.74);
+  --t-sm: calc(var(--br-fs) * 0.84);
+  --t-base: calc(var(--br-fs) * 0.94);
+  --t-md: calc(var(--br-fs) * 1.08);
+  --t-lg: calc(var(--br-fs) * 1.3);
+  --t-xl: calc(var(--br-fs) * 1.62);
+  --t-2xl: calc(var(--br-fs) * 2.05);
+  --t-3xl: calc(var(--br-fs) * 2.7);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% -10%, color-mix(in srgb, var(--fundus) 14%, transparent), transparent 55%),
+    radial-gradient(circle at 105% 110%, color-mix(in srgb, var(--verdigris) 16%, transparent), transparent 55%),
+    var(--paper-desk, #D3C9B0);
+  outline: none;
+}
+[data-theme='nocturne'] .br { --paper-desk: #0C0B09; }
+
+.br-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem clamp(0.75rem, 2vw, 1.5rem);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.br-name { margin: 0; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-count { margin: 0; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+.br-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.8rem;
+  border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.br-close span:last-child { font-size: 1.3em; line-height: 1; }
+.br-close:hover { color: var(--fundus); border-color: var(--fundus); }
+@media (max-width: 40rem) {
+  .br-name { display: none; }
+  .br-count { flex: 1; }
+  .br-close span:first-child { display: none; }
+}
+
+.br-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1vw, 0.9rem);
+  min-height: 0;
+  touch-action: pan-y;
+}
+.br-book {
+  position: relative;
+  flex: none;
+  width: var(--br-page-w);
+  height: var(--br-page-h);
+  perspective: 4200px;
+}
+.br.is-spread .br-book { width: calc(var(--br-page-w) * 2); }
+
+/* A page: paper, running head, folio. The left page binds on its right edge
+   and the right page on its left, so each carries the shadow of the gutter
+   on that side, and the stacked fore-edges show on the outside. */
+.br-page {
+  position: absolute;
+  top: 0;
+  width: var(--br-page-w);
+  height: var(--br-page-h);
+  background-color: var(--paper);
+  background-image: var(--page-light), var(--sheet-texture, none);
+  box-shadow: 0 0 0 0.5px var(--edge);
+}
+.br-page--l {
+  left: 0;
+  --page-light: linear-gradient(270deg, var(--binding), transparent 3.2rem);
+  border-radius: 4px 1px 1px 4px;
+  box-shadow:
+    0 0 0 0.5px var(--edge),
+    -2px 2px 0 -0.5px var(--paper), -2px 2px 0 0 var(--edge),
+    -4px 4px 0 -0.5px var(--paper), -4px 4px 0 0 var(--edge),
+    -14px 24px 40px -18px var(--drop);
+}
+.br-page--r {
+  left: var(--br-page-w);
+  --page-light: linear-gradient(90deg, var(--binding), transparent 3.2rem);
+  border-radius: 1px 4px 4px 1px;
+  box-shadow:
+    0 0 0 0.5px var(--edge),
+    2px 2px 0 -0.5px var(--paper), 2px 2px 0 0 var(--edge),
+    4px 4px 0 -0.5px var(--paper), 4px 4px 0 0 var(--edge),
+    14px 24px 40px -18px var(--drop);
+}
+.br:not(.is-spread) .br-page--l {
+  --page-light: linear-gradient(90deg, var(--binding), transparent 2rem);
+  border-radius: 1px 4px 4px 1px;
+}
+/* At night the dark pages keep the warmth of the site's gradient. */
+[data-theme='nocturne'] .br .br-page--l {
+  --page-light: linear-gradient(270deg, var(--binding), transparent 3.2rem),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--fundus) 13%, transparent), transparent 62%);
+}
+[data-theme='nocturne'] .br .br-page--r {
+  --page-light: linear-gradient(90deg, var(--binding), transparent 3.2rem),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--verdigris) 14%, transparent), transparent 62%);
+}
+[data-book='numina'] .br-page::before {
+  content: '';
+  position: absolute;
+  inset: clamp(0.45rem, 1vw, 0.8rem);
+  border: 0.5px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  pointer-events: none;
+}
+
+.br-rh, .br-folio {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: calc(var(--br-fs) * 0.72);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline: var(--br-mo);
+}
+.br-rh { top: calc(var(--br-mt) * 0.36); }
+.br-folio { bottom: calc(var(--br-mb) * 0.34); letter-spacing: 0.1em; font-variant-numeric: oldstyle-nums; }
+.br-page.is-blank .br-rh { visibility: hidden; }
+
+/* The text: one column per page, the flow translated to turn. */
+.br-window {
+  position: absolute;
+  top: var(--br-mt);
+  left: var(--br-mo);
+  width: var(--br-t);
+  height: var(--br-h);
+  overflow: hidden;
+}
+.br.is-spread .br-book > .br-window { width: calc(var(--br-t) * 2 + var(--br-g)); }
+.br-page--r > .br-window { left: var(--br-mi); }
+
+.br-flow {
+  width: var(--br-t);
+  height: var(--br-h);
+  column-width: var(--br-t);
+  column-gap: var(--br-g);
+  column-fill: auto;
+  font-size: var(--br-fs);
+  line-height: var(--body-leading);
+  will-change: transform;
+}
+.br-flow > [data-book-source] {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+.br-flow > [data-book-source]::before,
+.br-flow > [data-book-source]::after { content: none !important; }
+.br :is([data-book-skip], .book-head) { display: none !important; }
+.br-flow * { content-visibility: visible !important; }
+.br-flow :is(figure, table, pre, blockquote, .katex-display, .art, .fig-draw, li, dl > div) { break-inside: avoid; }
+.br-flow :is(h1, h2, h3, h4, .book-head) { break-after: avoid; }
+.br .br-flow img {
+  /* Components size their pictures to the full width; on a page that would
+     stretch a tall picture once its height is capped. */
+  width: auto !important;
+  height: auto !important;
+  max-width: 100%;
+  max-height: calc(var(--br-h) * 0.6);
+  margin-inline: auto;
+}
+.br[data-mode='plates'] .br-flow img { max-height: calc(var(--br-h) * 0.56); }
+.br[data-mode='plates'] .br-flow > [data-book-source] > :is(.book-toc-h, .book-orn) { display: none; }
+.br-flow svg { max-height: calc(var(--br-h) * 0.66); }
+.br-flow .book-head { margin-bottom: 1.6em; }
+.br-flow .book-text > p:first-of-type::first-letter { font-size: calc(var(--br-fs) * var(--body-leading) * 2.6); }
+.br-flow .book-text::after { margin-top: 1.6em; }
+.br-flow .book-text figure { margin-block: 1.4em; }
+/* A plate with a long caption cannot break, so a smaller picture is what
+   lets it share a page instead of leaving most of one blank. */
+.br-flow figure:has(figcaption) img { max-height: calc(var(--br-h) * 0.44); }
+.br-flow .book-text > .footnotes ol { columns: auto; }
+.br-end { display: block; height: 1px; }
+/* Tabulae, read as a book of plates: each plate takes a page of its own. */
+.br[data-mode='plates'] .br-flow .art { break-before: column; break-inside: avoid; }
+.br[data-mode='plates'] .br-flow :is(.tb-grid) { display: block !important; }
+
+/* The turning leaf. */
+.br-leaf {
+  position: absolute;
+  top: 0;
+  z-index: 3;
+  width: var(--br-page-w);
+  height: var(--br-page-h);
+  transform-style: preserve-3d;
+}
+.br-leaf--fwd { left: var(--br-page-w); transform-origin: left center; }
+.br-leaf--back { left: 0; transform-origin: right center; }
+.br-leaf > .br-page {
+  left: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.br-leaf > .br-face--back { transform: rotateY(180deg); }
+.br-under { z-index: 2; }
+.br-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.3), rgb(0 0 0 / 0.05) 40%, rgb(255 255 255 / 0.06) 70%, rgb(0 0 0 / 0.18));
+}
+.br-flow--copy { pointer-events: none; }
+
+.br-turn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(2.2rem, 3vw, 3.2rem);
+  height: clamp(4rem, 14vh, 7rem);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.br-turn svg { width: 70%; height: auto; }
+.br-turn:hover:not(:disabled) { color: var(--fundus); }
+.br-turn:disabled { opacity: 0.25; cursor: default; }
+.br:not(.is-spread) .br-turn {
+  position: absolute;
+  z-index: 4;
+  top: auto;
+  bottom: -0.2rem;
+  height: 2.6rem;
+  width: 3rem;
+}
+.br:not(.is-spread) .br-turn--prev { left: 0.4rem; }
+.br:not(.is-spread) .br-turn--next { right: 0.4rem; }
+
+.br-foot { padding: 0.35rem clamp(3.5rem, 18vw, 22rem) 0.75rem; }
+.br-seek { width: 100%; accent-color: var(--brass); }
+
+/* The button that opens the reader, set in the running head. */
+.br-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 0.9rem 0.38rem;
+  border: 0.5px solid color-mix(in srgb, var(--brass) 75%, transparent);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-sm);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.br-open[hidden] { display: none; }
+.br-open:hover { color: var(--fundus); border-color: var(--fundus); }
+.br-open svg { width: 1.25rem; height: auto; }

@@ -68,8 +68,9 @@ const chapterHref = `${base}/${slug}`;
   description={`${d.kind === 'problem' ? 'Worked problem' : 'Exercise'} ${d.id}, variant ${d.variant}.`}
   folio={d.id}
   type="article"
+  book="elementa"
 >
-  <article class="it codex">
+  <article class="it codex sheet" data-folio={d.id}>
     <Breadcrumb
       bookNumeral={numeral} bookTitle={book.data.title} bookHref={base}
       chapterN={n} chapterTitle={chapter.data.title} chapterHref={chapterHref}

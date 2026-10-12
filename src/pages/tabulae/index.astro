@@ -1,56 +1,144 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import LesionRule from '../../components/ornament/LesionRule.astro';
 import ArtPlate from '../../components/art/ArtPlate.astro';
+import BookCover from '../../components/book/BookCover.astro';
+import BookReader from '../../components/book/BookReader.astro';
 import { getEntry } from 'astro:content';
 import { getTabulae } from '../../lib/collections';
+import { toRoman, AUTHOR } from '../../consts';
 
+/**
+ * Tabulae as a book of plates: a portfolio's board, the first plate as the
+ * frontispiece facing the title page, a list of plates, and the plates
+ * themselves, each mounted inside its plate mark. "Turn through the plates"
+ * opens them one to a page.
+ */
 const tabulae = await getTabulae();
 const meta = await getEntry('site', 'tabulae');
+const ledes = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
+const frontis = tabulae[0];
+const title = meta?.data.title ?? 'Tabulae';
 ---
 <BaseLayout
   title="Tabulae — Md. Asif Uddin"
   description="The interleaved plates: engravings, drawings and sculpture that sit between the chapters, each with a note on where it came from."
   folio="T"
+  book="tabulae"
 >
   <div class="codex tb">
-    <header class="tb-head">
-      {meta?.data.kicker && <p class="tb-kicker" data-reveal>{meta.data.kicker}</p>}
-      <h1 class="tb-h1" data-press>{meta?.data.title ?? 'Tabulae'}</h1>
-      {meta?.data.lede && <p class="tb-lede codex-measure" data-reveal>{meta.data.lede}</p>}
-    </header>
+    <section class="sheet sheet--spread tb-open" aria-labelledby="tb-title">
+      <BookCover book="tabulae" title={title} subtitle={meta?.data.kicker} author={AUTHOR} />
+      {frontis && (
+        <figure class:list={['spread-verso', 'tb-frontis', `art--${frontis.data.treatment}`]}>
+          <div class="tb-frontis-mark">
+            <Image
+              src={frontis.data.image}
+              alt={frontis.data.alt?.trim() || `${frontis.data.title}${frontis.data.artist ? `, ${frontis.data.artist}` : ''}`}
+              widths={[420, 720, 1000]}
+              sizes="(max-width: 900px) 80vw, 36vw"
+              loading="eager"
+              quality={72}
+            />
+          </div>
+          <figcaption class="tb-frontis-cap">
+            Frontispiece · <a href={`/tabulae/${frontis.id}`}><em>{frontis.data.title}</em></a>
+            {frontis.data.artist && <>, {frontis.data.artist}</>}
+          </figcaption>
+        </figure>
+      )}
+      <header class="spread-recto book-title-page tb-head">
+        {meta?.data.kicker && <p class="tp-kicker" data-reveal>{meta.data.kicker}</p>}
+        <h1 class="tp-title" id="tb-title" data-press>{title}</h1>
+        <span class="book-orn" aria-hidden="true"></span>
+        {ledes.map((t) => <p class="tp-lede" data-reveal>{t}</p>)}
+        {tabulae.length > 0 && (
+          <p class="tb-read"><BookReader title={title} head="The plates" mode="plates" label="Turn through the plates" /></p>
+        )}
+        <p class="tp-imprint" data-reveal>
+          <span class="tp-author">{AUTHOR}</span>
+          <span>{tabulae.length} plates</span>
+          <span class="tp-place">Dhaka · {toRoman(new Date().getFullYear())}</span>
+        </p>
+      </header>
+    </section>
 
-    <LesionRule />
-
-    {tabulae.length === 0 ? (
-      <p class="tb-empty">No plates yet.</p>
-    ) : (
-      <div class="tb-grid" data-reveal-stagger>
-        {tabulae.map((t, i) => (
-          <ArtPlate entry={t} n={i + 1} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 44vw, 22rem" />
-        ))}
-      </div>
+    {tabulae.length > 0 && (
+      <section class="sheet tb-listsheet" data-folio="ix" aria-labelledby="tb-list-h">
+        <h2 class="book-toc-h" id="tb-list-h">List of Plates</h2>
+        <span class="book-orn" aria-hidden="true"></span>
+        <ol class="tb-list">
+          {tabulae.map((t, i) => (
+            <li>
+              <a class="tb-entry toc-leader" href={`/tabulae/${t.id}`}>
+                <span class="tb-n">{toRoman(i + 1)}.</span>
+                <span class="tb-t"><em>{t.data.title}</em>{t.data.artist && t.data.artist !== 'Unknown' && <span class="tb-a">, {t.data.artist}</span>}</span>
+                <span class="toc-end tb-p">Tabula {toRoman(i + 1)}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
     )}
+
+    <section class="sheet tb-plates" data-folio="x" data-book-source aria-labelledby="tb-plates-h">
+      <h2 class="book-toc-h" id="tb-plates-h">The Plates</h2>
+      <span class="book-orn" aria-hidden="true"></span>
+      {tabulae.length === 0 ? (
+        <p class="tb-empty">No plates yet.</p>
+      ) : (
+        <div class="tb-grid" data-reveal-stagger>
+          {tabulae.map((t, i) => (
+            <ArtPlate entry={t} n={i + 1} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 44vw, 26rem" />
+          ))}
+        </div>
+      )}
+    </section>
   </div>
 </BaseLayout>
 
 <style>
-  .tb { padding-top: clamp(2.5rem, 7vh, 5rem); }
-  .tb-kicker {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-    margin-bottom: 0.8rem;
+  .tb-frontis { margin: 0; display: grid; justify-items: center; gap: 0.9rem; }
+  .tb-frontis-mark {
+    padding: clamp(0.8rem, 2vw, 1.4rem);
+    border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
+    outline: 0.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  outline-offset: -5px;
+    max-width: min(100%, 30rem);
   }
-  .tb-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
-  .tb-lede { font-size: var(--body-size); line-height: var(--body-leading); }
+  .tb-frontis-mark :global(img) { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; }
+  .tb-frontis-cap { font-size: var(--t-sm); letter-spacing: 0.06em; color: var(--ink-soft); text-align: center; }
+  .tb-frontis-cap a { color: inherit; }
+  .tb-read { margin: 1.6rem 0 0; }
+
+  .tb-list {
+    list-style: none;
+    margin: clamp(1.4rem, 3vh, 2.2rem) auto 0;
+    padding: 0;
+    max-width: 82rem;
+    columns: 1;
+    column-gap: clamp(3rem, 6vw, 6rem);
+  }
+  @media (min-width: 64rem) { .tb-list { columns: 2; } }
+  .tb-list li { break-inside: avoid; }
+  .tb-entry {
+    padding: 0.42rem 0;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: var(--t-base);
+  }
+  .tb-entry:hover .tb-t { color: var(--fundus); }
+  .tb-n { min-width: 3.2rem; color: var(--brass-text); font-size: var(--t-sm); letter-spacing: 0.06em; }
+  .tb-t { min-width: 0; }
+  .tb-a { color: var(--ink-soft); }
+  .tb-p { font-size: var(--t-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+
   .tb-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
-    gap: 3rem 2.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+    gap: clamp(2.5rem, 5vw, 4rem) clamp(2rem, 4vw, 3.5rem);
     align-items: start;
+    margin-top: clamp(1.6rem, 4vh, 2.6rem);
   }
-  .tb-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .tb-empty { text-align: center; color: var(--ink-soft); }
 </style>

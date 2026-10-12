@@ -12,6 +12,7 @@ import '../styles/global.css';
 import '../styles/motion.css';
 import '../styles/figures.css';
 import '../styles/elementa.css';
+import '../styles/book.css';
 
 import BaseHead from '../components/layout/BaseHead.astro';
 import Header from '../components/layout/Header.astro';
@@ -38,9 +39,12 @@ interface Props {
       Back by re-rendering the page instead of letting the page close what
       it opened. */
   router?: boolean;
+  /** Sets the route as a printed book (see book.css): which section's paper,
+      ornaments and initials it takes. */
+  book?: 'elementa' | 'numina' | 'tabulae';
 }
 
-const { title, description, folio, image, type, noindex, router = true } = Astro.props;
+const { title, description, folio, image, type, noindex, router = true, book } = Astro.props;
 
 /**
  * What the search index files this page under. Derived from the path, so a new
@@ -148,7 +152,7 @@ const listedTitle =
         at all — a document without it is skipped — which is how /admin stays
         out of the results without a rule naming it, and how a noindex page
         (the CV editor, the private archive) stays out of a public search. */}
-    <main id="main" class="page" data-pagefind-body={noindex ? undefined : ''}>
+    <main id="main" class="page" data-book={book} data-pagefind-body={noindex ? undefined : ''}>
       {/* Metadata for a result: the title it is listed under, and the part of
           the book it belongs to, which is also the filter. Empty elements,
           because the `key:value` form takes the value from the attribute — a

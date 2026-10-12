@@ -58,8 +58,9 @@ const groups = d.mathTier === 'M3'
   title={`Problems · Chapter ${chapterN} — ${d.title}`}
   description={`The worked problems and exercises of ${d.title}, at tier ${d.mathTier}.`}
   folio={`${d.id}.B`}
+  book="elementa"
 >
-  <div class="codex pr">
+  <div class="codex pr sheet" data-folio={`${d.id}.B`}>
     <Breadcrumb
       bookNumeral={bookNumeral} bookTitle={book.data.title} bookHref={base}
       chapterN={chapterN} chapterTitle={d.title} chapterHref={chapterHref}

@@ -48,13 +48,15 @@ const practical = d.practical;
   title={`Book ${numeral} · ${book.data.title} — Elementa`}
   description={book.data.goal ?? book.data.covers}
   folio={numeral}
+  book="elementa"
 >
-  <div class="codex bk">
+  <div class="codex bk sheet" data-folio={numeral}>
     <Breadcrumb bookNumeral={numeral} bookTitle={book.data.title} bookHref={base} />
 
-    <header class="bk-head">
+    <header class="bk-head book-title-page">
       <p class="bk-n" data-reveal>Book {numeral}</p>
       <h1 class="bk-h1" data-press>{book.data.title}</h1>
+      <span class="book-orn" aria-hidden="true"></span>
       <p class="bk-covers" data-reveal>{book.data.covers}</p>
       {d.goal && <p class="bk-goal codex-measure" data-reveal>{d.goal}</p>}
       <div class="bk-progress" data-reveal>
@@ -185,17 +187,18 @@ const practical = d.practical;
 </BaseLayout>
 
 <style>
-  .bk { padding-top: clamp(2.5rem, 7vh, 5rem); }
+  .bk-head { max-width: 60rem; margin-bottom: 1.5rem; }
+  .bk-progress { display: flex; justify-content: center; }
   .bk-n {
     font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.2em;
+    font-size: var(--t-sm);
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--brass-text);
     margin-bottom: 0.7rem;
   }
-  .bk-h1 { font-size: var(--t-2xl); margin-bottom: 0.8rem; }
-  .bk-covers { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin-bottom: 1rem; }
+  .bk-h1 { font-size: clamp(var(--t-2xl), 5.4vw, 4.4rem); line-height: 1.02; margin: 0 auto 0.3rem; }
+  .bk-covers { font-style: italic; font-size: var(--t-md); color: var(--ink-soft); margin-bottom: 1rem; }
   .bk-goal { font-size: var(--body-size); line-height: var(--body-leading); margin-bottom: 1.4rem; }
   .bk-progress { margin-bottom: 0.4rem; }
 

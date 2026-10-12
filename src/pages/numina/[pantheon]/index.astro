@@ -1,7 +1,6 @@
 ---
 import { render } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import LesionRule from '../../../components/ornament/LesionRule.astro';
 import { getNumina, type NuminaBook } from '../../../lib/collections';
 import { toRoman } from '../../../consts';
 
@@ -22,109 +21,118 @@ const { Content } = await render(b.entry);
   title={`${d.title} — Numina — Md. Asif Uddin`}
   description={d.gloss}
   folio="N"
+  book="numina"
 >
   <div class="codex np">
-    <header class="np-head">
-      <p class="np-trail" data-reveal><a href="/numina">Numina</a> · Book {numeral}</p>
-      <h1 class="np-h1" data-press>{d.title}</h1>
-      <p class="np-meta" data-reveal>{d.region} · {d.span}</p>
-    </header>
+    {/* The book's own title page: its number, name and span, its argument. */}
+    <section class="sheet np-title" data-folio={numeral.toLowerCase()} aria-labelledby="np-h1">
+      <p class="np-trail book-head"><a href="/numina">Numina</a> · Book {numeral}</p>
+      <header class="book-title-page np-head">
+        <p class="tp-kicker" data-reveal>Book {numeral}</p>
+        <h1 class="np-h1" id="np-h1" data-press>{d.title}</h1>
+        <span class="book-orn" aria-hidden="true"></span>
+        <p class="np-meta" data-reveal>{d.region} · {d.span}</p>
+      </header>
 
-    <div class="np-body codex-measure" data-reveal>
-      <Content />
-    </div>
+      <div class="np-body book-text codex-measure" data-reveal>
+        <Content />
+      </div>
+    </section>
 
-    <LesionRule />
-
-    <h2 class="np-toc-h">Contents</h2>
-    <ol class="np-toc">
-      {b.chapters.map((c, i) => (
-        <li class="np-ch">
-          <div class="np-ch-head">
-            <span class="np-ch-n">{numeral}.{i + 1}</span>
-            <span class="np-ch-body">
+    <section class="sheet np-contents" data-folio={`${numeral.toLowerCase()} · contents`} aria-labelledby="np-toc-h">
+      <h2 class="book-toc-h" id="np-toc-h">Contents</h2>
+      <span class="book-orn" aria-hidden="true"></span>
+      <ol class="np-toc">
+        {b.chapters.map((c, i) => (
+          <li class="np-ch">
+            <div class="np-ch-head toc-leader">
+              <span class="np-ch-n">{numeral}.{i + 1}</span>
               <span class="np-ch-t">{c.title}</span>
-              {c.gloss && <span class="np-ch-g">{c.gloss}</span>}
-            </span>
-            <span class="np-ch-count">
-              {c.topics.length === 0 ? '—' : `${c.topics.length}`}
-            </span>
-          </div>
-          {c.topics.length > 0 && (
-            <ul class="np-topics">
-              {c.topics.map((t) => (
-                <li>
-                  <a class="np-topic" href={`/numina/${b.slug}/${t.id}`}>
-                    <span class="np-topic-t">{t.data.title}</span>
-                    <span class="np-topic-s">{t.data.summary}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ol>
+              <span class="toc-end np-ch-count">
+                {c.topics.length === 0 ? 'to come' : `${c.topics.length} written`}
+              </span>
+            </div>
+            {c.gloss && <p class="np-ch-g">{c.gloss}</p>}
+            {c.topics.length > 0 && (
+              <ul class="np-topics">
+                {c.topics.map((t) => (
+                  <li>
+                    <a class="np-topic" href={`/numina/${b.slug}/${t.id}`}>
+                      <span class="np-topic-t">{t.data.title}</span>
+                      <span class="np-topic-s">{t.data.summary}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ol>
 
-    {b.topics === 0 && (
-      <p class="np-empty codex-measure">
-        The chapters are laid out; nothing is written into them yet. They stand
-        so that what is missing is obvious rather than invisible.
-      </p>
-    )}
+      {b.topics === 0 && (
+        <p class="np-empty codex-measure">
+          The chapters are laid out; nothing is written into them yet. They stand
+          so that what is missing is obvious rather than invisible.
+        </p>
+      )}
 
-    <nav class="np-nav" aria-label="Other books">
-      {prev && <a href={`/numina/${prev.slug}`}>← {prev.entry.data.name}</a>}
-      <a class="np-all" href="/numina">All eleven</a>
-      {next && <a href={`/numina/${next.slug}`}>{next.entry.data.name} →</a>}
-    </nav>
+      <nav class="np-nav" aria-label="Other books">
+        {prev && <a href={`/numina/${prev.slug}`}>← {prev.entry.data.name}</a>}
+        <a class="np-all" href="/numina">All eleven</a>
+        {next && <a href={`/numina/${next.slug}`}>{next.entry.data.name} →</a>}
+      </nav>
+    </section>
   </div>
 </BaseLayout>
 
 <style>
-  .np { padding-top: clamp(2.5rem, 7vh, 5rem); }
-  .np-trail {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-    margin-bottom: 0.8rem;
-  }
   .np-trail a { color: inherit; }
-  .np-h1 { font-size: var(--t-2xl); margin-bottom: 0.5rem; }
-  .np-meta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); margin: 0 0 1.6rem; }
+  .np-head { margin-bottom: clamp(1.8rem, 4vh, 2.6rem); }
+  .np-h1 {
+    font-size: clamp(var(--t-2xl), 5.4vw, 4.4rem);
+    line-height: 1.02;
+    margin: 0 auto 0.3rem;
+  }
+  .np-meta { font-style: italic; font-size: var(--t-md); color: var(--ink-soft); margin: 0; }
   .np-body { font-size: var(--body-size); line-height: var(--body-leading); }
   :global(.np-body:has(> .np-illustrated-intro)) { max-width: none; }
   .np-body :global(.np-illustrated-intro) {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
     gap: clamp(2rem, 5vw, 4.5rem);
     align-items: start;
   }
+  .np-body :global(.np-illustrated-intro > div > p + p) { text-indent: 1.6em; margin-top: 0; }
+  .np-body :global(.np-illustrated-intro > div > p) { text-align: justify; margin-bottom: 0; }
   .np-body :global(.np-intro-plate) {
     width: 100%;
-    max-width: 22rem;
+    max-width: 24rem;
     margin: 0 auto;
+    padding: clamp(0.75rem, 1.8vw, 1.2rem);
+    border: 0.5px solid color-mix(in srgb, var(--brass) 65%, transparent);
+    outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  outline-offset: -5px;
   }
   .np-body :global(.np-intro-plate img) {
     display: block;
     width: 100%;
     height: auto;
+    mix-blend-mode: multiply;
+    filter: sepia(0.2) saturate(0.86);
   }
+  :global([data-theme='nocturne']) .np-body :global(.np-intro-plate img) { mix-blend-mode: normal; filter: sepia(0.1) brightness(0.92); }
   .np-body :global(.np-intro-plate figcaption) {
     margin-top: 1rem;
     font-size: var(--t-sm);
     line-height: 1.6;
     color: var(--ink-soft);
   }
-  .np-body :global(.np-intro-plate figcaption p) { margin: 0; }
+  .np-body :global(.np-intro-plate figcaption p) { margin: 0; text-indent: 0; }
   .np-body :global(.np-plate-label) {
     display: block;
     padding-bottom: 0.5rem;
-    font-family: var(--font-mono);
     font-size: var(--t-xs);
-    letter-spacing: 0.1em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--brass-text);
   }
@@ -138,41 +146,37 @@ const { Content } = await render(b.entry);
     .np-body :global(.np-illustrated-intro) { grid-template-columns: minmax(0, 1fr); }
     :global(.np-body:has(> .np-illustrated-intro)) { max-width: var(--measure); }
   }
-  .np-empty { color: var(--ink-soft); font-style: italic; margin: 1.4rem 0; }
+  .np-empty { color: var(--ink-soft); font-style: italic; margin: 1.6rem auto 0; text-align: center; }
 
-  .np-toc-h {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+  .np-toc {
+    list-style: none;
+    margin: clamp(1.4rem, 3vh, 2.2rem) auto 0;
+    padding: 0;
+    max-width: 64rem;
+  }
+  .np-ch { padding: 1.1rem 0 1.2rem; border-bottom: 0.5px solid color-mix(in srgb, var(--brass) 28%, transparent); }
+  .np-ch-n {
+    min-width: 3.2rem;
+    font-size: var(--t-sm);
+    letter-spacing: 0.12em;
     color: var(--brass-text);
-    margin: 1.6rem 0 0.4rem;
   }
-  .np-toc { list-style: none; margin: 0; padding: 0; }
-  .np-ch { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 22%, transparent); padding: 1rem 0; }
-  .np-ch-head {
-    display: grid;
-    grid-template-columns: 4rem minmax(0, 1fr) auto;
-    gap: 1rem;
-    align-items: baseline;
-  }
-  .np-ch-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); }
-  .np-ch-t { display: block; font-family: var(--font-display); font-size: var(--t-md); color: var(--ink); }
-  .np-ch-g { display: block; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.55; margin-top: 0.2rem; max-width: 52ch; }
-  .np-ch-count { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .np-ch-t { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); line-height: 1.2; }
+  .np-ch-count { font-size: var(--t-sm); font-style: italic; color: var(--ink-soft); }
+  .np-ch-g { font-size: var(--t-base); font-style: italic; color: var(--ink-soft); line-height: 1.55; margin: 0.3rem 0 0 3.8rem; max-width: 60ch; }
 
-  .np-topics { list-style: none; margin: 0.6rem 0 0 5rem; padding: 0; display: grid; gap: 0.2rem; }
+  .np-topics { list-style: none; margin: 0.7rem 0 0 3.8rem; padding: 0; display: grid; gap: 0.2rem; }
   .np-topic {
     display: grid;
     gap: 0.1rem;
-    padding: 0.4rem 0.6rem;
+    padding: 0.45rem 0.8rem;
     text-decoration: none;
     color: inherit;
-    border-left: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
+    border-left: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
     transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .np-topic:hover { border-color: var(--fundus); background: color-mix(in srgb, var(--brass) 7%, transparent); }
-  .np-topic-t { font-size: var(--t-base); color: var(--ink); }
+  .np-topic:hover { border-color: var(--fundus); background: color-mix(in srgb, var(--brass) 8%, transparent); }
+  .np-topic-t { font-size: var(--t-md); color: var(--fundus); }
   .np-topic-s { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.5; }
 
   .np-nav {
@@ -181,17 +185,18 @@ const { Content } = await render(b.entry);
     gap: 1rem;
     align-items: center;
     justify-content: space-between;
-    margin: 2.4rem 0 1rem;
+    max-width: 64rem;
+    margin: 2.4rem auto 0;
     padding-top: 1rem;
-    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 35%, transparent);
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
+    border-top: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+    font-size: var(--t-sm);
+    letter-spacing: 0.06em;
   }
   .np-all { color: var(--ink-soft); }
 
   @media (max-width: 40rem) {
-    .np-ch-head { grid-template-columns: 3rem minmax(0, 1fr) auto; gap: 0.6rem; }
-    .np-topics { margin-left: 3.6rem; }
+    .np-ch-g, .np-topics { margin-left: 0; }
+    .np-ch-head { flex-wrap: wrap; }
   }
   @media (max-width: 24rem) {
     .np-h1 { font-size: 2.25rem; overflow-wrap: anywhere; }
