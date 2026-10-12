@@ -1,6 +1,6 @@
 /**
  * The page-turning reader: a chapter laid out as a two-page spread (one page
- * on a phone) that turns with arrows, keys, a swipe or the page slider.
+ * on a phone) that turns with arrows, keys, a finger or the page slider.
  *
  * Pagination is CSS multi-column layout. The chapter's own article is moved,
  * live, into a box one page wide and one page tall with column-width set to
@@ -38,6 +38,128 @@ interface Geo {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const BLOCKS = 'h1, h2, h3, h4, p, figure, li, pre, table, blockquote, .katex-display, .art, dl > div';
 
+interface Turn {
+  from: number;
+  to: number;
+  layer: HTMLElement[];
+  leaf: HTMLElement;
+  shadeF: HTMLElement;
+  shadeB: HTMLElement;
+  cast: HTMLElement;
+  /** -1 turns towards the left (forward), 1 towards the right (back). */
+  sign: 1 | -1;
+  t: number;
+  target: 0 | 1;
+}
+
+/**
+ * The sound of a page turning, made fresh each time with the Web Audio API
+ * rather than played from a file, so that no two turns sound the same: the
+ * dry crackle of the sheet coming off the stack, the swish of air as it
+ * crosses (noise through a band-pass that sweeps up and back, with a shallow
+ * flutter in it), and the soft slap of it landing.
+ *
+ * Switched off from the button in the reader's bar, and remembered. The audio
+ * context is created inside a turn the reader made, which is what browsers
+ * require before they allow sound.
+ */
+class PageSound {
+  on = true;
+  ctx: AudioContext | null = null;
+  noise: AudioBuffer | null = null;
+
+  constructor() {
+    try { this.on = localStorage.getItem('codex-book-sound') !== 'off'; } catch { /* storage blocked: on */ }
+  }
+
+  toggle() {
+    this.on = !this.on;
+    try { localStorage.setItem('codex-book-sound', this.on ? 'on' : 'off'); } catch { /* not remembered */ }
+    if (this.on) this.flip(0.6);
+  }
+
+  flip(level = 1) {
+    if (!this.on) return;
+    try {
+      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      const ctx = (this.ctx ??= new AC());
+      if (ctx.state === 'suspended') void ctx.resume();
+      if (!this.noise) {
+        this.noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        const d = this.noise.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const r = (a: number, b: number) => a + Math.random() * (b - a);
+      const t = ctx.currentTime + 0.01;
+      // Slower than a quick riffle: a single page turned by a reader in no
+      // hurry. The owner heard the crisp version as real and asked only that
+      // it be slower and smoother, so the character is that one's.
+      const len = r(0.52, 0.64);
+      const out = ctx.createGain();
+      out.gain.value = 0.55 * level;
+      const air = ctx.createBiquadFilter();
+      air.type = 'lowpass';
+      air.frequency.value = 7000;
+      out.connect(air).connect(ctx.destination);
+      const noise = () => {
+        const s = ctx.createBufferSource();
+        s.buffer = this.noise;
+        s.loop = true;
+        s.start(t, r(0, 0.5));
+        s.stop(t + len + 0.15);
+        return s;
+      };
+
+      // The swish: air across a moving sheet.
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = r(0.6, 0.85);
+      bp.frequency.setValueAtTime(r(700, 1000), t);
+      bp.frequency.exponentialRampToValueAtTime(r(2600, 3600), t + len * 0.38);
+      bp.frequency.exponentialRampToValueAtTime(r(1100, 1500), t + len * 0.86);
+      const g = ctx.createGain();
+      const curve = new Float32Array(40);
+      for (let i = 0; i < curve.length; i++) {
+        const k = i / (curve.length - 1);
+        // A sheet of paper is not rigid, so there is a flutter in it; kept
+        // shallow, so the swish is smooth rather than ragged.
+        curve[i] = Math.pow(Math.sin(Math.PI * Math.min(1, k * 1.12)), 1.5) * r(0.78, 1) * 0.9;
+      }
+      g.gain.setValueAtTime(0, t);
+      g.gain.setValueCurveAtTime(curve, t, len * 0.9);
+      noise().connect(bp).connect(g).connect(out);
+
+      // The crackle: a few dry ticks of paper fibre as the sheet lifts.
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 4200;
+      const cg = ctx.createGain();
+      cg.gain.setValueAtTime(0, t);
+      const ticks = Array.from({ length: 7 }, () => t + r(0, len * 0.5)).sort((x, y) => x - y);
+      for (const at of ticks) {
+        cg.gain.setValueAtTime(r(0.08, 0.2), at);
+        cg.gain.setValueAtTime(0, at + r(0.004, 0.012));
+      }
+      noise().connect(hp).connect(cg).connect(out);
+
+      // The landing: a soft, low slap as the page settles.
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = r(500, 750);
+      const sg = ctx.createGain();
+      const land = t + len * r(0.8, 0.88);
+      sg.gain.setValueAtTime(0, t);
+      sg.gain.setValueAtTime(0, land);
+      sg.gain.linearRampToValueAtTime(r(0.4, 0.55), land + 0.008);
+      sg.gain.exponentialRampToValueAtTime(0.001, land + 0.09);
+      noise().connect(lp).connect(sg).connect(out);
+    } catch {
+      /* no sound is better than a broken turn */
+    }
+  }
+}
+
 let reader: Reader | null = null;
 
 class Reader {
@@ -53,8 +175,11 @@ class Reader {
   pages = 1;
   page = 0;
   clones: HTMLElement[] = [];
-  turning: Animation[] = [];
-  turnLayer: HTMLElement[] = [];
+  /** The leaf in motion, whether a button sent it or a finger is holding it. */
+  active: Turn | null = null;
+  raf = 0;
+  sliding: Animation | null = null;
+  sound = new PageSound();
   placeholder = document.createComment('book-reader');
   relayoutTimer = 0;
   still = !document.documentElement.classList.contains('js');
@@ -115,7 +240,19 @@ class Reader {
     close.type = 'button';
     close.innerHTML = '<span>Close the book</span><span aria-hidden="true">×</span>';
     close.addEventListener('click', () => this.close());
-    bar.append(name, this.countEl, close);
+    const sound = el('button', 'br-sound');
+    sound.type = 'button';
+    const paintSound = () => {
+      sound.setAttribute('aria-pressed', String(this.sound.on));
+      sound.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/>${
+        this.sound.on
+          ? '<path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
+          : '<path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
+      }</svg><span>${this.sound.on ? 'Sound on' : 'Sound off'}</span>`;
+    };
+    sound.addEventListener('click', () => { this.sound.toggle(); paintSound(); });
+    paintSound();
+    bar.append(name, this.countEl, sound, close);
 
     const stage = el('div', 'br-stage');
     const prev = turnButton('prev', 'Previous page');
@@ -161,7 +298,7 @@ class Reader {
     // A late image changes where every later page breaks.
     this.flow.addEventListener('load', () => this.relayoutSoon(), true);
     window.addEventListener('resize', this.onResize);
-    this.swipe(stage);
+    this.drag(stage);
   }
 
   /* ------------------------------------------------------------- layout */
@@ -246,20 +383,29 @@ class Reader {
 
   /* -------------------------------------------------------------- turning */
 
-  goTo(p: number, animate: boolean) {
+  /** The first page of the view that holds page `p`. */
+  viewOf(p: number): number {
     const per = this.perView();
-    const target = clamp(Math.floor(p / per) * per, 0, Math.max(0, (Math.ceil(this.pages / per) - 1) * per));
+    return clamp(Math.floor(p / per) * per, 0, Math.max(0, (Math.ceil(this.pages / per) - 1) * per));
+  }
+
+  goTo(p: number, animate: boolean) {
+    this.finishTurn();
     const from = this.page;
-    if (animate && target !== from && !this.still) {
-      if (this.geo.spread && Math.abs(target - from) === 2) this.leaf(from, target);
-      else this.slide(from, target);
+    const target = this.viewOf(p);
+    if (target === from) { this.place(); return; }
+    if (animate && !this.still && Math.abs(target - from) === this.perView()) {
+      const turn = this.beginTurn(from, target);
+      this.sound.flip();
+      void this.runTurn(turn, 1, 760);
+      return;
     }
+    if (animate && !this.still) this.slide(from, target);
     this.page = target;
     this.place();
   }
 
   turn(dir: 1 | -1) {
-    this.finishTurn();
     this.goTo(this.page + dir * this.perView(), true);
   }
 
@@ -309,58 +455,123 @@ class Reader {
     return s;
   }
 
-  leaf(from: number, to: number) {
+  /**
+   * Lays out a leaf about to turn from view `from` to view `to`, and moves the
+   * live text to `to` underneath it. Nothing moves until setTurn is called.
+   *
+   * In a spread the leaf is the right-hand page going forward (the left-hand
+   * page going back), hinged on the binding in the middle; the page it
+   * uncovers on the far side is held by a copy until the leaf lands on it.
+   *
+   * On a phone there is one page, so the spine moves to whichever edge the
+   * turn needs: forward the page is hinged on its left edge and swings away to
+   * the left, back it is hinged on its right edge and swings away to the
+   * right. Either way the page underneath is already the one being turned to,
+   * and the motion follows the finger.
+   */
+  beginTurn(from: number, to: number): Turn {
     const fwd = to > from;
-    const under = fwd ? this.sheetFor(from, 'l', 'br-under') : this.sheetFor(from + 1, 'r', 'br-under');
-    const leaf = el('div', `br-leaf br-leaf--${fwd ? 'fwd' : 'back'}`);
-    const front = fwd ? this.sheetFor(from + 1, 'r', 'br-face') : this.sheetFor(from, 'l', 'br-face');
-    const back = fwd ? this.sheetFor(from + 2, 'l', 'br-face') : this.sheetFor(from - 1, 'r', 'br-face');
+    const spread = this.geo.spread;
+    let under: HTMLElement | null = null;
+    let front: HTMLElement;
+    let back: HTMLElement;
+    let cls: string;
+    let castSide: 'l' | 'r';
+    if (spread) {
+      under = fwd ? this.sheetFor(from, 'l', 'br-under') : this.sheetFor(from + 1, 'r', 'br-under');
+      front = fwd ? this.sheetFor(from + 1, 'r', 'br-face') : this.sheetFor(from, 'l', 'br-face');
+      back = fwd ? this.sheetFor(from + 2, 'l', 'br-face') : this.sheetFor(from - 1, 'r', 'br-face');
+      cls = fwd ? 'br-leaf--fwd' : 'br-leaf--back';
+      castSide = fwd ? 'r' : 'l';
+    } else {
+      front = this.sheetFor(from, 'l', 'br-face');
+      back = page('l', '');
+      back.classList.add('br-face', 'is-blank');
+      cls = fwd ? 'br-leaf--single-fwd' : 'br-leaf--single-back';
+      castSide = fwd ? 'l' : 'r';
+    }
     back.classList.add('br-face--back');
+    const leaf = el('div', `br-leaf ${cls}`);
     const shadeF = el('div', 'br-shade');
     const shadeB = el('div', 'br-shade');
     front.append(shadeF);
     back.append(shadeB);
     leaf.append(front, back);
-    this.book.append(under, leaf);
-    this.turnLayer = [under, leaf];
-
-    const ms = 760;
-    const easing = 'cubic-bezier(0.45, 0.05, 0.3, 1)';
+    // The shadow the lifted leaf throws on the page it uncovers, deepest at
+    // the hinge.
+    const cast = el('div', `br-cast br-cast--${spread ? castSide : `single-${castSide}`}`);
+    const layer = [under, cast, leaf].filter((n): n is HTMLElement => n !== null);
+    this.book.append(...layer);
     const sign = fwd ? -1 : 1;
-    const a = leaf.animate(
-      [
-        { transform: 'rotateY(0deg)' },
-        { transform: `rotateY(${sign * 90}deg)`, offset: 0.5 },
-        { transform: `rotateY(${sign * 180}deg)` },
-      ],
-      { duration: ms, easing },
-    );
-    const b = shadeF.animate([{ opacity: 0 }, { opacity: 0.55, offset: 0.5 }, { opacity: 0.55 }], { duration: ms, easing });
-    const c = shadeB.animate([{ opacity: 0.55 }, { opacity: 0.55, offset: 0.5 }, { opacity: 0 }], { duration: ms, easing });
-    this.turning = [a, b, c];
-    a.finished.then(() => this.clearTurn(), () => this.clearTurn());
+    const turn: Turn = { from, to, layer, leaf, shadeF, shadeB, cast, sign, t: 0, target: 1 };
+    this.active = turn;
+    this.page = to;
+    this.place();
+    this.setTurn(turn, 0);
+    return turn;
   }
 
+  /** Puts the leaf at `t` of the way through its turn, 0 to 1. */
+  setTurn(turn: Turn, t: number) {
+    turn.t = t;
+    turn.leaf.style.transform = `rotateY(${turn.sign * 180 * t}deg)`;
+    // The face tipping away from the light darkens; the face coming down
+    // towards it brightens again as it lands.
+    turn.shadeF.style.opacity = String(Math.min(0.6, t * 1.1));
+    turn.shadeB.style.opacity = String(Math.min(0.6, (1 - t) * 1.1));
+    turn.cast.style.opacity = String(Math.sin(Math.PI * t) * 0.85);
+  }
+
+  /** Carries a turn to `target`: 1 completes it, 0 lays the leaf back down. */
+  runTurn(turn: Turn, target: 0 | 1, ms: number): Promise<void> {
+    cancelAnimationFrame(this.raf);
+    turn.target = target;
+    const t0 = turn.t;
+    const start = performance.now();
+    const ease = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+    return new Promise((done) => {
+      const step = (now: number) => {
+        const k = Math.min(1, (now - start) / Math.max(1, ms));
+        this.setTurn(turn, t0 + (target - t0) * ease(k));
+        if (k < 1) this.raf = requestAnimationFrame(step);
+        else { this.endTurn(turn); done(); }
+      };
+      this.raf = requestAnimationFrame(step);
+    });
+  }
+
+  /** A turn laid back undoes itself: the text returns to where it was. */
+  endTurn(turn: Turn) {
+    if (this.active !== turn) return;
+    if (turn.target === 0) {
+      this.page = turn.from;
+      this.place();
+    }
+    this.clearTurn();
+  }
+
+  /** A jump of more than one page (a note link) slides rather than turns. */
   slide(from: number, to: number) {
     const { T, G } = this.geo;
-    const a = this.flow.animate(
+    this.sliding = this.flow.animate(
       [
         { transform: `translateX(${-from * (T + G)}px)`, opacity: 1 },
         { transform: `translateX(${-(from + (to - from) * 0.5) * (T + G)}px)`, opacity: 0.35, offset: 0.5 },
         { transform: `translateX(${-to * (T + G)}px)`, opacity: 1 },
       ],
-      { duration: Math.abs(to - from) > this.perView() ? 260 : 380, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' },
+      { duration: 260, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' },
     );
-    this.turning = [a];
   }
 
   finishTurn() {
-    for (const a of this.turning) { try { a.finish(); } catch { /* already done */ } }
-    this.clearTurn();
+    cancelAnimationFrame(this.raf);
+    try { this.sliding?.finish(); } catch { /* already done */ }
+    this.sliding = null;
+    if (this.active) this.endTurn(this.active);
   }
 
   clearTurn() {
-    for (const n of this.turnLayer) {
+    for (const n of this.active?.layer ?? []) {
       // Hand the copies back to the pool before the sheet goes.
       for (const c of n.querySelectorAll<HTMLElement>('.br-flow--copy')) {
         c.remove();
@@ -368,8 +579,7 @@ class Reader {
       }
       n.remove();
     }
-    this.turnLayer = [];
-    this.turning = [];
+    this.active = null;
   }
 
   /* --------------------------------------------------------------- input */
@@ -410,23 +620,62 @@ class Reader {
     this.goTo(this.pageOf(target), true);
   };
 
-  swipe(stage: HTMLElement) {
+  /**
+   * A finger (or a pen) takes hold of the page. The leaf follows it; let go a
+   * third of the way over, or with a flick, and the turn completes, otherwise
+   * the page settles back. A tap moves nothing, so links in the text still
+   * open.
+   */
+  drag(stage: HTMLElement) {
+    let id = -1;
     let x0 = 0;
     let y0 = 0;
-    let on = false;
+    let dir: 1 | -1 = 1;
+    let held: Turn | null = null;
+    let lastX = 0;
+    let lastT = 0;
+    let vx = 0;
     stage.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'mouse') return;
-      on = true;
-      x0 = e.clientX;
+      if (e.pointerType === 'mouse' || id !== -1) return;
+      this.finishTurn();
+      id = e.pointerId;
+      x0 = lastX = e.clientX;
       y0 = e.clientY;
+      lastT = e.timeStamp;
+      vx = 0;
+      held = null;
     });
-    stage.addEventListener('pointerup', (e) => {
-      if (!on) return;
-      on = false;
+    stage.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== id) return;
       const dx = e.clientX - x0;
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(e.clientY - y0) * 1.4) this.turn(dx < 0 ? 1 : -1);
+      const dy = e.clientY - y0;
+      if (!held) {
+        if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+        dir = dx < 0 ? 1 : -1;
+        const to = this.viewOf(this.page + dir * this.perView());
+        if (to === this.page || this.still) { id = -1; return; }
+        held = this.beginTurn(this.page, to);
+        this.sound.flip();
+        try { stage.setPointerCapture(id); } catch { /* the pointer has already gone */ }
+      }
+      const span = this.geo.spread ? this.geo.pageW * 1.5 : this.geo.pageW * 0.85;
+      this.setTurn(held, clamp((dir === 1 ? -dx : dx) / span, 0, 1));
+      vx = (e.clientX - lastX) / Math.max(1, e.timeStamp - lastT);
+      lastX = e.clientX;
+      lastT = e.timeStamp;
     });
-    stage.addEventListener('pointercancel', () => { on = false; });
+    const release = (e: PointerEvent) => {
+      if (e.pointerId !== id) return;
+      id = -1;
+      if (!held) return;
+      const turn = held;
+      held = null;
+      const flick = (dir === 1 ? -vx : vx) > 0.45;
+      const go = e.type !== 'pointercancel' && (turn.t > 0.33 || flick);
+      void this.runTurn(turn, go ? 1 : 0, go ? 140 + 520 * (1 - turn.t) : 120 + 360 * turn.t);
+    };
+    stage.addEventListener('pointerup', release);
+    stage.addEventListener('pointercancel', release);
   }
 }
 

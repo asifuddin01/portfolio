@@ -655,11 +655,27 @@ html.br-is-open body { overflow: hidden; }
   cursor: pointer;
 }
 .br-close span:last-child { font-size: 1.3em; line-height: 1; }
+.br-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem;
+  border: 0.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.br-sound svg { width: 1.15rem; height: 1.15rem; flex: none; }
+.br-sound[aria-pressed='true'] { color: var(--ink); }
+.br-sound:hover { color: var(--fundus); border-color: var(--fundus); }
 .br-close:hover { color: var(--fundus); border-color: var(--fundus); }
 @media (max-width: 40rem) {
   .br-name { display: none; }
   .br-count { flex: 1; }
-  .br-close span:first-child { display: none; }
+  .br-close span:first-child, .br-sound span { display: none; }
 }
 
 .br-stage {
@@ -669,7 +685,8 @@ html.br-is-open body { overflow: hidden; }
   justify-content: center;
   gap: clamp(0.25rem, 1vw, 0.9rem);
   min-height: 0;
-  touch-action: pan-y;
+  /* Sideways movement belongs to the page being turned; pinch-zoom stays. */
+  touch-action: pan-y pinch-zoom;
 }
 .br-book {
   position: relative;
@@ -826,6 +843,29 @@ html.br-is-open body { overflow: hidden; }
 }
 .br-leaf--fwd { left: var(--br-page-w); transform-origin: left center; }
 .br-leaf--back { left: 0; transform-origin: right center; }
+/* One page on a phone: the spine is the left edge for a page going forward
+   and the right edge for a page going back, so the leaf always swings the
+   way the finger moves. A nearer eye than a spread's, so the turn reads as
+   depth on a small screen. */
+.br-leaf--single-fwd { left: 0; transform-origin: left center; }
+.br-leaf--single-back { left: 0; transform-origin: right center; }
+.br:not(.is-spread) .br-book { perspective: 1500px; }
+
+/* The shadow a lifted leaf throws on the page it uncovers, deepest at the
+   hinge; its strength follows the turn. */
+.br-cast {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  width: var(--br-page-w);
+  height: var(--br-page-h);
+  opacity: 0;
+  pointer-events: none;
+}
+.br-cast--r { left: var(--br-page-w); background: linear-gradient(90deg, rgb(0 0 0 / 0.34), transparent 55%); }
+.br-cast--l { left: 0; background: linear-gradient(270deg, rgb(0 0 0 / 0.34), transparent 55%); }
+.br-cast--single-l { left: 0; background: linear-gradient(90deg, rgb(0 0 0 / 0.3), transparent 62%); }
+.br-cast--single-r { left: 0; background: linear-gradient(270deg, rgb(0 0 0 / 0.3), transparent 62%); }
 .br-leaf > .br-page {
   left: 0;
   backface-visibility: hidden;
