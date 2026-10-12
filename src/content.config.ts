@@ -833,6 +833,8 @@ const art = defineCollection({
       // missing plates and you can renumber freely.
       order: z.number(),
       title: z.string(),
+      /** The essay's own headline, set under the title on the plate's page. */
+      subtitle: z.string().optional(),
       artist: z.string(),
       date: z.string(),
       image: image(),

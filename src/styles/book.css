@@ -49,6 +49,18 @@
   --edge: #D8D2C4;
   --binding: rgb(40 34 24 / 0.09);
 }
+/* Elementa sets far more of its matter in the small sizes than the other
+   two books — topic lists, apparatus references, notation, quotas, labels —
+   and in the book face those sizes read a step smaller than they did in the
+   monospace. They come up a step here; Numina and Tabulae keep theirs. */
+[data-book='elementa'] {
+  --t-xs: 1rem;
+  --t-sm: 1.0625rem;
+  --t-base: 1.125rem;
+}
+/* References to the apparatus and to numbered equations were set a tenth
+   below their line, which in the book face is below comfortable reading. */
+[data-book='elementa'] :is(.app-ref, .eq-ref) { font-size: 1em; }
 [data-theme='nocturne'] [data-book] {
   --edge: color-mix(in srgb, var(--brass) 26%, #0B0A08);
   --binding: rgb(0 0 0 / 0.42);
@@ -412,6 +424,10 @@ main[data-book] .book-frontis .fmt:hover { opacity: 1; }
 @media (min-width: 40rem) {
   [data-book] .book-text > :is(p, ul, ol) { text-align: justify; }
 }
+/* Tabulae's text faces its plate across the binding, on half the spread.
+   At that width justified lines open gaps between words, so it is set
+   ragged-right, as many art books are; the indents and the face stay. */
+[data-book='tabulae'] .book-text > :is(p, ul, ol) { text-align: left; }
 [data-book] .book-text > p { margin-bottom: 0; }
 [data-book] .book-text > p + p { margin-top: 0; text-indent: 1.6em; }
 
