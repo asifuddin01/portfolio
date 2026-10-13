@@ -1,0 +1,72 @@
+---
+id: "I.12.X02"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: gradient
+difficulty: 1
+title: "The encoder waits for the decoder"
+depends:
+  - "I.12.P01"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+For the four points of
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01),
+$\mat S=\begin{bmatrix}2.92&1.44\\1.44&2.08\end{bmatrix}$. At
+$\mat E=(1,\,0)$ and $\mat D=(1,\,0)^{\mathsf T}$, evaluate both gradients
+of (I.12.2). Take one step of gradient descent with step size $0.1$ and
+find the new loss. Then evaluate both gradients at $\mat E=\mat 0$,
+$\mat D=\mat 0$.
+
+<Hint>
+Form $(\mat I-\mat D\mat E)\mat S$ once and use it in both gradients.
+</Hint>
+
+<SolutionToggle>
+
+Here $\mat I-\mat D\mat E=\begin{bmatrix}0&0\\0&1\end{bmatrix}$, so
+
+$$
+(\mat I-\mat D\mat E)\mat S=\begin{bmatrix}0&0\\1.44&2.08\end{bmatrix}.
+$$
+
+Multiplying on the right by $\mat E^{\mathsf T}=(1,0)^{\mathsf T}$ and on
+the left by $\mat D^{\mathsf T}=(1,\,0)$:
+
+$$
+\begin{aligned}
+\nabla_{\mat D}\mathcal L&=-2\begin{bmatrix}0\\1.44\end{bmatrix}
+ =\begin{bmatrix}0\\-2.88\end{bmatrix},\\
+\nabla_{\mat E}\mathcal L&=-2\,(0,\;0)=(0,\;0).
+\end{aligned}
+$$
+
+The decoder is told to raise its second weight: the residual, which lives
+in the second coordinate, is correlated with the code. The encoder is told
+nothing. Its gradient passes through $\mat D^{\mathsf T}$, and the decoder
+does not yet write to the coordinate where the error is.
+
+After the step, $\mat D=(1,\,0.288)^{\mathsf T}$ and $\mat E$ is unchanged.
+The residual map is $\begin{bmatrix}0&0\\-0.288&1\end{bmatrix}$ and the loss
+is
+
+$$
+\begin{aligned}
+&0.288^2\cdot2.92-2\cdot0.288\cdot1.44+2.08\\
+&\;\;=1.492756,
+\end{aligned}
+$$
+
+down from $2.08$. On the next step the encoder's gradient is no longer
+zero.
+
+At $\mat E=\mat 0$ and $\mat D=\mat 0$, each gradient has a zero matrix as
+a factor, so both vanish. The loss is $\operatorname{tr}\mat S=5$ and
+gradient descent never leaves. An autoencoder needs a nonzero
+initialisation in both halves.
+
+</SolutionToggle>

@@ -1,0 +1,60 @@
+---
+/**
+ * Book I, Ch. XII, Prop. 4: a circle encoded by its angle. Drawn to scale with
+ * the two inputs at ±175°, the numbers of I.12.X09.
+ */
+const DEG = 175;
+const CX = 110, CY = 138, R = 72;
+const rad = (DEG * Math.PI) / 180;
+const onCircle = (t: number) => [CX + R * Math.cos(t), CY - R * Math.sin(t)];
+const [ax, ay] = onCircle(rad);
+const [bx, by] = onCircle(-rad);
+const [mx, my] = onCircle(0);
+const Z0 = 335, HALF = 88;
+const zx = (z: number) => Z0 + (z / Math.PI) * HALF;
+---
+<svg class="fig" viewBox="0 0 440 300" role="img" aria-labelledby="ct-t ct-d" style="--fig-min: 0px">
+  <title id="ct-t">Neighbouring inputs at opposite ends of a code</title>
+  <desc id="ct-d">
+    On the left, a unit circle with two points a and b close together on its
+    left side, at angles of plus and minus 175 degrees, and a point m on its
+    right side. On the right, a line for the code from minus pi to pi, with b
+    at its left end, a at its right end and m at zero in the middle. The inputs
+    a and b are 0.174 apart, their codes are 6.109 apart, and the code halfway
+    between them decodes to m, 1.998 from both.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">input · unit circle</text>
+  <text x="240" y="23" class="t-lab">code · the angle</text>
+
+  <circle cx={CX} cy={CY} r={R} class="wire" />
+  <line x1={(ax + bx) / 2} y1={CY} x2={mx} y2={my} class="dash" />
+  <text x={CX} y={CY - 8} class="t-key" text-anchor="middle">1.998</text>
+  <circle cx={ax} cy={ay} r="4.5" class="a1" />
+  <circle cx={bx} cy={by} r="4.5" class="a2" />
+  <circle cx={mx} cy={my} r="4.5" class="a3" />
+  <text x={ax - 10} y={ay - 6} class="t-md" text-anchor="end">a</text>
+  <text x={bx - 10} y={by + 15} class="t-md" text-anchor="end">b</text>
+  <text x={mx + 10} y={my + 5} class="t-md">m</text>
+
+  <line x1={zx(-Math.PI)} y1={CY} x2={zx(Math.PI)} y2={CY} class="axis" />
+  {[-Math.PI, 0, Math.PI].map((z, i) => (
+    <g>
+      <line x1={zx(z)} y1={CY - 5} x2={zx(z)} y2={CY + 5} class="axis" />
+      <text x={zx(z)} y={CY + 24} class="t-sm" text-anchor="middle">{['−π', '0', 'π'][i]}</text>
+    </g>
+  ))}
+  <circle cx={zx(-rad)} cy={CY} r="4.5" class="a2" />
+  <circle cx={zx(rad)} cy={CY} r="4.5" class="a1" />
+  <circle cx={zx(0)} cy={CY} r="4.5" class="a3" />
+  <text x={zx(-rad)} y={CY - 14} class="t-md" text-anchor="middle">b</text>
+  <text x={zx(rad)} y={CY - 14} class="t-md" text-anchor="middle">a</text>
+  <text x={zx(0)} y={CY - 14} class="t-md" text-anchor="middle">m</text>
+
+  <path d={`M ${zx(-rad)} 86 V 78 H ${zx(rad)} V 86`} class="wire-soft" />
+  <text x={Z0} y="70" class="t-key" text-anchor="middle">6.109 apart</text>
+
+  <text x="8" y="244" class="t-sm">a and b are neighbours on the circle: 0.174 apart.</text>
+  <text x="8" y="263" class="t-sm">Their codes sit at opposite ends of the line.</text>
+  <text x="8" y="282" class="t-sm">The code halfway between decodes to m, 1.998 from both.</text>
+</svg>

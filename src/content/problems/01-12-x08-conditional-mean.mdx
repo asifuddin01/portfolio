@@ -1,0 +1,90 @@
+---
+id: "I.12.X08"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "The best denoiser returns a conditional mean"
+depends:
+  - "I.12.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+A scalar input is $+1$ or $-1$ with probability one half each. It is
+corrupted to $\tilde x=x+\varepsilon$ with $\varepsilon$ drawn from
+$\mathcal N(0,\sigma^2)$.
+
+(a) Find the best denoiser under squared error,
+$\E[x\mid\tilde x]$.
+
+(b) Evaluate it at $\tilde x=0.5$ for $\sigma^2=1$ and for
+$\sigma^2=0.25$, and at $\tilde x=0$.
+
+(c) Verify (I.12.8) for this distribution.
+
+(d) The output at $\tilde x=0$ is not a possible input. What does that say
+about reconstructions trained with squared error?
+
+<Hint>
+Use Bayes' rule (<ApparatusRef ref="0.PR.04" />) for the two posterior
+probabilities. The Gaussian normalising constants cancel in their ratio.
+</Hint>
+
+<SolutionToggle>
+
+**(a)** The two likelihoods are proportional to
+$e^{-(\tilde x-1)^2/2\sigma^2}$ and $e^{-(\tilde x+1)^2/2\sigma^2}$, and
+the priors are equal. Their ratio is $e^{2\tilde x/\sigma^2}$, so the
+posterior probabilities are
+
+$$
+p_\pm=\frac{e^{\pm\tilde x/\sigma^2}}
+ {e^{\tilde x/\sigma^2}+e^{-\tilde x/\sigma^2}}.
+$$
+
+The conditional mean is $p_+-p_-$:
+
+$$
+\E[x\mid\tilde x]=\tanh\!\big(\tilde x/\sigma^2\big).
+$$
+
+**(b)** At $\tilde x=0.5$: $\tanh(0.5)=0.462117$ for $\sigma^2=1$ and
+$\tanh(2)=0.964028$ for $\sigma^2=0.25$. At $\tilde x=0$ it is $0$ for any
+$\sigma^2$.
+
+With less noise the same observation is stronger evidence, and the
+denoiser commits to the nearer input. As $\sigma^2\to0$ it becomes the
+sign of $\tilde x$. As $\sigma^2\to\infty$ it flattens to the prior mean,
+$0$.
+
+**(c)** The noised density is proportional to the sum of the two
+likelihoods. Differentiating its logarithm,
+
+$$
+\begin{aligned}
+&\frac{d}{d\tilde x}\log p_\sigma(\tilde x)\\
+&\;\;=\frac{-(\tilde x-1)\,p_+-(\tilde x+1)\,p_-}{\sigma^2}\\
+&\;\;=\frac{\tanh(\tilde x/\sigma^2)-\tilde x}{\sigma^2}.
+\end{aligned}
+$$
+
+So $\tilde x+\sigma^2$ times the score is $\tanh(\tilde x/\sigma^2)$, as
+(I.12.8) requires. The displacement of the denoiser points towards the
+nearer of the two inputs, where the noised density is higher. The script
+checks this with a numerical derivative at all three points of (b).
+
+**(d)** At $\tilde x=0$ the two inputs are equally likely. The value that
+minimises the expected squared error is their mean, $0$, even though the
+input is never $0$. Squared error rewards the average of the plausible
+answers and not any one of them.
+
+For images, the average of several sharp reconstructions that differ
+slightly is a blurred one. An autoencoder trained with squared error on
+inputs it cannot resolve returns that average. More training does not
+sharpen it, because the average is the optimum.
+
+</SolutionToggle>

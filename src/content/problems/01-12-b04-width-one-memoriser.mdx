@@ -1,0 +1,126 @@
+---
+id: "I.12.B04"
+kind: problem
+chapter: "I.12"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A width-one code that memorises"
+depends:
+  - "I.12.P01"
+  - "I.12.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+<Statement>
+Show that a narrow code does not, by itself, stop an autoencoder from
+memorising its training set.
+</Statement>
+
+<Given>
+The training set is the four points $(1,2)$, $(2.2,0.4)$, $(-1,-2)$ and
+$(-2.2,-0.4)$, the corners of a rectangle. The encoder keeps the first
+coordinate, $z=x_1$. The decoder returns $g(z)=(z,\,g_2(z))$. Its second
+output is piecewise linear, with $\operatorname{relu}(a)=\max(a,0)$:
+
+$$
+\begin{aligned}
+g_2(z)=&-\tfrac43z-\tfrac{10}3\\
+ &+\tfrac{10}3\operatorname{relu}(z+1)\\
+ &-\tfrac{10}3\operatorname{relu}(z-1).
+\end{aligned}
+$$
+
+For comparison, the principal-axis autoencoder of
+[I.12.B02](/elementa/neural-networks/autoencoders/problems/b02) projects
+onto $\vec u_1=(0.8,0.6)$. The held-out set is the midpoints of the
+rectangle's four sides: $(-0.6,0.8)$, $(0.6,-0.8)$, $(1.6,1.2)$ and
+$(-1.6,-1.2)$.
+</Given>
+
+<Find>
+The training loss of both autoencoders, their mean error on the held-out
+points, the decoding of the code $z=5$, and what went wrong.
+</Find>
+
+<Strategy>
+Write the decoder's second coordinate on each of its three linear pieces.
+Then evaluate both models point by point.
+</Strategy>
+
+<Solution>
+
+**The decoder, piece by piece.** The two ReLU terms switch on at $z=-1$
+and $z=1$, so the second output is
+
+$$
+\begin{aligned}
+z\leq-1&:\quad g_2=-\tfrac43z-\tfrac{10}3,\\[2pt]
+|z|\leq1&:\quad g_2=2z,\\[2pt]
+z\geq1&:\quad g_2=-\tfrac43z+\tfrac{10}3.
+\end{aligned}
+$$
+
+**Training points.** The codes are $1$, $2.2$, $-1$ and $-2.2$, and
+$g_2$ returns $2$, $0.4$, $-2$ and $-0.4$. Every training point is
+reconstructed exactly, so the training loss is $0$. The principal axis
+gives each corner an error of $1$, so its training loss is $1$.
+
+**Held-out points.** At $(-0.6,0.8)$ the code is $-0.6$ and the decoder
+returns $(-0.6,-1.2)$: squared error $(0.8+1.2)^2=4$. At $(0.6,-0.8)$ it
+returns $(0.6,1.2)$: error $4$ again. At $(1.6,1.2)$ and $(-1.6,-1.2)$ it
+is exact. The mean is $2$.
+
+The principal axis gives the first two points the code $0$ and the
+reconstruction $(0,0)$, with error $1$ each. The other two lie on the axis,
+with error $0$. The mean is $0.5$.
+
+| | training loss | held-out mean |
+|---|---|---|
+| width-one code, two ReLU kinks | $0$ | $2$ |
+| principal axis | $1$ | $0.5$ |
+
+**Away from the data.** The code $5$ decodes to
+$(5,\,-\tfrac{20}3+\tfrac{10}3)=(5,\,-3.333333)$. The training codes lie
+between $-2.2$ and $2.2$; nothing constrained the decoder beyond them.
+
+**What went wrong.** The reconstruction surface is a zigzag through the
+corners in order of their first coordinate:
+$(-2.2,-0.4)\to(-1,-2)\to(1,2)\to(2.2,0.4)$. Its middle piece crosses the
+rectangle from one corner to the opposite one. The code is one number, as
+narrow as a code can be, and the surface is one-dimensional as it must be.
+But a curve with two kinks has three straight pieces, enough to meet four
+points. The bottleneck bounded the dimension of the surface and left its
+shape free.
+
+</Solution>
+
+<Answer>
+Training loss $0$ against $1$. Held-out mean error $2$ against $0.5$, with
+$4$ against $1$ at $(-0.6,0.8)$. The code $5$ decodes to $(5,-3.333333)$.
+The decoder had enough freedom to pass through every training point.
+</Answer>
+
+<CheckSanity>
+The decoder is continuous: at $z=-1$ both neighbouring pieces give $-2$,
+and at $z=1$ both give $2$. Its first output is the code itself, so only
+the second coordinate can be wrong.
+</CheckSanity>
+
+<Breaks>
+The construction needs the training points to have distinct codes. Two
+inputs that share a code share a reconstruction, whatever the decoder, so
+they cannot both be memorised. A curve with $n-2$ kinks passes through $n$
+points with distinct codes; with more training points than that, the same
+decoder can no longer fit them all.
+</Breaks>
+
+<Variation>
+Add the four midpoints to the training set. The zigzag now has a loss of
+$1$ on the eight points, since it errs by $4$ on two of them, while the
+principal axis has $0.75$. More data repaired what a narrower code could
+not.
+</Variation>

@@ -1,0 +1,77 @@
+---
+id: "I.12.X05"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "A flat spectrum cannot be compressed"
+depends:
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+A covariance in eight dimensions has eigenvalues $\lambda_i=2^{8-i}$, that
+is, $128,64,\ldots,2,1$.
+
+(a) Find the loss of the best width-$k$ linear autoencoder for
+$k=1,2,4,7$, and the fraction of the total variance each leaves
+unexplained.
+
+(b) Find the smallest $k$ that leaves under one per cent.
+
+(c) Repeat (b) for the flat spectrum $\lambda_i=1$.
+
+(d) For $\lambda_i=\rho^{\,i-1}$ with $0<\rho<1$ and $d\to\infty$, find the
+unexplained fraction as a function of $k$. What happens as $\rho\to1$?
+
+(e) In the flat case, which subspace is optimal?
+
+<Hint>
+By (I.12.5) the loss is the sum of the eigenvalues after the $k$-th. Both
+spectra are geometric series.
+</Hint>
+
+<SolutionToggle>
+
+**(a)** The total is $2^8-1=255$, and
+$\sum_{i>k}2^{8-i}=2^{8-k}-1$.
+
+| $k$ | loss | fraction unexplained |
+|---|---|---|
+| $1$ | $127$ | $0.498039$ |
+| $2$ | $63$ | $0.247059$ |
+| $4$ | $15$ | $0.058824$ |
+| $7$ | $1$ | $0.003922$ |
+
+Each extra code unit roughly halves what is left.
+
+**(b)** At $k=6$ the loss is $3$ and the fraction is $3/255=0.011765$,
+just over. At $k=7$ it is $0.003922$. So $k=7$.
+
+**(c)** With every eigenvalue equal to $1$ the loss is $8-k$ and the
+fraction is $1-k/8$. It is under one per cent only at $k=8$, where the code
+is as wide as the input. Nothing can be compressed.
+
+**(d)** The tail is $\sum_{i>k}\rho^{\,i-1}=\rho^k/(1-\rho)$ and the total
+is $1/(1-\rho)$, so the unexplained fraction is exactly $\rho^k$. Each code
+unit removes the fraction $1-\rho$ of what remains. To reach a fraction
+$\epsilon$ needs $k=\ln\epsilon/\ln\rho$, which grows like
+$\ln(1/\epsilon)/(1-\rho)$ as $\rho\to1$. A spectrum that decays slowly
+needs a wide code, and in the limit of no decay no finite width suffices.
+
+**(e)** Every one. In the proof of I.12.T1 the retained variance is
+$\sum_i\lambda_ic_i$ with weights that total $k$. When all $\lambda_i$ are
+equal this is $k$ whatever the weights, so every $k$-dimensional subspace
+has the same loss. The uniqueness in I.12.T1 required
+$\lambda_k>\lambda_{k+1}$, and here that fails at every $k$. Training will
+return some subspace, fixed by the initialisation and not by the data.
+
+A linear code compresses exactly to the extent that the spectrum is
+uneven. Isotropic noise has a flat spectrum, and no linear code compresses
+it.
+
+</SolutionToggle>

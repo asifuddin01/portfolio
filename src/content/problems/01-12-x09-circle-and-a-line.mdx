@@ -1,0 +1,98 @@
+---
+id: "I.12.X09"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "A circle does not pass through a width-one code"
+depends:
+  - "I.12.P04"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+The data are the unit circle in the plane, and the code has width one.
+
+(a) Prove that every continuous encoder gives some pair of antipodal
+points the same code.
+
+(b) Deduce that, whatever the decoder, some point of the circle is
+reconstructed at distance at least $1$ from itself.
+
+(c) Encoding a point by its angle in $(-\pi,\pi]$ and decoding $z$ to
+$(\cos z,\sin z)$ reconstructs every point exactly. Why does this not
+contradict (b)? For the inputs at $+175^\circ$ and $-175^\circ$, find the
+distance between them, the distance between their codes, and the distance
+from either to the decoding of the code halfway between.
+
+(d) How wide a code allows an autoencoder for the circle that is both
+continuous and exact?
+
+<Hint>
+Write the encoder as a function $F$ of the angle and study
+$h(\theta)=F(\theta)-F(\theta+\pi)$.
+</Hint>
+
+<SolutionToggle>
+
+**(a)** Let $F(\theta)$ be the code of the point at angle $\theta$. It is
+continuous, and $F(\theta+2\pi)=F(\theta)$ because the two angles name one
+point. Define $h(\theta)=F(\theta)-F(\theta+\pi)$. Then
+
+$$
+\begin{aligned}
+h(\theta+\pi)&=F(\theta+\pi)-F(\theta+2\pi)\\
+ &=-h(\theta).
+\end{aligned}
+$$
+
+If $h(0)=0$ the points at angles $0$ and $\pi$ share a code. Otherwise
+$h(0)$ and $h(\pi)$ have opposite signs, and by the intermediate value
+theorem $h(\theta^\star)=0$ for some $\theta^\star$ between them. The
+points at $\theta^\star$ and $\theta^\star+\pi$ are antipodal and share a
+code. $\blacksquare$
+
+**(b)** Call those points $\vec p$ and $-\vec p$. A decoder sees one code,
+so it returns one point $\vec a$ for both. By the triangle inequality,
+
+$$
+\begin{aligned}
+&\|\vec a-\vec p\|+\|\vec a+\vec p\|\\
+&\;\;\geq\|(\vec a+\vec p)-(\vec a-\vec p)\|\\
+&\;\;=2\|\vec p\|=2.
+\end{aligned}
+$$
+
+The larger of the two distances is at least $1$. $\blacksquare$
+
+**(c)** The angle is not a continuous function on the circle. Crossing
+the negative horizontal axis, it jumps from $\pi$ to $-\pi$. Part (a)
+needed continuity and does not apply.
+
+The two inputs are $10^\circ$ apart on the circle, at distance
+$2\sin5^\circ=0.174311$. Their codes are $\pm3.054326$, which are
+$6.108652$ apart. The code halfway between is $0$, which decodes to
+$(1,0)$, the point $175^\circ$ around from either input and at distance
+$2\sin87.5^\circ=1.998096$ from it.
+
+The exact autoencoder has put two neighbours at opposite ends of its code
+and the far side of the circle between them.
+
+**(d)** Width two. Take the encoder and the decoder to be the identity on
+the plane. Both are continuous and every point of the circle is
+reconstructed exactly.
+
+The circle has one degree of freedom and needs two code numbers. A closed
+curve cannot be laid along a line without cutting it somewhere, and (a)
+and (b) are that fact stated for encoders. The width a code needs depends
+on the shape of the data as well as on its dimension.
+
+As a check, the script takes
+$F(\theta)=\cos\theta+0.3\sin2\theta+0.2\sin\theta$, for which
+$h(\theta)=2\cos\theta+0.4\sin\theta$, and finds the shared code by
+bisection at $\theta^\star=\pi-\arctan5=1.768192$.
+
+</SolutionToggle>

@@ -69,6 +69,11 @@ import FigKernelSlide from '../components/figures/FigKernelSlide.astro';
 import FigPaddingStride from '../components/figures/FigPaddingStride.astro';
 import FigReceptiveGrowth from '../components/figures/FigReceptiveGrowth.astro';
 import FigPooling from '../components/figures/FigPooling.astro';
+/* Book I, Chapter XII — Autoencoders */
+import FigAutoencoder from '../components/figures/FigAutoencoder.astro';
+import FigPrincipalSubspace from '../components/figures/FigPrincipalSubspace.astro';
+import FigRegulariserGains from '../components/figures/FigRegulariserGains.astro';
+import FigCodeTear from '../components/figures/FigCodeTear.astro';
 import FigCnnLineage from '../components/figures/FigCnnLineage.astro';
 import FigFeatureHierarchy from '../components/figures/FigFeatureHierarchy.astro';
 import FigTransferFreeze from '../components/figures/FigTransferFreeze.astro';
@@ -624,6 +629,30 @@ export const FIGURES = {
     caption:
       'Moving a peak inside a pooling window can preserve the output. Moving it across the boundary need not.',
     source: 'Book I, Ch. XI, Prop. 4',
+  },
+  FigAutoencoder: {
+    component: FigAutoencoder,
+    caption:
+      'An autoencoder. The encoder maps five input numbers to two code numbers, the decoder maps them back, and the loss compares the output with the input it started from. No label enters, and with the code narrower than the input something has to be left out.',
+    source: 'Book I, Ch. XII, Prop. 1',
+  },
+  FigPrincipalSubspace: {
+    component: FigPrincipalSubspace,
+    caption:
+      'Four points and the best line through them, drawn to scale. Each corner lies at distance one from the principal axis, so the mean squared reconstruction error is one, the discarded eigenvalue. Keeping the first coordinate instead costs 2.08.',
+    source: 'Book I, Ch. XII, Prop. 2',
+  },
+  FigRegulariserGains: {
+    component: FigRegulariserGains,
+    caption:
+      'What four linear autoencoders do to the two principal directions of the same data. A bottleneck keeps one and drops the other. Noise and weight decay shrink both, and shrink the weak direction more.',
+    source: 'Book I, Ch. XII, Prop. 3',
+  },
+  FigCodeTear: {
+    component: FigCodeTear,
+    caption:
+      'A circle encoded by its angle. Reconstruction is exact everywhere, yet two neighbouring inputs sit at opposite ends of the code, and the code halfway between them decodes to the far side of the circle.',
+    source: 'Book I, Ch. XII, Prop. 4',
   },
   FigCnnLineage: {
     component: FigCnnLineage,

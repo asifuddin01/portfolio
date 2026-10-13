@@ -180,6 +180,10 @@ collections:
           - FigPaddingStride
           - FigReceptiveGrowth
           - FigPooling
+          - FigAutoencoder
+          - FigPrincipalSubspace
+          - FigRegulariserGains
+          - FigCodeTear
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze
@@ -532,6 +536,10 @@ collections:
           - FigPaddingStride
           - FigReceptiveGrowth
           - FigPooling
+          - FigAutoencoder
+          - FigPrincipalSubspace
+          - FigRegulariserGains
+          - FigCodeTear
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze
@@ -1185,6 +1193,10 @@ collections:
           - FigPaddingStride
           - FigReceptiveGrowth
           - FigPooling
+          - FigAutoencoder
+          - FigPrincipalSubspace
+          - FigRegulariserGains
+          - FigCodeTear
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze

@@ -3,37 +3,228 @@ id: "I.12"
 book: neural-networks
 order: 12
 title: "Autoencoders"
-summary: "Force the data through a narrow channel; whatever survives is what mattered."
-claim: "An autoencoder learns a representation by reconstruction alone, and under a linear map it recovers the PCA subspace."
-mathTier: M2
-topics: []
-definitions: []
+summary: "Force the data through a narrow channel and ask what survives. For a linear map the answer is exact: the directions of largest variance, whether or not they matter."
+claim: "An autoencoder learns a representation by reconstruction alone. Under a linear map it recovers the principal subspace and nothing finer; every other autoencoder is defined by the constraint that stops it copying."
+mathTier: M3
+topics:
+  - "Reconstruction as a supervised problem whose target is the input"
+  - "Encoder, decoder, code and the reconstruction surface"
+  - "Bottlenecks, rank and what an undercomplete code must discard"
+  - "Gradients of a linear autoencoder, untied and tied"
+  - "The principal-subspace theorem, proved by two least-squares steps"
+  - "Why the code's coordinates are not principal components"
+  - "Saddles, plateaus and what weight decay does to the symmetry"
+  - "Denoising as shrinkage, and the optimal denoiser as a score"
+  - "Contractive and sparse penalties, and the scale they must fix"
+  - "Dense and convolutional autoencoder shapes and parameter counts"
+  - "What reconstruction error does not measure"
+definitions:
+  - n: 1
+    term: "Autoencoder"
+    statement: "A pair of maps, an encoder f from R^d to R^k and a decoder g from R^k to R^d, trained so that g(f(x)) is close to x on the data. No label is used; each input is its own target."
+    introduces: []
+  - n: 2
+    term: "Code"
+    statement: "The encoder's output z = f(x) in R^k, also called the latent vector. It holds whatever the decoder needs, in whatever coordinates training happened to reach. Its width k is a count of numbers, not a measure of information."
+    introduces: []
+  - n: 3
+    term: "Reconstruction loss"
+    statement: "A distance between an input x and its reconstruction g(f(x)), summed over the d coordinates and averaged over the examples. Squared error is the usual choice for real-valued inputs; cross-entropy for inputs in [0, 1]."
+    introduces: []
+  - n: 4
+    term: "Reconstruction surface"
+    statement: "The image of the decoder, the set of all g(z) for z in R^k. Every reconstruction lies on it. It has dimension at most k: a curve for k = 1, and a k-dimensional subspace when the decoder is linear."
+    introduces: []
+  - n: 5
+    term: "Bottleneck"
+    statement: "A code narrower than the input, k < d. Such an autoencoder is called undercomplete. A linear map through a bottleneck has rank at most k and discards a subspace of dimension at least d - k. With k >= d the autoencoder is overcomplete and can copy."
+    introduces: []
+  - n: 6
+    term: "Principal subspace"
+    statement: "For centred data with covariance S, the span of the k eigenvectors of S with the largest eigenvalues. It is unique when the k-th eigenvalue exceeds the next. Projecting onto it retains more variance than projecting onto any other k-dimensional subspace."
+    introduces: []
+  - n: 7
+    term: "Tied weights"
+    statement: "The constraint that the decoder's weight matrix is the transpose of the encoder's. It halves the weight count, and the one shared matrix receives the sum of the gradients of both roles."
+    introduces: []
+  - n: 8
+    term: "Denoising autoencoder"
+    statement: "An autoencoder that is fed a corrupted input and trained to output the clean one. The corruption process, such as additive Gaussian noise or masking, is part of the model's definition."
+    introduces: []
+  - n: 9
+    term: "Contractive autoencoder"
+    statement: "An autoencoder whose loss adds the squared Frobenius norm of the encoder's Jacobian at each training point. The penalty asks the code to change little when the input is perturbed."
+    introduces: []
+  - n: 10
+    term: "Sparse autoencoder"
+    statement: "An autoencoder whose loss penalises the magnitude of the code, usually its L1 norm, or which keeps only a fixed number of nonzero code coordinates. It is typically overcomplete, and it needs a constraint on the decoder's scale."
+    introduces: []
+  - n: 11
+    term: "Score"
+    statement: "The gradient of a log-density with respect to its argument. It points towards higher density and does not depend on the normalising constant."
+    introduces: []
 beforeYouStart:
   - "I.5"
   - "I.4"
+  - "I.6"
+  - "I.8"
   - "0.LA.04"
-conceptFigure: FigLinearProbe
-problemStatement: "Everything so far needed labels. Most data has none. Reconstruction is the first objective that manufactures its own target, and it is the smallest step to the latent-variable models that follow."
-formalResults: []
-assumptions: []
+  - "0.LA.05"
+conceptFigure: FigAutoencoder
+problemStatement: "Everything so far needed labels. Most data has none. Reconstruction is the first objective that manufactures its own target, and it is the smallest step to the latent-variable models that follow. But reconstruction alone has a solution that teaches nothing: copy the input. We find exactly what a bottleneck forces a linear network to keep, derive what noise, contraction and sparsity do in its place, and mark where a low reconstruction error stops meaning anything."
+formalResults:
+  - id: "I.12.T1"
+    name: "A linear autoencoder's minimum is the projection onto the principal subspace"
+    statement: "Let the data be centred with covariance S = sum_i lambda_i u_i u_i^T, lambda_1 >= ... >= lambda_d, and let the loss be L(E, D) = tr((I - DE) S (I - DE)^T) with E of shape k by d and D of shape d by k. Then L >= lambda_(k+1) + ... + lambda_d, with equality when DE = U_k U_k^T. If lambda_k > lambda_(k+1) and S has full rank, equality holds only then. The same bound holds for any encoder, linear or not, whose decoder is affine."
+    doesNotPromise: "The code's coordinates are not principal components. D = U_k G with E = G^(-1) U_k^T attains the minimum for every invertible G, so the code is known only up to an invertible linear map. Nothing is said about uncentred data, about tied eigenvalues at the cut, or about whether the directions kept are the ones a later task needs."
+  - id: "I.12.T2"
+    name: "Every other stationary point is a saddle"
+    statement: "For any k eigenvectors of S, collected as the columns of U_I, the pair D = U_I, E = U_I^T is a stationary point of L with loss equal to the sum of the eigenvalues left out. If some excluded eigenvalue exceeds an included one, rotating the included direction towards the excluded one lowers the loss, so the point is not a local minimum. Baldi and Hornik (1989) show that for full-rank S with distinct eigenvalues these are, up to the factor G, all the stationary points of rank k, and that the principal subspace is the only local minimum."
+    doesNotPromise: "No rate is promised. Gradient descent can stay near a saddle for a long time, and it learns a direction more slowly the smaller its eigenvalue. E = 0 and D = 0 is also stationary, so a zero initialisation never moves. Autoencoders with nonlinear layers have no such guarantee."
+  - id: "I.12.T3"
+    name: "The optimal denoiser's displacement is the score of the noised density"
+    statement: "Let x have density p, and let x-tilde = x + eps with eps drawn from N(0, sigma^2 I) independently of x. Among all functions r, the expected squared error E||r(x-tilde) - x||^2 is minimised by r*(x-tilde) = E[x | x-tilde], and r*(x-tilde) = x-tilde + sigma^2 grad log p_sigma(x-tilde), where p_sigma is the density of x-tilde."
+    doesNotPromise: "The identity concerns the exact minimiser over all functions, Gaussian corruption and squared error. A finite network trained on finite data only approximates it. The score is that of the noised density p_sigma, not of the data density. Under masking or other corruptions the conditional-mean statement survives and the score identity does not."
+  - id: "I.12.T4"
+    name: "A circle does not pass continuously through a width-one code"
+    statement: "Every continuous encoder f from the unit circle to the real line gives some pair of antipodal points the same code. Whatever the decoder, one point of that pair is then reconstructed with error at least one, the radius."
+    doesNotPromise: "A discontinuous encoder escapes the bound: the angle reconstructs every point exactly, at the price of two neighbouring inputs with codes almost 2 pi apart. A width-two code has no such obstruction. The topology of real data is not known in advance."
+assumptions:
+  - statement: "The data are centred, or the autoencoder has biases that can absorb the mean."
+    testedBy: "I.12.X03"
+  - statement: "The eigenvalues at the cut are distinct. With a tie, the optimal subspace is not unique."
+    testedBy: "I.12.X05"
+  - statement: "The code is narrower than the input, or a penalty or a corruption makes copying suboptimal."
+    testedBy: "I.12.X04"
+  - statement: "A penalty on the code, or on the encoder alone, is paired with a fixed decoder scale."
+    testedBy: "I.12.X07"
+  - statement: "The decoder's flexibility is small relative to the number of training examples. A narrow code alone does not prevent memorisation."
+    testedBy: "I.12.B04"
+  - statement: "The encoder may be discontinuous, or the code is wide enough for the shape of the data."
+    testedBy: "I.12.X09"
 owns:
   - "autoencoder"
   - "bottleneck-representation"
 borrows:
   - "multilayer-perceptron"
   - "loss-function"
+  - "loss-as-negative-log-likelihood"
+  - "bayes-optimal-predictor"
+  - "backpropagation"
+  - "weight-decay"
   - "singular-value-decomposition"
-implementation: false
-failureModes: []
-references: []
+  - "eigendecomposition"
+implementation: true
+failureModes:
+  - "A code as wide as the input. On the chapter's four points, E = [[2, 1], [1, 1]] with D = [[1, -1], [-1, 2]] has loss exactly 0. It also returns (100, -7) unchanged. The loss is at its minimum and nothing about the data has been learned."
+  - "Zero initialisation. With E = 0 and D = 0 both gradients are exactly zero and the loss stays at tr S = 5. With E = [1, 0] and D = (1, 0) the encoder's first gradient is (0, 0) and only the decoder moves, to (1, 0.288) at step size 0.1."
+  - "Uncentred data without biases. For (10, -1), (10, 0), (10, 1) a width-one linear autoencoder keeps the mean direction: every code is 10 and the loss is 0.666667. After centring, the codes are -1, 0, 1 and the loss is 0."
+  - "Reading code coordinates as principal components. E = [4, 3] with D = (0.16, 0.12) and E = [0.8, 0.6] with D = (0.8, 0.6) reconstruct identically. The first gives every input a code five times larger."
+  - "An L1 penalty on the code with a free decoder. Dividing E by 10 and multiplying D by 10 leaves every reconstruction unchanged and takes the objective from 2.0 to 1.1; at a factor of 1000 it is 1.001. The penalty has bought nothing but large weights."
+  - "Memorising through a width-one code. A decoder with two ReLU kinks reconstructs all four training points exactly, loss 0 against 1 for the principal axis. On the held-out point (-0.6, 0.8) its squared error is 4 where the principal axis gives 1."
+  - "A transposed convolution without output padding. Two 3 by 3, stride-two layers with padding one take 7 to 13 to 25, not to 28. And a 16 by 7 by 7 code holds 784 numbers, exactly as many as the 28 by 28 input it was meant to compress."
+  - "Reconstruction error as an anomaly score. The point (8, 6) scores 0, lower than every training point, though it lies 8.062258 from the nearest of them. The point (-1.2, 1.6), at distance 2.236068, scores 4."
+  - "A mean reduction where a sum was meant. Averaging squared error over the 784 pixels of an image as well as over the batch divides the reconstruction term by 784, so a penalty coefficient tuned for the per-example sum becomes 784 times stronger."
+  - "Interpolating codes across a tear. Encoding the unit circle by its angle, the inputs at +175 and -175 degrees are 0.174311 apart and their codes 6.108652 apart. The code halfway between decodes to a point 1.998096 from both."
+references:
+  - title: "Auto-association by multilayer perceptrons and singular value decomposition"
+    url: https://doi.org/10.1007/BF00332918
+    authors: "Bourlard and Kamp"
+    year: 1988
+    venue: "Biological Cybernetics 59(4-5)"
+  - title: "Neural networks and principal component analysis: Learning from examples without local minima"
+    url: https://doi.org/10.1016/0893-6080(89)90014-2
+    authors: "Baldi and Hornik"
+    year: 1989
+    venue: "Neural Networks 2(1)"
+  - title: "The Approximation of One Matrix by Another of Lower Rank"
+    url: https://doi.org/10.1007/BF02288367
+    authors: "Eckart and Young"
+    year: 1936
+    venue: "Psychometrika 1(3)"
+  - title: "Reducing the Dimensionality of Data with Neural Networks"
+    url: https://doi.org/10.1126/science.1127647
+    authors: "Hinton and Salakhutdinov"
+    year: 2006
+    venue: "Science 313(5786)"
+  - title: "Extracting and Composing Robust Features with Denoising Autoencoders"
+    url: https://doi.org/10.1145/1390156.1390294
+    authors: "Vincent, Larochelle, Bengio and Manzagol"
+    year: 2008
+    venue: "International Conference on Machine Learning"
+  - title: "A Connection Between Score Matching and Denoising Autoencoders"
+    url: https://doi.org/10.1162/NECO_a_00142
+    authors: "Vincent"
+    year: 2011
+    venue: "Neural Computation 23(7)"
+  - title: "What Regularized Auto-Encoders Learn from the Data-Generating Distribution"
+    url: https://jmlr.org/papers/v15/alain14a.html
+    authors: "Alain and Bengio"
+    year: 2014
+    venue: "Journal of Machine Learning Research 15(110)"
+  - title: "Contractive Auto-Encoders: Explicit Invariance During Feature Extraction"
+    url: https://icml.cc/2011/papers/455_icmlpaper.pdf
+    authors: "Rifai, Vincent, Muller, Glorot and Bengio"
+    year: 2011
+    venue: "International Conference on Machine Learning"
+  - title: "Emergence of simple-cell receptive field properties by learning a sparse code for natural images"
+    url: https://doi.org/10.1038/381607a0
+    authors: "Olshausen and Field"
+    year: 1996
+    venue: "Nature 381(6583)"
+  - title: "Loss Landscapes of Regularized Linear Autoencoders"
+    url: https://proceedings.mlr.press/v97/kunin19a.html
+    authors: "Kunin, Bloom, Goeva and Seed"
+    year: 2019
+    venue: "International Conference on Machine Learning, PMLR 97"
+  - title: "Exact solutions to the nonlinear dynamics of learning in deep linear neural networks"
+    url: https://arxiv.org/abs/1312.6120
+    authors: "Saxe, McClelland and Ganguli"
+    year: 2014
+    venue: "International Conference on Learning Representations"
 notation:
   - "X"
   - "d"
   - "theta"
   - "L_loss"
+  - "W"
+  - "lambda"
+  - "sigma"
+  - "J"
+  - "nabla"
+  - "E"
 apparatus:
   - "0.LA.04"
   - "0.LA.05"
-keyEquations: []
-status: review
+  - "0.MC.07"
+  - "0.PR.03"
+keyEquations:
+  - id: "I.12.1"
+    formula: "z = f(x); x-hat = g(z); L = (1/n) sum_i ||x_i - g(f(x_i))||^2"
+    gloss: "A regression problem in which every example is its own target."
+  - id: "I.12.2"
+    formula: "L = tr((I - DE) S (I - DE)^T); grad_D L = -2 (I - DE) S E^T; grad_E L = -2 D^T (I - DE) S"
+    gloss: "The data enter only through S, and each half's gradient passes through the other half."
+  - id: "I.12.3"
+    formula: "D = S E^T (E S E^T)^(-1) for fixed E; E = (D^T D)^(-1) D^T for fixed D"
+    gloss: "Each half, taken alone, is a least-squares problem with a closed form."
+  - id: "I.12.4"
+    formula: "L(Q Q^T) = tr S - tr(Q^T S Q) for Q with orthonormal columns"
+    gloss: "A projection's loss is the variance it fails to keep."
+  - id: "I.12.5"
+    formula: "min L = sum_(i>k) lambda_i at DE = U_k U_k^T; D = U_k G, E = G^(-1) U_k^T"
+    gloss: "The minimum fixes the subspace and leaves the basis free."
+  - id: "I.12.6"
+    formula: "with penalty gamma (||E||_F^2 + ||D||_F^2): E = D^T, D = U_k diag(sqrt(1 - gamma/lambda_i)) O^T"
+    gloss: "Weight decay shrinks each direction and leaves only a rotation of the code."
+  - id: "I.12.7"
+    formula: "E||M(x + eps) - x||^2 = tr((M - I) S (M - I)^T) + sigma^2 ||M||_F^2; M* = S (S + sigma^2 I)^(-1)"
+    gloss: "Input noise is a ridge penalty on the end-to-end map."
+  - id: "I.12.8"
+    formula: "E[x | x-tilde] = x-tilde + sigma^2 grad log p_sigma(x-tilde)"
+    gloss: "The best denoiser moves a corrupted point up the noised density."
+  - id: "I.12.9"
+    formula: "argmin_z (a - z)^2 + beta |z| = sign(a) max(|a| - beta/2, 0)"
+    gloss: "An L1 penalty zeroes small codes and shortens the rest."
+status: published
 ---

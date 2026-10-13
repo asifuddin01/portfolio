@@ -1,0 +1,143 @@
+---
+chapter: neural-networks--autoencoders
+proposition: 4
+statement: "Reconstruction error measures distance to a surface, and certifies nothing else."
+claim: "A small error does not make the code useful, does not make the input likely, and does not make the points between codes meaningful. The last gap is the one the next chapter closes."
+given:
+  - a-linear-autoencoder-finds-the-principal-subspace
+  - noise-and-penalties-do-the-bottlenecks-work
+  - generalisation-is-not-memorisation
+figure: FigCodeTear
+figureType: G
+status: published
+updated: 2026-10-13
+sources:
+  - title: "Neural networks and principal component analysis: Learning from examples without local minima"
+    url: https://doi.org/10.1016/0893-6080(89)90014-2
+  - title: "What Regularized Auto-Encoders Learn from the Data-Generating Distribution"
+    url: https://jmlr.org/papers/v15/alain14a.html
+  - title: "Deep Learning, Chapter 14: Autoencoders"
+    url: https://www.deeplearningbook.org/contents/autoencoders.html
+---
+
+## What the number is
+
+Proposition 1 gave the picture: the decoder draws a reconstruction surface
+and the encoder picks a point on it for each input. With the best encoder,
+the error of an input is its squared distance to the nearest point of that
+surface. A small average error says one thing: the data lie close to a
+surface of dimension $k$ that the decoder is able to draw.
+
+That is a statement about geometry in input space. Three other things are
+often read into it.
+
+## It does not say the code is useful
+
+The loss never looks at the code directly. Take any invertible map $h$ of
+$\R^k$ to itself, replace the encoder by $h\circ f$ and the decoder by
+$g\circ h^{-1}$. Every reconstruction is unchanged, so the loss is too.
+Distances between codes, their nearest neighbours and their separability
+by a linear classifier can all be altered this way at no cost. The
+$\mat G$ of (I.12.5) is the linear case.
+
+Nor does the loss look at any task. By I.12.T1 a linear autoencoder keeps
+the directions of largest variance, and variance is a property of the
+inputs alone. Label the four points of this chapter by which long side of
+the rectangle they lie on. That label is the sign of the score along
+$\vec u_2$, the direction the width-one autoencoder discards. The two
+corners at each end share a code, $+2$ or $-2$, and carry opposite labels.
+The code retains $4/5$ of the variance and predicts the label no better
+than a coin. From the discarded coordinate the label can be read exactly.
+
+And a lower error is not a better code. The error falls as $k$ grows and
+reaches zero at $k=d$, where the code is a copy. The width cannot be chosen
+by reconstruction error on its own. It is chosen by what the code is for,
+measured on that task.
+
+## It does not say the input is likely
+
+A common use of an autoencoder is to flag unusual inputs by their
+reconstruction error. The error measures distance from the surface. It
+does not measure distance from the data on the surface.
+
+On the four points, the best width-one autoencoder gives every training
+point an error of $1$. The point $(8,6)$ lies on the principal axis and is
+reconstructed with error $0$, lower than any training point, although the
+nearest of them is $8.06$ away. The point $(-1.2,1.6)$ is only $2.24$ from
+the data and scores $4$
+([I.12.X10](/elementa/neural-networks/autoencoders/problems/x10)).
+
+The better a decoder generalises, the more inputs it reconstructs that it
+never saw, and the weaker this detector becomes. Saying that an input is
+unlikely requires a probability distribution over inputs, which (I.12.1)
+does not define.
+
+## It does not say the space between codes means anything
+
+The decoder is trained only at the codes of the training inputs. For a
+linear decoder that is enough: the code halfway between two codes decodes
+to the point halfway between their reconstructions. A nonlinear decoder
+is constrained nowhere else.
+
+Sometimes the trouble is forced. Let the data be the unit circle and let
+$k=1$. Encode a point by its angle in $(-\pi,\pi]$ and decode an angle $z$
+to $(\cos z,\sin z)$. Every point of the circle is reconstructed exactly.
+Now take the inputs at $+175^\circ$ and $-175^\circ$, as in the figure.
+They are $0.174$ apart. Their codes are $6.109$ apart. The code halfway
+between them is $0$, which decodes to $(1,0)$, at distance $1.998$ from
+both. Two neighbours in the data sit at opposite ends of the code, and
+the middle of the code is the far side of the data.
+
+No cleverer encoder avoids this. Let $f$ be any continuous encoder on the
+circle and define $h(\theta)=f(\theta)-f(\theta+\pi)$. Then
+$h(\theta+\pi)=-h(\theta)$, so $h$ takes both signs or is zero, and by
+the intermediate value theorem it vanishes somewhere. At that angle two
+antipodal points $\vec p$ and $-\vec p$ share a code and therefore a
+reconstruction $\vec a$. Since
+$\|\vec a-\vec p\|+\|\vec a+\vec p\|\geq2$, one of them is reconstructed
+with error at least $1$. This is I.12.T4, and
+[I.12.X09](/elementa/neural-networks/autoencoders/problems/x09) writes it
+out.
+
+So a continuous width-one code must fail somewhere on the circle, and an
+exact one must tear. A width-two code has no such difficulty. The circle
+has one degree of freedom and still needs two code numbers to be encoded
+continuously. The width a bottleneck needs depends on the shape of the
+data and not only on its dimension.
+
+## A code is a point, not a distribution
+
+Suppose the aim is to produce a new example. The decoder can turn any code
+into an output, so the question is which code to give it. The training set
+supplies $n$ codes. Nothing in (I.12.1) says which other codes are valid,
+how they are spread, or how far from a training code the decoder can still
+be trusted. In
+[I.12.B04](/elementa/neural-networks/autoencoders/problems/b04) the
+training codes lie between $-2.2$ and $2.2$, and the code $5$ decodes to
+$(5,-3.33)$, far outside the rectangle that holds all the data.
+
+An autoencoder defines two functions. It does not define a probability
+distribution over inputs or over codes. The denoising result (I.12.8) came
+closest, with a direction towards higher density but no density.
+
+Chapter I.13 supplies what is missing. The encoder there outputs a
+distribution over codes in place of a point, that distribution is tied to a
+fixed prior from which codes can be drawn, and the price is a term in the
+loss that reconstruction alone never asked for.
+
+## The tear, in six lines
+
+~~~python
+from math import atan2, cos, dist, radians, sin
+
+def encode(x): return atan2(x[1], x[0])
+def decode(z): return (cos(z), sin(z))
+
+a, b = decode(radians(175)), decode(radians(-175))
+m = decode((encode(a) + encode(b))/2)
+print(round(dist(a, b), 6), round(abs(encode(a) - encode(b)), 6), round(dist(m, a), 6))
+~~~
+
+It prints <code>0.174311 6.108652 1.998096</code>: the distance between
+the two inputs, the distance between their codes, and the distance from
+either input to the decoding of the midpoint code.

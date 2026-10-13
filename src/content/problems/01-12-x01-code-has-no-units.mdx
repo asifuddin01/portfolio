@@ -1,0 +1,55 @@
+---
+id: "I.12.X01"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A code has no units"
+depends:
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+A width-one linear autoencoder has $\mat E=(0.8,\,0.6)$ and
+$\mat D=(0.8,\,0.6)^{\mathsf T}$. Encode and reconstruct the new input
+$(2,-1)$, and find its squared error. Repeat with $\mat E'=(4,\,3)$ and
+$\mat D'=(0.16,\,0.12)^{\mathsf T}$. What do the two codes have in common,
+and what do they not?
+
+<Hint>
+Compute $\mat D\mat E$ and $\mat D'\mat E'$ before computing anything else.
+</Hint>
+
+<SolutionToggle>
+
+The code is $0.8\cdot2+0.6\cdot(-1)=1$. The reconstruction is
+$(0.8,\,0.6)$ and the residual is $(1.2,\,-1.6)$, with squared length
+$1.44+2.56=4$.
+
+With the second pair the code is $4\cdot2+3\cdot(-1)=5$, and the
+reconstruction is $(0.16\cdot5,\;0.12\cdot5)=(0.8,\,0.6)$ again. Both
+products equal
+
+$$
+\begin{bmatrix}0.64&0.48\\0.48&0.36\end{bmatrix},
+$$
+
+so the two autoencoders are the same function of the input and have the
+same loss on every dataset. They are the cases $\mat G=1$ and
+$\mat G=1/5$ of (I.12.5).
+
+The codes share their ordering and their ratios: one is five times the
+other for every input. They do not share a scale. A code's magnitude, and
+with more than one code unit its axes and the angles between them, are
+set by the factorisation that training happened to reach and not by the
+data.
+
+The input $(2,-1)$ is $\vec u_1-2\vec u_2$ in the eigenvectors
+$\vec u_1=(0.8,0.6)$ and $\vec u_2=(-0.6,0.8)$. The error $4$ is the square
+of its discarded component.
+
+</SolutionToggle>

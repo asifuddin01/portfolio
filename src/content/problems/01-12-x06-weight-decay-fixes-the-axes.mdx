@@ -1,0 +1,132 @@
+---
+id: "I.12.X06"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Weight decay fixes the axes"
+depends:
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+Add the penalty $\gamma(\|\mat E\|_F^2+\|\mat D\|_F^2)$, with $\gamma>0$, to
+the loss of (I.12.2).
+
+(a) Write the two stationarity conditions and prove that
+$\mat D^{\mathsf T}\mat D=\mat E\mat E^{\mathsf T}$ at every stationary
+point.
+
+(b) Let $\mat D=\mat U_k\mat C$ and $\mat E=\mat D^{\mathsf T}$ with
+$\mat C=\operatorname{diag}(c_1,\ldots,c_k)$. Show that this pair is
+stationary when $c_i^2=1-\gamma/\lambda_i$, and find the end-to-end map.
+
+(c) For the four points, with $k=2$ and $\gamma=0.5$, find the gains, the
+decoder and the value of the objective. Compare it with the identity.
+
+(d) Explain why the principal axes can be read from this decoder and not
+from an unpenalised one.
+
+(e) What happens to a direction with $\lambda_i\leq\gamma$?
+
+<Hint>
+For (b), use $\mat S\mat U_k=\mat U_k\mat\Lambda_k$ and
+$\mat U_k^{\mathsf T}\mat U_k=\mat I$, where
+$\mat\Lambda_k=\operatorname{diag}(\lambda_1,\ldots,\lambda_k)$.
+</Hint>
+
+<SolutionToggle>
+
+**(a)** The penalty adds $2\gamma\mat D$ and $2\gamma\mat E$ to the
+gradients of (I.12.2). Setting both to zero:
+
+$$
+\begin{aligned}
+(\mat I-\mat D\mat E)\,\mat S\,\mat E^{\mathsf T}&=\gamma\mat D,\\
+\mat D^{\mathsf T}(\mat I-\mat D\mat E)\,\mat S&=\gamma\mat E.
+\end{aligned}
+$$
+
+Multiply the first on the left by $\mat D^{\mathsf T}$ and the second on
+the right by $\mat E^{\mathsf T}$. Both left-hand sides become
+$\mat D^{\mathsf T}(\mat I-\mat D\mat E)\mat S\mat E^{\mathsf T}$, so
+$\gamma\mat D^{\mathsf T}\mat D=\gamma\mat E\mat E^{\mathsf T}$. Divide by
+$\gamma$.
+
+**(b)** Here $\mat D\mat E=\mat U_k\mat C^2\mat U_k^{\mathsf T}$. Using the
+hint,
+
+$$
+\begin{aligned}
+&(\mat I-\mat D\mat E)\,\mat S\,\mat E^{\mathsf T}\\
+&\;\;=(\mat I-\mat U_k\mat C^2\mat U_k^{\mathsf T})\,\mat U_k\mat\Lambda_k\mat C\\
+&\;\;=\mat U_k(\mat I-\mat C^2)\mat\Lambda_k\mat C.
+\end{aligned}
+$$
+
+This equals $\gamma\mat D=\gamma\mat U_k\mat C$ when
+$(1-c_i^2)\lambda_i=\gamma$ for every $i$, that is,
+$c_i^2=1-\gamma/\lambda_i$. Since $\mat D\mat E$ and $\mat S$ are both
+symmetric and share eigenvectors, they commute, and the second condition
+is the transpose of the first. The end-to-end map is
+
+$$
+\mat D\mat E=\mat U_k\operatorname{diag}(1-\gamma/\lambda_i)\,
+ \mat U_k^{\mathsf T}.
+$$
+
+Replacing $\mat D$ by $\mat D\mat O^{\mathsf T}$ and $\mat E$ by
+$\mat O\mat E$ for an orthogonal $\mat O$ changes neither condition nor
+either norm. That gives the family (I.12.6).
+
+**(c)** The gains are $1-0.5/4=0.875$ and $1-0.5/1=0.5$, so
+$c=(0.935414,\;0.707107)$. The decoder's columns are
+
+$$
+\begin{aligned}
+0.935414\begin{bmatrix}0.8\\0.6\end{bmatrix}
+ &=\begin{bmatrix}0.748331\\0.561249\end{bmatrix},\\[2pt]
+0.707107\begin{bmatrix}-0.6\\0.8\end{bmatrix}
+ &=\begin{bmatrix}-0.424264\\0.565685\end{bmatrix}.
+\end{aligned}
+$$
+
+The reconstruction term is
+$\sum_i(1-g_i)^2\lambda_i=0.0625+0.25=0.3125$. The penalty is
+$\gamma\cdot2\sum_ic_i^2=0.5\cdot2\cdot1.375=1.375$. The objective is
+$1.6875$. The identity, $\mat E=\mat D=\mat I$, reconstructs exactly and
+pays $0.5\cdot4=2$. With weight decay, copying is no longer the best
+answer even at full width.
+
+**(d)** The expression $\mat D=\mat U_k\mat C\mat O^{\mathsf T}$ is a
+singular value decomposition of the decoder: left singular vectors
+$\vec u_i$, singular values $c_i$. When the $\lambda_i$ are distinct, so
+are the $c_i$, and the left singular vectors are determined up to sign and
+come out in order of $\lambda_i$. The unknown rotation $\mat O$ sits on the
+right and does not disturb them.
+
+Without the penalty the decoder is $\mat U_k\mat G$ for an arbitrary
+invertible $\mat G$. Its left singular vectors are $\mat U_k$ times those
+of $\mat G$, which can be any orthonormal basis of the subspace.
+
+**(e)** In this family the contribution of one direction to the objective
+is $(1-c^2)^2\lambda+2\gamma c^2$. Its derivative with respect to $c^2$ is
+$-2(1-c^2)\lambda+2\gamma$, which is non-negative for all $c^2\geq0$ when
+$\lambda\leq\gamma$. The best choice is then $c=0$: the direction is not
+learned at all. Weight decay sets a floor on the variance a direction
+needs before it is worth representing.
+
+For the four points with $\gamma=1$, the second direction has
+$\lambda_2=\gamma$ and is dropped. The first has gain $0.75$, the decoder
+is $\sqrt{0.75}\,\vec u_1=(0.692820,\;0.519615)$, and the objective is
+$0.25+1+1.5=2.75$.
+
+The script checks the stationarity of (c) to machine precision, confirms
+that sixteen small perturbations all raise the objective, and confirms
+that rotating the code leaves it unchanged.
+
+</SolutionToggle>

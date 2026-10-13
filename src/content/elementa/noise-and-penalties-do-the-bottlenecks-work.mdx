@@ -1,0 +1,275 @@
+---
+chapter: neural-networks--autoencoders
+proposition: 3
+statement: "Noise, contraction and sparsity do a bottleneck's work without narrowing the code."
+claim: "Each makes copying suboptimal in its own way. For a linear map every one of them is a gain on each principal direction, and the best possible denoiser moves a corrupted point towards higher density."
+given:
+  - reconstruction-manufactures-its-own-target
+  - a-linear-autoencoder-finds-the-principal-subspace
+  - regularisation-decides-which-fit-you-get
+  - every-loss-is-a-likelihood
+figure: FigRegulariserGains
+figureType: D
+status: published
+updated: 2026-10-13
+sources:
+  - title: "Extracting and Composing Robust Features with Denoising Autoencoders"
+    url: https://doi.org/10.1145/1390156.1390294
+  - title: "A Connection Between Score Matching and Denoising Autoencoders"
+    url: https://doi.org/10.1162/NECO_a_00142
+  - title: "What Regularized Auto-Encoders Learn from the Data-Generating Distribution"
+    url: https://jmlr.org/papers/v15/alain14a.html
+  - title: "Training with Noise is Equivalent to Tikhonov Regularization"
+    url: https://doi.org/10.1162/neco.1995.7.1.108
+  - title: "Tweedie's Formula and Selection Bias"
+    url: https://doi.org/10.1198/jasa.2011.tm11181
+  - title: "Contractive Auto-Encoders: Explicit Invariance During Feature Extraction"
+    url: https://icml.cc/2011/papers/455_icmlpaper.pdf
+  - title: "Emergence of simple-cell receptive field properties by learning a sparse code for natural images"
+    url: https://doi.org/10.1038/381607a0
+  - title: "k-Sparse Autoencoders"
+    url: https://arxiv.org/abs/1312.5663
+---
+
+## Three ways to refuse the copy
+
+With $k\geq d$ the identity is available, and by proposition 1 it is
+optimal. Three classical changes to the objective each make it suboptimal
+without narrowing the code.
+
+- **Corrupt the input and keep the clean target.** This is the denoising
+  autoencoder of Vincent, Larochelle, Bengio and Manzagol (2008).
+- **Penalise how sharply the code responds to its input.** This is the
+  contractive autoencoder of Rifai and colleagues (2011).
+- **Penalise the size of the code.** This is sparse coding in the form
+  Olshausen and Field (1996) gave it.
+
+Each is a regulariser in the sense of I.8: among many maps that
+reconstruct well, it decides which one is chosen. For a linear autoencoder
+the choice has an exact description. Every one of these methods multiplies
+each principal direction of the data by a gain between zero and one. The
+figure shows the gains for the four points of this chapter, whose
+eigenvalues are $4$ and $1$. A bottleneck cuts. The others shrink.
+
+## Noise turns reconstruction into shrinkage
+
+Corrupt each input as $\tilde{\vec x}=\vec x+\vec\varepsilon$, where
+$\vec\varepsilon$ is independent of $\vec x$ with mean zero and covariance
+$\sigma^2\mat I$. Train a linear map $\mat M$ to return the clean input.
+Expanding the square, the cross term between $(\mat M-\mat I)\vec x$ and
+$\mat M\vec\varepsilon$ has mean zero, and
+$\E\|\mat M\vec\varepsilon\|^2=\sigma^2\operatorname{tr}(\mat M\mat M^{\mathsf T})$:
+
+<Eq id="I.12.7" gloss="Input noise is a ridge penalty on the end-to-end map.">
+
+$$
+\begin{aligned}
+&\E\big\|\mat M(\vec x+\vec\varepsilon)-\vec x\big\|^2\\
+&\;\;=\operatorname{tr}\big((\mat M-\mat I)\mat S(\mat M-\mat I)^{\mathsf T}\big)\\
+&\;\;\quad+\sigma^2\|\mat M\|_F^2,\\[6pt]
+&\mat M^\star=\mat S(\mat S+\sigma^2\mat I)^{-1}\\
+&\;\;=\sum_{i=1}^d\frac{\lambda_i}{\lambda_i+\sigma^2}\,
+ \vec u_i\vec u_i^{\mathsf T}.
+\end{aligned}
+$$
+
+</Eq>
+
+The first identity is the clean reconstruction loss plus weight decay of
+strength $\sigma^2$ on the end-to-end map. Only the mean and covariance of
+the noise were used. The second sets the gradient
+$2(\mat M-\mat I)\mat S+2\sigma^2\mat M$ to zero.
+
+No bottleneck appears in (I.12.7), and the optimum is still not the
+identity. A direction with $\lambda_i\gg\sigma^2$ passes almost unchanged.
+A direction with $\lambda_i\ll\sigma^2$ is nearly removed, because there
+the corrupted input is mostly noise. Principal components make a hard cut
+at position $k$; noise makes a soft one at the scale $\sigma^2$. With a
+bottleneck as well, the optimum keeps the top $k$ directions and shrinks
+them by the same gains.
+[I.12.B03](/elementa/neural-networks/autoencoders/problems/b03) works both
+cases and the two limits: as $\sigma^2\to0$ the map returns to the
+identity, and as $\sigma^2\to\infty$ it outputs the mean.
+
+## The best denoiser points uphill in density
+
+Drop linearity. Among all functions $r$, the expected squared error
+$\E\|r(\tilde{\vec x})-\vec x\|^2$ is minimised by a conditional mean,
+$r^\star(\tilde{\vec x})=\E[\vec x\mid\tilde{\vec x}]$, by the result of
+I.4 for squared error.
+
+For Gaussian noise that mean has a second form. Write $\phi$ for the
+density of the noise, a Gaussian with mean zero and covariance
+$\sigma^2\mat I$. The corrupted data have density
+$p_\sigma(\tilde{\vec x})=\int p(\vec x)\,\phi(\tilde{\vec x}-\vec x)\,d\vec x$.
+Differentiating $\phi(\tilde{\vec x}-\vec x)$ with respect to
+$\tilde{\vec x}$ multiplies it by $(\vec x-\tilde{\vec x})/\sigma^2$, so
+
+$$
+\begin{aligned}
+&\nabla p_\sigma(\tilde{\vec x})\\
+&\;\;=\frac1{\sigma^2}\int p(\vec x)\,\phi(\tilde{\vec x}-\vec x)\,
+ (\vec x-\tilde{\vec x})\,d\vec x\\
+&\;\;=\frac{p_\sigma(\tilde{\vec x})}{\sigma^2}
+ \big(\E[\vec x\mid\tilde{\vec x}]-\tilde{\vec x}\big).
+\end{aligned}
+$$
+
+Dividing by $p_\sigma$ gives
+
+<Eq id="I.12.8" gloss="The best denoiser moves a corrupted point up the noised density.">
+
+$$
+\E[\vec x\mid\tilde{\vec x}]
+ =\tilde{\vec x}+\sigma^2\,\nabla\log p_\sigma(\tilde{\vec x}).
+$$
+
+</Eq>
+
+This is I.12.T3. Statisticians know it as Tweedie's formula (Efron 2011).
+Vincent (2011) and Alain and Bengio (2014) read it for autoencoders: the
+displacement $r^\star(\tilde{\vec x})-\tilde{\vec x}$ of the best denoiser
+is $\sigma^2$ times the score of the noised density. A denoising
+autoencoder trained to its optimum has therefore estimated a vector field
+that points from every corrupted input towards higher density. It has
+learned something about the distribution without writing a density down.
+Models that generate by denoising repeatedly start from this identity.
+
+For Gaussian data, (I.12.8) is (I.12.7) again. The noised density is
+$\mathcal N(\vec 0,\mat S+\sigma^2\mat I)$, its score is
+$-(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x}$, and
+
+$$
+\begin{aligned}
+&\tilde{\vec x}-\sigma^2(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x}\\
+&\;\;=\mat S(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x}.
+\end{aligned}
+$$
+
+The identity also explains a familiar defect. If the clean input is $+1$ or
+$-1$ with equal probability, the best denoiser is
+$\tanh(\tilde x/\sigma^2)$
+([I.12.X08](/elementa/neural-networks/autoencoders/problems/x08)). At
+$\tilde x=0$ it returns $0$, which is not a possible input. A conditional
+mean of two sharp alternatives lies between them. Squared-error
+reconstructions of ambiguous inputs are blurred for this reason, and no
+amount of training removes it.
+
+The corruption need not be additive. Vincent and colleagues (2008) set a
+random subset of the input's coordinates to zero. The best reconstruction
+is still a conditional mean, of the hidden coordinates given the visible
+ones, but (I.12.8) no longer applies. Predicting the hidden part of an
+input from the rest is the same objective with deletion as the corruption.
+
+## A penalty on the Jacobian says it directly
+
+The contractive autoencoder adds $\beta\|\mat J_f(\vec x)\|_F^2$ at every
+training point, where $\mat J_f$ is the encoder's Jacobian. For a sigmoid
+code $\vec h=\sigma(\mat W\vec x+\vec b)$ the Jacobian is
+$\operatorname{diag}(\vec h\odot(1-\vec h))\,\mat W$, so the penalty is
+$\sum_j\big(h_j(1-h_j)\big)^2\|\vec w_j\|^2$ with $\vec w_j$ the $j$-th row
+of $\mat W$. It costs one pass over the weights.
+
+Noise imposes nearly the same thing on the whole reconstruction map
+$r=g\circ f$. Expand $r(\vec x+\vec\varepsilon)$ to first order as
+$r(\vec x)+\mat J_r(\vec x)\vec\varepsilon$. As in (I.12.7),
+
+$$
+\begin{aligned}
+&\E_{\vec\varepsilon}\big\|r(\vec x+\vec\varepsilon)-\vec x\big\|^2\\
+&\;\;=\|r(\vec x)-\vec x\|^2
+ +\sigma^2\|\mat J_r(\vec x)\|_F^2\\
+&\;\;\quad+o(\sigma^2)
+\end{aligned}
+$$
+
+near the optimum, where the second-order term of the expansion is
+multiplied by the small residual $r(\vec x)-\vec x$ and drops out at this
+order (Bishop 1995; Alain and Bengio 2014). For a linear map the relation
+is exact and is the first identity of (I.12.7).
+
+So the two methods differ in what they flatten. Denoising penalises the
+Jacobian of the reconstruction; the contractive penalty acts on the code.
+Both pull against the reconstruction term, which needs the map to vary
+along the data in order to tell examples apart. The compromise is a map
+that responds to movement along the data and ignores movement away from it.
+
+## Sparsity needs a fixed decoder scale
+
+A sparse autoencoder adds $\beta\sum_j|z_j|$ to the loss, usually with more
+code units than inputs, so that each input is rebuilt from a few active
+units out of many. Its effect is visible in one coordinate. For a target
+$a$, minimise $(a-z)^2+\beta|z|$. For $z>0$ the derivative
+$-2(a-z)+\beta$ vanishes at $z=a-\beta/2$, which is positive only if
+$a>\beta/2$. The negative side is symmetric, and otherwise $z=0$ is best:
+
+<Eq id="I.12.9" gloss="An L1 penalty zeroes small codes and shortens the rest.">
+
+$$
+\begin{aligned}
+&\operatorname*{arg\,min}_z\;(a-z)^2+\beta|z|\\
+&\;\;=\operatorname{sign}(a)\,\max\!\big(|a|-\tfrac\beta2,\,0\big).
+\end{aligned}
+$$
+
+</Eq>
+
+Two things follow from (I.12.9). Codes below the threshold are exactly
+zero, which is the sparsity. Every surviving code is shortened by
+$\beta/2$, which is a bias in its amplitude.
+
+The penalty is only meaningful if the decoder cannot undo it. Divide the
+encoder by a constant $c$ and multiply the decoder by $c$. Every
+reconstruction is unchanged and the penalty falls by the factor $c$. As $c$
+grows the objective approaches the unpenalised loss without reaching it,
+and the penalty has bought nothing but large weights. The remedy is to hold
+every decoder column at unit norm, or to weight each $|z_j|$ by the norm of
+its column.
+[I.12.X07](/elementa/neural-networks/autoencoders/problems/x07) computes
+both sides. The same scaling defeats a contractive penalty when the
+decoder is free. Rifai and colleagues tie the weights, noting that this
+rules out a contracting encoder paired with an expanding decoder.
+
+Makhzani and Frey (2013) replace the penalty by a hard rule: keep a fixed
+number of the largest code coordinates and zero the rest. That gives
+sparsity without the shortening of (I.12.9).
+
+## Width is not capacity
+
+All of these control the map and not only the code. One more quantity
+needs control, and it is the oldest in the book.
+
+A decoder with enough freedom can pass its reconstruction surface through
+every training point, however narrow the code. In
+[I.12.B04](/elementa/neural-networks/autoencoders/problems/b04) a
+width-one code and a decoder with two ReLU kinks reconstruct all four
+training points exactly: training loss $0$, against $1$ for the principal
+axis. On a held-out point from the same rectangle the order reverses, with
+a squared error of $4$ against $1$.
+
+A bottleneck bounds the dimension of the surface. The size of the encoder
+and decoder, and the amount of data, bound how it bends. Reconstruction
+error is a training loss like any other, and by I.1 it must be read on
+held-out data.
+
+## Reproduce the gains
+
+~~~python
+lam = (4.0, 1.0)                      # eigenvalues of the four-point covariance
+noise, decay = 1.0, 0.5
+rows = {
+    "bottleneck k=1": [1.0, 0.0],
+    "noise": [l/(l + noise) for l in lam],
+    "weight decay": [1 - decay/l for l in lam],
+}
+for name, gains in rows.items():
+    error = sum((1 - g)**2*l for g, l in zip(gains, lam))
+    print(f"{name}: gains {gains}, clean error {error:.4f}")
+~~~
+
+It prints gains $(1,0)$, $(0.8,0.5)$ and $(0.875,0.5)$, with clean
+reconstruction errors $1.0000$, $0.4100$ and $0.3125$. The noise row is
+(I.12.7) and the weight-decay row is (I.12.6). A map with gains $g_i$
+leaves the error $\sum_i(1-g_i)^2\lambda_i$ on clean inputs. The two
+shrinking methods reconstruct the training data better than the
+bottleneck does, and neither has learned to copy.

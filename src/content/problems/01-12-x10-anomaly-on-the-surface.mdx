@@ -1,0 +1,69 @@
+---
+id: "I.12.X10"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "An anomaly on the surface scores zero"
+depends:
+  - "I.12.P04"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+The best width-one linear autoencoder for the four points $(1,2)$,
+$(2.2,0.4)$, $(-1,-2)$ and $(-2.2,-0.4)$ projects onto
+$\vec u_1=(0.8,0.6)$. Its squared reconstruction error is used as an
+anomaly score, and any input scoring above $1.5$ is flagged.
+
+(a) Find the scores of the four training points.
+
+(b) Find the scores of $(8,6)$ and of $(-1.2,1.6)$, and the distance from
+each to its nearest training point.
+
+(c) Which of the two is flagged?
+
+(d) What does the score measure, and what would be needed to flag the
+other one?
+
+<Hint>
+Write each new point in the eigenvectors $\vec u_1=(0.8,0.6)$ and
+$\vec u_2=(-0.6,0.8)$. The score is the square of the $\vec u_2$ component.
+</Hint>
+
+<SolutionToggle>
+
+**(a)** Each training point has a component of $\pm1$ along $\vec u_2$, so
+every score is $1$. The threshold of $1.5$ passes all of them.
+
+**(b)** The point $(8,6)$ is $10\,\vec u_1$. It lies on the principal axis
+and its score is $0$. Its nearest training points are $(1,2)$ and
+$(2.2,0.4)$, each at distance $\sqrt{65}=8.062258$.
+
+The point $(-1.2,1.6)$ is $2\,\vec u_2$. Its score is $4$. Its nearest
+training points are $(1,2)$ and $(-2.2,-0.4)$, each at distance
+$\sqrt5=2.236068$.
+
+**(c)** Only $(-1.2,1.6)$ is flagged. The point $(8,6)$ passes with the
+lowest score of any input seen so far, lower than every training point,
+though it is more than three times as far from the data as the point that
+was flagged.
+
+**(d)** The score is the squared distance from the reconstruction surface,
+here a line. It says nothing about where along the line an input falls.
+The line extends without end, and the data occupy a short stretch of it.
+
+To flag $(8,6)$ one must know which codes are usual. Its code is $10$,
+where the training codes are $\pm2$. Reconstruction error does not look at
+the code, and (I.12.1) defines no distribution over codes against which
+$10$ could be judged improbable. A threshold on the size of the code would
+catch this case and would be a second detector, added by hand.
+
+The failure grows with the quality of the model. A decoder that
+generalises well reconstructs inputs it was never shown, and each of them
+scores as normal.
+
+</SolutionToggle>

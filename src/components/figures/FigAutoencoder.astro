@@ -1,0 +1,54 @@
+---
+/**
+ * Book I, Ch. XII, Prop. 1: an autoencoder. Five numbers go in, two survive
+ * the middle, five come out, and the loss compares the output with the input.
+ */
+const ROWS = [78, 108, 138, 168, 198];
+const CODE = [123, 153];
+const IN_X = 70, CODE_X = 220, OUT_X = 370;
+---
+<svg class="fig" viewBox="0 0 440 318" role="img" aria-labelledby="ae-t ae-d" style="--fig-min: 0px">
+  <title id="ae-t">An autoencoder and its loss</title>
+  <desc id="ae-d">
+    Five input units connect to two code units, which connect to five output
+    units. The left half is the encoder and the right half is the decoder. A
+    bracket beneath joins the output back to the input: the loss is the squared
+    distance between them, so the input serves as its own target.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">five in · two kept · five out</text>
+
+  {ROWS.map((y) => CODE.map((cy) => (
+    <g>
+      <line x1={IN_X + 7} y1={y} x2={CODE_X - 8} y2={cy} class="wire-soft" />
+      <line x1={CODE_X + 8} y1={cy} x2={OUT_X - 7} y2={y} class="wire-soft" />
+    </g>
+  )))}
+
+  {ROWS.map((y) => (
+    <g>
+      <circle cx={IN_X} cy={y} r="7" class="bx-fill" />
+      <circle cx={OUT_X} cy={y} r="7" class="bx-fill" />
+    </g>
+  ))}
+  {CODE.map((cy) => (
+    <g>
+      <circle cx={CODE_X} cy={cy} r="8" class="a3" opacity="0.22" />
+      <circle cx={CODE_X} cy={cy} r="8" class="s3" stroke-width="2" />
+    </g>
+  ))}
+
+  <text x={IN_X} y="56" class="t-md" text-anchor="middle">input x</text>
+  <text x={CODE_X} y="56" class="t-md" text-anchor="middle">code z</text>
+  <text x={OUT_X} y="56" class="t-md" text-anchor="middle">output x̂</text>
+
+  <text x="145" y="226" class="t-key" text-anchor="middle">encoder f</text>
+  <text x="295" y="226" class="t-key" text-anchor="middle">decoder g</text>
+
+  <path d={`M ${OUT_X} 214 V 250 H ${IN_X} V 222`} class="dash" />
+  <polygon points={`${IN_X - 5},224 ${IN_X},212 ${IN_X + 5},224`} class="head" />
+  <text x="220" y="268" class="t-md" text-anchor="middle">loss = ‖x − x̂‖²</text>
+
+  <text x="8" y="292" class="t-sm">No label enters: the input is its own target.</text>
+  <text x="8" y="311" class="t-sm">Two numbers cannot hold five. The loss decides what is kept.</text>
+</svg>

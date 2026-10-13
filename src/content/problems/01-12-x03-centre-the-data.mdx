@@ -1,0 +1,60 @@
+---
+id: "I.12.X03"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Centre the data, or the code spends itself on the mean"
+depends:
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+Three inputs are $(10,-1)$, $(10,0)$ and $(10,1)$. A width-one linear
+autoencoder without biases is trained on them as they are. Find the
+direction it keeps, the three codes and the loss. Then subtract the mean
+first and repeat. Which result is the principal subspace?
+
+<Hint>
+Without centring, the matrix in (I.12.2) is the second-moment matrix
+$\frac1n\mat X^{\mathsf T}\mat X$ and not the covariance. Apply I.12.T1 to
+whichever matrix the loss contains.
+</Hint>
+
+<SolutionToggle>
+
+**As they are.** The second-moment matrix is
+
+$$
+\frac13\mat X^{\mathsf T}\mat X
+ =\begin{bmatrix}100&0\\0&2/3\end{bmatrix}.
+$$
+
+The algebra of I.12.T1 applies to this matrix. Its largest eigenvalue is
+$100$, with eigenvector $(1,0)$, so the autoencoder keeps the first
+coordinate. All three codes are $10$. Every input is reconstructed as
+$(10,0)$ and the loss is the other eigenvalue, $2/3=0.666667$.
+
+The code is the same number for every example. It carries no information
+about which example it came from.
+
+**Centred.** The mean is $(10,0)$, and the centred inputs are $(0,-1)$,
+$(0,0)$ and $(0,1)$. The covariance is
+$\begin{bmatrix}0&0\\0&2/3\end{bmatrix}$. Its largest eigenvalue is $2/3$,
+with eigenvector $(0,1)$. The codes are $-1$, $0$ and $1$, and the loss is
+the other eigenvalue, $0$.
+
+The second result is the principal subspace: the direction along which the
+data vary. The first is the direction in which the data are large. The two
+matrices differ by $\vec\mu\vec\mu^{\mathsf T}$ for the mean $\vec\mu$, and
+when the mean is long compared with the spread, that term dominates and
+the leading direction is close to $\vec\mu$ itself.
+
+An autoencoder with a bias in the decoder can learn the mean and escape
+this. Without one, centre the data first.
+
+</SolutionToggle>

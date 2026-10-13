@@ -1,0 +1,248 @@
+---
+chapter: neural-networks--autoencoders
+proposition: 1
+statement: "An autoencoder is supervised learning whose target is its own input."
+claim: "Reconstruction turns unlabelled data into a regression problem. The loss alone does not ask for a representation: without a constraint the best answer is to copy, and the constraint decides what is learned."
+given:
+  - a-hidden-layer-is-a-learned-coordinate-system
+  - every-loss-is-a-likelihood
+  - backpropagation-is-the-chain-rule-over-a-graph
+figure: FigAutoencoder
+figureType: C
+status: published
+updated: 2026-10-13
+sources:
+  - title: "Auto-association by multilayer perceptrons and singular value decomposition"
+    url: https://doi.org/10.1007/BF00332918
+  - title: "Reducing the Dimensionality of Data with Neural Networks"
+    url: https://doi.org/10.1126/science.1127647
+  - title: "Deep Learning, Chapter 14: Autoencoders"
+    url: https://www.deeplearningbook.org/contents/autoencoders.html
+  - title: "MSELoss: the reduction argument"
+    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html
+---
+
+## The label was there all along
+
+Chapters I.2 to I.11 fitted a function to pairs of an input and a label.
+An autoencoder is fitted to the inputs alone. It composes two maps, an
+encoder $f:\R^d\to\R^k$ and a decoder $g:\R^k\to\R^d$, and is trained so
+that the output reproduces the input:
+
+<Eq id="I.12.1" gloss="A regression problem in which every example is its own target.">
+
+$$
+\begin{aligned}
+\vec z&=f(\vec x),\qquad \hat{\vec x}=g(\vec z),\\
+\mathcal L(\theta)&=\frac1n\sum_{i=1}^n
+ \big\|\vec x_i-g(f(\vec x_i))\big\|^2.
+\end{aligned}
+$$
+
+</Eq>
+
+The vector $\vec z$ is the code, $\hat{\vec x}$ is the reconstruction, and
+$\theta$ collects the parameters of both maps. Nothing in (I.12.1) is new
+machinery. It is the regression loss of I.4 with the target set equal to
+the input. Its gradient comes from the backward pass of I.6, and the
+optimisers of I.7 follow it.
+
+What changes is where the interest lies. In regression the output is the
+product. Here the output is known before training starts, and the product is
+the intermediate vector $\vec z$.
+
+The loss is still a likelihood. By I.4, squared error is the negative
+log-likelihood of a Gaussian of fixed variance centred on $\hat{\vec x}$,
+up to constants. For inputs in $[0,1]$ a sigmoid output with binary
+cross-entropy is the Bernoulli counterpart. The choice states which errors
+the model may ignore. It does not change the argument below.
+
+## What stops it copying?
+
+Suppose $k\geq d$ and both maps are unrestricted. Then $f$ and $g$ can each
+be the identity, the loss is exactly zero, and the code is the input.
+Zero is the best value the loss can take, and reaching it this way has
+taught the network nothing.
+[I.12.X04](/elementa/neural-networks/autoencoders/problems/x04) builds such
+a pair and shows it reconstructs points far from the data just as exactly.
+
+So an autoencoder is defined by what prevents the copy. The oldest device
+is a bottleneck: choose $k<d$. Every reconstruction is then $g(\vec z)$ for
+some $\vec z\in\R^k$, so it lies in the image of the decoder,
+
+$$
+\mathcal M=\{\,g(\vec z):\vec z\in\R^k\,\}.
+$$
+
+Call $\mathcal M$ the reconstruction surface. Its points are indexed by $k$
+numbers: a curve when $k=1$, a surface when $k=2$. This gives the picture to
+keep. The decoder draws a surface in input space. The encoder chooses, for
+each input, a point on it. The loss is the mean squared distance between
+the inputs and their chosen points.
+
+When the decoder is linear, $\mathcal M$ is a subspace of dimension at
+most $k$. The end-to-end map then has rank at most $k$
+(<ApparatusRef ref="0.LA.04" />), and at least $d-k$ directions of the input
+are sent to zero. Two inputs that differ along one of them receive the same
+code. This is the discarded subspace of
+[I.5.X04](/elementa/neural-networks/mlp/problems/x04), now chosen on purpose.
+
+The bottleneck does not say which surface. The loss does, and the next
+proposition finds the answer exactly for linear maps.
+
+The width $k$ bounds the dimension of the surface. It does not bound how
+far the surface can bend. A decoder with enough freedom can thread a curve
+through every training point, and
+[I.12.B04](/elementa/neural-networks/autoencoders/problems/b04) does so
+with a single code number.
+
+## The data enter through one matrix
+
+Take the linear case, where every step can be written out. Let
+$\vec z=\mat E\vec x$ and $\hat{\vec x}=\mat D\vec z$ with
+$\mat E\in\R^{k\times d}$ and $\mat D\in\R^{d\times k}$. Stack the examples
+as the rows of $\mat X\in\R^{n\times d}$. The codes are
+$\mat Z=\mat X\mat E^{\mathsf T}$, of shape $n\times k$, and the
+reconstructions are $\mat Z\mat D^{\mathsf T}$, of shape $n\times d$.
+
+Write $\mat S=\frac1n\mat X^{\mathsf T}\mat X$ for the second-moment matrix,
+which is the covariance when the data are centred
+(<ApparatusRef ref="0.PR.03" />). For one example the squared error is a
+trace,
+
+$$
+\begin{aligned}
+&\|\vec x-\mat D\mat E\vec x\|^2\\
+&\;\;=\operatorname{tr}\big((\mat I-\mat D\mat E)\,\vec x\vec x^{\mathsf T}
+ (\mat I-\mat D\mat E)^{\mathsf T}\big),
+\end{aligned}
+$$
+
+and averaging over the examples replaces $\vec x\vec x^{\mathsf T}$ by
+$\mat S$:
+
+<Eq id="I.12.2" gloss="The data enter only through S, and each half's gradient passes through the other half.">
+
+$$
+\begin{aligned}
+\mathcal L&=\operatorname{tr}\big(
+ (\mat I-\mat D\mat E)\,\mat S\,(\mat I-\mat D\mat E)^{\mathsf T}\big),\\
+\nabla_{\mat D}\mathcal L&=
+ -2\,(\mat I-\mat D\mat E)\,\mat S\,\mat E^{\mathsf T},\\
+\nabla_{\mat E}\mathcal L&=
+ -2\,\mat D^{\mathsf T}(\mat I-\mat D\mat E)\,\mat S.
+\end{aligned}
+$$
+
+</Eq>
+
+To derive the gradients, write $\mat M=\mat D\mat E$ for the end-to-end
+map. A change $d\mat M$ changes the loss by
+$-2\operatorname{tr}\big((\mat I-\mat M)\mat S\,d\mat M^{\mathsf T}\big)$,
+because the two terms of the product rule are transposes of each other and
+$\mat S$ is symmetric. So
+$\nabla_{\mat M}\mathcal L=-2(\mat I-\mat M)\mat S$. The chain rule for a
+matrix product (<ApparatusRef ref="0.MC.07" />) gives
+$\nabla_{\mat D}\mathcal L=(\nabla_{\mat M}\mathcal L)\mat E^{\mathsf T}$ and
+$\nabla_{\mat E}\mathcal L=\mat D^{\mathsf T}(\nabla_{\mat M}\mathcal L)$.
+The shapes are $d\times k$ and $k\times d$, as they must be.
+
+The first line of (I.12.2) says that a linear autoencoder sees its data
+only through $\mat S$. Two datasets with the same second-moment matrix give
+it the same loss surface.
+
+## One backward pass through both halves
+
+The same gradients appear when (I.12.1) is differentiated one example at a
+time, as in I.6. The output error is
+$\vec\delta=2(\hat{\vec x}-\vec x)$. The decoder's gradient is
+$\vec\delta\vec z^{\mathsf T}$. The error passes back through the decoder
+as $\mat D^{\mathsf T}\vec\delta$, and the encoder's gradient is
+$(\mat D^{\mathsf T}\vec\delta)\vec x^{\mathsf T}$. Averaging over the data
+returns (I.12.2).
+
+Two consequences follow from the order of the factors.
+
+The encoder learns only through the decoder. Its gradient begins with
+$\mat D^{\mathsf T}$, so a decoder that cannot yet express the residual
+passes nothing back. In
+[I.12.X02](/elementa/neural-networks/autoencoders/problems/x02) the
+encoder's first gradient is exactly zero while the decoder's is not. In the
+extreme case $\mat E=\mat 0$ and $\mat D=\mat 0$ both gradients vanish, and
+the loss stays at $\operatorname{tr}\mat S$ for ever.
+
+A tied autoencoder sets $\mat D=\mat E^{\mathsf T}=\mat W^{\mathsf T}$. One
+matrix then plays two roles, and by the accumulation rule of I.6 its
+gradient is the sum of both:
+
+$$
+\begin{aligned}
+\nabla_{\mat W}\mathcal L&=-2\,\mat W(\mat R+\mat R^{\mathsf T}),\\
+\mat R&=(\mat I-\mat W^{\mathsf T}\mat W)\,\mat S.
+\end{aligned}
+$$
+
+The term with $\mat R$ is the encoder's role and the term with
+$\mat R^{\mathsf T}$ is the decoder's, transposed into the shape of
+$\mat W$. Dropping either is the shared-weight error of I.9 and I.11 in a
+new place.
+
+With a nonlinearity $\varphi$ in the code, $\vec h=\varphi(\mat E\vec x+\vec b)$
+and $\hat{\vec x}=\mat D\vec h+\vec c$, the backward pass gains one factor:
+the error entering the encoder is
+$(\mat D^{\mathsf T}\vec\delta)\odot\varphi'(\mat E\vec x+\vec b)$. Nothing
+else changes.
+
+## What the hourglass costs
+
+A one-hidden-layer autoencoder with biases has $2dk+k+d$ parameters, or
+$dk+k+d$ with tied weights. For $d=784$ and $k=32$ these are $50{,}992$ and
+$25{,}904$. One forward pass costs $2dk=50{,}176$ multiply-accumulates.
+[I.12.B05](/elementa/neural-networks/autoencoders/problems/b05) counts a
+deeper dense stack and a convolutional one.
+
+Two counts deserve suspicion.
+
+The code is $k$ real numbers, which is a count of coordinates and not of
+information. One real number can index every example of a finite training
+set. The bottleneck constrains only together with the limited flexibility
+of $f$ and $g$.
+
+The reduction is part of the loss, as in I.4. Equation (I.12.1) sums over
+the $d$ coordinates and averages over the $n$ examples. A library default
+that averages over all $nd$ numbers divides the loss and its gradient by
+$d$. Alone that rescales the learning rate. Next to a penalty with its own
+coefficient it changes the balance by a factor of $d$, which is $784$ for a
+$28\times28$ image.
+
+## A pass small enough to inspect
+
+The chapter uses one dataset throughout: the four points
+$(1,2)$, $(2.2,0.4)$, $(-1,-2)$ and $(-2.2,-0.4)$. They are centred, and
+$\mat S=\begin{bmatrix}2.92&1.44\\1.44&2.08\end{bmatrix}$. This script runs
+a width-one autoencoder that keeps the first coordinate, one example at a
+time:
+
+~~~python
+X = [(1, 2), (2.2, 0.4), (-1, -2), (-2.2, -0.4)]
+E, D = [1.0, 0.0], [1.0, 0.0]        # one encoder row, one decoder column
+
+loss, gE, gD = 0.0, [0.0, 0.0], [0.0, 0.0]
+for x in X:
+    z = E[0]*x[0] + E[1]*x[1]                          # code
+    xhat = [D[0]*z, D[1]*z]                            # reconstruction
+    delta = [2*(xhat[j] - x[j])/len(X) for j in range(2)]
+    loss += sum((xhat[j] - x[j])**2 for j in range(2))/len(X)
+    back = D[0]*delta[0] + D[1]*delta[1]               # through the decoder
+    for j in range(2):
+        gD[j] += delta[j]*z
+        gE[j] += back*x[j]
+print(round(loss, 6), [round(g, 6) for g in gD], [round(g, 6) for g in gE])
+~~~
+
+It prints <code>2.08 [0.0, -2.88] [0.0, 0.0]</code>. The loss is the
+variance of the coordinate that was dropped. The decoder is told to start
+using its second weight. The encoder is told nothing yet.
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01) continues
+from here, and its script checks (I.12.2) against central finite
+differences for untied and tied weights.

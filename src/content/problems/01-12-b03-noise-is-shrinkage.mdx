@@ -1,0 +1,155 @@
+---
+id: "I.12.B03"
+kind: problem
+chapter: "I.12"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "How much noise, how much shrinkage"
+depends:
+  - "I.12.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+<Statement>
+Find the linear map that best removes noise of variance $\sigma^2$ from four
+points, with and without a bottleneck, and follow it as the noise goes to
+zero and to infinity.
+</Statement>
+
+<Given>
+The four points of
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01), with
+eigenvalues $\lambda=(4,1)$ and eigenvectors $\vec u_1=(0.8,0.6)$,
+$\vec u_2=(-0.6,0.8)$. The input is corrupted as
+$\tilde{\vec x}=\vec x+\vec\varepsilon$, where $\vec\varepsilon$ is
+independent of $\vec x$ with mean zero and covariance $\sigma^2\mat I$. The
+loss is $\E\|\mat M\tilde{\vec x}-\vec x\|^2$.
+</Given>
+
+<Find>
+(a) The optimal gain on each principal direction and the loss it leaves.
+(b) The optimal map and its loss at $\sigma^2=1$.
+(c) The same when $\mat M$ must have rank one.
+(d) The limits $\sigma^2\to0$ and $\sigma^2\to\infty$, with values at
+$\sigma^2=0.01$ and $100$.
+(e) A check of (I.12.8) for Gaussian data.
+</Find>
+
+<Strategy>
+Use the decomposition in (I.12.7). The optimal map shares the eigenvectors
+of $\mat S$, so the problem separates into one scalar problem per direction.
+</Strategy>
+
+<Solution>
+
+**(a)** By (I.12.7) the loss is the clean reconstruction loss of
+$\mat M$ plus $\sigma^2\|\mat M\|_F^2$, and its minimiser
+$\mat S(\mat S+\sigma^2\mat I)^{-1}$ has the eigenvectors of $\mat S$. Write
+$\mat M=\sum_ig_i\vec u_i\vec u_i^{\mathsf T}$. The loss becomes
+$\sum_i\big[(1-g_i)^2\lambda_i+\sigma^2g_i^2\big]$. Each term is a parabola
+in its own $g_i$, with derivative $-2(1-g_i)\lambda_i+2\sigma^2g_i$:
+
+$$
+\begin{aligned}
+g_i&=\frac{\lambda_i}{\lambda_i+\sigma^2},\\
+\text{loss}_i&=\frac{\lambda_i\,\sigma^2}{\lambda_i+\sigma^2}.
+\end{aligned}
+$$
+
+A direction is kept at exactly one half when the noise variance equals its
+own.
+
+**(b)** At $\sigma^2=1$ the gains are $4/5$ and $1/2$. The two
+projections are
+
+$$
+\begin{aligned}
+\vec u_1\vec u_1^{\mathsf T}&=\begin{bmatrix}0.64&0.48\\0.48&0.36\end{bmatrix},\\[2pt]
+\vec u_2\vec u_2^{\mathsf T}&=\begin{bmatrix}0.36&-0.48\\-0.48&0.64\end{bmatrix},
+\end{aligned}
+$$
+
+so
+
+$$
+\begin{aligned}
+\mat M^\star&=0.8\,\vec u_1\vec u_1^{\mathsf T}+0.5\,\vec u_2\vec u_2^{\mathsf T}\\[2pt]
+ &=\begin{bmatrix}0.692&0.144\\0.144&0.608\end{bmatrix}.
+\end{aligned}
+$$
+
+The loss is $4/5+1/2=1.3$.
+
+**(c)** A rank-one map keeps one direction. Keeping direction $i$ costs
+$\lambda_i\sigma^2/(\lambda_i+\sigma^2)$ there and the full $\lambda_j$ on
+the other. Keeping $\vec u_1$ costs $0.8+1=1.8$; keeping $\vec u_2$ costs
+$0.5+4=4.5$. So the best rank-one map is
+$0.8\,\vec u_1\vec u_1^{\mathsf T}$, with loss $1.8$.
+
+The bottleneck chooses the direction, as in I.12.T1. The noise then shrinks
+what is kept.
+
+**(d)** As $\sigma^2\to0$ each gain tends to $1$, the map tends to the
+identity and the loss to $0$. Without noise, nothing stops the copy. As
+$\sigma^2\to\infty$ each gain behaves like $\lambda_i/\sigma^2$ and tends
+to $0$; the map outputs the mean, and the loss tends to
+$\operatorname{tr}\mat S=5$.
+
+| $\sigma^2$ | $0.01$ | $1$ | $100$ |
+|---|---|---|---|
+| $g_1$ | $0.997506$ | $0.8$ | $0.038462$ |
+| $g_2$ | $0.990099$ | $0.5$ | $0.009901$ |
+| loss | $0.019876$ | $1.3$ | $4.836253$ |
+
+**(e)** If $\vec x$ is Gaussian with mean zero and covariance $\mat S$, then
+$\tilde{\vec x}$ is Gaussian with covariance $\mat S+\sigma^2\mat I$ and
+score $-(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x}$. Then (I.12.8) gives
+
+$$
+\begin{aligned}
+&\tilde{\vec x}-\sigma^2(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x}\\
+&\;\;=\mat S(\mat S+\sigma^2\mat I)^{-1}\tilde{\vec x},
+\end{aligned}
+$$
+
+which is the map of (a). For Gaussian data the best denoiser is linear, and
+the two results are one.
+
+</Solution>
+
+<Answer>
+Gains $\lambda_i/(\lambda_i+\sigma^2)$ with loss
+$\sum_i\lambda_i\sigma^2/(\lambda_i+\sigma^2)$. At $\sigma^2=1$:
+$\mat M^\star=\begin{bmatrix}0.692&0.144\\0.144&0.608\end{bmatrix}$ with
+loss $1.3$, or $0.8\,\vec u_1\vec u_1^{\mathsf T}$ with loss $1.8$ at rank
+one. The map tends to the identity as $\sigma^2\to0$ and to zero as
+$\sigma^2\to\infty$.
+</Answer>
+
+<CheckSanity>
+At $\sigma^2=1$, copying the corrupted input costs
+$\sigma^2\|\mat I\|_F^2=2$ and outputting the mean costs
+$\operatorname{tr}\mat S=5$. The optimum, $1.3$, is below both. Every gain
+lies strictly between $0$ and $1$.
+</CheckSanity>
+
+<Breaks>
+Noise with a general covariance $\mat N$ gives
+$\mat S(\mat S+\mat N)^{-1}$, which shares eigenvectors with $\mat S$ only
+if the two matrices commute. And for data that are not Gaussian the best
+denoiser is not linear at all:
+[I.12.X08](/elementa/neural-networks/autoencoders/problems/x08) finds a
+$\tanh$.
+</Breaks>
+
+<Variation>
+At $\sigma^2=4$ the gains are $(0.5,\;0.2)$ and the loss is $2+0.8=2.8$.
+The script also confirms the decomposition of (I.12.7) exactly, by
+averaging over the four points and four noise vectors
+$(\pm\sigma\sqrt2,0)$, $(0,\pm\sigma\sqrt2)$, whose covariance is
+$\sigma^2\mat I$.
+</Variation>

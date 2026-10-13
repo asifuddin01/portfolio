@@ -1,0 +1,20 @@
+B01 loss 2.080000; best decoder (1.000000, 0.493151) loss 1.369863; best encoder (0.804377, 0.396679) loss 1.101887; next two 1.026137 1.006577; limit 1.000000
+B02 optimum loss 1.000000, M = [0.64, 0.48, 0.48, 0.36]; saddle at u2 loss 4.000000, rotated by 0.1 rad 3.970100
+B03 denoiser [0.692, 0.144, 0.144, 0.608] loss 1.300000; with k=1 1.800000; gains at 0.01/1/100: (0.997506, 0.990099) (0.800000, 0.500000) (0.038462, 0.009901)
+B03 losses at 0.01/1/100: 0.019876 1.300000 4.836253; total variance 5.0
+B04 train loss memoriser/PCA: 0.000000 1.000000; held-out mean: 2.000000 0.500000; at (-0.6, 0.8): 4.000000 1.000000; decode z=5: (5.000000, -3.333333)
+B05 dense untied/tied: 209968 105520; conv sizes [28, 14, 7], code 784 numbers; transposed [7, 14, 28], without output padding [7, 13, 25]; conv parameters 2481; 4-channel code 196
+X01 code 1.000000, reconstruction (0.800000, 0.600000), error 4.000000; rescaled code 5.000000
+X02 grad D [0.0, -2.88], grad E [0.0, 0.0]; after one step D [1.0, 0.288], loss 1.492756; at zero loss 5.000000
+X03 uncentred loss 0.666667 with codes [10.0, 10.0, 10.0]; centred loss 0.000000 with codes [-1.0, 0.0, 1.0]
+X04 loss 0.000000; code of (1, 2) is [4.0, 3.0]; (100, -7) returns [100.0, -7.0]
+X05 geometric losses k=1,2,4,7: 127 63 15 1 of 255; fractions 0.498039 0.247059 0.058824 0.003922; under 1 per cent at k=7; flat spectrum needs k=8
+X06 gains [0.875, 0.5]; decoder columns [0.748331, 0.561249, -0.424264, 0.565685]; objective 1.687500 against identity 2.000000; k=1, gamma=1: decoder [0.69282, 0.519615], objective 2.750000
+X07 objective at scale 1, 10, 1000: 2.000000 1.100000 1.001000; unit-norm decoder: code 1.750000, objective 1.937500; code is zero from beta = 4.0
+X08 conditional means: 0.462117 0.964028 0.000000
+X09 inputs 0.174311 apart, codes 6.108652 apart, midpoint decodes 1.998096 away; antipodes share a code at angle 1.768192
+X10 scores: 0.000000 4.000000; distance to nearest training point: 8.062258 2.236068
+P02 gradient descent: loss 1.000000, E [1.0048, 0.7536], D [0.6369, 0.4777], imbalance 0.9438 from 0.9600
+P02 beside the saddle, tilt 1e-6: near loss 4 from step 82 to 273, below 1.01 at 513; tilt 1e-3: 74 to 85, then 315
+P03 clean error under bottleneck, noise, decay: 1.0000 0.4100 0.3125
+P04 variance kept 0.80, label accuracy from the code 0.50

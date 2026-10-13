@@ -1,0 +1,141 @@
+---
+id: "I.12.B05"
+kind: problem
+chapter: "I.12"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "Count the code before calling it a bottleneck"
+depends:
+  - "I.12.P01"
+rounding: "Exact integers."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+<Statement>
+Track shapes and parameters through a dense and a convolutional
+autoencoder for the same image, and find the two places where the
+convolutional one goes wrong.
+</Statement>
+
+<Given>
+One input is a $1\times28\times28$ image, $784$ numbers.
+
+The dense autoencoder has layer widths $784$, $128$, $32$, $128$, $784$,
+with a bias on every layer.
+
+The convolutional encoder is two layers with $3\times3$ kernels, stride
+$2$ and padding $1$, taking $1$ channel to $8$ and then $8$ to $16$. The
+decoder is two transposed convolutions with the same kernel, stride and
+padding, taking $16$ channels to $8$ and then $8$ to $1$. All four layers
+have biases.
+</Given>
+
+<Find>
+(a) The dense parameter count, untied and with tied weights.
+(b) The spatial sizes through the convolutional encoder, and how many
+numbers its code holds.
+(c) The decoder's output size with output padding $0$ and with $1$.
+(d) The convolutional parameter count.
+(e) The code channel counts for which the convolutional code is narrower
+than its input.
+</Find>
+
+<Strategy>
+Count each dense layer as inputs times outputs plus outputs. Use (I.11.4)
+for the encoder's sizes and (I.11.5) for the decoder's.
+</Strategy>
+
+<Solution>
+
+**(a)** The four dense layers hold
+
+$$
+\begin{aligned}
+784\cdot128+128&=100{,}480,\\
+128\cdot32+32&=4{,}128,\\
+32\cdot128+128&=4{,}224,\\
+128\cdot784+784&=101{,}136,
+\end{aligned}
+$$
+
+for a total of $209{,}968$. With tied weights the two decoder matrices are
+transposes of the encoder's. The weights are then
+$100{,}352+4{,}096=104{,}448$ and the four bias vectors add $1{,}072$, for
+$105{,}520$. The code is $32$ numbers, $24.5$ times fewer than the input.
+
+**(b)** By (I.11.4), with no dilation,
+
+$$
+\begin{aligned}
+\left\lfloor\frac{28+2-3}{2}\right\rfloor+1&=14,\\[2pt]
+\left\lfloor\frac{14+2-3}{2}\right\rfloor+1&=7.
+\end{aligned}
+$$
+
+The code has shape $16\times7\times7$ and holds $784$ numbers, exactly as
+many as the input. This is the first fault. Each layer halved the height
+and the width and the picture looks like an hourglass, but the channel
+count grew as fast as the grid shrank. By count, nothing forces this code
+to discard anything.
+
+**(c)** By (I.11.5) a transposed layer returns
+$(n-1)\cdot2-2+2+o+1=2n-1+o$ for output padding $o$. With $o=0$ the sizes
+run $7\to13\to25$. The reconstruction is $25\times25$, with $625$ numbers,
+and cannot be compared with a $28\times28$ target. This is the second
+fault. With $o=1$ they run $7\to14\to28$.
+
+The ambiguity is real. Under the encoder's stride-two layer an input of
+size $27$ and one of size $28$ both give $14$. The transposed layer cannot
+know which it is undoing, and output padding tells it.
+
+**(d)** A transposed convolution stores its weight with shape
+$(C_{\mathrm{in}},C_{\mathrm{out}},k_h,k_w)$ and one bias per output
+channel. The four layers hold
+
+$$
+\begin{aligned}
+8\cdot1\cdot9+8&=80,\\
+16\cdot8\cdot9+16&=1{,}168,\\
+16\cdot8\cdot9+8&=1{,}160,\\
+8\cdot1\cdot9+1&=73,
+\end{aligned}
+$$
+
+a total of $2{,}481$, against $209{,}968$ for the dense stack.
+
+**(e)** A code of $C$ channels on the $7\times7$ grid holds $49C$ numbers.
+It is narrower than the input when $49C<784$, that is, $C<16$. With $C=4$
+the code holds $196$ numbers, a quarter of the input.
+
+</Solution>
+
+<Answer>
+(a) $209{,}968$ untied and $105{,}520$ tied. (b) $28\to14\to7$; the code
+holds $784$ numbers. (c) $7\to13\to25$ without output padding and
+$7\to14\to28$ with it. (d) $2{,}481$. (e) Fewer than $16$ code channels.
+</Answer>
+
+<CheckSanity>
+The tied count is half the untied weights plus all the biases:
+$208{,}896/2+1{,}072=105{,}520$. The transposed sizes $14$ and $28$ are the
+encoder's sizes read backwards.
+</CheckSanity>
+
+<Breaks>
+A count of numbers is a necessary check and not a sufficient one. A code
+with fewer numbers than the input can still memorise
+([I.12.B04](/elementa/neural-networks/autoencoders/problems/b04)), and
+shared, local weights restrict a convolutional autoencoder in ways the
+count does not show. The count catches only the case where no restriction
+was imposed at all.
+</Breaks>
+
+<Variation>
+With $4\times4$ kernels, stride $2$ and padding $1$, the encoder still
+gives $\lfloor(28+2-4)/2\rfloor+1=14$, and the transposed layer returns
+$(7-1)\cdot2-2+3+0+1=14$ with no output padding. An even input size is
+then recovered without the extra argument.
+</Variation>

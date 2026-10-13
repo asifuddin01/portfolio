@@ -1,0 +1,207 @@
+---
+id: "I.12.B02"
+kind: problem
+chapter: "I.12"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "The minimum of a linear autoencoder, step by step"
+depends:
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+<Statement>
+Prove that the smallest loss of a linear autoencoder is the sum of the
+discarded eigenvalues, find every pair of matrices that attains it, and
+evaluate the result on four points.
+</Statement>
+
+<Given>
+Centred data with covariance
+$\mat S=\sum_{i=1}^d\lambda_i\vec u_i\vec u_i^{\mathsf T}$, where
+$\lambda_1\geq\cdots\geq\lambda_d>0$ and the $\vec u_i$ are orthonormal. The
+loss is the first line of (I.12.2), with
+$\mat E\in\R^{k\times d}$, $\mat D\in\R^{d\times k}$ and $k<d$. Assume
+$\lambda_k>\lambda_{k+1}$. For the numbers, use the four points of
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01) with $k=1$.
+</Given>
+
+<Find>
+(a) The best encoder for a fixed decoder, and the end-to-end map it gives.
+(b) The loss of that map in terms of an orthonormal basis.
+(c) The lower bound and the condition for equality.
+(d) All minimising pairs.
+(e) The eigenvalues, the optimal map, its loss and two different
+factorisations for the four points.
+(f) The other stationary projection and a path that leaves it downhill.
+</Find>
+
+<Strategy>
+Reduce pairs of matrices to subspaces by solving for the encoder. Then
+write the retained variance as a weighted sum of eigenvalues and bound the
+weights.
+</Strategy>
+
+<Solution>
+
+**(a)** Fix $\mat D$ with independent columns. For one input, the
+derivative of $\|\vec x-\mat D\vec z\|^2$ with respect to $\vec z$ is
+$-2\mat D^{\mathsf T}(\vec x-\mat D\vec z)$. It vanishes at
+
+$$
+\vec z=(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}\vec x,
+$$
+
+which is the unique minimum because $\mat D^{\mathsf T}\mat D$ is positive
+definite. The same matrix serves every input, so
+$\mat E=(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}$ and
+
+$$
+\mat D\mat E=\mat D(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}=\mat P.
+$$
+
+Direct multiplication gives $\mat P^2=\mat P$ and
+$\mat P^{\mathsf T}=\mat P$: the orthogonal projection onto the columns of
+$\mat D$. No other encoder gives any input a better code, so no encoder
+has a smaller loss than $\mat P$. Because $\lambda_d>0$ the data span every
+direction, and a different encoder gives some of them a strictly worse one.
+
+**(b)** Choose $\mat Q\in\R^{d\times k}$ with orthonormal columns spanning
+the same subspace. Then $\mat P=\mat Q\mat Q^{\mathsf T}$, and
+$\mat I-\mat P$ is symmetric with $(\mat I-\mat P)^2=\mat I-\mat P$.
+Moving one factor around the trace,
+
+$$
+\begin{aligned}
+\mathcal L(\mat P)
+ &=\operatorname{tr}\big((\mat I-\mat P)\mat S(\mat I-\mat P)\big)\\
+ &=\operatorname{tr}\big(\mat S(\mat I-\mat P)\big)\\
+ &=\operatorname{tr}\mat S-\operatorname{tr}(\mat Q^{\mathsf T}\mat S\mat Q).
+\end{aligned}
+$$
+
+This is (I.12.4).
+
+**(c)** Substitute the eigendecomposition:
+
+$$
+\begin{aligned}
+\operatorname{tr}(\mat Q^{\mathsf T}\mat S\mat Q)
+ &=\sum_{i=1}^d\lambda_i c_i,\\
+c_i&=\|\mat Q^{\mathsf T}\vec u_i\|^2.
+\end{aligned}
+$$
+
+Since $\mat Q\mat Q^{\mathsf T}$ is a projection and $\vec u_i$ a unit
+vector, $0\leq c_i\leq1$. Since the $\vec u_i$ are an orthonormal basis,
+$\sum_ic_i=\operatorname{tr}(\mat Q^{\mathsf T}\mat Q)=k$. Therefore
+$\sum_{i\leq k}(1-c_i)=\sum_{i>k}c_i$, and
+
+$$
+\begin{aligned}
+&\sum_{i\leq k}\lambda_i-\sum_{i=1}^d\lambda_ic_i\\
+&\;=\sum_{i\leq k}\lambda_i(1-c_i)
+ -\sum_{i>k}\lambda_ic_i\\
+&\;\geq\lambda_k\sum_{i\leq k}(1-c_i)\\
+&\;\quad-\lambda_{k+1}\sum_{i>k}c_i\\
+&\;=(\lambda_k-\lambda_{k+1})\sum_{i>k}c_i\\
+&\;\geq0.
+\end{aligned}
+$$
+
+So the retained variance is at most $\lambda_1+\cdots+\lambda_k$, and
+
+$$
+\mathcal L\geq\sum_{i>k}\lambda_i.
+$$
+
+Because $\lambda_k>\lambda_{k+1}$, equality requires $c_i=0$ for every
+$i>k$, hence $c_i=1$ for every $i\leq k$. A unit vector whose projection
+has length one lies in the subspace. The subspace is therefore the span of
+$\vec u_1,\ldots,\vec u_k$, and $\mat P=\mat U_k\mat U_k^{\mathsf T}$.
+
+**(d)** A decoder attains the bound exactly when its columns span that
+subspace, that is, $\mat D=\mat U_k\mat G$ with
+$\mat G=\mat U_k^{\mathsf T}\mat D$ invertible. By (a) the encoder must then
+be
+
+$$
+\begin{aligned}
+\mat E&=(\mat G^{\mathsf T}\mat G)^{-1}\mat G^{\mathsf T}\mat U_k^{\mathsf T}\\
+ &=\mat G^{-1}\mat U_k^{\mathsf T}.
+\end{aligned}
+$$
+
+Every invertible $\mat G$ gives a minimiser, and these are all of them.
+This is (I.12.5).
+
+A decoder of rank below $k$ spans fewer than $k$ dimensions. Its retained
+variance is at most $\lambda_1+\cdots+\lambda_{k-1}$, which is strictly
+less because $\lambda_k>0$.
+
+**(e)** For the four points, $\mat S$ has trace $5$ and determinant
+$2.92\cdot2.08-1.44^2=4$, so its eigenvalues solve
+$\lambda^2-5\lambda+4=0$: they are $4$ and $1$. Solving
+$(\mat S-4\mat I)\vec u=\vec 0$ gives $\vec u_1=(0.8,0.6)$, and then
+$\vec u_2=(-0.6,0.8)$. With $k=1$,
+
+$$
+\begin{aligned}
+\mat D\mat E&=\vec u_1\vec u_1^{\mathsf T}
+ =\begin{bmatrix}0.64&0.48\\0.48&0.36\end{bmatrix},\\
+\mathcal L&=\lambda_2=1.
+\end{aligned}
+$$
+
+For the point $(1,2)$ the code under $\mat G=1$ is $0.8+1.2=2$, the
+reconstruction is $(1.6,1.2)$ and the residual is $(-0.6,0.8)$, of squared
+length $1$. The same holds at every corner.
+
+Two factorisations of the same map: $\mat G=1$ gives
+$\mat D=(0.8,0.6)^{\mathsf T}$ and $\mat E=(0.8,\,0.6)$. $\mat G=1/5$
+gives $\mat D=(0.16,0.12)^{\mathsf T}$ and $\mat E=(4,\,3)$.
+
+**(f)** Setting $\mat D=\vec u_2$ and $\mat E=\vec u_2^{\mathsf T}$ makes
+both gradients of (I.12.2) vanish, with loss $\lambda_1=4$. Rotate the
+direction to $\cos\theta\,\vec u_2+\sin\theta\,\vec u_1$. By (b) the loss
+is $5-(\cos^2\theta+4\sin^2\theta)=4-3\sin^2\theta$. At $\theta=0.1$ it is
+$3.970100$. The point is stationary and is not a minimum.
+
+</Solution>
+
+<Answer>
+The minimum is $\sum_{i>k}\lambda_i$, attained exactly by
+$\mat D=\mat U_k\mat G$, $\mat E=\mat G^{-1}\mat U_k^{\mathsf T}$ for
+invertible $\mat G$. For the four points the eigenvalues are $4$ and $1$,
+the optimal map is $\begin{bmatrix}0.64&0.48\\0.48&0.36\end{bmatrix}$ and
+the loss is $1$. The projection onto $\vec u_2$ is a saddle with loss $4$.
+</Answer>
+
+<CheckSanity>
+The optimal map has trace $1$, the dimension of the subspace, and squares
+to itself: its first entry is $0.64^2+0.48^2=0.64$. The retained variance
+$4$ and the loss $1$ add to the total $5$.
+</CheckSanity>
+
+<Breaks>
+With $\lambda_k=\lambda_{k+1}$ the last step fails: weight can move between
+the tied directions without changing the sum, and the optimal subspace is
+not unique
+([I.12.X05](/elementa/neural-networks/autoencoders/problems/x05)). With a
+zero eigenvalue the encoder is determined only on the directions in which
+the data vary. With uncentred data $\mat S$ is not a covariance and the
+subspace found is a different one
+([I.12.X03](/elementa/neural-networks/autoencoders/problems/x03)).
+</Breaks>
+
+<Variation>
+The script scans $3600$ directions and confirms that the loss of the
+projection onto each lies between $1$ and $4$, the two eigenvalues. For
+$k=d$ the bound is an empty sum: the loss is $0$ and the map is the
+identity
+([I.12.X04](/elementa/neural-networks/autoencoders/problems/x04)).
+</Variation>

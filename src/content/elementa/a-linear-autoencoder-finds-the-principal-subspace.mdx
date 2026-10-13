@@ -1,0 +1,323 @@
+---
+chapter: neural-networks--autoencoders
+proposition: 2
+statement: "A linear autoencoder finds the principal subspace, and not its axes."
+claim: "The minimum of the reconstruction loss is the projection onto the directions of largest variance. The loss fixes that subspace and leaves the basis inside it free, so the code's coordinates are not principal components."
+given:
+  - reconstruction-manufactures-its-own-target
+  - a-linear-layer-is-an-affine-map
+  - non-linearity-is-what-makes-depth-worth-having
+figure: FigPrincipalSubspace
+figureType: B
+status: published
+updated: 2026-10-13
+sources:
+  - title: "Neural networks and principal component analysis: Learning from examples without local minima"
+    url: https://doi.org/10.1016/0893-6080(89)90014-2
+  - title: "The Approximation of One Matrix by Another of Lower Rank"
+    url: https://doi.org/10.1007/BF02288367
+  - title: "Auto-association by multilayer perceptrons and singular value decomposition"
+    url: https://doi.org/10.1007/BF00332918
+  - title: "Loss Landscapes of Regularized Linear Autoencoders"
+    url: https://proceedings.mlr.press/v97/kunin19a.html
+  - title: "Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced"
+    url: https://arxiv.org/abs/1806.00900
+  - title: "Exact solutions to the nonlinear dynamics of learning in deep linear neural networks"
+    url: https://arxiv.org/abs/1312.6120
+  - title: "Reducing the Dimensionality of Data with Neural Networks"
+    url: https://doi.org/10.1126/science.1127647
+---
+
+## The question, stated so it can be answered
+
+Proposition 1 left one thing open: a bottleneck forces a linear autoencoder
+to discard a subspace, and the loss chooses which. By (I.12.2) the loss
+depends on the two matrices only through their product
+$\mat M=\mat D\mat E$, which has rank at most $k$:
+
+$$
+\mathcal L(\mat M)=\operatorname{tr}\big(
+ (\mat I-\mat M)\,\mat S\,(\mat I-\mat M)^{\mathsf T}\big).
+$$
+
+Assume the data are centred, so that $\mat S$ is their covariance
+([I.12.X03](/elementa/neural-networks/autoencoders/problems/x03) shows what
+happens otherwise). Write its eigendecomposition
+(<ApparatusRef ref="0.LA.04" />) as
+$\mat S=\sum_i\lambda_i\vec u_i\vec u_i^{\mathsf T}$ with
+$\lambda_1\geq\cdots\geq\lambda_d\geq0$ and orthonormal $\vec u_i$. Let
+$\mat U_k$ hold the first $k$ eigenvectors as columns. Which $\mat M$ of
+rank at most $k$ makes the loss smallest?
+
+## Each half is a least-squares problem
+
+Hold one matrix fixed and the other has a closed form.
+
+Fix the encoder. The codes are then fixed, and the loss is a linear
+regression of each input on its code. Setting
+$\nabla_{\mat D}\mathcal L=\mat 0$ in (I.12.2) gives
+$(\mat I-\mat D\mat E)\mat S\mat E^{\mathsf T}=\mat 0$, which is solved by the
+first line below whenever the code covariance
+$\mat E\mat S\mat E^{\mathsf T}$ is invertible.
+
+Fix the decoder, with independent columns. For one input, the code that
+minimises $\|\vec x-\mat D\vec z\|^2$ is the least-squares solution
+$\vec z=(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}\vec x$. It is
+linear in $\vec x$, so a linear encoder can produce the best code for every
+input at once.
+
+<Eq id="I.12.3" gloss="Each half, taken alone, is a least-squares problem with a closed form.">
+
+$$
+\begin{aligned}
+\text{fixed }\mat E:\quad
+ \mat D&=\mat S\mat E^{\mathsf T}
+ (\mat E\mat S\mat E^{\mathsf T})^{-1},\\
+\text{fixed }\mat D:\quad
+ \mat E&=(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}.
+\end{aligned}
+$$
+
+</Eq>
+
+The second line settles the form of the answer. With that encoder,
+
+$$
+\mat M=\mat D(\mat D^{\mathsf T}\mat D)^{-1}\mat D^{\mathsf T}=\mat P,
+$$
+
+the orthogonal projection onto the column space of $\mat D$
+(<ApparatusRef ref="0.LA.05" />): $\mat P^2=\mat P$ and
+$\mat P^{\mathsf T}=\mat P$. So for any decoder, no encoder does better
+than the one that makes the autoencoder a projection onto the decoder's
+columns. A decoder of lower rank spans a smaller subspace, and enlarging a
+subspace never increases a distance to it. The search over pairs of
+matrices has become a search over $k$-dimensional subspaces.
+
+## The loss of a projection is the variance it drops
+
+Let the columns of $\mat Q\in\R^{d\times k}$ be an orthonormal basis of the
+subspace, so $\mat P=\mat Q\mat Q^{\mathsf T}$. Since $\mat I-\mat P$ is
+also a symmetric projection, the cyclic property of the trace gives
+
+<Eq id="I.12.4" gloss="A projection's loss is the variance it fails to keep.">
+
+$$
+\begin{aligned}
+\mathcal L(\mat Q\mat Q^{\mathsf T})
+ &=\operatorname{tr}\big(\mat S(\mat I-\mat Q\mat Q^{\mathsf T})\big)\\
+ &=\operatorname{tr}\mat S-\operatorname{tr}(\mat Q^{\mathsf T}\mat S\mat Q).
+\end{aligned}
+$$
+
+</Eq>
+
+Here $\operatorname{tr}\mat S$ is the total variance of the data and
+$\operatorname{tr}(\mat Q^{\mathsf T}\mat S\mat Q)$ is the total variance of
+the codes $\mat Q^{\mathsf T}\vec x$. By (I.12.4), minimising reconstruction
+error and maximising retained variance are one problem.
+
+Now expand in the eigenbasis:
+
+$$
+\begin{aligned}
+\operatorname{tr}(\mat Q^{\mathsf T}\mat S\mat Q)
+ &=\sum_{i=1}^d\lambda_i c_i,\\
+c_i&=\|\mat Q^{\mathsf T}\vec u_i\|^2.
+\end{aligned}
+$$
+
+Each $c_i$ is the squared length of the projection of a unit vector, so
+$0\leq c_i\leq1$. They sum to
+$\operatorname{tr}(\mat Q^{\mathsf T}\mat Q)=k$, because the $\vec u_i$ form
+an orthonormal basis. A weighted sum of the $\lambda_i$ with weights
+between zero and one that total $k$ is largest when weight one sits on the
+$k$ largest. Hence the retained variance is at most
+$\lambda_1+\cdots+\lambda_k$. If $\lambda_k>\lambda_{k+1}$, equality forces
+$c_i=1$ for $i\leq k$, which places every one of $\vec u_1,\ldots,\vec u_k$
+inside the subspace.
+
+<Eq id="I.12.5" gloss="The minimum fixes the subspace and leaves the basis free.">
+
+$$
+\begin{aligned}
+\min_{\mat E,\mat D}\mathcal L&=\sum_{i>k}\lambda_i,\\
+\text{attained at}\quad\mat D\mat E&=\mat U_k\mat U_k^{\mathsf T},\\
+\text{that is,}\quad\mat D&=\mat U_k\mat G,\\
+\mat E&=\mat G^{-1}\mat U_k^{\mathsf T}.
+\end{aligned}
+$$
+
+</Eq>
+
+That is I.12.T1.
+[I.12.B02](/elementa/neural-networks/autoencoders/problems/b02) writes out
+each step and evaluates it on the four points of the figure, where
+$\lambda=(4,1)$ and $\vec u_1=(0.8,0.6)$: the best width-one autoencoder
+projects onto that line and its loss is exactly $1$.
+
+The result has an older name. With $\mat X$ the centred data matrix, its
+right singular vectors are the $\vec u_i$ and
+$\lambda_i=s_i^2/n$ for singular values $s_i$. The reconstruction
+$\mat X\mat U_k\mat U_k^{\mathsf T}$ is the best approximation of $\mat X$
+of rank $k$ in the Frobenius norm, which is the theorem of Eckart and Young
+(1936). Bourlard and Kamp (1988) and Baldi and Hornik (1989) recognised it
+in the autoencoder.
+
+## The subspace, and not its axes
+
+The last two lines of (I.12.5) hold for every invertible $\mat G$ of size
+$k\times k$, since $\mat G$ cancels in the product. The loss cannot tell
+these factorisations apart, so the minimum is a family with $k^2$ free
+numbers.
+
+Principal component analysis delivers more than this. Its directions are
+orthonormal and ordered by variance, and its scores are uncorrelated. A
+trained linear autoencoder delivers a basis of the right subspace and
+nothing else. The decoder's columns need not be orthogonal or of unit
+length, the code's coordinates may be correlated, and none comes first. On
+the four points, $\mat E=(4,\,3)$ with $\mat D=(0.16,0.12)^{\mathsf T}$
+computes the same reconstructions as $\mat E=(0.8,\,0.6)$ with
+$\mat D=(0.8,0.6)^{\mathsf T}$, and every one of its codes is five times
+larger
+([I.12.X01](/elementa/neural-networks/autoencoders/problems/x01)).
+
+Training does pick one member of the family, and the data do not decide
+which. Under gradient descent with a vanishing step size,
+$\mat E\mat E^{\mathsf T}-\mat D^{\mathsf T}\mat D$ does not change: by
+(I.12.2), $\frac{d}{dt}(\mat E\mat E^{\mathsf T})$ and
+$\frac{d}{dt}(\mat D^{\mathsf T}\mat D)$ are the same matrix. Du, Hu and Lee
+(2018) prove invariances of this kind between adjacent layers of deep
+homogeneous networks. The factorisation reached is therefore fixed by the
+imbalance between the two matrices at initialisation.
+
+To read principal components off a trained linear autoencoder,
+orthonormalise the decoder's columns into $\mat Q$, form the $k\times k$
+matrix $\mat Q^{\mathsf T}\mat S\mat Q$ and diagonalise it. Or change the
+objective so that the freedom is not there.
+
+## Weight decay removes most of the freedom
+
+Add the penalty $\gamma(\|\mat E\|_F^2+\|\mat D\|_F^2)$ of I.8. The
+stationarity conditions become
+$(\mat I-\mat D\mat E)\mat S\mat E^{\mathsf T}=\gamma\mat D$ and
+$\mat D^{\mathsf T}(\mat I-\mat D\mat E)\mat S=\gamma\mat E$. Multiply the
+first on the left by $\mat D^{\mathsf T}$ and the second on the right by
+$\mat E^{\mathsf T}$. The left-hand sides agree, so for $\gamma>0$,
+$\mat D^{\mathsf T}\mat D=\mat E\mat E^{\mathsf T}$ at every stationary
+point. Kunin, Bloom, Goeva and Seed (2019) prove more: every stationary
+point has $\mat E=\mat D^{\mathsf T}$, and for $\gamma<\lambda_k$ the minima
+are
+
+<Eq id="I.12.6" gloss="Weight decay shrinks each direction and leaves only a rotation of the code.">
+
+$$
+\begin{aligned}
+\mat D&=\mat U_k\operatorname{diag}\!\Big(\sqrt{1-\gamma/\lambda_i}\Big)
+ \mat O^{\mathsf T},\\
+\mat E&=\mat D^{\mathsf T},\\
+\mat D\mat E&=\mat U_k\operatorname{diag}(1-\gamma/\lambda_i)\,
+ \mat U_k^{\mathsf T},
+\end{aligned}
+$$
+
+</Eq>
+
+with $\mat O$ any orthogonal $k\times k$ matrix. The family has shrunk from
+all invertible $\mat G$ to rotations of the code. When the kept eigenvalues
+are distinct, so are the singular values $\sqrt{1-\gamma/\lambda_i}$ of the
+decoder. Its left singular vectors are then
+$\vec u_1,\ldots,\vec u_k$ in order, and the axes can be read from the
+decoder alone.
+
+The price is in the last line of (I.12.6). The end-to-end map is no
+longer a projection: each kept direction is shrunk by $1-\gamma/\lambda_i$,
+a weak one more than a strong one.
+[I.12.X06](/elementa/neural-networks/autoencoders/problems/x06) verifies
+that (I.12.6) is stationary and evaluates it.
+
+## Every other stationary point is a saddle
+
+Take any $k$ eigenvectors of $\mat S$, not necessarily the first, as the
+columns of $\mat U_I$, and set $\mat D=\mat U_I$,
+$\mat E=\mat U_I^{\mathsf T}$. Then
+$(\mat I-\mat D\mat E)\mat S\mat U_I=\mat 0$ and
+$\mat U_I^{\mathsf T}(\mat I-\mat D\mat E)=\mat 0$, so both gradients in
+(I.12.2) vanish. The loss there is the sum of the eigenvalues left out.
+
+Such a point is not a minimum unless it is the principal subspace. Suppose
+$\vec u_j$ is included, $\vec u_m$ is not, and $\lambda_m>\lambda_j$.
+Replace $\vec u_j$ by $\cos\theta\,\vec u_j+\sin\theta\,\vec u_m$. The
+subspace stays $k$-dimensional and the loss changes by
+$-(\lambda_m-\lambda_j)\sin^2\theta$, which is negative for every small
+$\theta\neq0$. Scaling the decoder up instead raises the loss. A point with
+a way down and a way up is a saddle. Baldi and Hornik (1989) show that for
+full-rank $\mat S$ with distinct eigenvalues there are no other stationary
+points of rank $k$ beyond these and their $\mat G$-families. This is
+I.12.T2: the loss surface of a linear autoencoder has no local minimum that
+is not global.
+
+It promises the destination and not the schedule. Near a saddle the
+gradient is small, and the escape is slower the closer the start. On the
+four points, begin half a unit along $\vec u_2$ with a tilt of $10^{-6}$
+towards $\vec u_1$, at step size $0.01$. The loss sits within $0.01$ of the
+saddle's value $4$ from step $82$ to step $273$, and reaches $1.01$ only at
+step $513$. With a tilt of $10^{-3}$ it has left by step $85$. Saxe,
+McClelland and Ganguli (2014) solve these dynamics exactly for deep linear
+networks: long plateaus, then rapid drops, with the stronger directions
+learned first.
+
+## A linear decoder caps the autoencoder at this bound
+
+The projection step used nothing about the encoder except that it could
+produce the best code. So make the encoder anything at all, deep and
+nonlinear, and keep an affine decoder $g(\vec z)=\mat D\vec z+\vec c$.
+Every reconstruction lies in the flat $\vec c+\operatorname{col}(\mat D)$,
+of dimension at most $k$. For centred data, the mean squared distance to
+that flat is the mean squared distance to the parallel subspace through
+the origin plus the squared distance of $\vec c$ from that subspace, so it
+is at least $\lambda_{k+1}+\cdots+\lambda_d$. A nonlinear encoder in front
+of a linear decoder cannot beat principal components on the training loss.
+
+To bend the reconstruction surface, the decoder must be nonlinear.
+Hinton and Salakhutdinov (2006) trained a
+$784$-$1000$-$500$-$250$-$30$ autoencoder on images of handwritten digits,
+pretrained one layer at a time, with logistic units throughout except for a
+linear code. On test images they report an average squared error of $3.00$
+per image, against $13.87$ for principal components with the same thirty
+numbers. Proposition 3 takes up what else
+has to be controlled once the decoder has that freedom.
+
+## Train one and watch the product
+
+This script runs gradient descent on (I.12.2) for the four points, from a
+deliberately unbalanced start:
+
+~~~python
+S = [[2.92, 1.44], [1.44, 2.08]]          # covariance of the four points
+e, d = [1.0, 0.0], [0.2, 0.0]             # encoder row, decoder column
+
+def loss_and_grads(e, d):
+    r = [[(i == j) - d[i]*e[j] for j in range(2)] for i in range(2)]   # I - DE
+    rs = [[r[i][0]*S[0][j] + r[i][1]*S[1][j] for j in range(2)] for i in range(2)]
+    loss = sum(rs[i][j]*r[i][j] for i in range(2) for j in range(2))
+    gd = [-2*(rs[i][0]*e[0] + rs[i][1]*e[1]) for i in range(2)]
+    ge = [-2*(d[0]*rs[0][j] + d[1]*rs[1][j]) for j in range(2)]
+    return loss, ge, gd
+
+for step in range(4000):
+    loss, ge, gd = loss_and_grads(e, d)
+    e = [a - 0.01*g for a, g in zip(e, ge)]
+    d = [a - 0.01*g for a, g in zip(d, gd)]
+print(round(loss, 6), [round(d[i]*e[j], 4) for i in range(2) for j in range(2)])
+print([round(v, 4) for v in e], [round(v, 4) for v in d])
+~~~
+
+It prints a loss of <code>1.0</code> and the product
+<code>[0.64, 0.48, 0.48, 0.36]</code>, which is
+$\vec u_1\vec u_1^{\mathsf T}$. The factors are
+<code>[1.0048, 0.7536]</code> and <code>[0.6369, 0.4777]</code>: both
+point along $(0.8,0.6)$, and neither is that vector. The imbalance
+$\|\mat E\|^2-\|\mat D\|^2$ began at $0.96$ and ends at $0.9438$, moved
+only by the finite step size. The product is determined by the data. The
+factors remember where they started.

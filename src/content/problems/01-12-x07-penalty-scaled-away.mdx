@@ -1,0 +1,83 @@
+---
+id: "I.12.X07"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A penalty on the code can be scaled away"
+depends:
+  - "I.12.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+On the four points of
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01), a
+width-one linear autoencoder has $\mat E=(0.8,\,0.6)/c$ and
+$\mat D=c\,(0.8,\,0.6)^{\mathsf T}$ for a constant $c>0$. Its objective is
+the reconstruction loss plus $\beta$ times the mean of $|z|$ over the
+data, with $\beta=0.5$.
+
+(a) Evaluate the objective at $c=1$, $10$ and $1000$. What is its infimum,
+and is it attained?
+
+(b) Now hold the decoder at $(0.8,\,0.6)^{\mathsf T}$ and let each input
+take whichever code is best for it. Find that code for a corner of the
+rectangle, and the objective.
+
+(c) For which $\beta$ is the best code in (b) zero?
+
+<Hint>
+Each corner has a score of $\pm2$ along $(0.8,0.6)$ and $\pm1$ along
+$(-0.6,0.8)$. Use (I.12.9) for (b).
+</Hint>
+
+<SolutionToggle>
+
+**(a)** The product $\mat D\mat E$ does not depend on $c$. It is the
+projection onto $(0.8,0.6)$, with reconstruction loss $1$. The codes are
+$\pm2/c$, with mean absolute value $2/c$. So the objective is
+
+$$
+1+\frac{0.5\cdot2}{c}=1+\frac1c,
+$$
+
+which is $2$, $1.1$ and $1.001$ at the three values of $c$.
+
+Its infimum is $1$, the unpenalised loss, and no finite $c$ attains it.
+Along the way the encoder shrinks towards zero and the decoder grows
+without bound. Nothing about the function computed has changed. The
+penalty has selected for large decoder weights and done nothing else.
+
+**(b)** With a unit-norm decoder the error of one input splits along the
+two eigenvectors. For a corner with scores $a=\pm2$ and $b=\pm1$, a code
+$z$ gives
+
+$$
+(a-z)^2+b^2+\beta|z|.
+$$
+
+By (I.12.9) the best code is
+$\operatorname{sign}(a)\,(|a|-\beta/2)=\pm1.75$. The objective is
+
+$$
+0.25^2+1+0.5\cdot1.75=1.9375,
+$$
+
+against $2$ for the unshortened code $\pm2$. The penalty now trades
+something real: codes an eighth shorter, and a reconstruction error of
+$1.0625$ where it was $1$.
+
+**(c)** The code is zero when $\beta/2\geq|a|=2$, that is, $\beta\geq4$.
+The unit is then never active, the reconstruction is the origin for every
+input, and the reconstruction loss is the total variance, $5$.
+
+**The fix.** Hold each decoder column at unit norm, or weight $|z_j|$ by
+the norm of its column, so that the product of the two scales is what is
+penalised. A penalty on the encoder's Jacobian has the same weakness, and
+tied weights remove it there.
+
+</SolutionToggle>

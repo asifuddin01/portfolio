@@ -1,0 +1,50 @@
+---
+/**
+ * Book I, Ch. XII, Prop. 3: four linear autoencoders on the same data, each
+ * described by the gain it applies to the two principal directions.
+ */
+const LAM = [4, 1];
+const NOISE = 1, DECAY = 0.5;
+const ROWS = [
+  { name: 'no constraint', rule: 'k = d: the identity', gains: [1, 1] },
+  { name: 'bottleneck', rule: 'k = 1: keep or drop', gains: [1, 0] },
+  { name: 'noise σ² = 1', rule: 'λ / (λ + σ²)', gains: LAM.map((l) => l / (l + NOISE)) },
+  { name: 'decay γ = 0.5', rule: '1 − γ / λ', gains: LAM.map((l) => 1 - DECAY / l) },
+];
+const COL = [150, 310];
+const FULL = 100;
+const y = (r: number) => 74 + r * 46;
+---
+<svg class="fig" viewBox="0 0 440 310" role="img" aria-labelledby="rg2-t rg2-d" style="--fig-min: 0px">
+  <title id="rg2-t">The gain each constraint applies to a principal direction</title>
+  <desc id="rg2-d">
+    Four rows of two bars. Each bar is the factor by which a linear autoencoder
+    multiplies one principal direction of the data, for eigenvalues four and
+    one. With no constraint both gains are one. A width-one bottleneck gives one
+    and zero. Input noise of variance one gives 0.8 and 0.5. Weight decay of 0.5
+    gives 0.875 and 0.5.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">gain on each principal direction</text>
+  <text x={COL[0]} y="56" class="t-key">λ₁ = 4</text>
+  <text x={COL[1]} y="56" class="t-key">λ₂ = 1</text>
+
+  {ROWS.map((row, r) => (
+    <g>
+      <text x="8" y={y(r) + 5} class="t-md">{row.name}</text>
+      <text x="8" y={y(r) + 21} class="t-sm">{row.rule}</text>
+      {row.gains.map((gain, c) => (
+        <g>
+          <rect x={COL[c]} y={y(r) - 6} width={FULL} height="14" class="bx-soft" />
+          {gain > 0 && (
+            <rect x={COL[c]} y={y(r) - 6} width={FULL * gain} height="14" class={c === 0 ? 'a3' : 'a1'} opacity="0.7" />
+          )}
+          <text x={COL[c] + FULL + 6} y={y(r) + 5} class="t-sm">{String(gain)}</text>
+        </g>
+      ))}
+    </g>
+  ))}
+
+  <text x="8" y="275" class="t-sm">Only the first row copies its input.</text>
+  <text x="8" y="294" class="t-sm">A bottleneck cuts the weak direction; noise and decay shrink it.</text>
+</svg>

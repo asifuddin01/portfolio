@@ -1,0 +1,58 @@
+---
+id: "I.12.X04"
+kind: exercise
+chapter: "I.12"
+scope: chapter
+variant: counterexample
+difficulty: 1
+title: "As wide as the input, and nothing learned"
+depends:
+  - "I.12.P01"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+A linear autoencoder with $d=k=2$ has
+
+$$
+\mat E=\begin{bmatrix}2&1\\1&1\end{bmatrix},\qquad
+\mat D=\begin{bmatrix}1&-1\\-1&2\end{bmatrix}.
+$$
+
+Find its loss on the four points of
+[I.12.B01](/elementa/neural-networks/autoencoders/problems/b01), the code
+of $(1,2)$, and its reconstruction of $(100,-7)$, a point nowhere near the
+data. What has it learned about the data?
+
+<Hint>
+Multiply $\mat D\mat E$.
+</Hint>
+
+<SolutionToggle>
+
+The product is
+
+$$
+\mat D\mat E=\begin{bmatrix}2-1&1-1\\-2+2&-1+2\end{bmatrix}
+ =\begin{bmatrix}1&0\\0&1\end{bmatrix}.
+$$
+
+Every input is reconstructed exactly, so the loss is $0$ on the four points
+and on any other dataset. The code of $(1,2)$ is $(2+2,\;1+2)=(4,3)$, and
+$(100,-7)$ is returned as $(100,-7)$.
+
+It has learned nothing about the data. The loss is at its smallest
+possible value, yet the same pair of matrices would have been optimal for
+any four points. Any invertible $\mat E$ with $\mat D=\mat E^{-1}$ does the
+same, a family with four free numbers.
+
+The code is the input in another basis. A linear classifier on the code
+can do exactly what it could do on the input, no more and no less.
+
+This is the case $k=d$ of (I.12.5): the sum of discarded eigenvalues is
+empty. A reconstruction loss of zero is evidence that an autoencoder
+compresses only when something prevents this solution.
+
+</SolutionToggle>

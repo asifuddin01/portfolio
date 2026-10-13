@@ -1,0 +1,155 @@
+---
+id: "I.12.B01"
+kind: problem
+chapter: "I.12"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "Keep one coordinate, then repair each half"
+depends:
+  - "I.12.P01"
+  - "I.12.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-12-autoencoders-checks.py"
+status: published
+---
+<Statement>
+Run a width-one linear autoencoder by hand on four points. Then improve the
+decoder alone, and after it the encoder alone, using their closed forms.
+</Statement>
+
+<Given>
+The data are $(1,2)$, $(2.2,0.4)$, $(-1,-2)$ and $(-2.2,-0.4)$. They are
+centred, with
+
+$$
+\begin{aligned}
+\mat S&=\begin{bmatrix}2.92&1.44\\1.44&2.08\end{bmatrix},\\
+\operatorname{tr}\mat S&=5.
+\end{aligned}
+$$
+
+The autoencoder starts at $\mat E=(1,\,0)$ and $\mat D=(1,\,0)^{\mathsf T}$:
+it keeps the first coordinate and writes it back.
+</Given>
+
+<Find>
+The four codes, the reconstructions and the loss. The best decoder for this
+encoder and its loss. The best encoder for that decoder and its loss. Where
+the sequence goes if the two repairs are alternated.
+</Find>
+
+<Strategy>
+Evaluate (I.12.1) directly, then apply the two lines of (I.12.3) in turn.
+After a decoder repair the loss is
+$\operatorname{tr}\mat S-\operatorname{tr}(\mat D\mat E\mat S)$.
+</Strategy>
+
+<Solution>
+
+**The starting point.** The codes are the first coordinates:
+$1$, $2.2$, $-1$ and $-2.2$. Each reconstruction is $(z,0)$, so each error
+is the square of the second coordinate: $4$, $0.16$, $4$ and $0.16$. The
+loss is their mean, $2.08$. That is $S_{22}$, the variance of the
+coordinate that was dropped.
+
+**Repair the decoder.** With $\mat E=(1,0)$ the code variance is
+$\mat E\mat S\mat E^{\mathsf T}=2.92$ and
+$\mat S\mat E^{\mathsf T}=(2.92,\,1.44)^{\mathsf T}$. The first line of
+(I.12.3) gives
+
+$$
+\begin{aligned}
+\mat D&=\frac{1}{2.92}\begin{bmatrix}2.92\\1.44\end{bmatrix}\\[2pt]
+ &=\begin{bmatrix}1\\0.493151\end{bmatrix}.
+\end{aligned}
+$$
+
+The decoder now predicts the second coordinate from the first by
+regression. The loss falls to
+
+$$
+\begin{aligned}
+5-\frac{2.92^2+1.44^2}{2.92}
+ &=5-\frac{10.6}{2.92}\\
+ &=1.369863.
+\end{aligned}
+$$
+
+**Repair the encoder.** For this decoder
+$\mat D^{\mathsf T}\mat D=1.243198$, and the second line of (I.12.3) gives
+
+$$
+\begin{aligned}
+\mat E&=\frac{\mat D^{\mathsf T}}{1.243198}\\
+ &=(0.804377,\;0.396679).
+\end{aligned}
+$$
+
+The autoencoder is now the projection onto the direction of $\mat D$. By
+(I.12.4) its loss is $5$ minus the variance along that direction, which is
+$1.101887$.
+
+**Alternate.** Two more repairs give $1.026137$ and $1.006577$, and the
+sequence converges to $1$.
+
+The reason is visible in the two formulas. The decoder repair sets
+$\mat D$ proportional to $\mat S\mat E^{\mathsf T}$, and the encoder repair
+sets $\mat E$ proportional to $\mat D^{\mathsf T}$. One full sweep
+therefore multiplies the direction by $\mat S$, which is the power method.
+The starting direction $(1,0)$ equals $0.8\,\vec u_1-0.6\,\vec u_2$ for the
+eigenvectors $\vec u_1=(0.8,0.6)$ and $\vec u_2=(-0.6,0.8)$ of $\mat S$,
+with eigenvalues $4$ and $1$. Each sweep divides the tangent of the angle
+to $\vec u_1$ by $4$: it is $0.75$, then $0.1875$, then $0.046875$. A
+projection at angle $\varphi$ to $\vec u_1$ has loss $1+3\sin^2\varphi$,
+which reproduces $1.101887$ and $1.006577$.
+
+</Solution>
+
+<Answer>
+Codes $(1,\,2.2,\,-1,\,-2.2)$ and loss $2.08$. Best decoder
+$(1,\,0.493151)^{\mathsf T}$ with loss $1.369863$. Best encoder
+$(0.804377,\,0.396679)$ with loss $1.101887$. Then $1.026137$, $1.006577$,
+and the limit $1$, the smaller eigenvalue of $\mat S$.
+</Answer>
+
+<CheckSanity>
+The losses decrease at every step, because each repair is an exact
+minimisation over one matrix with the other held fixed. None falls below
+$1$, the bound of I.12.T1.
+</CheckSanity>
+
+<CheckNumeric snippet="i-12-autoencoders-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-12-autoencoders-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-12-autoencoders-checks.py
+~~~
+
+It checks all fifteen problems of the chapter and the numbers quoted in its
+four propositions. Its first line reports the losses above. Before that it
+confirms that $\mat S$ has eigenvalues $4$ and $1$ with the stated
+eigenvectors, and later that the gradients of (I.12.2) match central finite
+differences for untied and for tied weights.
+
+</CheckNumeric>
+
+<Breaks>
+Start the encoder at $\vec u_2^{\mathsf T}=(-0.6,\,0.8)$. Then
+$\mat S\mat E^{\mathsf T}$ is a multiple of $\vec u_2$, the repaired decoder
+is $\vec u_2$ again, and the alternation never moves. The loss stays at
+$4$. This is the saddle of I.12.T2, and an exact start on it is the only
+way to remain there.
+</Breaks>
+
+<Variation>
+Keep the second coordinate instead, $\mat E=(0,1)$ and
+$\mat D=(0,1)^{\mathsf T}$. The loss is $S_{11}=2.92$, worse than before
+because the first coordinate has the larger variance. One decoder repair
+gives $\mat D=(0.692308,\,1)^{\mathsf T}$ and a loss of
+$5-6.4/2.08=1.923077$.
+</Variation>

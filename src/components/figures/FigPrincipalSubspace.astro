@@ -1,0 +1,52 @@
+---
+/**
+ * Book I, Ch. XII, Prop. 2: the chapter's four points and the best line
+ * through them. Drawn to scale, so every residual has length one.
+ */
+const U = [0.8, 0.6];
+const POINTS = [[1, 2], [2.2, 0.4], [-1, -2], [-2.2, -0.4]];
+const px = (x: number) => 200 + 44 * x;
+const py = (y: number) => 165 - 44 * y;
+const score = (p: number[]) => U[0] * p[0] + U[1] * p[1];
+const foot = (p: number[]) => [score(p) * U[0], score(p) * U[1]];
+const corners = POINTS.map((p) => `${px(p[0])},${py(p[1])}`).join(' ');
+---
+<svg class="fig" viewBox="0 0 440 326" role="img" aria-labelledby="ps-t ps-d" style="--fig-min: 0px">
+  <title id="ps-t">Four points and their principal axis</title>
+  <desc id="ps-d">
+    The four corners of a rectangle four units long and two units wide, turned
+    so that its long side points along the direction 0.8, 0.6. A solid line
+    through the origin in that direction is the principal axis. Each corner
+    drops a perpendicular of length one onto it, and the two corners at each
+    end land on the same point. A dashed horizontal line marks the alternative
+    of keeping the first coordinate alone, which costs 2.08 instead of 1.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">four points · one code number</text>
+
+  <line x1="50" y1="165" x2="350" y2="165" class="dash" />
+  <line x1="200" y1="58" x2="200" y2="272" class="wire-soft" />
+  <text x="356" y="162" class="t-sm">x₁ axis</text>
+  <text x="356" y="177" class="t-sm">loss 2.08</text>
+
+  <polygon points={corners} class="wire-soft" />
+
+  <line x1={px(-3.3 * U[0])} y1={py(-3.3 * U[1])} x2={px(3.3 * U[0])} y2={py(3.3 * U[1])} class="s3" stroke-width="2" />
+  <text x="322" y="74" class="t-key">u₁ = (0.8, 0.6)</text>
+  <text x="322" y="89" class="t-key">loss 1</text>
+
+  {POINTS.map((p) => (
+    <line x1={px(p[0])} y1={py(p[1])} x2={px(foot(p)[0])} y2={py(foot(p)[1])} class="s1" stroke-width="1.6" />
+  ))}
+  {[POINTS[0], POINTS[2]].map((p) => (
+    <circle cx={px(foot(p)[0])} cy={py(foot(p)[1])} r="4" class="a3" />
+  ))}
+  {POINTS.map((p) => (
+    <circle cx={px(p[0])} cy={py(p[1])} r="5" class="head" />
+  ))}
+
+  <text x="293" y="126" class="t-sm">length 1</text>
+
+  <text x="8" y="299" class="t-sm">Each corner lies 1 from the line, so the loss is 1 = λ₂.</text>
+  <text x="8" y="318" class="t-sm">Two corners share each reconstruction. The codes are ±2.</text>
+</svg>
