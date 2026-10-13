@@ -21,8 +21,20 @@ const optionalUrl = z
     const raw = v.trim();
     if (raw === '') return null;
     // Somebody pasted a sentence with a link in it. Take the link.
-    const found = raw.match(/https?:\/\/[^\s<>"')\]]+/);
-    if (found) return found[0];
+    const found = raw.match(/https?:\/\/[^\s<>"'\]]+/);
+    if (found) {
+      // A closing bracket ends the link unless the link opened it. "(see
+      // https://example.com/page)" yields the page; a DOI such as
+      // 10.1016/0893-6080(89)90020-8 keeps its brackets, where stopping at the
+      // first ")" used to publish half an address.
+      const url = found[0];
+      let depth = 0;
+      for (let i = 0; i < url.length; i += 1) {
+        if (url[i] === '(') depth += 1;
+        else if (url[i] === ')' && --depth < 0) return url.slice(0, i);
+      }
+      return url;
+    }
     // A bare domain, e.g. example.com/page — assume https.
     if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(raw)) return `https://${raw}`;
     return raw;

@@ -69,6 +69,7 @@ function resolves(href) {
 }
 
 const broken = new Map();
+const cutShort = new Map();
 let links = 0;
 let pages = 0;
 
@@ -90,6 +91,19 @@ for await (const file of walk(DIST)) {
       broken.get(href).add(page);
     }
   }
+
+  /* An external link is not fetched, but one defect in it is ours to catch: an
+     address cut off inside a bracket. A DOI such as 10.1016/0893-6080(89)90020-8
+     was once published as far as "(89", and every such link led nowhere. */
+  for (const m of html.matchAll(/href="(https?:\/\/[^"]*)"/g)) {
+    if (m[1].split('(').length !== m[1].split(')').length) cutShort.set(m[1], page);
+  }
+}
+
+if (cutShort.size) {
+  console.error(`✗ ${cutShort.size} external link(s) end inside a bracket:`);
+  for (const [href, page] of [...cutShort].sort()) console.error(`  ✗ ${href}\n      on ${page}`);
+  process.exit(1);
 }
 
 if (broken.size) {
