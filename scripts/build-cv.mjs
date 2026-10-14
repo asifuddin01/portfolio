@@ -65,9 +65,15 @@ const cv = buildCv({
 // An ORCID iD is sixteen digits in fours: shaped exactly like a phone number
 // and not one. Only an iD written as its own orcid.org address is set aside
 // before the scan, so nothing else gets a way through by looking like an iD —
-// a bare 0009-0000-1705-4097 anywhere else still stops the build.
+// a bare 0009-0000-1705-4097 anywhere else still stops the build. An arXiv
+// identifier (2610.17933) is the same case and gets the same narrow
+// exemption: only as an arxiv.org/abs/ or /pdf/ address.
 const phoneShaped = (text) =>
-  /\+?\d[\d\s().-]{7,}/.test(text.replace(/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/g, 'orcid'));
+  /\+?\d[\d\s().-]{7,}/.test(
+    text
+      .replace(/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/g, 'orcid')
+      .replace(/arxiv\.org\/(?:abs|pdf)\/\d{4}\.\d{4,5}(?:v\d+)?/g, 'arxiv'),
+  );
 
 // The guard checks itself before it checks the CV. If the exemption is ever
 // widened far enough to let a number through, this is where the build stops.
@@ -76,6 +82,10 @@ for (const [text, blocked] of [
   ['0009-0000-1705-4097', true],
   ['+880 1712-345678', true],
   ['orcid.org/0009-0000-1705-4097 +880 1712-345678', true],
+  ['https://arxiv.org/abs/2610.17933', false],
+  ['2610.17933', true],
+  ['arXiv:2610.17933', true],
+  ['https://arxiv.org/abs/2610.17933 +880 1712-345678', true],
 ]) {
   if (phoneShaped(text) !== blocked) {
     console.error(`✗ the phone-number guard is broken: it ${blocked ? 'let through' : 'blocked'} ${JSON.stringify(text)}.`);

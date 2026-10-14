@@ -15,7 +15,7 @@ const hasAny = Boolean(cite) || Boolean(paperUrl) || Boolean(repoUrl);
     {cite && <p class="cl-cite">{cite}</p>}
     {(paperUrl || repoUrl) && (
       <p class="cl-links">
-        {paperUrl && <a class="link" href={paperUrl}>Paper</a>}
+        {paperUrl && <a class="link" href={paperUrl}>{/arxiv\.org\//.test(paperUrl) ? 'Preprint (arXiv)' : 'Paper'}</a>}
         {paperUrl && repoUrl && <span class="cl-sep"> · </span>}
         {repoUrl && <a class="link" href={repoUrl}>Repository</a>}
       </p>

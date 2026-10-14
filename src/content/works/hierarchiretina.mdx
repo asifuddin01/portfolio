@@ -25,8 +25,8 @@ datasets:
   - E-Ophtha
 abstract: |-
   Clinical screening for diabetic retinopathy proceeds in stages, yet most automated systems grade fundus images with a single black-box network. Three gaps remain: (i) lesions differ widely in size and contrast, but segmenters typically apply the same blocks to all; (ii) ungradable images are usually excluded or treated as an extra class, and lesion-aware graders seldom test whether lesions drive the grade; (iii) staged systems often report each stage only on the images reaching it, leaving propagated errors unmeasured. HierarchiRetina, a screening, segmentation and grading cascade with inspectable stage outputs, addresses each gap. First, HSMoE-AUNet is a U-Net whose skip, bottleneck and decoder blocks are sparse mixtures of heterogeneous experts, with lesion-matched types, counts and losses; SwinHRUNetPP, a dual-encoder vessel segmenter, uses a field-of-view-restricted loss. Second, LG-DRG separates gradability from ordinal severity and lets lesion masks query the image through gated cross-attention. Third, an end-to-end evaluation counts screening misses as errors and traces each error to its stage. Pooled Dice ranged from 0.184 (microaneurysms) to 0.579 (exudates); vessel Dice was 0.731. On 58,689 held-out images from six datasets, end-to-end quadratic weighted kappa was 0.804, with referral sensitivity 0.832 at specificity 0.947, and the screening gate caused 66% of errors. In ablations, the grade ignored the masks, even with the cross-attention gate started open. On all 4,105 official DDR test images, six-class accuracy was 85.6%, above the best published six-class result we found (83.8%). Staged screening systems should be evaluated end-to-end, with stage attribution and mask ablation, before clinical deployment.
-citation: 'Md Asif Uddin, Niloy Farhan, Rafeed Rahman, and Md. Golam Rabiul Alam, "HierarchiRetina: A diabetic retinopathy screening and grading cascade with heterogeneous mixture-of-experts lesion segmentation," under review, IEEE Journal of Biomedical and Health Informatics, 2026.'
-paperUrl: ''
+citation: 'Md Asif Uddin, Niloy Farhan, Rafeed Rahman, and Md. Golam Rabiul Alam, "HierarchiRetina: A diabetic retinopathy screening and grading cascade with heterogeneous mixture-of-experts lesion segmentation," arXiv:2610.17933 [cs.CV], 2026. Under review, IEEE Journal of Biomedical and Health Informatics.'
+paperUrl: 'https://arxiv.org/abs/2610.17933'
 repoUrl: 'https://github.com/asifuddin01/HierarchiRetina'
 metrics:
   - label: End-to-end quadratic weighted kappa
@@ -51,7 +51,7 @@ metrics:
 
 **Under review** at the *IEEE Journal of Biomedical and Health Informatics* (submitted October 2026).
 Md Asif Uddin, Niloy Farhan, Rafeed Rahman and Md. Golam Rabiul Alam, Department of Computer Science and Engineering, Brac University.
-[Code, trained weights and per-image predictions](https://github.com/asifuddin01/HierarchiRetina) · preprint to follow on TechRxiv or arXiv.
+[Preprint, arXiv:2610.17933](https://arxiv.org/abs/2610.17933) · [Code, trained weights and per-image predictions](https://github.com/asifuddin01/HierarchiRetina)
 
 ![The HierarchiRetina cascade: a screening gate, lesion and vessel segmentation, and a lesion-guided grader](../../assets/images/hierarchiretina-cascade.png)
 

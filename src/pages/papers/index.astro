@@ -85,7 +85,11 @@ const LABEL: Record<string, string> = {
             {(p.data.url || p.data.doi || p.data.code) && (
               <p class="pp-refs">
                 {[
-                  p.data.url && <a class="link" href={p.data.url} rel="noopener">Read it</a>,
+                  p.data.url && (
+                    <a class="link" href={p.data.url} rel="noopener">
+                      {/arxiv\.org\//.test(p.data.url) ? 'arXiv preprint' : 'Read it'}
+                    </a>
+                  ),
                   p.data.doi && (
                     <a class="link" href={`https://doi.org/${p.data.doi}`} rel="noopener">
                       doi:{p.data.doi}
