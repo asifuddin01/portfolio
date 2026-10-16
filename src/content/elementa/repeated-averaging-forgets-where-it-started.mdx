@@ -1,0 +1,155 @@
+---
+chapter: neural-networks--gnn
+proposition: 3
+statement: "Repeated averaging forgets where it started, at a rate the graph's spectrum sets."
+claim: "Stacked graph convolutions drive every node towards one direction fixed by the degrees. The distance to that limit shrinks by the second eigenvalue at every layer, which is why graph networks are shallow."
+given:
+  - a-graph-convolution-cannot-tell-neighbours-apart
+  - long-recurrences-vanish-or-explode
+figure: FigOverSmoothing
+figureType: G
+status: published
+updated: 2026-10-16
+sources:
+  - title: "Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning"
+    url: https://arxiv.org/abs/1801.07606
+  - title: "Graph Neural Networks Exponentially Lose Expressive Power for Node Classification"
+    url: https://arxiv.org/abs/1905.10947
+  - title: "On the Bottleneck of Graph Neural Networks and its Practical Implications"
+    url: https://arxiv.org/abs/2006.05205
+---
+
+## Averaging has a fixed direction
+
+Strip a graph convolution of its weights and nonlinearity and stack it $k$
+times: the result is $\hat{\mat A}^k\vec x$. This is the part of a deep graph
+network that the graph contributes, and it has a limit.
+
+Let $\vec s$ hold the square roots of the degrees with self-loops,
+$s_v=\sqrt{\tilde d_v}$. Each row of $\mat A+\mat I$ sums to that node's
+degree, so
+
+$$
+\begin{aligned}
+\hat{\mat A}\vec s
+ &=\tilde{\mat D}^{-1/2}(\mat A+\mat I)\mathbf 1\\
+ &=\tilde{\mat D}^{-1/2}\tilde{\vec d}=\vec s,
+\end{aligned}
+$$
+
+and $\vec s$ is an eigenvector with eigenvalue $1$. The matrix $\hat{\mat A}$ is similar to
+$\tilde{\mat D}^{-1}(\mat A+\mat I)$, a random walk that may stay put. For
+a connected graph that walk can reach every node and is not periodic, so by
+the Perron–Frobenius theorem the eigenvalue $1$ is simple and every other
+eigenvalue lies strictly between $-1$ and $1$. Expanding $\vec x$ in the
+orthonormal eigenvectors of the symmetric $\hat{\mat A}$, each component is
+multiplied by its eigenvalue at every step:
+
+<Eq id="I.14.6" gloss="Repeated averaging forgets everything but one direction.">
+
+$$
+\begin{aligned}
+&\hat{\mat A}^k\vec x=\sum_i\lambda_i^k\,\vec u_i\vec u_i^{\mathsf T}\vec x\\
+&\;\;\to\vec u_1\vec u_1^{\mathsf T}\vec x,\\
+&\vec u_1=\vec s/\|\vec s\|,\\[4pt]
+&\big\|\hat{\mat A}^k\vec x-\vec u_1\vec u_1^{\mathsf T}\vec x\big\|\\
+&\;\;\leq|\lambda_2|^k\,\big\|\vec x-\vec u_1\vec u_1^{\mathsf T}\vec x\big\|.
+\end{aligned}
+$$
+
+</Eq>
+
+Here $|\lambda_2|$ is the largest absolute value among the other
+eigenvalues. The limit gives every node the value $c\sqrt{\tilde d_v}$ for
+one number $c$: once divided by $\sqrt{\tilde d_v}$, all nodes agree, and the
+features that distinguished them are gone. That is over-smoothing, and
+(I.14.6) is I.14.T3. The geometry is that of I.9: a product of the same
+matrix, with the eigenvalues deciding what survives. There the problem was
+a vanishing gradient; here it is a vanishing difference between nodes.
+
+## On the paw graph
+
+The paw's $\hat{\mat A}$ has eigenvalues $1$, $0.564333$, $0$ and
+$-0.147667$, so $|\lambda_2|=0.564333$. Starting from $\vec x=(1,2,3,4)$, the
+limit is
+
+$$
+\begin{aligned}
+\vec u_1\vec u_1^{\mathsf T}\vec x
+ =(&2.432522,\;2.432522,\\
+ &2.808834,\;1.986146),
+\end{aligned}
+$$
+
+which is $1.404417\sqrt{\tilde d_v}$ at every node. The distance to it is
+$2.516217$ at the start and
+
+| layers $k$ | distance to the limit |
+|---|---|
+| $1$ | $1.358469$ |
+| $2$ | $0.766463$ |
+| $4$ | $0.244093$ |
+| $8$ | $0.024757$ |
+| $16$ | $0.000255$ |
+
+each within the bound $0.564333^k\times2.516217$. The figure plots the four
+node values divided by $\sqrt{\tilde d_v}$: after ten rounds they differ by
+less than one per cent.
+
+The eigenvalue $0$ explains what proposition 2 found. Its eigenvector is
+$(1,-1,0,0)/\sqrt2$, the difference between nodes $1$ and $2$, and one
+application of $\hat{\mat A}$ removes that component entirely. That is why
+the two nodes merged after one layer.
+[I.14.B02](/elementa/neural-networks/gnn/problems/b02) derives every
+number.
+
+## What a trained network keeps
+
+Weights and nonlinearities change the rate, not the tendency. Oono and
+Suzuki (2020) showed that for graph convolutions with ReLU, when the
+largest singular value of each weight matrix times $|\lambda_2|$ is below
+one, the node states approach a subspace that carries no information
+beyond degrees, exponentially fast in the depth. Li, Han and Wu (2018)
+read the graph convolution as Laplacian smoothing. A few rounds help,
+because a node borrows evidence from labelled neighbours; many rounds
+hurt, because every node borrows the same evidence. Graph networks with
+two or three layers are common for this reason. Residual connections,
+which I.11 used to make deep convolutional networks trainable, keep part of
+each node's own state and slow the collapse.
+
+Depth fails in a second way that is not smoothing. A node $k$ hops from
+many others must pass all their information through one fixed-width
+vector. Alon and Yahav (2021) called this over-squashing: the number of
+nodes within $k$ hops can grow exponentially while the width does not.
+
+## Without self-loops
+
+The self-loop is what keeps the eigenvalues above $-1$. Without it, a
+bipartite graph's normalised adjacency $\mat D^{-1/2}\mat A\mat D^{-1/2}$ has
+the eigenvalue $-1$, whose eigenvector alternates in sign between the two
+sides. On a hexagon the signal $(1,-1,1,-1,1,-1)$ flips sign at every layer
+and never converges. With self-loops the hexagon's eigenvalues are
+$(1+2\cos\theta)/3$, the largest after $1$ is $\tfrac23$, and differences
+fall below one per cent after $12$ layers
+([I.14.X05](/elementa/neural-networks/gnn/problems/x05)).
+
+## Watch it converge
+
+~~~python
+from math import sqrt
+A = [[0, 1, 1, 0], [1, 0, 1, 0], [1, 1, 0, 1], [0, 0, 1, 0]]
+d = [sum(r) + 1 for r in A]                                  # degrees with self-loops
+Ahat = [[(A[i][j] + (i == j))/sqrt(d[i]*d[j]) for j in range(4)] for i in range(4)]
+h = [1.0, 2.0, 3.0, 4.0]
+u = [sqrt(di/sum(d)) for di in d]                            # the fixed direction
+limit = [ui*sum(uj*hj for uj, hj in zip(u, h)) for ui in u]
+for k in range(1, 17):
+    h = [sum(a*b for a, b in zip(row, h)) for row in Ahat]
+    if k in (1, 2, 4, 8, 16):
+        print(k, round(sqrt(sum((a - b)**2 for a, b in zip(h, limit))), 6))
+~~~
+
+It prints the distances in the table: $1.358469$, $0.766463$, $0.244093$,
+$0.024757$ and $0.000255$. From $k=8$ to $k=16$ the distance falls by a
+factor of $97$, which is $0.564333^{-8}$ to within a third of one per cent:
+the second eigenvalue, applied once per layer.

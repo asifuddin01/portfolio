@@ -3,19 +3,103 @@ id: "I.14"
 book: neural-networks
 order: 14
 title: "Graph Neural Networks"
-summary: "Each node repeatedly summarises its neighbours; after k rounds it knows its k-hop neighbourhood."
+summary: "Each node repeatedly summarises its neighbours. After k rounds it knows its k-hop neighbourhood, and after many rounds it knows only the average."
 claim: "Message passing is permutation-equivariant, and no amount of it can distinguish graphs that the 1-WL test cannot."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "Node features, adjacency and what a relabelling does to them"
+  - "Permutation equivariance of layers and invariance of readouts"
+  - "Message passing: messages, aggregators, updates"
+  - "Receptive fields on a graph: k layers see k hops"
+  - "The graph Laplacian, spectral filters and the graph convolution"
+  - "Why a graph convolution cannot tell its neighbours apart"
+  - "Over-smoothing: repeated averaging and the second eigenvalue"
+  - "Colour refinement and the limit it sets on message passing"
+  - "Sum, mean and max aggregators, and which can count"
+  - "Sparse computation, batching graphs and neighbour sampling"
+definitions:
+  - n: 1
+    term: "Node features"
+    statement: "A matrix X with one row per node and one column per feature, n by d. Together with the adjacency matrix A it is the whole input. The order of its rows is a labelling, not information."
+    introduces: []
+  - n: 2
+    term: "Relabelling"
+    statement: "A permutation of the node numbers, written as a permutation matrix P. It sends A to P A P^T and X to P X, and describes the same graph with the same features."
+    introduces: []
+  - n: 3
+    term: "Permutation equivariance and invariance"
+    statement: "A layer f is equivariant if f(P A P^T, P X) = P f(A, X) for every permutation: relabelling the input relabels the output. A readout r is invariant if r(P A P^T, P X) = r(A, X): relabelling changes nothing."
+    introduces: []
+  - n: 4
+    term: "Message passing"
+    statement: "A layer in which every node computes a message from each neighbour, combines the messages with a permutation-invariant aggregator, and updates its own state from the result and its previous state. The same functions are used at every node."
+    introduces: []
+  - n: 5
+    term: "Aggregator"
+    statement: "The function that combines a node's incoming messages: sum, mean, max, or a weighted sum such as attention. It must not depend on the order of the neighbours, so it acts on a multiset."
+    introduces: []
+  - n: 6
+    term: "Node embedding"
+    statement: "A node's state after the last layer, a vector that depends on the node's features and on its neighbourhood up to as many hops as there are layers."
+    introduces: []
+  - n: 7
+    term: "Readout"
+    statement: "A permutation-invariant function of all node states that produces one vector per graph, usually their sum or mean, used for predictions about whole graphs."
+    introduces: []
+  - n: 8
+    term: "Graph Laplacian"
+    statement: "L = D - A, with D the diagonal matrix of degrees. Its quadratic form x^T L x is the sum over edges of (x_u - x_v)^2, so small values mean a signal that varies little across edges. The normalised form is I - D^(-1/2) A D^(-1/2)."
+    introduces: []
+  - n: 9
+    term: "Graph convolution"
+    statement: "The layer H' = sigma(A-hat H W) of Kipf and Welling, with A-hat = D-tilde^(-1/2) (A + I) D-tilde^(-1/2) and D-tilde the degrees counted with self-loops. Every node takes a degree-weighted average of itself and its neighbours, then all nodes share W."
+    introduces: []
+  - n: 10
+    term: "Over-smoothing"
+    statement: "The convergence of node states towards a common direction as averaging layers are stacked. The nodes become indistinguishable except for a factor set by their degrees."
+    introduces: []
+  - n: 11
+    term: "Colour refinement (1-WL)"
+    statement: "The Weisfeiler-Lehman test: give every node the same colour, then repeatedly recolour each node by its own colour and the multiset of its neighbours' colours. Two graphs whose colour counts differ at some round are not isomorphic; equal counts prove nothing."
+    introduces: []
 beforeYouStart:
   - "I.11"
+  - "I.6"
   - "0.GR.01"
   - "0.GR.02"
-conceptFigure: FigFcmaeGrn
-problemStatement: "Grids and sequences are graphs with a fixed, regular neighbourhood. Molecules, interaction networks and citation graphs are not. Generalising convolution to an arbitrary neighbourhood is the last piece of neural machinery Elementa needs."
-formalResults: []
-assumptions: []
+  - "0.LA.04"
+conceptFigure: FigMessagePassing
+problemStatement: "Grids and sequences are graphs with a fixed, regular neighbourhood. Molecules, interaction networks and citation graphs are not, and their nodes have no natural order. Generalising convolution to an arbitrary neighbourhood is the last piece of neural machinery Elementa needs. We build the layer from the one constraint a graph imposes, that numbering the nodes means nothing; derive the graph convolution and what it cannot represent; show that repeating it averages every node into the same vector; and prove a limit on what any such network can tell apart."
+formalResults:
+  - id: "I.14.T1"
+    name: "Message passing with an invariant aggregator is permutation-equivariant"
+    statement: "If every node applies the same message, aggregation and update functions, and the aggregator depends only on the multiset of incoming messages, then relabelling the nodes by P sends the layer's output H to P H. A readout that sums or averages over nodes is then permutation-invariant, and so is any composition of such layers followed by it."
+    doesNotPromise: "Equivariance is a restriction as well as a guarantee: a node cannot tell its neighbours apart, so no layer of this kind computes a directional difference. Nor does it promise that structurally different nodes receive different states; I.14.T4 bounds that."
+  - id: "I.14.T2"
+    name: "k layers see k hops"
+    statement: "After k message-passing layers, a node's state depends only on the features and edges within distance k of it. In matrix form, the entry of A^k for nodes v and u counts walks of length k between them, and is zero when they are more than k apart."
+    doesNotPromise: "Possible dependence is not effective dependence. A node k hops away may influence the state by a negligible amount, and a fixed-width state must summarise a neighbourhood that can grow exponentially with k."
+  - id: "I.14.T3"
+    name: "The graph convolution's averaging converges at the rate of its second eigenvalue"
+    statement: "For a connected graph, A-hat = D-tilde^(-1/2) (A + I) D-tilde^(-1/2) has eigenvalue 1 once, with unit eigenvector u proportional to the square roots of the degrees with self-loops, and every other eigenvalue strictly between -1 and 1. Hence A-hat^k x tends to u (u^T x), and the distance to that limit is at most |lambda_2|^k times the starting distance, where |lambda_2| is the largest other eigenvalue in absolute value."
+    doesNotPromise: "This is the linear part only. Learned weights and nonlinearities change the rate, and residual connections or normalisation can prevent the collapse. Without self-loops a bipartite graph has eigenvalue -1 and the iteration oscillates instead. A disconnected graph converges separately on each component."
+  - id: "I.14.T4"
+    name: "Message passing is no more discriminating than colour refinement"
+    statement: "If colour refinement gives two graphs the same colour counts at every round, then every message-passing network started from identical node features gives them the same multiset of node states at every layer, and so the same readout. With a sum aggregator and injective update functions a message-passing network separates every pair that colour refinement separates. Mean and max aggregators are strictly weaker."
+    doesNotPromise: "Matching colour refinement in principle does not mean a trained network does. Distinct node features break the ties the theorem assumes. Colour refinement separates almost all graphs drawn at random, and fails on regular graphs such as two triangles against a hexagon."
+assumptions:
+  - statement: "The aggregator is invariant to the order of the neighbours. A layer that reads neighbours in index order depends on the labelling."
+    testedBy: "I.14.X02"
+  - statement: "The graph is connected and has self-loops when convergence is claimed. Without self-loops a bipartite graph oscillates."
+    testedBy: "I.14.X05"
+  - statement: "Graphs batched together are offset so that their edges stay within their own blocks."
+    testedBy: "I.14.B05"
+  - statement: "Node features, or extra structural features, break the symmetries that colour refinement cannot."
+    testedBy: "I.14.B03"
+  - statement: "The dependencies the task needs lie within as many hops as there are layers."
+    testedBy: "I.14.X07"
+  - statement: "Where counting matters, the aggregator is injective on multisets, as a sum is and a mean or a max is not."
+    testedBy: "I.14.X03"
 owns:
   - "message-passing"
   - "graph-convolution"
@@ -24,23 +108,135 @@ owns:
   - "permutation-equivariance"
 borrows:
   - "convolution"
+  - "receptive-field"
   - "graph-basics"
   - "graph-representation"
   - "eigendecomposition"
   - "backpropagation"
-implementation: false
-failureModes: []
-references: []
+implementation: true
+failureModes:
+  - "Stacking averaging layers. On the four-node paw graph the distance of the state from its limit falls from 2.516217 to 0.244093 after four rounds and to 0.000255 after sixteen; after ten the four nodes differ by less than one per cent."
+  - "A mean or max aggregator where counts matter. The centres of stars with two and four leaves receive the same mean, 1, from constant features; the multisets {1, 1, 2, 2} and {1, 2} have the same mean and the same maximum."
+  - "Merging nodes with the same closed neighbourhood. One graph convolution gives nodes 1 and 2 of the paw graph the same output, 1.866025, although their features are 1 and 2."
+  - "Batching graphs without offsetting their edge lists. Three graphs of sizes 4, 3 and 5 should read out 8, 4 and 10 after one summed round; without offsets they read out 10, 2 and 0."
+  - "Omitting self-loops on a bipartite graph. On a hexagon the normalised adjacency has eigenvalue -1, and the alternating signal flips sign at every layer instead of converging."
+  - "Expecting message passing to separate regular graphs. Two triangles and a hexagon get identical outputs from every message-passing network with identical starting features, though one has two triangles and the other none."
+  - "Using a dense adjacency matrix. For a million nodes and ten million edges it needs 4e12 bytes and 1.28e14 multiply-accumulates per layer of width 128; an edge list needs 3.2e8 bytes and 1.89e10."
+  - "Too few layers for the task. Node 1 of a four-node path and of a five-node path has the same state after two layers, 0.892956, and the two differ only from the third."
+  - "Ignoring neighbourhood growth. With average degree 20, a three-layer network's prediction for one node can depend on up to 8,000 nodes; sampling 25 and then 10 neighbours bounds two layers at 250."
+  - "Feeding Laplacian eigenvectors as positions without handling their ambiguity. Each eigenvector is defined only up to sign, and the eigenvalue 3 of two triangles has multiplicity four, with no preferred basis."
+references:
+  - title: "The Graph Neural Network Model"
+    url: https://doi.org/10.1109/TNN.2008.2005605
+    authors: "Scarselli, Gori, Tsoi, Hagenbuchner and Monfardini"
+    year: 2009
+    venue: "IEEE Transactions on Neural Networks 20(1)"
+  - title: "Neural Message Passing for Quantum Chemistry"
+    url: https://proceedings.mlr.press/v70/gilmer17a.html
+    authors: "Gilmer, Schoenholz, Riley, Vinyals and Dahl"
+    year: 2017
+    venue: "International Conference on Machine Learning, PMLR 70"
+  - title: "Spectral Networks and Locally Connected Networks on Graphs"
+    url: https://arxiv.org/abs/1312.6203
+    authors: "Bruna, Zaremba, Szlam and LeCun"
+    year: 2014
+    venue: "International Conference on Learning Representations"
+  - title: "Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering"
+    url: https://arxiv.org/abs/1606.09375
+    authors: "Defferrard, Bresson and Vandergheynst"
+    year: 2016
+    venue: "Advances in Neural Information Processing Systems 29"
+  - title: "Semi-Supervised Classification with Graph Convolutional Networks"
+    url: https://arxiv.org/abs/1609.02907
+    authors: "Kipf and Welling"
+    year: 2017
+    venue: "International Conference on Learning Representations"
+  - title: "Deep Sets"
+    url: https://arxiv.org/abs/1703.06114
+    authors: "Zaheer, Kottur, Ravanbakhsh, Poczos, Salakhutdinov and Smola"
+    year: 2017
+    venue: "Advances in Neural Information Processing Systems 30"
+  - title: "Inductive Representation Learning on Large Graphs"
+    url: https://arxiv.org/abs/1706.02216
+    authors: "Hamilton, Ying and Leskovec"
+    year: 2017
+    venue: "Advances in Neural Information Processing Systems 30"
+  - title: "Graph Attention Networks"
+    url: https://arxiv.org/abs/1710.10903
+    authors: "Veličković, Cucurull, Casanova, Romero, Liò and Bengio"
+    year: 2018
+    venue: "International Conference on Learning Representations"
+  - title: "Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning"
+    url: https://arxiv.org/abs/1801.07606
+    authors: "Li, Han and Wu"
+    year: 2018
+    venue: "AAAI Conference on Artificial Intelligence"
+  - title: "How Powerful are Graph Neural Networks?"
+    url: https://arxiv.org/abs/1810.00826
+    authors: "Xu, Hu, Leskovec and Jegelka"
+    year: 2019
+    venue: "International Conference on Learning Representations"
+  - title: "Weisfeiler and Leman Go Neural: Higher-order Graph Neural Networks"
+    url: https://arxiv.org/abs/1810.02244
+    authors: "Morris, Ritzert, Fey, Hamilton, Lenssen, Rattan and Grohe"
+    year: 2019
+    venue: "AAAI Conference on Artificial Intelligence"
+  - title: "Weisfeiler-Lehman Graph Kernels"
+    url: https://jmlr.org/papers/v12/shervashidze11a.html
+    authors: "Shervashidze, Schweitzer, van Leeuwen, Mehlhorn and Borgwardt"
+    year: 2011
+    venue: "Journal of Machine Learning Research 12"
+  - title: "Graph Neural Networks Exponentially Lose Expressive Power for Node Classification"
+    url: https://arxiv.org/abs/1905.10947
+    authors: "Oono and Suzuki"
+    year: 2020
+    venue: "International Conference on Learning Representations"
+  - title: "On the Bottleneck of Graph Neural Networks and its Practical Implications"
+    url: https://arxiv.org/abs/2006.05205
+    authors: "Alon and Yahav"
+    year: 2021
+    venue: "International Conference on Learning Representations"
 notation:
   - "W"
   - "X"
   - "lambda"
   - "d"
+  - "sigma"
+  - "nabla"
+  - "L_loss"
 apparatus:
   - "0.GR.01"
   - "0.GR.02"
+  - "0.GR.03"
   - "0.LA.02"
   - "0.LA.04"
-keyEquations: []
+keyEquations:
+  - id: "I.14.1"
+    formula: "A -> P A P^T, X -> P X; f(P A P^T, P X) = P f(A, X); r(P A P^T, P X) = r(A, X)"
+    gloss: "A relabelling changes the description of a graph, not the graph."
+  - id: "I.14.2"
+    formula: "h_v' = phi(h_v, aggregate over u in N(v) of psi(h_v, h_u))"
+    gloss: "Every node runs the same rule on the multiset of its neighbours."
+  - id: "I.14.3"
+    formula: "H' = sigma(H W_0 + A H W_1); (A^k)_vu = number of walks of length k from v to u"
+    gloss: "Sum aggregation is a product with A, and k products reach k hops."
+  - id: "I.14.4"
+    formula: "L = D - A; x^T L x = sum over edges (x_u - x_v)^2; L = U Lambda U^T; g(L) x = U g(Lambda) U^T x"
+    gloss: "The Laplacian's eigenvectors are a graph's frequencies, and a filter reweights them."
+  - id: "I.14.5"
+    formula: "A-hat = D-tilde^(-1/2) (A + I) D-tilde^(-1/2); H' = sigma(A-hat H W)"
+    gloss: "A graph convolution averages each node with its neighbours, weighted by degree."
+  - id: "I.14.6"
+    formula: "A-hat^k x -> u u^T x, u proportional to D-tilde^(1/2) 1; distance <= |lambda_2|^k times its start"
+    gloss: "Repeated averaging forgets everything but one direction."
+  - id: "I.14.7"
+    formula: "c_v(t+1) = hash(c_v(t), multiset of c_u(t) over u in N(v))"
+    gloss: "Colour refinement is message passing with an injective update."
+  - id: "I.14.8"
+    formula: "h_v' = MLP((1 + epsilon) h_v + sum over u in N(v) of h_u)"
+    gloss: "A sum and an injective update are enough to match colour refinement."
+  - id: "I.14.9"
+    formula: "cost per layer: O(m d + n d^2) with an edge list; O(n^2 d + n d^2) with a dense A"
+    gloss: "A sparse graph is cheap only if its sparsity is used."
 status: review
 ---

@@ -1,0 +1,49 @@
+---
+id: "I.14.X07"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: numeric
+difficulty: 2
+title: "Two layers cannot see three hops"
+depends:
+  - "I.14.P01"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Give every node the feature $1$ on a path of four nodes and on a path of
+five. Apply the graph convolution's $\hat{\mat A}$ one, two and three times,
+and compare the value at node $1$, an end of each path. When do the two
+first differ, and why then?
+
+<Hint>
+After $k$ applications node $1$ depends on the degrees and features within
+$k$ hops. In both paths nodes $1$, $2$ and $3$ have the same degrees; node
+$4$ does not.
+</Hint>
+
+<SolutionToggle>
+
+| layers | path of four | path of five |
+|---|---|---|
+| $1$ | $0.908248$ | $0.908248$ |
+| $2$ | $0.892956$ | $0.892956$ |
+| $3$ | $0.890408$ | $0.880213$ |
+
+The values agree for two layers and differ at the third. Node $1$'s value
+after $k$ layers uses the entries of $\hat{\mat A}$ along walks of length at
+most $k$ from it. Those entries depend on the degrees at both ends of each
+edge walked. Within two hops of node $1$ the walks touch only nodes $1$, $2$
+and $3$, whose degrees are $1$, $2$ and $2$ in both paths. The third layer
+walks the edge from node $3$ to node $4$, and node $4$ has degree $1$ in the
+shorter path and $2$ in the longer.
+
+So a two-layer network cannot tell whether node $1$ sits on a path of four
+or five, whatever its width or weights. That is I.14.T2 at work: a task
+that depends on something three hops away needs three layers, and the
+averaging of proposition 3 makes each extra layer cost something.
+
+</SolutionToggle>

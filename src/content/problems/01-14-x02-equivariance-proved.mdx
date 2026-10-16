@@ -1,0 +1,58 @@
+---
+id: "I.14.X02"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: proof
+difficulty: 2
+title: "Equivariance, proved and broken"
+depends:
+  - "I.14.P01"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Prove that the sum layer $\mat H'=\sigma(\mat H\mat W_0+\mat A\mat H\mat W_1)$,
+with $\sigma$ applied entrywise, is permutation-equivariant, and that the
+readout $\mathbf 1^{\mathsf T}\mat H'$ is invariant. Then show that the layer
+"take the feature of your lowest-numbered neighbour" is not equivariant,
+using the paw graph with $\vec x=(1,2,3,4)$ and the relabelling that swaps
+nodes $1$ and $4$.
+
+<Hint>
+$\mat P^{\mathsf T}\mat P=\mat I$, an entrywise function commutes with
+reordering rows, and $\mathbf 1^{\mathsf T}\mat P=\mathbf 1^{\mathsf T}$.
+</Hint>
+
+<SolutionToggle>
+
+**Equivariance.** Relabel: $\mat A\mapsto\mat P\mat A\mat P^{\mathsf T}$ and
+$\mat H\mapsto\mat P\mat H$. The pre-activation becomes
+
+$$
+\begin{aligned}
+&\mat P\mat H\mat W_0+\mat P\mat A\mat P^{\mathsf T}\mat P\mat H\mat W_1\\
+&\;\;=\mat P\big(\mat H\mat W_0+\mat A\mat H\mat W_1\big).
+\end{aligned}
+$$
+
+An entrywise $\sigma$ applied to a matrix with reordered rows gives the
+same rows reordered, so the output is $\mat P\mat H'$. $\blacksquare$
+
+**Invariance.** A permutation matrix's columns each contain one $1$, so
+$\mathbf 1^{\mathsf T}\mat P=\mathbf 1^{\mathsf T}$ and
+$\mathbf 1^{\mathsf T}(\mat P\mat H')=\mathbf 1^{\mathsf T}\mat H'$. $\blacksquare$
+
+**A layer that breaks it.** On the paw the lowest-numbered neighbours of
+nodes $1$ to $4$ are $2$, $1$, $1$ and $3$, so the layer returns
+$(2,1,1,3)$. After swapping nodes $1$ and $4$, the features are
+$(4,2,3,1)$ and the lowest-numbered neighbours are $3$, $3$, $1$ and $2$:
+the layer returns $(3,3,4,2)$. Equivariance would require the original
+output with its first and last entries swapped, $(3,1,1,2)$. The second
+and third entries differ: node $2$'s output changed although nothing about
+node $2$ did. The layer reads the labelling, which carries no information
+about the graph.
+
+</SolutionToggle>

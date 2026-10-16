@@ -1,0 +1,95 @@
+---
+id: "I.14.B04"
+kind: problem
+chapter: "I.14"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What a graph layer costs"
+depends:
+  - "I.14.P01"
+  - "I.14.P02"
+rounding: "Three significant figures."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+<Statement>
+Count the work and memory of one graph-convolution layer on a large sparse
+graph, with a dense adjacency matrix and with an edge list, and count how
+fast a node's receptive field grows with depth.
+</Statement>
+
+<Given>
+$n=10^6$ nodes, $m=10^7$ undirected edges, width $d=128$, $32$-bit floats
+for the dense matrix and $64$-bit integers for the edge list. For sampling,
+$25$ neighbours per node in the first layer and $10$ in the second.
+</Given>
+
+<Find>
+Multiply-accumulates for $\hat{\mat A}\mat H$ dense and sparse, and for
+$\mat H\mat W$; memory for the dense $\hat{\mat A}$ and for the edge list;
+the average degree; a bound on the nodes a three-layer prediction can
+depend on; the bound with sampling for two layers.
+</Find>
+
+<Strategy>
+Use (I.14.9). Each undirected edge is stored as two directed entries,
+each with two indices.
+</Strategy>
+
+<Solution>
+
+**Work.** A dense product of an $n\times n$ matrix with an $n\times d$
+matrix costs $n^2d=1.28\times10^{14}$ multiply-accumulates. With an edge
+list, each of the $2m$ directed entries adds one $d$-vector:
+$2md=2.56\times10^9$. The weight product $\mat H\mat W$ costs
+$nd^2=1.64\times10^{10}$ either way. The sparse layer totals
+$1.89\times10^{10}$, about $6{,}800$ times less than the dense product
+alone.
+
+**Memory.** The dense $\hat{\mat A}$ needs $n^2\cdot4=4\times10^{12}$ bytes,
+four terabytes, almost all of them zeros. The edge list needs
+$2m\cdot2\cdot8=3.2\times10^8$ bytes, $320$ megabytes.
+
+**Receptive field.** The average degree is $2m/n=20$. A node has about $20$
+neighbours, each with about $20$ more, so within three hops there can be
+up to $20^3=8{,}000$ nodes, and a three-layer prediction for one node can
+depend on all of them. Computing it exactly for a batch of targets means
+gathering their neighbourhoods first.
+
+**Sampling.** Drawing $25$ neighbours per node for the first layer and
+$10$ for the second bounds a two-layer neighbourhood at $25\times10=250$
+nodes, whatever the degrees. Hamilton, Ying and Leskovec (2017) trained on
+large graphs this way.
+
+</Solution>
+
+<Answer>
+Dense $\hat{\mat A}\mat H$: $1.28\times10^{14}$; sparse: $2.56\times10^9$;
+$\mat H\mat W$: $1.64\times10^{10}$; sparse layer $1.89\times10^{10}$. Dense
+matrix $4\times10^{12}$ bytes; edge list $3.2\times10^8$. Average degree
+$20$; up to $8{,}000$ nodes in three hops; $250$ with sampling over two
+layers.
+</Answer>
+
+<CheckSanity>
+On a sparse graph the neighbour sums are cheaper than the weight product:
+$2md<nd^2$ exactly when the average degree $2m/n$ is below $d$, here
+$20<128$.
+</CheckSanity>
+
+<Breaks>
+The counts assume the edge list is processed with gather and scatter
+operations whose cost is proportional to the work. On hardware tuned for
+dense products, irregular memory access can make the sparse layer slower
+per operation, though never by the four orders of magnitude separating
+the two counts.
+</Breaks>
+
+<Variation>
+At width $d=16$ the weight product shrinks to $2.56\times10^8$, and the
+neighbour sums, $3.2\times10^8$, dominate. Narrow graph networks are
+limited by the edges, wide ones by the weights.
+</Variation>

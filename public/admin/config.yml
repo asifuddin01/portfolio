@@ -188,6 +188,10 @@ collections:
           - FigElboGap
           - FigReparameterisation
           - FigRateDistortion
+          - FigMessagePassing
+          - FigIsotropic
+          - FigOverSmoothing
+          - FigWlPair
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze
@@ -548,6 +552,10 @@ collections:
           - FigElboGap
           - FigReparameterisation
           - FigRateDistortion
+          - FigMessagePassing
+          - FigIsotropic
+          - FigOverSmoothing
+          - FigWlPair
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze
@@ -1209,6 +1217,10 @@ collections:
           - FigElboGap
           - FigReparameterisation
           - FigRateDistortion
+          - FigMessagePassing
+          - FigIsotropic
+          - FigOverSmoothing
+          - FigWlPair
           - FigCnnLineage
           - FigFeatureHierarchy
           - FigTransferFreeze

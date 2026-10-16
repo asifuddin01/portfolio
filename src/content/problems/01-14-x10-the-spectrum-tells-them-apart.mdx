@@ -1,0 +1,50 @@
+---
+id: "I.14.X10"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "The Laplacian spectrum separates the pair"
+depends:
+  - "I.14.P04"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Find the eigenvalues of the Laplacian $\mat L=\mat D-\mat A$ for two disjoint
+triangles and for a hexagon. Show that they differ, explain which
+eigenvalue counts components, and say what goes wrong if the eigenvectors
+are fed to a network as node positions.
+
+<Hint>
+A cycle of $n$ nodes has Laplacian eigenvalues $2-2\cos(2\pi j/n)$. The
+spectrum of a disjoint union is the union of the spectra.
+</Hint>
+
+<SolutionToggle>
+
+For the hexagon, $2-2\cos(2\pi j/6)$ for $j=0,\ldots,5$ gives
+$0,1,3,4,3,1$, that is $\{0,1,1,3,3,4\}$. For one triangle it gives
+$0,3,3$; for two, $\{0,0,3,3,3,3\}$. The spectra differ, so a network given
+spectral information can separate the pair that defeated colour
+refinement in [I.14.B03](/elementa/neural-networks/gnn/problems/b03).
+
+The eigenvalue $0$ counts connected components. Since
+$\vec x^{\mathsf T}\mat L\vec x=\sum_{(u,v)\in E}(x_u-x_v)^2$ by (I.14.4),
+$\mat L\vec x=\vec 0$ exactly when $\vec x$ is constant across every edge,
+that is, constant on each component. There is one independent such vector
+per component: one for the hexagon, two for the triangles.
+
+As positions the eigenvectors have two ambiguities. Each is defined only up
+to sign, so a network must give the same answer for $\vec v$ and $-\vec v$,
+or it depends on an arbitrary choice made by the eigensolver. And a
+repeated eigenvalue has no preferred basis: the two triangles' eigenvalue
+$3$ has a four-dimensional eigenspace, and any rotation within it is as
+valid as any other. Positional features from the Laplacian therefore need
+architectures invariant to these choices, or they reintroduce exactly the
+dependence on arbitrary labels that equivariance was built to remove.
+
+</SolutionToggle>

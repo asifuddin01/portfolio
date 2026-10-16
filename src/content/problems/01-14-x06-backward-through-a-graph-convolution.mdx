@@ -1,0 +1,59 @@
+---
+id: "I.14.X06"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: gradient
+difficulty: 2
+title: "Backpropagation through one graph convolution"
+depends:
+  - "I.14.P02"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Derive the gradients of a loss $\mathcal L$ with respect to $\mat W$ and $\mat H$
+for the linear layer $\mat Y=\hat{\mat A}\mat H\mat W$, given
+$\mat G=\partial\mathcal L/\partial\mat Y$. Then evaluate them for the paw
+graph with scalar features $\vec x=(1,2,3,4)$, weight $w=0.5$, target
+$\vec t=(0,0,1,1)$ and $\mathcal L=\tfrac12\|\vec y-\vec t\|^2$.
+
+<Hint>
+Treat $\hat{\mat A}\mat H$ as one matrix and use the chain rule for matrix
+products (<ApparatusRef ref="0.MC.07" />). $\hat{\mat A}$ is symmetric.
+</Hint>
+
+<SolutionToggle>
+
+With $\mat Z=\hat{\mat A}\mat H$, $\mat Y=\mat Z\mat W$, so
+$\partial\mathcal L/\partial\mat W=\mat Z^{\mathsf T}\mat G=(\hat{\mat A}\mat H)^{\mathsf T}\mat G$
+and $\partial\mathcal L/\partial\mat Z=\mat G\mat W^{\mathsf T}$. Then
+$\partial\mathcal L/\partial\mat H=\hat{\mat A}^{\mathsf T}\mat G\mat W^{\mathsf T}=\hat{\mat A}\mat G\mat W^{\mathsf T}$.
+The backward pass through a graph convolution is another graph
+convolution, applied to the gradients: each node receives a degree-weighted
+average of its neighbours' errors.
+
+For the numbers, $\hat{\mat A}\vec x=(1.866025,\,1.866025,$
+$3.030239,\,3.060660)$ from I.14.B01, so
+
+$$
+\begin{aligned}
+\vec y&=(0.933013,\;0.933013,\\
+ &\qquad1.515119,\;1.530330),
+\end{aligned}
+$$
+
+the residual is $\vec y-\vec t=(0.933013,\,0.933013,$
+$0.515119,\,0.530330)$, and
+$\mathcal L=1.143812$. The weight's gradient is the dot product of
+$\hat{\mat A}\vec x$ with the residual, $6.666146$. The input's gradient is
+$0.5\,\hat{\mat A}(\vec y-\vec t)=(0.385355,\,0.385355,$
+$0.427478,\,0.223644)$.
+
+Nodes $1$ and $2$ receive the same gradient, as they produced the same
+output: one layer cannot tell them apart in either direction. The script
+confirms all five derivatives by central finite differences.
+
+</SolutionToggle>

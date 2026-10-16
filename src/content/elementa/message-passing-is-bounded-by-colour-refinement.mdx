@@ -1,0 +1,167 @@
+---
+chapter: neural-networks--gnn
+proposition: 4
+statement: "Message passing cannot separate what colour refinement cannot."
+claim: "A message-passing network's node states are functions of colour-refinement colours, so two graphs that refinement confuses get identical outputs. A sum aggregator reaches that limit; a mean or a max falls short of it. Passing the limit takes features the graph alone does not supply."
+given:
+  - a-graph-layer-must-ignore-node-numbering
+  - repeated-averaging-forgets-where-it-started
+figure: FigWlPair
+figureType: G
+status: published
+updated: 2026-10-16
+sources:
+  - title: "How Powerful are Graph Neural Networks?"
+    url: https://arxiv.org/abs/1810.00826
+  - title: "Weisfeiler and Leman Go Neural: Higher-order Graph Neural Networks"
+    url: https://arxiv.org/abs/1810.02244
+  - title: "Weisfeiler-Lehman Graph Kernels"
+    url: https://jmlr.org/papers/v12/shervashidze11a.html
+---
+
+## Colour refinement
+
+Weisfeiler and Leman's test for graph isomorphism, in its simplest form,
+is a message-passing algorithm with no learning in it. Give every node the
+same colour. Then, round after round, recolour each node by its own colour
+and the multiset of its neighbours' colours, giving a fresh colour to each
+distinct combination:
+
+<Eq id="I.14.7" gloss="Colour refinement is message passing with an injective update.">
+
+$$
+\begin{aligned}
+&c_v^{(t+1)}=\operatorname{hash}\big(c_v^{(t)},\\
+&\qquad\{\!\{c_u^{(t)}:u\in\mathcal N(v)\}\!\}\big).
+\end{aligned}
+$$
+
+</Eq>
+
+The double braces mark a multiset. The hash is injective: different
+inputs get different colours. If at some round two graphs have different
+counts of some colour, they are not isomorphic. Equal counts at every
+round prove nothing. Shervashidze and colleagues (2011) built graph
+kernels on these colours.
+
+On the paw graph the first round separates the degrees: nodes $1$ and $2$
+have degree $2$, node $3$ degree $3$, node $4$ degree $1$. The second round
+looks at neighbours' colours and changes nothing, so refinement stops with
+the classes $\{1,2\}$, $\{3\}$ and $\{4\}$. Nodes $1$ and $2$ cannot be
+separated by any method that ignores numbering: swapping them is a
+symmetry of the graph.
+
+## The bound
+
+The update (I.14.7) has the same shape as message passing (I.14.2), with
+an injective hash in place of learned functions. That is enough to bound
+every message-passing network. Xu, Hu, Leskovec and Jegelka (2019) and
+Morris and colleagues (2019) proved it independently.
+
+Start every node with the same features, and suppose two nodes, in the
+same graph or in different graphs, have the same colour after round $t$.
+Claim: they have the same state after layer $t$. At $t=0$ every state is
+equal. If two nodes share a colour at round $t+1$, then because the hash is
+injective they shared a colour at round $t$ and had equal multisets of
+neighbour colours. By the claim at $t$ they had equal states and equal
+multisets of neighbour states. Their messages then form equal multisets,
+the aggregator returns equal values, and the update gives equal new
+states. So every node state is a function of its colour, and two graphs
+with equal colour counts produce equal multisets of node states and equal
+readouts. That is the first half of I.14.T4.
+
+## Two triangles and a hexagon
+
+The figure shows the standard pair. Two separate triangles and one hexagon
+both have six nodes and six edges, and every node in both has degree two,
+with neighbours of degree two. Refinement gives all twelve nodes the same
+colour at every round. By the bound, no message-passing network with
+identical starting features can tell the graphs apart, whatever its
+weights, depth or aggregator. The check script runs three random sum
+networks on both and gets identical multisets of node states each time.
+
+Yet the graphs differ in ways a chemist would care about. The count of
+triangles, $\operatorname{tr}(\mat A^3)/6$, is $2$ for one and $0$ for the
+other, and one graph is connected and the other is not.
+[I.14.B03](/elementa/neural-networks/gnn/problems/b03) works the pair
+through.
+
+## Which aggregators reach the bound
+
+The bound used only that the network's functions cannot separate more
+than the hash does. Reaching it needs the reverse: an aggregator that does
+not merge different multisets. A sum can be injective on bounded multisets
+of features from a countable set. A mean cannot: it sees only the
+proportions, so $\{1,1,2,2\}$ and $\{1,2\}$ both give $1.5$. A maximum sees
+only which values occur, so $\{1,1,2\}$ and $\{1,2,2\}$ both give $2$. With
+constant features, the centres of a star with two leaves and one with four
+receive the same mean, $1$, while their sums are $2$ and $4$
+([I.14.X03](/elementa/neural-networks/gnn/problems/x03)).
+
+Xu and colleagues built the graph isomorphism network on this
+observation:
+
+<Eq id="I.14.8" gloss="A sum and an injective update are enough to match colour refinement.">
+
+$$
+\begin{aligned}
+\vec h_v'=\operatorname{MLP}\Big(&(1+\epsilon)\,\vec h_v\\
+&+\sum_{u\in\mathcal N(v)}\vec h_u\Big).
+\end{aligned}
+$$
+
+</Eq>
+
+The sum keeps the multiset, the scalar $\epsilon$ separates a node's own
+state from its neighbours', and a multilayer perceptron can approximate
+the injective update that refinement uses (I.5). With these choices a
+message-passing network separates every pair that refinement separates,
+the second half of I.14.T4. The graph convolution of (I.14.5) averages, so
+it does not.
+
+## Past the bound
+
+The bound assumes identical starting features, and the way past it is to
+give nodes features the graph's symmetry does not erase. Counts of small
+cycles through each node separate the pair above at once. Random features
+separate it too, at the price of equivariance holding only in
+distribution. Eigenvectors of the Laplacian can serve as positions: the
+two graphs' Laplacian spectra differ, since the multiplicity of the
+eigenvalue $0$ counts connected components
+([I.14.X10](/elementa/neural-networks/gnn/problems/x10)). Each eigenvector
+is defined only up to sign, and a repeated eigenvalue has no preferred
+basis, so such positions must be used with care. Morris and colleagues
+also built higher-order networks that pass messages between tuples of
+nodes and match stronger forms of the test, at a cost that grows with the
+tuple size.
+
+Book II meets the same structure in attention, which is
+permutation-equivariant over the tokens of a sequence. Positional
+encodings are its version of the repair: features that break a symmetry
+the mechanism cannot break by itself.
+
+This chapter completes the machinery of Book I. Books II to VIII build
+on these fourteen chapters.
+
+## Refine the colours
+
+~~~python
+def refine(edges, n, rounds=3):
+    nbrs = [[j for i, j in edges if i == v] + [i for i, j in edges if j == v] for v in range(n)]
+    colour = [0]*n
+    for _ in range(rounds):
+        sig = [(colour[v], tuple(sorted(colour[u] for u in nbrs[v]))) for v in range(n)]
+        names = {s: k for k, s in enumerate(sorted(set(sig)))}
+        colour = [names[s] for s in sig]
+    return sorted(sig)
+
+two_triangles = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3)]
+hexagon = [(i, (i + 1) % 6) for i in range(6)]
+paw = [(0, 1), (0, 2), (1, 2), (2, 3)]
+print(refine(two_triangles, 6) == refine(hexagon, 6))
+print(refine(paw, 4))
+~~~
+
+It prints <code>True</code>: the two graphs' final colourings agree. For the
+paw it prints four signatures in three distinct classes, nodes $1$ and $2$
+sharing one.

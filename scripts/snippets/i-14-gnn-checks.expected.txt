@@ -1,0 +1,16 @@
+B01 sum [5.0, 4.0, 7.0, 3.0]; mean [2.5, 2.0, 2.333333, 3.0]; GCN [1.866025, 1.866025, 3.030239, 3.06066]; relabelled output is the relabelled input's
+B02 eigenvalues [1.0, 0.564333, 0.0, -0.147667]; |lambda_2| 0.564333; limit [2.432522, 2.432522, 2.808834, 1.986146]; distance at k = 1, 2, 4, 8, 16: 1.358469 0.766463 0.244093 0.024757 0.000255
+B02 distance at k = 0: 2.516217; limit per sqrt(degree): 1.404417
+B03 1-WL histograms equal; three random sum-aggregation networks agree on both; triangles 2 and 0; components 2 and 1
+B04 dense 1.28e+14 MACs, sparse 1.89e+10 MACs (2.56e+09 + 1.638e+10); dense adjacency 4e+12 bytes, edge list 3.2e+08 bytes; average degree 20; 3-hop bound 8000; sampled 25 x 10: 250
+B05 12 nodes, batch [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2], 22 directed edge entries, offsets [0, 4, 7]; readout of one summed round: right [8.0, 4.0, 10.0], without offsets [10.0, 2.0, 0.0]
+X01 degrees with self-loops [2.0, 3.0, 2.0]; A-hat row 1 [0.5, 0.408248, 0.0]; signal (1, 0, 0) becomes [0.5, 0.408248, 0.0]
+X02 lowest-numbered neighbour: [2.0, 1.0, 1.0, 3.0]; after relabelling [3.0, 3.0, 4.0, 2.0], not [3.0, 1.0, 1.0, 2.0]
+X03 {1,1,2,2} vs {1,2}: sum (6, 3), mean (1.5, 1.5), max (2, 2); {1,1,2} vs {1,2,2}: sum (4, 5), mean (1.333333, 1.666667), max (2, 2); star centres: mean 1 and 1, sum (2.0, 4.0)
+X04 C6 GCN eigenvalues [1.0, 0.666667, 0.666667, 0.0, 0.0, -0.333333]; the difference operator is antisymmetric
+X05 |lambda_2| = 2/3; layers for 1%: 12 ((2/3)^12 = 0.007707); without self-loops the smallest eigenvalue is -1.0 and the alternating signal flips each layer
+X06 output [0.933013, 0.933013, 1.515119, 1.53033]; loss 1.143812; dL/dw 6.666146; dL/dx [0.385355, 0.385355, 0.427478, 0.223644]
+X07 node 1 of P4 after 1, 2, 3 layers: [0.908248, 0.892956, 0.890408]; of P5: [0.908248, 0.892956, 0.880213]
+X08 4 undirected edges, 8 directed entries, 12 with self-loops; gather then scatter-add gives [5.0, 4.0, 7.0, 3.0]
+X09 variance of a sampled mean, degree 100: s = 10 0.090909, s = 25 0.030303, s = 100 0.0
+X10 Laplacian spectra: two triangles [0.0, 0.0, 3.0, 3.0, 3.0, 3.0]; hexagon [0.0, 1.0, 1.0, 3.0, 3.0, 4.0]

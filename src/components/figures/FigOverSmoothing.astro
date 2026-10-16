@@ -1,0 +1,64 @@
+---
+/**
+ * Book I, Ch. XIV, Prop. 3: ten rounds of the GCN's averaging on the paw
+ * graph, starting from x = (1, 2, 3, 4). Each node's value is divided by the
+ * square root of its degree with self-loop; all four converge to 1.404417.
+ * Computed here from the same matrix as I.14.B02.
+ */
+const A = [[0, 1, 1, 0], [1, 0, 1, 0], [1, 1, 0, 1], [0, 0, 1, 0]];
+const At = A.map((r, i) => r.map((v, j) => v + (i === j ? 1 : 0)));
+const d = At.map((r) => r.reduce((s, v) => s + v, 0));
+const H = At.map((r, i) => r.map((v, j) => v / Math.sqrt(d[i] * d[j])));
+const steps: number[][] = [];
+let h = [1, 2, 3, 4];
+for (let k = 0; k <= 10; k++) {
+  steps.push(h.map((v, i) => v / Math.sqrt(d[i])));
+  h = H.map((r) => r.reduce((s, v, j) => s + v * h[j], 0));
+}
+const LIMIT = 1.404417;
+const x = (k: number) => 64 + k * 32;
+const y = (v: number) => 246 - (v / 3) * 190;
+const SERIES = [
+  { node: 4, cls: 's1', col: 'var(--lesion-ves)' },
+  { node: 3, cls: 's3', col: 'var(--lesion-ex)' },
+  { node: 2, cls: 's2', col: 'var(--lesion-ma)' },
+  { node: 1, cls: 's4', col: 'var(--lesion-cws)' },
+];
+---
+<svg class="fig" viewBox="0 0 440 320" role="img" aria-labelledby="os-t os-d" style="--fig-min: 0px">
+  <title id="os-t">Four node values converging under repeated averaging</title>
+  <desc id="os-d">
+    Ten rounds of graph convolution without weights on the paw graph, starting
+    from the values 1, 2, 3 and 4. Each node's value divided by the square root
+    of its degree is plotted against the round. Nodes 1 and 2 coincide after
+    one round. All four approach the same value, 1.404, shown as a dashed
+    line, and differ by less than one per cent after ten rounds.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">ten rounds of averaging</text>
+
+  <line x1="64" y1="246" x2={x(10)} y2="246" class="axis" />
+  <line x1="64" y1="246" x2="64" y2="50" class="axis" />
+  {[0, 1, 2, 3].map((v) => (
+    <text x="56" y={y(v) + 4} class="t-sm" text-anchor="end">{v}</text>
+  ))}
+  {[0, 2, 4, 6, 8, 10].map((k) => (
+    <text x={x(k)} y="264" class="t-sm" text-anchor="middle">{k}</text>
+  ))}
+  <text x="224" y="284" class="t-sm" text-anchor="middle">round k</text>
+  <text x="70" y="46" class="t-sm">value / √d̃</text>
+
+  <line x1="64" y1={y(LIMIT)} x2={x(10)} y2={y(LIMIT)} class="dash" />
+  <text x={x(10) + 6} y={y(LIMIT) + 4} class="t-sm">1.404</text>
+  <text x={x(1) + 8} y={y(1.0774) + 22} class="t-sm">nodes 1 and 2 merge</text>
+
+  {SERIES.map((s) => (
+    <polyline points={steps.map((v, k) => `${x(k)},${y(v[s.node - 1])}`).join(' ')} class={s.cls} stroke-width="1.8" fill="none" />
+  ))}
+  {SERIES.map((s, i) => (
+    <g>
+      <line x1={20 + i * 104} y1="306" x2={42 + i * 104} y2="306" stroke={s.col} stroke-width="1.8" />
+      <text x={48 + i * 104} y="311" class="t-sm">node {s.node}</text>
+    </g>
+  ))}
+</svg>

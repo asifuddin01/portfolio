@@ -1,0 +1,136 @@
+---
+id: "I.14.B02"
+kind: problem
+chapter: "I.14"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "Where repeated averaging converges, and how fast"
+depends:
+  - "I.14.P02"
+  - "I.14.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+<Statement>
+Find the eigenvalues and the limit of the graph convolution's averaging
+on the paw graph exactly, using the graph's symmetry, and bound the
+distance to the limit after $k$ layers.
+</Statement>
+
+<Given>
+The paw graph of [I.14.B01](/elementa/neural-networks/gnn/problems/b01),
+with degrees $\tilde{\vec d}=(3,3,4,2)$ counted with self-loops,
+$\hat{\mat A}=\tilde{\mat D}^{-1/2}(\mat A+\mat I)\tilde{\mat D}^{-1/2}$ and
+$\vec x=(1,2,3,4)$.
+</Given>
+
+<Find>
+(a) An eigenvector with eigenvalue $1$, and one with eigenvalue $0$.
+(b) The other two eigenvalues, exactly. (c) The limit of
+$\hat{\mat A}^k\vec x$. (d) A bound on the distance after $k$ layers, and its
+value at $k=8$.
+</Find>
+
+<Strategy>
+Guess two eigenvectors from the structure: square roots of degrees, and
+the difference of the two nodes that swap under the graph's symmetry. Get
+the other two from the trace of $\hat{\mat A}$ and of $\hat{\mat A}^2$.
+</Strategy>
+
+<Solution>
+
+**(a)** Let $\vec s=(\sqrt3,\sqrt3,2,\sqrt2)$, the square roots of the
+degrees. Then
+
+$$
+\begin{aligned}
+\hat{\mat A}\vec s
+ &=\tilde{\mat D}^{-1/2}(\mat A+\mat I)\mathbf 1\\
+ &=\tilde{\mat D}^{-1/2}\tilde{\vec d}=\vec s,
+\end{aligned}
+$$
+
+since each row of $\mat A+\mat I$ sums to the degree with self-loop. So
+$\vec s$ has eigenvalue $1$. Nodes $1$ and $2$ have identical rows of
+$\hat{\mat A}$, so $\hat{\mat A}(1,-1,0,0)^{\mathsf T}=\vec 0$: eigenvalue $0$.
+
+**(b)** The trace of $\hat{\mat A}$ is the sum of its diagonal,
+$\sum_v1/\tilde d_v=\tfrac13+\tfrac13+\tfrac14+\tfrac12=\tfrac{17}{12}$. The
+other two eigenvalues therefore add to $\tfrac{17}{12}-1-0=\tfrac5{12}$. The
+trace of $\hat{\mat A}^2$ is the sum of squared entries. The diagonal gives
+$\tfrac19+\tfrac19+\tfrac1{16}+\tfrac14=\tfrac{77}{144}$, and the four edges,
+each appearing twice, give
+$2\big(\tfrac19+\tfrac1{12}+\tfrac1{12}+\tfrac18\big)=\tfrac{116}{144}$, for a
+total of $\tfrac{193}{144}$. So the squares of the two add to $\tfrac{193}{144}-1=\tfrac{49}{144}$, and
+their product is
+$\tfrac12\big((\tfrac5{12})^2-\tfrac{49}{144}\big)=-\tfrac1{12}$. They solve
+$12\lambda^2-5\lambda-1=0$:
+
+$$
+\begin{aligned}
+\lambda&=\frac{5\pm\sqrt{73}}{24}\\
+ &=0.564333,\;-0.147667.
+\end{aligned}
+$$
+
+**(c)** All other eigenvalues have absolute value below $1$, so only the
+component along $\vec u_1=\vec s/\|\vec s\|$ survives, and $\|\vec s\|^2=12$.
+With $\vec s^{\mathsf T}\vec x=3\sqrt3+6+4\sqrt2=16.853006$,
+
+$$
+\begin{aligned}
+&\vec u_1\vec u_1^{\mathsf T}\vec x=\frac{16.853006}{12}\,\vec s\\
+&\;=1.404417\,\vec s\\
+&\;=(2.432522,\;2.432522,\\
+&\;\qquad2.808834,\;1.986146).
+\end{aligned}
+$$
+
+**(d)** Write $\vec x$ minus its limit in the remaining orthonormal
+eigenvectors. Each component is multiplied by its eigenvalue at every
+layer, and none exceeds $0.564333$ in absolute value, so
+
+$$
+\begin{aligned}
+&\big\|\hat{\mat A}^k\vec x-\vec u_1\vec u_1^{\mathsf T}\vec x\big\|\\
+&\;\;\leq0.564333^k\cdot2.516217,
+\end{aligned}
+$$
+
+where $2.516217$ is the starting distance. At $k=8$ the bound is
+$0.025884$ and the actual distance $0.024757$: almost all of the remainder
+lies along the second eigenvector.
+
+</Solution>
+
+<Answer>
+Eigenvalues $1$, $(5+\sqrt{73})/24=0.564333$, $0$ and
+$(5-\sqrt{73})/24=-0.147667$; limit $1.404417\,\vec s=(2.432522,\,2.432522,$ $2.808834,\,1.986146)$;
+distance at most $0.564333^k\cdot2.516217$, which is $0.025884$ at
+$k=8$, against an actual $0.024757$.
+</Answer>
+
+<CheckSanity>
+The four eigenvalues add to $\tfrac{17}{12}$, the trace. Divided by
+$\sqrt{\tilde d_v}$, every entry of the limit is $1.404417$: the nodes are
+indistinguishable except through their degrees.
+</CheckSanity>
+
+<Breaks>
+Without self-loops the graph's normalised adjacency would have eigenvalue
+$-1$ if the graph were bipartite; the paw is not, because it contains a
+triangle. Learned weights between layers change the rate, and the bound
+then needs their singular values as well.
+</Breaks>
+
+<Variation>
+The zero eigenvalue means one layer removes the difference between nodes
+$1$ and $2$ completely, which is why
+[I.14.B01](/elementa/neural-networks/gnn/problems/b01) found them equal.
+Any graph with two nodes sharing a closed neighbourhood and a degree has
+such an eigenvector.
+</Variation>

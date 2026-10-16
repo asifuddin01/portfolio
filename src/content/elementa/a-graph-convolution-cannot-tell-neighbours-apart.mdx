@@ -1,0 +1,174 @@
+---
+chapter: neural-networks--gnn
+proposition: 2
+statement: "A graph convolution is a degree-weighted average, and it cannot tell its neighbours apart."
+claim: "The graph Laplacian supplies a graph's frequencies, and a first-order filter on them, renormalised, is the graph convolution. Its coefficients come from degrees alone, so it has no notion of direction, and it merges nodes whose neighbourhoods coincide."
+given:
+  - a-graph-layer-must-ignore-node-numbering
+  - a-convolution-is-one-filter-everywhere
+figure: FigIsotropic
+figureType: D
+status: published
+updated: 2026-10-16
+sources:
+  - title: "Spectral Networks and Locally Connected Networks on Graphs"
+    url: https://arxiv.org/abs/1312.6203
+  - title: "Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering"
+    url: https://arxiv.org/abs/1606.09375
+  - title: "Semi-Supervised Classification with Graph Convolutional Networks"
+    url: https://arxiv.org/abs/1609.02907
+  - title: "Graph Attention Networks"
+    url: https://arxiv.org/abs/1710.10903
+  - title: "Inductive Representation Learning on Large Graphs"
+    url: https://arxiv.org/abs/1706.02216
+---
+
+## Frequencies on a graph
+
+On a grid, convolution is multiplication in the Fourier basis: each
+frequency is scaled by the kernel's response. A graph has no sines and
+cosines, but it has a matrix that plays their role. Let $\mat D$ be the
+diagonal matrix of degrees and $\mat L=\mat D-\mat A$ the graph Laplacian.
+Since $\vec x^{\mathsf T}\mat D\vec x=\sum_vd_vx_v^2$ counts each edge's two
+endpoints once each, and $\vec x^{\mathsf T}\mat A\vec x$ counts each edge
+twice,
+
+<Eq id="I.14.4" gloss="The Laplacian's eigenvectors are a graph's frequencies, and a filter reweights them.">
+
+$$
+\begin{aligned}
+\vec x^{\mathsf T}\mat L\vec x
+ &=\sum_{(u,v)\in E}(x_u-x_v)^2,\\
+\mat L&=\mat U\mat\Lambda\mat U^{\mathsf T},\\
+g(\mat L)\,\vec x&=\mat U\,g(\mat\Lambda)\,\mat U^{\mathsf T}\vec x.
+\end{aligned}
+$$
+
+</Eq>
+
+The first line measures how much a signal varies across edges. The
+Laplacian is symmetric, so it has an orthonormal eigenbasis
+(<ApparatusRef ref="0.LA.04" />). An eigenvector with a small eigenvalue
+varies little across edges: it is a low frequency. On a cycle the
+eigenvectors are exactly the discrete sines and cosines. The third line is
+a spectral filter: transform into the eigenbasis, scale each frequency by
+$g$, and transform back.
+
+Bruna and colleagues (2014) learned $g(\mat\Lambda)$ directly. That needs
+the eigendecomposition, which costs $O(n^3)$; its filters are not local;
+and a filter learned on one graph means nothing on another, whose
+eigenvectors differ. Defferrard, Bresson and Vandergheynst (2016) made $g$
+a polynomial of degree $K$. A polynomial in $\mat L$ needs no
+eigenvectors, and by I.14.T2 it reaches exactly $K$ hops.
+
+## The first-order filter, renormalised
+
+Kipf and Welling (2017) kept the polynomial at degree one and tied its two
+coefficients, giving $\theta(\mat I+\mat D^{-1/2}\mat A\mat D^{-1/2})$.
+That matrix has eigenvalues in $[0,2]$, so stacking it can amplify a
+signal without bound. Their repair, which they called the renormalisation
+trick, adds a self-loop to every node first:
+
+<Eq id="I.14.5" gloss="A graph convolution averages each node with its neighbours, weighted by degree.">
+
+$$
+\begin{aligned}
+\hat{\mat A}&=\tilde{\mat D}^{-1/2}(\mat A+\mat I)\,\tilde{\mat D}^{-1/2},\\
+\mat H'&=\sigma\big(\hat{\mat A}\mat H\mat W\big).
+\end{aligned}
+$$
+
+</Eq>
+
+Here $\tilde{\mat D}$ holds the degrees counted with the self-loop, so
+$\hat A_{vu}=1/\sqrt{\tilde d_v\tilde d_u}$ for every neighbour $u$ of $v$
+and for $u=v$. The eigenvalues of $\hat{\mat A}$ lie in $(-1,1]$ for a
+connected graph, a fact proposition 3 uses. The layer is a fixed average
+over each node's closed neighbourhood followed by one weight matrix
+shared by every node: the convolution of I.11 with the kernel replaced by
+a rule.
+
+On the paw graph the degrees with self-loops are $3$, $3$, $4$ and $2$. Node
+$1$'s row of $\hat{\mat A}$ is $(\tfrac13,\tfrac13,\tfrac1{\sqrt{12}},0)$, and
+for $\vec x=(1,2,3,4)$
+
+$$
+\begin{aligned}
+\hat{\mat A}\vec x=(&1.866025,\;1.866025,\\
+ &3.030239,\;3.060660).
+\end{aligned}
+$$
+
+## What the average cannot see
+
+The coefficients of (I.14.5) depend on the degrees at the two ends of an
+edge and on nothing else. A node therefore cannot tell one neighbour from
+another, except through their states. The figure sets this against I.11.
+On a line, a kernel of width three has three weights, $w_{-1}$, $w_0$ and
+$w_{+1}$, and can weigh the left neighbour differently from the right.
+
+On a cycle the difference is exact. There every degree with self-loop is
+$3$, and $\hat{\mat A}$ averages each node with its two neighbours by
+$\tfrac13$ each. Its eigenvalues are $(1+2\cos\theta)/3$ for the cycle's
+frequencies $\theta$, a low-pass filter. A difference filter, which returns
+$x_{i+1}-x_{i-1}$, is an antisymmetric matrix. Every polynomial in the
+symmetric $\hat{\mat A}$ is symmetric, so no stack of linear graph
+convolutions computes a directional difference
+([I.14.X04](/elementa/neural-networks/gnn/problems/x04)). Equivariance was
+bought by forgetting which neighbour is which.
+
+The rule has a second consequence. Nodes $1$ and $2$ of the paw have the
+same closed neighbourhood, $\{1,2,3\}$, and the same degree, so their rows
+of $\hat{\mat A}$ are identical. One graph convolution gives both the
+value $1.866025$, although their features are $1$ and $2$: the difference
+between them is erased. The sum layer of (I.14.3) keeps them apart,
+because its self-term $\mat H\mat W_0$ has its own weights.
+
+Attention gives the coefficients more freedom. In the graph attention
+network of Veličković and colleagues (2018) each edge's weight is
+computed from the two nodes' states, so the average can favour some
+neighbours. It is still a function of the states and not of an ordering,
+so it still cannot invent a direction the features do not carry.
+
+## What it costs
+
+Each layer multiplies $\hat{\mat A}$ by an $n\times d$ matrix and then by a
+$d\times d$ weight matrix:
+
+<Eq id="I.14.9" gloss="A sparse graph is cheap only if its sparsity is used.">
+
+$$
+\begin{aligned}
+\text{edge list:}&\quad O(md+nd^2),\\
+\text{dense }\hat{\mat A}:&\quad O(n^2d+nd^2).
+\end{aligned}
+$$
+
+</Eq>
+
+For a million nodes, ten million edges and width $128$, the dense product
+alone is $1.28\times10^{14}$ multiply-accumulates and the matrix occupies
+$4\times10^{12}$ bytes. With an edge list the whole layer is about
+$1.9\times10^{10}$ operations
+([I.14.B04](/elementa/neural-networks/gnn/problems/b04)). When even that is
+too much, Hamilton, Ying and Leskovec (2017) sample a fixed number of
+neighbours per node and layer, trading an exact average for an unbiased
+estimate of it ([I.14.X09](/elementa/neural-networks/gnn/problems/x09)).
+
+## Build the matrix
+
+~~~python
+from math import sqrt
+A = [[0, 1, 1, 0], [1, 0, 1, 0], [1, 1, 0, 1], [0, 0, 1, 0]]   # the paw graph
+d = [sum(row) + 1 for row in A]                              # degrees with self-loops
+Ahat = [[(A[i][j] + (i == j))/sqrt(d[i]*d[j]) for j in range(4)] for i in range(4)]
+x = [1.0, 2.0, 3.0, 4.0]
+print(d)
+print([round(v, 6) for v in Ahat[0]])
+print([round(sum(a*b for a, b in zip(row, x)), 6) for row in Ahat])
+~~~
+
+It prints the degrees <code>[3, 3, 4, 2]</code>, node 1's row
+<code>[0.333333, 0.333333, 0.288675, 0.0]</code>, and the convolved signal
+<code>[1.866025, 1.866025, 3.030239, 3.06066]</code>, with the first two
+entries equal.

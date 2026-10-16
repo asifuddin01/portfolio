@@ -1,0 +1,91 @@
+---
+id: "I.14.B05"
+kind: problem
+chapter: "I.14"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "A batch of three graphs"
+depends:
+  - "I.14.P01"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+<Statement>
+Put three graphs of different sizes into one batch, give the shape of
+every array, and find what goes wrong when the edge lists are not offset.
+</Statement>
+
+<Given>
+The paw graph ($4$ nodes, edges $01$, $02$, $12$, $23$), a path on $3$ nodes
+($01$, $12$) and a cycle on $5$ nodes ($01$, $12$, $23$, $34$, $40$), each
+numbered from $0$. Node features have width $d$. The readout sums node
+states per graph. For the check, every feature is $1$ and one round of sum
+aggregation is applied.
+</Given>
+
+<Find>
+The total node count; the shapes of the batched features, the batch
+vector, the edge index and the readout; the offsets; the readouts with and
+without offsets.
+</Find>
+
+<Strategy>
+Stack the graphs' nodes one after another. A batch is then one large
+graph whose adjacency matrix is block diagonal, provided every edge is
+shifted by the number of nodes before its graph.
+</Strategy>
+
+<Solution>
+
+**Shapes.** There are $4+3+5=12$ nodes, so the features are $12\times d$.
+The batch vector, of length $12$, records each node's graph:
+$(0,0,0,0,1,1,1,2,2,2,2,2)$. The $11$ undirected edges become $22$
+directed entries, so the edge index is $2\times22$. The readout is
+$3\times d$, one row per graph.
+
+**Offsets.** Graph $g$'s node $i$ becomes node $i+o_g$ with $o=(0,4,7)$, the
+running total of earlier sizes. The adjacency matrix of the batch is then
+block diagonal, and no message crosses between graphs. Since sum
+aggregation over a block-diagonal matrix acts on each block separately,
+batching changes no graph's result.
+
+**The check.** With all features $1$, one round of sum aggregation gives
+each node its degree, and the per-graph sum of degrees is twice the edge
+count: $8$, $4$ and $10$.
+
+**Without offsets.** All three edge lists then refer to nodes $0$ to $4$.
+The path's edges coincide with two of the paw's and merge into them, and
+the cycle's edges connect the paw's nodes to one another and to node $4$,
+which belongs to the path. The readouts become $10$, $2$ and $0$. The
+shapes are all still correct, so nothing fails until the numbers are
+compared.
+
+</Solution>
+
+<Answer>
+$12$ nodes; features $12\times d$; batch vector length $12$; edge index
+$2\times22$; readout $3\times d$; offsets $(0,4,7)$. Readouts $8$, $4$, $10$
+with offsets and $10$, $2$, $0$ without.
+</Answer>
+
+<CheckSanity>
+Each correct readout equals twice that graph's number of edges, $2\cdot4$,
+$2\cdot2$ and $2\cdot5$, as the handshake count requires.
+</CheckSanity>
+
+<Breaks>
+A readout by mean needs each graph's node count, $4$, $3$ and $5$, taken
+from the batch vector; dividing by $12$ would mix the graphs again. Graph
+libraries keep the batch vector for exactly this reason.
+</Breaks>
+
+<Variation>
+A dense alternative pads every graph to the largest size, $5$, giving
+features of shape $3\times5\times d$ and three $5\times5$ adjacency
+matrices. It wastes $3$ of $15$ node slots here, and far more when sizes
+vary widely.
+</Variation>

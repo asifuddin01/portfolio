@@ -1,0 +1,49 @@
+---
+id: "I.14.X03"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A mean and a max cannot count"
+depends:
+  - "I.14.P04"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Find what the sum, the mean and the maximum return for the multisets
+$\{1,1,2,2\}$ and $\{1,2\}$, and for $\{1,1,2\}$ and $\{1,2,2\}$. Then give
+every node of a star with two leaves and of a star with four leaves the
+feature $1$, and compare what each aggregator delivers to the centre.
+
+<Hint>
+A mean sees proportions; a maximum sees which values occur.
+</Hint>
+
+<SolutionToggle>
+
+| multisets | sum | mean | max |
+|---|---|---|---|
+| $\{1,1,2,2\}$, $\{1,2\}$ | $6$, $3$ | $1.5$, $1.5$ | $2$, $2$ |
+| $\{1,1,2\}$, $\{1,2,2\}$ | $4$, $5$ | $1.333333$, $1.666667$ | $2$, $2$ |
+
+The first pair has the same proportions, so the mean cannot separate it,
+and the same values, so the maximum cannot either. The second pair has
+different proportions but the same values: the mean separates it and the
+maximum does not. The sum separates both.
+
+At the stars' centres, the neighbour features are $\{1,1\}$ and
+$\{1,1,1,1\}$. The mean gives $1$ and $1$, the maximum $1$ and $1$, the sum
+$2$ and $4$. With constant features, a mean- or max-aggregating network
+cannot even learn a node's degree.
+
+So mean and max aggregators separate strictly fewer graphs than colour
+refinement, which counts. This is why the graph isomorphism network of
+(I.14.8) sums. The mean has its uses: it keeps the scale of the state
+independent of the degree, which helps on graphs with very uneven degrees.
+The choice trades counting for stability.
+
+</SolutionToggle>

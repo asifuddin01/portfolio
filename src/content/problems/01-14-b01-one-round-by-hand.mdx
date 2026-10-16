@@ -1,0 +1,132 @@
+---
+id: "I.14.B01"
+kind: problem
+chapter: "I.14"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One round of message passing, three aggregators"
+depends:
+  - "I.14.P01"
+  - "I.14.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+<Statement>
+Run one round of message passing on a four-node graph with a sum, a mean
+and the graph convolution's weighted average, then relabel the graph and
+confirm that each output is relabelled with it.
+</Statement>
+
+<Given>
+The paw graph: a triangle on nodes $1$, $2$ and $3$, and node $4$ joined to
+node $3$. Scalar features $\vec x=(1,2,3,4)$. The relabelling swaps nodes $1$
+and $4$.
+</Given>
+
+<Find>
+$\mat A\vec x$; the mean over neighbours; $\hat{\mat A}\vec x$ with
+$\hat{\mat A}=\tilde{\mat D}^{-1/2}(\mat A+\mat I)\tilde{\mat D}^{-1/2}$; the
+same three after relabelling.
+</Find>
+
+<Strategy>
+Read each node's neighbours off the graph. For the graph convolution,
+include the node itself and weight each pair by
+$1/\sqrt{\tilde d_v\tilde d_u}$.
+</Strategy>
+
+<Solution>
+
+**Sum.** Node $1$'s neighbours are $2$ and $3$; node $2$'s are $1$ and $3$;
+node $3$'s are $1$, $2$ and $4$; node $4$'s is $3$. So
+
+$$
+\begin{aligned}
+\mat A\vec x&=(2+3,\;1+3,\\
+ &\qquad1+2+4,\;3)\\
+ &=(5,4,7,3).
+\end{aligned}
+$$
+
+**Mean.** The degrees are $(2,2,3,1)$, giving
+$(2.5,\;2,\;2.333333,\;3)$.
+
+**Graph convolution.** With self-loops the degrees are $(3,3,4,2)$. Node
+$1$ averages nodes $1$, $2$ and $3$:
+
+$$
+\begin{aligned}
+&(\hat{\mat A}\vec x)_1\\
+&\;=\frac13+\frac23+\frac{3}{\sqrt{12}}\\
+&\;=1+0.866025=1.866025.
+\end{aligned}
+$$
+
+Node $2$ averages the same three nodes with the same weights, so it also
+gets $1.866025$. Node $3$ gets
+$\tfrac{3}{\sqrt{12}}+\tfrac34+\tfrac{4}{\sqrt8}=3.030239$, and node $4$ gets
+$\tfrac{3}{\sqrt8}+\tfrac42=3.060660$.
+
+**Relabelled.** Swapping nodes $1$ and $4$ gives
+$\vec x'=(4,2,3,1)$, and node $1$ is now the pendant. Repeating the
+computation on the relabelled graph gives
+
+$$
+\begin{aligned}
+&\text{sum: }(3,4,7,5),\\
+&\text{mean: }(3,\,2,\,2.333333,\,2.5),\\
+&\text{convolution:}\\
+&\quad(3.060660,\,1.866025,\\
+&\quad\;\;3.030239,\,1.866025),
+\end{aligned}
+$$
+
+in each case the original output with its first and last entries
+swapped.
+
+</Solution>
+
+<Answer>
+Sum $(5,4,7,3)$; mean $(2.5,\,2,\,2.333333,\,3)$; graph convolution
+$(1.866025,\,1.866025,$ $3.030239,\,3.060660)$. After relabelling, each is
+the original with entries $1$ and $4$ exchanged.
+</Answer>
+
+<CheckSanity>
+The entries of $\mat A\vec x$ add to $19$, and each feature is counted once
+per neighbour: $1\cdot2+2\cdot2+3\cdot3+4\cdot1=19$.
+</CheckSanity>
+
+<CheckNumeric snippet="i-14-gnn-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-14-gnn-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-14-gnn-checks.py
+~~~
+
+It checks all fifteen problems of the chapter and the numbers quoted in its
+four propositions, including the eigenvalues of the paw graph's
+$\hat{\mat A}$, computed by Jacobi rotations, and a message-passing network
+run on the two-triangle and hexagon graphs.
+
+</CheckNumeric>
+
+<Breaks>
+The graph convolution gave nodes $1$ and $2$ the same value although their
+features differ, because their closed neighbourhoods coincide. A layer
+with a separate self-term, $\vec h_v'=w_0x_v+w_1(\mat A\vec x)_v$, keeps them
+apart whenever $w_0\neq w_1$.
+</Breaks>
+
+<Variation>
+With features $\vec x=(1,1,1,1)$ the sum returns the degrees $(2,2,3,1)$,
+the mean returns all ones, and the graph convolution returns
+$(0.955342,\,0.955342,$ $1.180904,\,0.853553)$. The mean has erased even
+the degrees; the graph convolution keeps a trace of them.
+</Variation>

@@ -1,0 +1,51 @@
+---
+id: "I.14.X05"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "How fast a hexagon smooths, and why self-loops matter"
+depends:
+  - "I.14.P03"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Using the eigenvalues of [I.14.X04](/elementa/neural-networks/gnn/problems/x04),
+find how many graph-convolution layers bring the distance from the limit
+on a hexagon below one per cent of where it started. Then drop the
+self-loops, using $\mat D^{-1/2}\mat A\mat D^{-1/2}$, and apply it repeatedly to
+the alternating signal $(1,-1,1,-1,1,-1)$. What happens as the number of
+layers grows?
+
+<Hint>
+The distance shrinks by at most the largest eigenvalue below $1$ in
+absolute value per layer. Without self-loops every degree is $2$.
+</Hint>
+
+<SolutionToggle>
+
+The eigenvalues other than $1$ are $\tfrac23$, $\tfrac23$, $0$, $0$ and
+$-\tfrac13$, so $|\lambda_2|=\tfrac23$ and the distance after $k$ layers is at
+most $(\tfrac23)^k$ times its start. $(\tfrac23)^{11}=0.011561$ and
+$(\tfrac23)^{12}=0.007707$, so $12$ layers suffice for any starting signal,
+and a signal with a component along the slowest mode needs that many.
+
+Without self-loops the operator is $\mat A/2$, and its eigenvalues are
+$\cos\theta$ for $\theta=2\pi j/6$: $1$, $\tfrac12$, $\tfrac12$, $-\tfrac12$,
+$-\tfrac12$ and $-1$. The eigenvalue $-1$ belongs to the alternating signal:
+each node's two neighbours have the opposite sign, so the average is
+exactly the negative. The signal flips sign at every layer and never
+converges. The limit of I.14.T3 does not exist.
+
+The hexagon is bipartite, since its nodes split into alternate halves with
+every edge between them, and every bipartite graph has this eigenvalue.
+The self-loop mixes each node with itself. On a graph where every degree
+is $r$ it maps each eigenvalue $\lambda$ of the plain operator to
+$(r\lambda+1)/(r+1)$, so $-1$ becomes $(1-r)/(r+1)$, which is $-\tfrac13$
+here. On any connected graph it rules out $-1$.
+
+</SolutionToggle>

@@ -1,0 +1,179 @@
+---
+chapter: neural-networks--gnn
+proposition: 1
+statement: "A graph layer must give the same answer however the nodes are numbered, and message passing is the layer that does."
+claim: "Numbering the nodes of a graph is a choice, not information. A layer that runs one rule at every node and combines neighbours with an order-free aggregator relabels its output exactly as its input was relabelled, and k such layers see k hops."
+given:
+  - a-convolution-is-one-filter-everywhere
+  - depth-buys-receptive-field
+  - permuting-hidden-units-changes-nothing
+figure: FigMessagePassing
+figureType: C
+status: published
+updated: 2026-10-16
+sources:
+  - title: "The Graph Neural Network Model"
+    url: https://doi.org/10.1109/TNN.2008.2005605
+  - title: "Neural Message Passing for Quantum Chemistry"
+    url: https://proceedings.mlr.press/v70/gilmer17a.html
+  - title: "Deep Sets"
+    url: https://arxiv.org/abs/1703.06114
+---
+
+## The input has no order
+
+A graph has $n$ nodes and $m$ edges (<ApparatusRef ref="0.GR.01" />). A
+network receives it as two arrays: the adjacency matrix $\mat A$, of shape
+$n\times n$ (<ApparatusRef ref="0.GR.02" />), and the node features
+$\mat X$, of shape $n\times d$, one row per node.
+
+Those arrays depend on how the nodes were numbered. Renumbering by a
+permutation matrix $\mat P$, whose inverse is its transpose
+(<ApparatusRef ref="0.LA.02" />), describes the same graph with different
+arrays:
+
+<Eq id="I.14.1" gloss="A relabelling changes the description of a graph, not the graph.">
+
+$$
+\begin{aligned}
+&\mat A\mapsto\mat P\mat A\mat P^{\mathsf T},\qquad\mat X\mapsto\mat P\mat X,\\[4pt]
+&f(\mat P\mat A\mat P^{\mathsf T},\mat P\mat X)=\mat Pf(\mat A,\mat X),\\
+&r(\mat P\mat A\mat P^{\mathsf T},\mat P\mat X)=r(\mat A,\mat X).
+\end{aligned}
+$$
+
+</Eq>
+
+The second line of (I.14.1) asks a node-level layer $f$ to be
+equivariant: renumber the input and the output is renumbered the same
+way. The third asks a
+graph-level readout $r$ to be invariant: renumbering changes nothing.
+
+A multilayer perceptron applied to the flattened adjacency matrix has
+neither property. A graph on $n$ nodes can be numbered in up to $n!$ ways,
+$3{,}628{,}800$ for ten nodes, and the perceptron would have to learn
+separately that all of them are the same graph. It also fixes $n$. A
+convolution escaped the same problem on a grid by reusing one local rule
+at every position (I.11). A graph needs one local rule that also does not
+care in which order a node's neighbours are listed.
+
+## Message passing
+
+A message-passing layer gives every node the same three steps. Each
+neighbour sends a message computed from the two nodes' states. The
+messages are combined by an aggregator that sees them only as a multiset.
+The node updates its state from the result and its previous state:
+
+<Eq id="I.14.2" gloss="Every node runs the same rule on the multiset of its neighbours.">
+
+$$
+\begin{aligned}
+\vec m_v&=\bigoplus_{u\in\mathcal N(v)}\psi(\vec h_v,\vec h_u),\\
+\vec h_v'&=\varphi(\vec h_v,\vec m_v).
+\end{aligned}
+$$
+
+</Eq>
+
+Here $\mathcal N(v)$ is the set of $v$'s neighbours and $\bigoplus$ is a sum,
+a mean, a maximum, or an attention-weighted sum. The functions $\psi$ and
+$\varphi$ are small networks shared by every node. Scarselli and colleagues
+(2009) introduced graph networks of this kind, and Gilmer and colleagues
+(2017) showed that most later variants are instances of (I.14.2).
+
+The equivariance proof takes three sentences. Renumbering moves each node
+together with its features and its set of neighbours. The aggregator
+receives the same multiset of messages under any numbering, because a
+multiset has no order. So every node computes the same new state as
+before, and only its row number changes: the output is $\mat P\mat H'$.
+That is I.14.T1. A readout that sums or averages the rows is then
+invariant, because a sum over all nodes does not depend on their order.
+Zaheer and colleagues (2017) showed that sums are general here: every
+permutation-invariant function of a finite set from a countable domain
+can be written as $\rho\big(\sum_i\phi(\vec x_i)\big)$.
+
+## Sum aggregation is a product with the adjacency matrix
+
+With a sum aggregator and linear messages, the layer is a few matrix
+products:
+
+<Eq id="I.14.3" gloss="Sum aggregation is a product with A, and k products reach k hops.">
+
+$$
+\begin{aligned}
+\mat H'&=\sigma\big(\mat H\mat W_0\\
+ &\qquad+\mat A\mat H\mat W_1\big),\\
+(\mat A^k)_{vu}&=\#\{\text{walks }v\to u\\
+&\qquad\text{of length }k\}.
+\end{aligned}
+$$
+
+</Eq>
+
+Row $v$ of $\mat A\mat H$ is the sum of $v$'s neighbours' rows. Equivariance
+is now one line: $(\mat P\mat A\mat P^{\mathsf T})(\mat P\mat H)=\mat P(\mat A\mat H)$,
+because $\mat P^{\mathsf T}\mat P=\mat I$, and the weights act on the feature
+axis, which relabelling does not touch.
+
+The chapter's running example is the paw: a triangle on nodes $1$, $2$ and
+$3$, and node $4$ joined to node $3$. Its degrees are $2$, $2$, $3$ and $1$.
+With scalar features $\vec x=(1,2,3,4)$, the summed messages $\mat A\vec x$
+are $(5,4,7,3)$: node $3$ receives $1+2+4$. The mean aggregator divides by
+the degrees and gives $(2.5,\,2,\,2.333333,\,3)$. Swap the labels of nodes
+$1$ and $4$, and both results come back with their first and last entries
+swapped. [I.14.B01](/elementa/neural-networks/gnn/problems/b01) works it
+through, and [I.14.X02](/elementa/neural-networks/gnn/problems/x02) shows
+a layer that reads neighbours in index order and is not equivariant.
+
+## k layers see k hops
+
+The second line of (I.14.3) is the graph form of a receptive field. A walk
+of length $k$ can reach only nodes within distance $k$
+(<ApparatusRef ref="0.GR.03" />), so after $k$ layers a node's state
+depends only on the features and edges within $k$ hops of it. That is
+I.14.T2. Like the receptive field of I.11.T3, it bounds what can matter,
+not what does.
+
+Two features of graphs make the bound bite harder than on a grid. The
+number of nodes within $k$ hops can grow like $c^k$ for average degree
+$c$, so a few layers can depend on a large part of the graph
+([I.14.B04](/elementa/neural-networks/gnn/problems/b04)). And a task whose
+answer depends on something three hops away cannot be solved by two
+layers, however wide:
+[I.14.X07](/elementa/neural-networks/gnn/problems/x07) builds two paths
+whose end nodes look identical for two layers and differ at the third.
+
+## Node embeddings and readouts
+
+The rows of the final state matrix are node embeddings: vectors that
+describe each node in the context of its neighbourhood. A node-level task,
+such as classifying the atoms of a molecule or the proteins of an
+interaction network, reads them directly. A graph-level task, such as
+predicting a molecule's toxicity, applies a readout first. An edge-level
+task combines the embeddings of the edge's two ends. Book VII uses all
+three.
+
+## One round, relabelled
+
+~~~python
+A = [[0, 1, 1, 0], [1, 0, 1, 0], [1, 1, 0, 1], [0, 0, 1, 0]]   # the paw graph
+x = [1.0, 2.0, 3.0, 4.0]
+
+def layer(A, x):                     # sum over neighbours, then a fixed update
+    return [x[v] + 0.5*sum(x[u] for u in range(len(A)) if A[v][u])
+            for v in range(len(A))]
+
+p = [3, 1, 2, 0]                     # relabel: node i becomes node p[i]
+PA = [[0]*4 for _ in range(4)]
+Px = [0.0]*4
+for i in range(4):
+    Px[p[i]] = x[i]
+    for j in range(4):
+        PA[p[i]][p[j]] = A[i][j]
+print(layer(A, x))
+print(layer(PA, Px))
+~~~
+
+It prints <code>[3.5, 4.0, 6.5, 5.5]</code> and then
+<code>[5.5, 4.0, 6.5, 3.5]</code>: the same four numbers, with nodes $1$ and
+$4$ exchanged as the input was.

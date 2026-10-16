@@ -1,0 +1,90 @@
+---
+id: "I.14.B03"
+kind: problem
+chapter: "I.14"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "Two triangles and a hexagon"
+depends:
+  - "I.14.P04"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+<Statement>
+Exhibit two graphs that differ in structure but that every message-passing
+network maps to the same output, and name a quantity that tells them
+apart.
+</Statement>
+
+<Given>
+Graph $G_1$ is two disjoint triangles; $G_2$ is a cycle of six nodes. Every
+node starts with the same feature vector. A message-passing network has
+any number of layers of the form (I.14.2), any aggregator, and a sum
+readout.
+</Given>
+
+<Find>
+The colour-refinement colours of both graphs; the network's outputs; the
+number of triangles and of connected components in each.
+</Find>
+
+<Strategy>
+Run colour refinement by hand: it stalls after one round. Then apply the
+induction of I.14.T4.
+</Strategy>
+
+<Solution>
+
+**Refinement.** All nodes start with one colour. In both graphs every
+node has two neighbours, each with that colour, so every node receives the
+same signature, (one colour, two neighbours of that colour), and one new
+colour. The next round sees the same thing. The colour counts, six nodes of
+one colour, agree at every round.
+
+**The network.** By the induction in proposition 4, a node's state after
+layer $t$ is a function of its colour after round $t$. All twelve nodes
+share a colour at every round, so all twelve have the same state at every
+layer, whatever the weights. The sum readout returns six times that state
+for both graphs. The outputs are identical.
+
+The check script confirms it for three randomly weighted sum networks of
+three layers: the sorted node states of $G_1$ and $G_2$ agree to twelve
+decimal places.
+
+**What differs.** The number of triangles is $\operatorname{tr}(\mat A^3)/6$,
+because each triangle gives six closed walks of length three: $2$ for $G_1$
+and $0$ for $G_2$. $G_1$ has two connected components and $G_2$ one. A
+molecule-property model could hardly be indifferent to either.
+
+</Solution>
+
+<Answer>
+Every node gets the same colour at every round in both graphs, so every
+message-passing network gives identical node states and readouts. They
+differ in triangles, $2$ against $0$, and components, $2$ against $1$.
+</Answer>
+
+<CheckSanity>
+Both graphs have six nodes and six edges and are $2$-regular, so any
+statistic built from degrees alone must agree. The difference is in
+cycles, which no fixed number of local averaging steps can count here.
+</CheckSanity>
+
+<Breaks>
+The construction needs identical starting features. Give each node its
+number of triangles as a feature, and a single layer separates the
+graphs. Random features also separate them, at the price of an output that
+is equivariant only in distribution.
+</Breaks>
+
+<Variation>
+Any two $r$-regular graphs on the same number of nodes are
+indistinguishable by colour refinement and hence by message passing. Two
+disjoint copies of the complete graph on four nodes and the cube are both
+$3$-regular on eight nodes; the first has $8$ triangles and the second
+none.
+</Variation>

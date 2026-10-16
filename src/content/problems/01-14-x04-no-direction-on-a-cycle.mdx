@@ -1,0 +1,53 @@
+---
+id: "I.14.X04"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "No direction on a cycle"
+depends:
+  - "I.14.P02"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+On a cycle of six nodes, write $\hat{\mat A}$ and find its eigenvalues. Show
+that no polynomial in $\hat{\mat A}$, and hence no stack of linear graph
+convolutions with scalar weights, can compute the difference
+$x_{i+1}-x_{i-1}$ at every node.
+
+<Hint>
+$\hat{\mat A}$ is a circulant matrix, and its eigenvectors are the discrete
+Fourier modes. For the second part, compare transposes.
+</Hint>
+
+<SolutionToggle>
+
+Every node has degree $3$ with its self-loop, so $\hat{\mat A}$ has
+$\tfrac13$ on the diagonal and on the two neighbouring positions of each
+row, cyclically. On the Fourier mode $x_i=e^{\mathrm i\theta i}$ with
+$\theta=2\pi j/6$ it acts as multiplication by
+
+$$
+\frac{e^{-\mathrm i\theta}+1+e^{\mathrm i\theta}}{3}=\frac{1+2\cos\theta}{3},
+$$
+
+so the eigenvalues are $1$, $\tfrac23$, $\tfrac23$, $0$, $0$ and $-\tfrac13$.
+High frequencies are damped and the lowest kept: a low-pass filter.
+
+The difference operator $\mat D$, with $(\mat D\vec x)_i=x_{i+1}-x_{i-1}$,
+satisfies $\mat D^{\mathsf T}=-\mat D$: it is antisymmetric. Every power of
+the symmetric $\hat{\mat A}$ is symmetric, so every polynomial
+$\sum_kc_k\hat{\mat A}^k$ is symmetric. A matrix that is both symmetric and
+antisymmetric is zero, and $\mat D$ is not zero. So no polynomial in
+$\hat{\mat A}$ equals $\mat D$. $\blacksquare$
+
+A convolution of width three, as in I.11, computes $\mat D$ with weights
+$(-1,0,1)$. The graph convolution cannot, because it has no way to tell the
+neighbour at $i+1$ from the one at $i-1$. Features that encode position
+around the cycle, which the bare graph does not supply, would be needed.
+
+</SolutionToggle>

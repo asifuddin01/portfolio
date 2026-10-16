@@ -1,0 +1,46 @@
+---
+/**
+ * Book I, Ch. XIV, Prop. 4: two triangles and a hexagon. Every node in both
+ * has degree two and neighbours of degree two, so colour refinement never
+ * separates them, and neither does any message-passing network.
+ */
+const R = 34;
+const tri = (cx: number, cy: number) =>
+  [0, 1, 2].map((k) => [cx + R * Math.sin((2 * Math.PI * k) / 3), cy - R * Math.cos((2 * Math.PI * k) / 3)]);
+const hex = (cx: number, cy: number) =>
+  [0, 1, 2, 3, 4, 5].map((k) => [cx + 52 * Math.cos((Math.PI * k) / 3), cy + 52 * Math.sin((Math.PI * k) / 3)]);
+const T1 = tri(64, 120), T2 = tri(154, 120), HX = hex(330, 120);
+const ring = (pts: number[][]) => pts.map((p, i) => [p, pts[(i + 1) % pts.length]]);
+---
+<svg class="fig" viewBox="0 0 440 310" role="img" aria-labelledby="wl-t wl-d" style="--fig-min: 0px">
+  <title id="wl-t">Two triangles and a hexagon look the same to message passing</title>
+  <desc id="wl-d">
+    On the left, two separate triangles with six nodes in all. On the right, a
+    single hexagon with six nodes. Every node in both graphs has degree two,
+    and so does every neighbour, so all twelve nodes receive the same colour at
+    every round of refinement. The left graph has two triangles and two
+    components; the right has none and one.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">two triangles</text>
+  <text x="250" y="23" class="t-lab">one hexagon</text>
+
+  {[T1, T2, HX].map((pts) => ring(pts).map(([a, b]) => (
+    <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} class="wire" />
+  )))}
+  {[...T1, ...T2, ...HX].map((p) => (
+    <g>
+      <circle cx={p[0]} cy={p[1]} r="9" style="fill: var(--paper-raised)" />
+      <circle cx={p[0]} cy={p[1]} r="9" class="a3" opacity="0.35" />
+      <circle cx={p[0]} cy={p[1]} r="9" class="s3" stroke-width="1.6" />
+    </g>
+  ))}
+
+  <text x="110" y="196" class="t-sm" text-anchor="middle">2 triangles, 2 components</text>
+  <text x="330" y="196" class="t-sm" text-anchor="middle">0 triangles, 1 component</text>
+
+  <text x="8" y="236" class="t-sm">Every node: degree 2, neighbours of degree 2.</text>
+  <text x="8" y="255" class="t-sm">Colour refinement gives all twelve the same colour,</text>
+  <text x="8" y="274" class="t-sm">so every message-passing network returns the same</text>
+  <text x="8" y="293" class="t-sm">multiset of node states for the two graphs.</text>
+</svg>

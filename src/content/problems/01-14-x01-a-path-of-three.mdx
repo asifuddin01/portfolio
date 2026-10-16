@@ -1,0 +1,47 @@
+---
+id: "I.14.X01"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A graph convolution on a path of three"
+depends:
+  - "I.14.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+For the path $1$–$2$–$3$, write $\hat{\mat A}$ of (I.14.5) and apply it to
+the signal $(1,0,0)$, a unit at one end. Where has the signal gone after one
+layer?
+
+<Hint>
+With self-loops the degrees are $2$, $3$ and $2$, and
+$\hat A_{vu}=1/\sqrt{\tilde d_v\tilde d_u}$ for neighbours and for $u=v$.
+</Hint>
+
+<SolutionToggle>
+
+The matrix is
+
+$$
+\hat{\mat A}=\begin{bmatrix}
+\tfrac12&\tfrac1{\sqrt6}&0\\[2pt]
+\tfrac1{\sqrt6}&\tfrac13&\tfrac1{\sqrt6}\\[2pt]
+0&\tfrac1{\sqrt6}&\tfrac12
+\end{bmatrix}.
+$$
+
+Its first column is the output for the input $(1,0,0)$:
+$(0.5,\;0.408248,\;0)$. Half of the unit stays at node $1$, part moves to its
+neighbour, and node $3$, two hops away, receives nothing. A second layer
+would reach it, as I.14.T2 says.
+
+The output's entries add to $0.908248$, not $1$: the symmetric
+normalisation does not preserve sums. It preserves the vector of square
+roots of degrees, $(\sqrt2,\sqrt3,\sqrt2)$, which it maps to itself.
+
+</SolutionToggle>

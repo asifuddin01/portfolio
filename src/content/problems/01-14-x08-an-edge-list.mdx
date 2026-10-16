@@ -1,0 +1,45 @@
+---
+id: "I.14.X08"
+kind: exercise
+chapter: "I.14"
+scope: chapter
+variant: shape
+difficulty: 1
+title: "Message passing with an edge list"
+depends:
+  - "I.14.P01"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-14-gnn-checks.py"
+status: published
+---
+Store the paw graph as an edge index: a $2\times E$ array whose columns are
+(source, target) pairs. How large is $E$ for message passing in both
+directions, and with self-loops? Implement $\mat A\vec x$ for
+$\vec x=(1,2,3,4)$ as a gather followed by a scatter-add, and give the
+shape of each intermediate.
+
+<Hint>
+An undirected edge sends messages both ways, so it is stored twice.
+</Hint>
+
+<SolutionToggle>
+
+The paw has $4$ undirected edges. Stored in both directions they give
+$E=8$ columns; adding one self-loop per node gives $12$.
+
+The gather reads the source of each column: with features of width $d$ it
+produces an $E\times d$ array of messages, here $8\times1$. The scatter-add
+sends each message to its target and sums by target, producing $n\times d$,
+here $4\times1$. The result is $(5,4,7,3)$, the same as $\mat A\vec x$ in
+I.14.B01, and it never forms the $4\times4$ matrix.
+
+Two details matter in practice. The scatter must add, not assign: node $3$
+has three incoming messages, and assignment would keep one of them, the
+mistake I.11.T2 warned against for overlapping windows. And the order of
+additions is not fixed on parallel hardware, so results can differ in the
+last bits from run to run, though never in a way that depends on the
+labelling.
+
+</SolutionToggle>

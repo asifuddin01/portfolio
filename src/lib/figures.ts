@@ -79,6 +79,11 @@ import FigVae from '../components/figures/FigVae.astro';
 import FigElboGap from '../components/figures/FigElboGap.astro';
 import FigReparameterisation from '../components/figures/FigReparameterisation.astro';
 import FigRateDistortion from '../components/figures/FigRateDistortion.astro';
+/* Book I, Chapter XIV — Graph Neural Networks */
+import FigMessagePassing from '../components/figures/FigMessagePassing.astro';
+import FigIsotropic from '../components/figures/FigIsotropic.astro';
+import FigOverSmoothing from '../components/figures/FigOverSmoothing.astro';
+import FigWlPair from '../components/figures/FigWlPair.astro';
 import FigCnnLineage from '../components/figures/FigCnnLineage.astro';
 import FigFeatureHierarchy from '../components/figures/FigFeatureHierarchy.astro';
 import FigTransferFreeze from '../components/figures/FigTransferFreeze.astro';
@@ -682,6 +687,30 @@ export const FIGURES = {
     caption:
       'Rate against distortion for the linear β-VAE on the chapter\'s four points, drawn from the exact solution. Raising β buys a cheaper code with a worse reconstruction; at β = 4 the code carries nothing and the decoder ignores it.',
     source: 'Book I, Ch. XIII, Prop. 4',
+  },
+  FigMessagePassing: {
+    component: FigMessagePassing,
+    caption:
+      'One round of message passing at node 3 of a four-node graph. The neighbours\' states are summed, so their order cannot matter, and the same rule runs at every node. Renumbering the nodes renumbers the outputs and changes nothing else.',
+    source: 'Book I, Ch. XIV, Prop. 1',
+  },
+  FigIsotropic: {
+    component: FigIsotropic,
+    caption:
+      'A grid convolution has one weight per relative position, so it can tell left from right. A graph convolution has no positions to weigh: each edge\'s coefficient comes from the degrees at its ends, and one weight matrix is shared by every neighbour.',
+    source: 'Book I, Ch. XIV, Prop. 2',
+  },
+  FigOverSmoothing: {
+    component: FigOverSmoothing,
+    caption:
+      'Ten rounds of the graph convolution\'s averaging on the four-node graph, from the values 1, 2, 3 and 4, each divided by the square root of its degree. Nodes 1 and 2 merge after one round, and all four converge to one value at the rate set by the second eigenvalue, 0.564.',
+    source: 'Book I, Ch. XIV, Prop. 3',
+  },
+  FigWlPair: {
+    component: FigWlPair,
+    caption:
+      'Two triangles and one hexagon. Every node has degree two and neighbours of degree two, so colour refinement cannot separate the graphs, and no message-passing network can either, although one has two triangles and the other none.',
+    source: 'Book I, Ch. XIV, Prop. 4',
   },
   FigCnnLineage: {
     component: FigCnnLineage,
