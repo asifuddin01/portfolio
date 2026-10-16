@@ -1,0 +1,51 @@
+---
+id: "I.13.X10"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "The pathwise estimator is not always the quieter one"
+depends:
+  - "I.13.P03"
+rounding: "Exact values where possible; four decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Let $q=\mathcal N(\mu,1)$ at $\mu=0$ and $f(z)=\sin(10z)$. Find the true
+derivative of $\E_q[f(z)]$ with respect to $\mu$, and the variances of the
+pathwise estimate $f'(z)$ and the score-function estimate
+$f(z)(z-\mu)$.
+
+<Hint>
+For $z\sim\mathcal N(\mu,1)$, $\E[\cos(\omega z)]=\cos(\omega\mu)e^{-\omega^2/2}$.
+Use $\cos^2t=\tfrac12(1+\cos2t)$.
+</Hint>
+
+<SolutionToggle>
+
+**The truth.** $\E_q[\sin(10z)]=\sin(10\mu)e^{-50}$, so the derivative at
+$\mu=0$ is $10e^{-50}=1.9\times10^{-21}$: zero to any printed precision.
+
+**Pathwise.** The estimate is $10\cos(10z)$. Its mean is the derivative,
+and its second moment is
+$100\,\E[\cos^2(10z)]=50\big(1+e^{-200}\big)$. Its variance is therefore
+$50$ to every printed digit.
+
+**Score function.** The estimate is $\sin(10z)\,z$. Its mean is also the
+derivative. Its second moment is
+$\E[\sin^2(10z)\,z^2]=\tfrac12\E[z^2]-\tfrac12\E[z^2\cos(20z)]$, and the
+second average is $-399\,e^{-200}$, so the variance is $0.5$ to every
+printed digit.
+
+So the pathwise estimate is a hundred times noisier here. It reads the
+slope of $f$ at the draw, and a function that oscillates ten times per
+unit has slopes of size ten everywhere, which cancel only on average. The
+score function reads the value of $f$, which never exceeds one. The claim
+broken is that reparameterisation always lowers the variance. It does for
+the smooth, slowly varying log-likelihoods of a VAE decoder; it does not
+in general.
+
+</SolutionToggle>

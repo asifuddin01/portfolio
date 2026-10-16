@@ -1,0 +1,56 @@
+---
+/**
+ * Book I, Ch. XIII, Prop. 2: the evidence of one point, (1, 2), and the bound
+ * four encoders give it. Values from I.13.B01; the gap under each bar is the
+ * KL divergence from that encoder's distribution to the true posterior.
+ */
+const LOGP = -3.531024;
+const BARS = [
+  { label: 'N(0, 1)', note: 'the prior', value: -5.837877, gap: '2.31' },
+  { label: 'N(0, ¼)', note: 'width only', value: -5.031024, gap: '1.50' },
+  { label: 'N(0.87, 1)', note: 'mean only', value: -4.337877, gap: '0.81' },
+  { label: 'N(0.87, ¼)', note: 'posterior', value: -3.531024, gap: '0' },
+];
+const y = (v: number) => 60 + (-3.2 - v) * 71.43;
+const BASE = y(-6);
+const x0 = (i: number) => 112 + i * 82;
+---
+<svg class="fig" viewBox="0 0 440 330" role="img" aria-labelledby="eg-t eg-d" style="--fig-min: 0px">
+  <title id="eg-t">The evidence of one point and four lower bounds</title>
+  <desc id="eg-d">
+    A dashed line marks the log-evidence of the point (1, 2), minus 3.531. Four
+    bars rise to the bound each encoder gives: minus 5.838 for the prior,
+    minus 5.031 with the right width but mean zero, minus 4.338 with the right
+    mean but width one, and minus 3.531 for the true posterior. The gaps are
+    2.31, 1.50, 0.81 and zero.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">one point, four bounds</text>
+
+  {[-6, -5, -4].map((v) => (
+    <g>
+      <line x1="70" y1={y(v)} x2="430" y2={y(v)} class="wire-soft" opacity="0.5" />
+      <text x="62" y={y(v) + 4} class="t-sm" text-anchor="end">{v === -6 ? '−6' : v === -5 ? '−5' : '−4'}</text>
+    </g>
+  ))}
+  <line x1="70" y1={BASE} x2="430" y2={BASE} class="axis" />
+
+  <line x1="70" y1={y(LOGP)} x2="430" y2={y(LOGP)} class="dash" />
+  <text x="70" y={y(LOGP) - 8} class="t-key">log p(x) = −3.531</text>
+
+  {BARS.map((b, i) => (
+    <g>
+      <rect x={x0(i) - 22} y={y(b.value)} width="44" height={BASE - y(b.value)} class={i === 3 ? 'a3' : 'a1'} opacity="0.55" />
+      {b.gap !== '0' && (
+        <g>
+          <line x1={x0(i) + 28} y1={y(b.value)} x2={x0(i) + 28} y2={y(LOGP)} class="s2" stroke-width="1.6" />
+          <text x={x0(i) + 32} y={(y(b.value) + y(LOGP)) / 2 + 4} class="t-sm">{b.gap}</text>
+        </g>
+      )}
+      <text x={x0(i)} y={BASE + 18} class="t-sm" text-anchor="middle">{b.label}</text>
+      <text x={x0(i)} y={BASE + 33} class="t-sm" text-anchor="middle">{b.note}</text>
+    </g>
+  ))}
+
+  <text x="8" y="318" class="t-sm">Each gap is the KL from that encoder to the posterior.</text>
+</svg>

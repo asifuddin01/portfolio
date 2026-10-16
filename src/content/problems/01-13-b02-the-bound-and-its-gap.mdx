@@ -1,0 +1,149 @@
+---
+id: "I.13.B02"
+kind: problem
+chapter: "I.13"
+scope: chapter
+variant: symbolic
+difficulty: 3
+title: "The bound, its gap and the price of a Gaussian code"
+depends:
+  - "I.13.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+<Statement>
+Derive the ELBO identity, derive the KL divergence of a Gaussian code from
+the standard normal and its derivatives, and show that the encoder that
+maximises the ELBO is the posterior.
+</Statement>
+
+<Given>
+A model $p(\vec z)\,p(\vec x\mid\vec z)$ with evidence $p(\vec x)>0$, and a
+distribution $q(\vec z\mid\vec x)$ that is positive exactly where the
+posterior is. For the last part, the linear model of
+[I.13.B01](/elementa/neural-networks/vae/problems/b01).
+</Given>
+
+<Find>
+(a) $\log p(\vec x)-\operatorname{ELBO}(q)$ as a single divergence.
+(b) $\KL(\mathcal N(\mu,s^2)\,\|\,\mathcal N(0,1))$ and its derivatives with
+respect to $\mu$ and $\log s^2$.
+(c) The $q=\mathcal N(m,v)$ that maximises the ELBO of the linear model, and
+the ELBO there.
+</Find>
+
+<Strategy>
+For (a), write $\log p(\vec x)$ as an average under $q$ of something that
+does not depend on $\vec z$. For (b), average the log-ratio of densities.
+For (c), differentiate the closed-form ELBO.
+</Strategy>
+
+<Solution>
+
+**(a)** Bayes' rule gives
+$p(\vec x)=p(\vec x,\vec z)/p(\vec z\mid\vec x)$ for every $\vec z$ with
+positive posterior. The left side does not depend on $\vec z$, so it
+equals its average under $q$:
+
+$$
+\begin{aligned}
+&\log p(\vec x)\\
+&\;=\E_q\Big[\log\frac{p(\vec x,\vec z)}{p(\vec z\mid\vec x)}\Big]\\
+&\;=\E_q\Big[\log\frac{p(\vec x,\vec z)}{q(\vec z\mid\vec x)}\Big]\\
+&\;\quad+\E_q\Big[\log\frac{q(\vec z\mid\vec x)}{p(\vec z\mid\vec x)}\Big].
+\end{aligned}
+$$
+
+The first average is the ELBO and the second is
+$\KL(q(\vec z\mid\vec x)\,\|\,p(\vec z\mid\vec x))$. Splitting
+$p(\vec x,\vec z)=p(\vec x\mid\vec z)\,p(\vec z)$ in the first gives the
+form in (I.13.4), with $-\KL(q\,\|\,p(\vec z))$ as its second term.
+Since a KL divergence is non-negative and zero only for equal
+distributions, the ELBO is a lower bound, tight exactly at the posterior.
+
+**(b)** The log-densities are
+
+$$
+\begin{aligned}
+\log q(z)&=-\tfrac12\log2\pi s^2\\
+ &\quad-\frac{(z-\mu)^2}{2s^2},\\
+\log p(z)&=-\tfrac12\log2\pi-\frac{z^2}{2}.
+\end{aligned}
+$$
+
+Under $q$, $(z-\mu)^2$ averages to $s^2$ and $z^2$ to $\mu^2+s^2$.
+Therefore
+
+$$
+\begin{aligned}
+\KL&=-\tfrac12\log s^2-\tfrac12\\
+ &\quad+\tfrac12(\mu^2+s^2)\\
+ &=\tfrac12\big(\mu^2+s^2\\
+ &\qquad-1-\log s^2\big).
+\end{aligned}
+$$
+
+This is (I.13.5) for one coordinate. With $\ell=\log s^2$, so that
+$s^2=e^\ell$,
+
+$$
+\begin{aligned}
+\frac{\partial\KL}{\partial\mu}&=\mu,\\[2pt]
+\frac{\partial\KL}{\partial\ell}&=\tfrac12(s^2-1).
+\end{aligned}
+$$
+
+Both vanish only at $\mu=0$, $s^2=1$. For example
+$\KL(\mathcal N(1,0.25)\,\|\,\mathcal N(0,1))=\tfrac12(0.25+1.386294)=0.818147$.
+
+**(c)** From B01, with $a=\vec w^{\mathsf T}\vec x$ and $r=\|\vec w\|^2$,
+the ELBO of $\mathcal N(m,v)$ is, up to a constant,
+
+$$
+\begin{aligned}
+&-\frac{-2am+(m^2+v)r}{2\sigma^2}\\
+&\quad-\tfrac12\big(m^2+v-1-\log v\big).
+\end{aligned}
+$$
+
+Setting the derivative in $m$ to zero gives $a/\sigma^2=m(r/\sigma^2+1)$,
+so $m=a/(r+\sigma^2)$. In $v$ it gives $-r/2\sigma^2-\tfrac12+1/(2v)=0$,
+so $v=\sigma^2/(r+\sigma^2)$. These are the posterior's mean and variance
+in (I.13.2). For the point $(1,2)$ they are $0.866025$ and $0.25$, and by
+(a) the ELBO there equals $\log p(\vec x)=-3.531024$.
+
+</Solution>
+
+<Answer>
+(a) $\log p(\vec x)-\operatorname{ELBO}(q)=\KL(q(\vec z\mid\vec x)\,\|\,p(\vec z\mid\vec x))$.
+(b) $\tfrac12(\mu^2+s^2-1-\log s^2)$, with derivatives $\mu$ and
+$\tfrac12(s^2-1)$. (c) $m=a/(r+\sigma^2)$ and $v=\sigma^2/(r+\sigma^2)$,
+the exact posterior, where the ELBO is $-3.531024$.
+</Answer>
+
+<CheckSanity>
+The KL in (b) is zero at the prior and positive elsewhere: for fixed $s$
+it grows with $\mu^2$, and $s^2-1-\log s^2\geq0$ with equality only at
+$s^2=1$, by $\log t\leq t-1$.
+</CheckSanity>
+
+<Breaks>
+If $q$ is positive somewhere the posterior is zero, the KL in (a) is
+infinite and the ELBO is minus infinity. If $q$ is zero somewhere the
+posterior is not, (a) still holds but $q$ cannot be the posterior, so the
+gap never closes. A Gaussian prior and decoder make the posterior positive
+everywhere, and neither case arises. If the decoder variance also depends
+on $z$, (c) has no closed form.
+</Breaks>
+
+<Variation>
+For a code with $k$ independent coordinates the KL is a sum of $k$ copies
+of (b). At the posterior of the linear model the price is
+$\tfrac12\log\big((r+\sigma^2)/\sigma^2\big)+\tfrac12(m^2+v-1)$. At the
+maximum-likelihood $\vec w$ the second part averages to zero over the
+data, and at every corner of the rectangle it is exactly zero, leaving
+$\tfrac12\log4=\log2$.
+</Variation>

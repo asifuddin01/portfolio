@@ -1,0 +1,51 @@
+---
+id: "I.13.X04"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "A point code has unbounded rate"
+depends:
+  - "I.13.P02"
+  - "I.13.P04"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Keep the encoder's mean at $0.866025$, the posterior mean of the point
+$(1,2)$, and shrink its standard deviation $s$. Compute the price of the
+code, $\KL(\mathcal N(0.866025,s^2)\,\|\,\mathcal N(0,1))$, at $s=0.1$,
+$0.01$ and $0.001$. How fast does it grow, and what does the limit say
+about the autoencoder of Chapter I.12?
+
+<Hint>
+Only the $-\log s^2$ term of (I.13.5) grows as $s\to0$.
+</Hint>
+
+<SolutionToggle>
+
+With $\mu^2=0.75$, (I.13.5) gives $\tfrac12(s^2-0.25-\log s^2)$:
+
+| $s$ | price of the code |
+|---|---|
+| $0.1$ | $2.182585$ |
+| $0.01$ | $4.480220$ |
+| $0.001$ | $6.782756$ |
+
+Each tenfold narrowing adds $\log10=2.302585$ nats, apart from the vanishing
+$s^2$ term: the price grows like $-\log s$ without limit.
+
+A deterministic encoder is the limit $s\to0$, so its rate is infinite. The
+autoencoder of I.12 is a VAE whose code costs nothing because its price is
+never charged. Proposition 4 reaches the same corner from the other side:
+in the linear model the encoder's variance is $\beta\sigma^2/\lambda_1$,
+which goes to zero only as $\beta\to0$, and the rate
+$\tfrac12\log(\lambda_1/\beta\sigma^2)$ diverges with it.
+
+The noise in the code is what makes the space between codes trained. A
+point code puts the decoder back where it was in I.12.
+
+</SolutionToggle>

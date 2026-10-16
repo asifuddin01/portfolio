@@ -1,0 +1,57 @@
+---
+id: "I.13.X08"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A discrete code has no pathwise derivative"
+depends:
+  - "I.13.P03"
+rounding: "Exact values where possible; four decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+A one-bit code is $z\sim\operatorname{Bernoulli}(\pi)$, and
+$f(z)=(z-0.3)^2$. Find the true derivative of $\E[f(z)]$ with respect to
+$\pi$. Write the draw as $z=\mathbf 1[u<\pi]$ with $u$ uniform on
+$(0,1)$, and find what differentiating through it returns. Then find the
+score-function estimate at $\pi=0.5$, its mean and its variance.
+
+<Hint>
+$\E[f(z)]=\pi f(1)+(1-\pi)f(0)$. The function $\mathbf 1[u<\pi]$ is a step
+in $\pi$.
+</Hint>
+
+<SolutionToggle>
+
+**The truth.** $f(1)=0.49$ and $f(0)=0.09$, so the derivative is
+$f(1)-f(0)=0.4$.
+
+**Through the draw.** For fixed $u$, $\mathbf 1[u<\pi]$ is constant in
+$\pi$ except at $\pi=u$, where it jumps. Its derivative is zero with
+probability one, so backpropagating through the draw returns $0$. The
+claim broken is that writing a draw as a function of noise always gives a
+usable pathwise gradient: the function must be differentiable, and a step
+is not.
+
+**Score function.** $\log q(z)=z\log\pi+(1-z)\log(1-\pi)$, so its
+derivative is $z/\pi-(1-z)/(1-\pi)$. At $\pi=0.5$ the estimate is
+$f(1)/0.5=0.98$ when $z=1$ and $-f(0)/0.5=-0.18$ when $z=0$. Its mean is
+$\tfrac12(0.98-0.18)=0.4$, correct, and its variance is
+
+$$
+\begin{aligned}
+&\tfrac12(0.98-0.4)^2\\
+&\;\;+\tfrac12(-0.18-0.4)^2=0.3364.
+\end{aligned}
+$$
+
+The standard deviation $0.58$ exceeds the gradient itself, which is
+typical of the score function. Relaxations such as the Gumbel-softmax
+replace the step by a smooth function of the noise, accepting bias for a
+pathwise gradient.
+
+</SolutionToggle>

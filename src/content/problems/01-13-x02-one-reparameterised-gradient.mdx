@@ -1,0 +1,64 @@
+---
+id: "I.13.X02"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: gradient
+difficulty: 1
+title: "One reparameterised gradient"
+depends:
+  - "I.13.P03"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Use the model of [I.13.B01](/elementa/neural-networks/vae/problems/b01):
+$\vec w=\sqrt3\,\vec u_1$, $\sigma^2=1$, $\vec x=(1,2)$, so
+$\vec w^{\mathsf T}\vec x=2\sqrt3$ and $\|\vec w\|^2=3$. The encoder returns
+$m=0.5$ and $s=0.5$, and the draw is $\varepsilon=0.6$. Compute the
+one-draw gradient of the ELBO with respect to $m$ and $s$, then the exact
+gradient with respect to $m$.
+
+<Hint>
+The reconstruction term is $-\|\vec x-\vec wz\|^2/2$ plus a constant, with
+$z=m+s\varepsilon$. The KL term is $\tfrac12(m^2+s^2-1-\log s^2)$.
+</Hint>
+
+<SolutionToggle>
+
+The code is $z=0.5+0.5\cdot0.6=0.8$. The derivative of the reconstruction
+term with respect to $z$ is
+
+$$
+\begin{aligned}
+\vec w^{\mathsf T}(\vec x-\vec wz)
+ &=2\sqrt3-3\cdot0.8\\
+ &=1.064102.
+\end{aligned}
+$$
+
+Since $\partial z/\partial m=1$ and $\partial z/\partial s=\varepsilon$,
+and the KL has derivatives $m$ and $s-1/s$,
+
+$$
+\begin{aligned}
+\frac{\partial}{\partial m}&=1.064102-0.5=0.564102,\\
+\frac{\partial}{\partial s}&=1.064102\cdot0.6-(0.5-2)\\
+ &=2.138461.
+\end{aligned}
+$$
+
+The exact gradient with respect to $m$ averages over $\varepsilon$. The
+reconstruction derivative is linear in $z$, so its average is its value at
+$z=m$: $2\sqrt3-1.5=1.964102$. Subtracting the KL's $0.5$ gives
+$1.464102$. The single draw underestimated it by $0.9$, because
+$\varepsilon=0.6$ moved the code above its mean; an $\varepsilon$ of
+$-0.6$ would have overestimated it by the same amount.
+
+Both one-draw derivatives point uphill. An unbiased estimate need not be
+close; it needs only to be right on average, which is all stochastic
+gradient ascent requires.
+
+</SolutionToggle>

@@ -1,0 +1,152 @@
+---
+id: "I.13.B01"
+kind: problem
+chapter: "I.13"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "One point, four bounds"
+depends:
+  - "I.13.P01"
+  - "I.13.P02"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+<Statement>
+Compute the log-evidence of one point under probabilistic PCA, then the
+lower bound that four different encoder distributions give it, and confirm
+that each gap is a KL divergence.
+</Statement>
+
+<Given>
+The four points of I.12 have covariance eigenvalues $4$ and $1$ along
+$\vec u_1=(0.8,0.6)$ and $\vec u_2=(-0.6,0.8)$. The model has one latent
+dimension, $z\sim\mathcal N(0,1)$ and
+$\vec x\mid z\sim\mathcal N(\vec wz,\sigma^2\mat I)$, at its maximum
+likelihood $\sigma^2=1$ and $\vec w=\sqrt3\,\vec u_1$. Take
+$\vec x=(1,2)$. The four candidate encoder distributions are
+$\mathcal N(0,1)$, $\mathcal N(0,\tfrac14)$, $\mathcal N(\tfrac{\sqrt3}2,1)$
+and $\mathcal N(\tfrac{\sqrt3}2,\tfrac14)$.
+</Given>
+
+<Find>
+$\log p(\vec x)$; the posterior of $z$; the ELBO for each candidate; the
+gaps; and the two terms of the ELBO at the posterior.
+</Find>
+
+<Strategy>
+Use (I.13.2) for the evidence and the posterior, written in the
+eigenbasis. For the ELBO, both terms of (I.13.4) have closed forms for a
+Gaussian $q$ with mean $m$ and variance $v$.
+</Strategy>
+
+<Solution>
+
+**The evidence.** The point has coordinates $\vec u_1^{\mathsf T}\vec x=2$
+and $\vec u_2^{\mathsf T}\vec x=1$. The model's covariance
+$\vec w\vec w^{\mathsf T}+\mat I$ has eigenvalues $4$ along $\vec u_1$ and
+$1$ along $\vec u_2$, so its determinant is $4$ and
+
+$$
+\begin{aligned}
+&\log p(\vec x)\\
+&\;=-\log2\pi-\tfrac12\log4\\
+&\;\quad-\tfrac12\Big(\frac{2^2}{4}+\frac{1^2}{1}\Big)\\
+&\;=-\log2\pi-\log2-1\\
+&\;=-3.531024.
+\end{aligned}
+$$
+
+**The posterior.** With $\|\vec w\|^2=3$ and
+$\vec w^{\mathsf T}\vec x=2\sqrt3$, (I.13.2) gives variance
+$\sigma^2/(\|\vec w\|^2+\sigma^2)=1/4$ and mean $2\sqrt3/4=0.866025$.
+
+**The bounds.** For $q=\mathcal N(m,v)$,
+
+$$
+\begin{aligned}
+&\E_q\|\vec x-\vec wz\|^2\\
+&\;=\|\vec x\|^2-2m\,\vec w^{\mathsf T}\vec x\\
+&\;\quad+(m^2+v)\|\vec w\|^2\\
+&\;=5-4\sqrt3\,m+3(m^2+v),
+\end{aligned}
+$$
+
+and the reconstruction term is $-\log2\pi$ minus half of that. The price
+of the code is $\tfrac12(m^2+v-1-\log v)$ by (I.13.5). For the prior,
+$m=0$ and $v=1$: the squared error averages to $8$, the reconstruction
+term is $-\log2\pi-4$, the price is $0$, and
+
+$$
+\operatorname{ELBO}=-5.837877.
+$$
+
+The other three, computed the same way, are $-5.031024$, $-4.337877$ and
+$-3.531024$.
+
+**The gaps.** Subtracting from $\log p(\vec x)$ gives $2.306853$, $1.5$,
+$0.806853$ and $0$. By (I.13.4) each must equal the KL divergence from
+$\mathcal N(m,v)$ to the posterior $\mathcal N(0.866025,0.25)$. For the
+prior,
+
+$$
+\begin{aligned}
+&\tfrac12\Big(\frac{1}{0.25}+\frac{0.75}{0.25}\\
+&\qquad-1+\log0.25\Big)\\
+&\;\;=\tfrac12(4+3-1-1.386294)\\
+&\;\;=2.306853.
+\end{aligned}
+$$
+
+**At the posterior.** The squared error averages to
+$5-6+3=2$, so the reconstruction term is $-\log2\pi-1=-2.837877$. The price
+is $\tfrac12(0.75+0.25-1-\log0.25)=\log2=0.693147$. Their difference is
+the evidence.
+
+</Solution>
+
+<Answer>
+$\log p(\vec x)=-3.531024$; posterior $\mathcal N(0.866025,0.25)$; ELBOs
+$-5.837877$, $-5.031024$, $-4.337877$, $-3.531024$; gaps $2.306853$, $1.5$,
+$0.806853$, $0$; at the posterior, reconstruction $-2.837877$ and price
+$0.693147$.
+</Answer>
+
+<CheckSanity>
+Every bound is below the evidence and the gaps are non-negative. The
+correct width with mean $0$ costs $1.5$, which is
+$\tfrac12(0.866025^2)/0.25$: with equal variances, the KL is the squared
+distance between the means over twice the variance.
+</CheckSanity>
+
+<CheckNumeric snippet="i-13-vae-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-13-vae-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-13-vae-checks.py
+~~~
+
+It checks all fifteen problems of the chapter and the numbers quoted in its
+four propositions. It confirms the evidence by integrating
+$p(z)\,p(\vec x\mid z)$ numerically, and each gap against a separately
+computed KL divergence.
+
+</CheckNumeric>
+
+<Breaks>
+With a nonlinear decoder neither the evidence nor the posterior has a
+closed form, and only the ELBO can be computed. The gaps above can be
+seen only because this model is linear.
+</Breaks>
+
+<Variation>
+Every corner of the rectangle has $|\vec u_1^{\mathsf T}\vec x|=2$ and
+$|\vec u_2^{\mathsf T}\vec x|=1$, so all four have the same evidence, and
+the posterior means are $\pm0.866025$. The average log-likelihood over the
+dataset is therefore also $-3.531024$.
+</Variation>

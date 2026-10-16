@@ -1,0 +1,59 @@
+---
+/**
+ * Book I, Ch. XIII, Prop. 4: the linear β-VAE on the chapter's four points.
+ * Rate R = ½ log(4/β) and squared distortion D = 1 + β until β reaches 4,
+ * where the code switches off. Exact curve from I.13.B03.
+ */
+const LAM1 = 4, LAM2 = 1;
+const x = (d: number) => 70 + (d - 1) * 74;
+const y = (r: number) => 246 - r * 112;
+const curve = Array.from({ length: 80 }, (_, i) => 0.2 + (i * (LAM1 - 0.2)) / 79)
+  .map((b) => `${x(LAM2 + b)},${y(0.5 * Math.log(LAM1 / b))}`)
+  .join(' ');
+const MARKS = [
+  { beta: 0.25, dx: 8, dy: -2 },
+  { beta: 1, dx: 8, dy: -6 },
+  { beta: 2, dx: 8, dy: -6 },
+];
+---
+<svg class="fig" viewBox="0 0 440 330" role="img" aria-labelledby="rd-t rd-d" style="--fig-min: 0px">
+  <title id="rd-t">Rate against distortion for the linear β-VAE</title>
+  <desc id="rd-d">
+    A curve of rate against squared distortion for the chapter's four points.
+    At beta one quarter the rate is 1.386 and the distortion 1.25. At beta one,
+    the ordinary ELBO, the rate is 0.693 and the distortion 2. At beta two they
+    are 0.347 and 3. At beta four the rate reaches zero and the distortion 5,
+    the total variance: the code is ignored. As beta goes to zero the curve
+    rises without bound against a dashed line at distortion 1, the error of
+    the principal-axis autoencoder of Chapter I.12.
+  </desc>
+
+  <text x="8" y="23" class="t-lab">rate against distortion</text>
+
+  <line x1="70" y1="246" x2="410" y2="246" class="axis" />
+  <line x1="70" y1="246" x2="70" y2="58" class="axis" />
+  {[1, 2, 3, 4, 5].map((d) => (
+    <text x={x(d)} y="264" class="t-sm" text-anchor="middle">{d}</text>
+  ))}
+  {[0, 0.5, 1, 1.5].map((r) => (
+    <text x="62" y={y(r) + 4} class="t-sm" text-anchor="end">{r}</text>
+  ))}
+  <text x="240" y="284" class="t-sm" text-anchor="middle">distortion: mean squared error</text>
+  <text x="76" y="52" class="t-sm">rate: nats</text>
+
+  <line x1={x(1)} y1="246" x2={x(1)} y2="62" class="dash" />
+  <text x={x(1) + 6} y="236" class="t-sm">β → 0: I.12's loss</text>
+
+  <polyline points={curve} class="s3" stroke-width="2" fill="none" />
+  {MARKS.map((m) => (
+    <g>
+      <circle cx={x(LAM2 + m.beta)} cy={y(0.5 * Math.log(LAM1 / m.beta))} r="4" class="a3" />
+      <text x={x(LAM2 + m.beta) + m.dx} y={y(0.5 * Math.log(LAM1 / m.beta)) + m.dy} class="t-key">β = {m.beta}</text>
+    </g>
+  ))}
+  <circle cx={x(5)} cy={y(0)} r="5" class="a1" />
+  <text x={x(5)} y={y(0) - 12} class="t-key" text-anchor="middle">β ≥ 4: collapse</text>
+
+  <text x="8" y="306" class="t-sm">R = ½ log(4/β) and D = 1 + β, until β = 4.</text>
+  <text x="8" y="325" class="t-sm">β = 1 is the ELBO. Past β = 4 the code carries nothing.</text>
+</svg>

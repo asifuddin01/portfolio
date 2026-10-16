@@ -1,0 +1,63 @@
+---
+id: "I.13.X01"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: numeric
+difficulty: 1
+title: "A Gaussian KL by hand, both ways round"
+depends:
+  - "I.13.P02"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Compute $\KL(\mathcal N(1,0.25)\,\|\,\mathcal N(0,1))$ with (I.13.5). Then
+compute $\KL(\mathcal N(0,1)\,\|\,\mathcal N(1,0.25))$ with the general
+formula
+$\tfrac12\big(v_1/v_2+(m_1-m_2)^2/v_2-1+\log(v_2/v_1)\big)$.
+Which direction does a VAE's loss use, and what does the asymmetry mean?
+
+<Hint>
+The first is a narrow distribution measured against a wide one, the second
+a wide one against a narrow one.
+</Hint>
+
+<SolutionToggle>
+
+The first is
+
+$$
+\begin{aligned}
+&\tfrac12\big(1+0.25-1-\log0.25\big)\\
+&\;\;=\tfrac12(0.25+1.386294)\\
+&\;\;=0.818147.
+\end{aligned}
+$$
+
+The second is
+
+$$
+\begin{aligned}
+&\tfrac12\Big(\frac{1}{0.25}+\frac{1}{0.25}\\
+&\qquad-1+\log0.25\Big)\\
+&\;\;=\tfrac12(4+4-1-1.386294)\\
+&\;\;=2.806853.
+\end{aligned}
+$$
+
+The VAE's loss uses the first direction: the encoder's distribution
+measured against the prior, $\KL(q\,\|\,p)$. It is cheap for $q$ to be
+narrower than the prior and costly to put mass where the prior has
+little. The reverse direction punishes the narrow distribution for every
+place the wide one reaches and it does not, so it is more than three times
+larger here.
+
+The same direction appears in the gap of (I.13.4), $\KL(q\,\|\,p(\vec z\mid\vec x))$.
+That is why an encoder fitted by the ELBO tends to sit inside the
+posterior rather than cover it, the effect
+[I.13.X03](/elementa/neural-networks/vae/problems/x03) measures.
+
+</SolutionToggle>

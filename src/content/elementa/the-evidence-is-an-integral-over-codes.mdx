@@ -1,0 +1,216 @@
+---
+chapter: neural-networks--vae
+proposition: 1
+statement: "A latent-variable model explains each observation by a code it never sees, and its likelihood is an integral over every code."
+claim: "Putting a prior on the code makes every code meaningful and lets the model generate. The price is an evidence and a posterior that only the linear model can write down, and that sampling the prior cannot estimate."
+given:
+  - reconstruction-error-measures-distance-to-a-surface
+  - a-linear-autoencoder-finds-the-principal-subspace
+  - every-loss-is-a-likelihood
+figure: FigVae
+figureType: C
+status: published
+updated: 2026-10-16
+sources:
+  - title: "Probabilistic Principal Component Analysis"
+    url: https://doi.org/10.1111/1467-9868.00196
+  - title: "Auto-Encoding Variational Bayes"
+    url: https://arxiv.org/abs/1312.6114
+  - title: "Stochastic Backpropagation and Approximate Inference in Deep Generative Models"
+    url: https://proceedings.mlr.press/v32/rezende14.html
+  - title: "Inference Suboptimality in Variational Autoencoders"
+    url: https://proceedings.mlr.press/v80/cremer18a.html
+---
+
+## From a code to a distribution over codes
+
+Chapter I.12 ended with two functions and no distribution. Its encoder
+gave every training input a code, and nothing said which other codes were
+valid. A latent-variable model starts from the other end. It says how data
+are generated: draw a code from a fixed prior, then draw an observation
+from a distribution the decoder computes from that code.
+
+$$
+\begin{aligned}
+\vec z&\sim p(\vec z)=\mathcal N(\vec 0,\mat I),\\
+\vec x\mid\vec z&\sim p_\theta(\vec x\mid\vec z).
+\end{aligned}
+$$
+
+The decoder now returns the parameters of a distribution: a mean
+$g_\theta(\vec z)$ with variance $\sigma^2\mat I$ for real-valued inputs, or
+one probability per coordinate for binary ones. By I.4, its negative log is
+a reconstruction loss. Generating is two draws: a code from the prior, then
+an observation from the decoder.
+
+Two quantities follow, and both are hard.
+
+<Eq id="I.13.1" gloss="The evidence is an integral over codes, and the posterior needs it.">
+
+$$
+\begin{aligned}
+p_\theta(\vec x)&=\int p(\vec z)\,p_\theta(\vec x\mid\vec z)\,d\vec z,\\
+p_\theta(\vec z\mid\vec x)&=\frac{p(\vec z)\,p_\theta(\vec x\mid\vec z)}
+ {p_\theta(\vec x)}.
+\end{aligned}
+$$
+
+</Eq>
+
+The evidence $p_\theta(\vec x)$ is what maximum likelihood would maximise.
+It averages the decoder's explanation of $\vec x$ over every code the prior
+allows. The posterior, by Bayes' rule
+(<ApparatusRef ref="0.PR.04" />), says which codes explain $\vec x$, and it
+divides by the evidence. For a decoder that is a neural network neither has
+a closed form.
+
+## The one model where everything is exact
+
+Make the decoder linear: $p(\vec x\mid\vec z)=\mathcal N(\mat W\vec z,\sigma^2\mat I)$.
+A linear function of Gaussians is Gaussian, so the integral in (I.13.1) can
+be done, and Bayes' rule can be completed by collecting the terms in
+$\vec z$:
+
+<Eq id="I.13.2" gloss="Probabilistic PCA: the one model in which the evidence and posterior are exact.">
+
+$$
+\begin{aligned}
+\vec x&\sim\mathcal N\big(\vec 0,\;\mat W\mat W^{\mathsf T}+\sigma^2\mat I\big),\\
+\vec z\mid\vec x&\sim\mathcal N\big(\mat M^{-1}\mat W^{\mathsf T}\vec x,\;
+ \sigma^2\mat M^{-1}\big),\\
+\mat M&=\mat W^{\mathsf T}\mat W+\sigma^2\mat I.
+\end{aligned}
+$$
+
+</Eq>
+
+This is probabilistic PCA. Tipping and Bishop (1999) found its maximum
+likelihood in closed form. The noise variance is the average of the
+discarded eigenvalues of the data covariance, and
+$\mat W=\mat U_k(\mat\Lambda_k-\sigma^2\mat I)^{1/2}\mat R$ for any rotation
+$\mat R$. The columns of $\mat W$ span the principal subspace of I.12.T1,
+each scaled by how far its variance stands above the noise. A direction
+whose eigenvalue does not exceed $\sigma^2$ gets no weight at all. Proposition
+4 meets that threshold again.
+
+Take the four points of Chapter I.12, $(1,2)$, $(2.2,0.4)$, $(-1,-2)$ and
+$(-2.2,-0.4)$, with eigenvalues $4$ and $1$ along $\vec u_1=(0.8,0.6)$ and
+$\vec u_2=(-0.6,0.8)$, and one latent dimension. Maximum likelihood gives
+$\sigma^2=1$ and
+
+$$
+\begin{aligned}
+\vec w&=\sqrt{4-1}\;\vec u_1\\
+ &=(1.385641,\;1.039230).
+\end{aligned}
+$$
+
+The model's covariance $\vec w\vec w^{\mathsf T}+\mat I$ has eigenvalues $4$
+and $1$: it is the data covariance exactly. Every corner then has the same
+log-evidence,
+
+$$
+\begin{aligned}
+\log p(\vec x)&=-\log2\pi-\log2-1\\
+ &=-3.531024.
+\end{aligned}
+$$
+
+For $\vec x=(1,2)$, the scalar version of (I.13.2) gives the posterior.
+Its precision is $1+\|\vec w\|^2/\sigma^2=4$ and its mean is
+$\vec w^{\mathsf T}\vec x/(\|\vec w\|^2+\sigma^2)=2\sqrt3/4$:
+
+$$
+z\mid\vec x\sim\mathcal N(0.866025,\;0.25).
+$$
+
+Compare I.12. The principal-axis code of this point was $2$. The posterior
+mean points the same way, shrunk by $\sqrt3/4$, and it comes with a width
+of one half, set by the noise. The code is no longer a point.
+
+## Why the integral cannot be sampled from the prior
+
+The evidence is an expectation over the prior,
+$p(\vec x)=\E_{p(\vec z)}[p(\vec x\mid\vec z)]$. Averaging
+$p(\vec x\mid\vec z_s)$ over $n$ prior draws $\vec z_s$ estimates it without
+bias. How many draws are needed? By Bayes' rule
+$p(\vec x\mid\vec z)/p(\vec x)=p(\vec z\mid\vec x)/p(\vec z)$, so the
+variance of one draw, relative to the square of what it estimates, is
+
+<Eq id="I.13.3" gloss="Sampling the prior pays for every place the posterior is not.">
+
+$$
+\begin{aligned}
+&\frac{\operatorname{Var}[p(\vec x\mid\vec z)]}{p(\vec x)^2}\\
+&\;\;=\int\frac{p(\vec z\mid\vec x)^2}{p(\vec z)}\,d\vec z-1\\
+&\;\;=\E_{p(\vec z\mid\vec x)}\!\Big[\frac{p(\vec z\mid\vec x)}{p(\vec z)}\Big]-1.
+\end{aligned}
+$$
+
+</Eq>
+
+The ratio inside is large wherever the posterior is concentrated and the
+prior is not. For a one-dimensional Gaussian posterior with mean $\mu$ and
+variance $s^2<2$ the integral is
+$e^{\mu^2/(2-s^2)}/(s\sqrt{2-s^2})$. For the point $(1,2)$ the relative
+variance is $1.320797$, so a relative standard error of ten per cent takes
+about $132$ draws.
+
+That is the easy case. With noise variance $0.01$ in place of $1$ the
+posterior has standard deviation $0.05$ and the relative variance is
+$22.316431$. For independent latent dimensions the integral in (I.13.3)
+is a product, one factor of $1+r$ for each dimension with relative variance
+$r$. In ten such dimensions the count exceeds $10^{15}$;
+[I.13.B05](/elementa/neural-networks/vae/problems/b05) works it out. Almost
+every prior draw lands where the posterior is not, and contributes almost
+nothing.
+
+The remedy is to draw codes from something close to the posterior. That
+distribution must be found for every observation, and finding it by a
+separate optimisation for each one is slow. Kingma and Welling (2014) and
+Rezende, Mohamed and Wierstra (2014) train an encoder network to output
+it instead. Sharing one network across all inputs is called amortised
+inference. It is fast, and it costs something: Cremer, Li and Duvenaud
+(2018) found that the bound lost to the shared encoder often exceeds the
+loss from the Gaussian family itself.
+
+## The variational autoencoder in one picture
+
+The encoder of a variational autoencoder returns two vectors of width $k$,
+a mean $\vec\mu$ and a width $\vec\sigma$, which define
+$q_\phi(\vec z\mid\vec x)=\mathcal N(\vec\mu,\operatorname{diag}\vec\sigma^2)$.
+A code is drawn from it, the decoder explains $\vec x$ from that code, and
+the loss adds a second term that keeps $q_\phi$ close to the prior. The
+figure shows the path. Proposition 2 derives the loss, and proposition 3
+shows how a gradient passes through the draw.
+
+A width must be positive. A linear output layer can return $-0.3$, which
+is not a standard deviation. Encoders therefore predict $\log\sigma^2$ and
+exponentiate, or pass the output through softplus, as
+[I.3.X02](/elementa/neural-networks/activations/problems/x02) anticipated.
+
+## Compute the evidence and the posterior
+
+This script evaluates the integral in (I.13.1) on a grid for the point
+$(1,2)$ and the model above:
+
+~~~python
+from math import exp, log, pi, sqrt
+
+x, w, var = (1.0, 2.0), (0.8*sqrt(3), 0.6*sqrt(3)), 1.0   # probabilistic PCA
+
+def joint(z):        # p(z) p(x | z) for z ~ N(0, 1), x | z ~ N(w z, var I)
+    r2 = sum((xi - wi*z)**2 for xi, wi in zip(x, w))
+    return exp(-z*z/2)/sqrt(2*pi)*exp(-r2/(2*var))/(2*pi*var)
+
+h = 0.001
+grid = [i*h for i in range(-10000, 10001)]
+evidence = sum(joint(z) for z in grid)*h
+mean = sum(z*joint(z) for z in grid)*h/evidence
+spread = sum((z - mean)**2*joint(z) for z in grid)*h/evidence
+print(round(log(evidence), 6), round(mean, 6), round(spread, 6))
+~~~
+
+It prints <code>-3.531024 0.866025 0.25</code>: the log-evidence, and the
+posterior's mean and variance, as (I.13.2) predicts. A grid works in one
+dimension. In twenty it would need $20{,}001^{20}$ points.

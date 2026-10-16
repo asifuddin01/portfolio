@@ -1,0 +1,116 @@
+---
+id: "I.13.B05"
+kind: problem
+chapter: "I.13"
+scope: chapter
+variant: complexity
+difficulty: 2
+title: "What sampling the prior costs"
+depends:
+  - "I.13.P01"
+rounding: "Three significant figures for sample counts; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+<Statement>
+Count how many prior samples an unbiased estimate of the evidence needs,
+in one dimension and in ten, and set that against the cost of one ELBO
+step.
+</Statement>
+
+<Given>
+The estimate is the average of $p(\vec x\mid z_s)$ over $n$ draws $z_s$
+from the prior. By (I.13.3) one draw has relative variance
+$r=\int p(z\mid\vec x)^2/p(z)\,dz-1$, and for a posterior
+$\mathcal N(\mu,s^2)$ with $s^2<2$ the integral is
+$e^{\mu^2/(2-s^2)}/(s\sqrt{2-s^2})$. Use the point $(1,2)$ under the model
+of [I.13.B01](/elementa/neural-networks/vae/problems/b01), and again with
+noise variance $0.01$, where $\|\vec w\|^2=3.99$. The target is a relative
+standard error of ten per cent, so $n=r/0.1^2$. For the encoder, take a
+hidden layer of $400$ units and a code of $k=20$ dimensions.
+</Given>
+
+<Find>
+$r$ and $n$ for both noise levels in one dimension; $n$ in ten independent
+latent dimensions; the cost of one ELBO step; the size of the encoder's
+output layer.
+</Find>
+
+<Strategy>
+Get the posterior from (I.13.2), apply the formula, and use the fact that
+for independent dimensions the integral in (I.13.3) factorises.
+</Strategy>
+
+<Solution>
+
+**Noise variance 1.** The posterior is $\mathcal N(0.866025,0.25)$, so
+$\mu^2=0.75$ and $2-s^2=1.75$:
+
+$$
+\begin{aligned}
+1+r&=\frac{e^{0.75/1.75}}{0.5\sqrt{1.75}}\\
+ &=\frac{1.535063}{0.661438}\\
+ &=2.320797.
+\end{aligned}
+$$
+
+So $r=1.320797$ and $n=132$ draws.
+
+**Noise variance 0.01.** The posterior variance is
+$0.01/(3.99+0.01)=0.0025$, a standard deviation of $0.05$, and its mean is
+$2\sqrt{3.99}/4=0.998749$. The same formula gives $r=22.316431$ and
+$n=2{,}230$. Narrowing the posterior by a factor of ten multiplied the
+cost by about seventeen.
+
+**Ten dimensions.** For a factorised prior and posterior the integral is
+a product, one factor $1+r$ per dimension:
+
+$$
+1+r_{10}=(1+r)^{10}.
+$$
+
+At noise variance $1$ that is $2.320797^{10}=4{,}530$, so
+$n=4.53\times10^5$. At $0.01$ it is $23.316431^{10}=4.75\times10^{13}$,
+so $n=4.75\times10^{15}$. The cost is exponential in the number of latent
+dimensions.
+
+**One ELBO step.** The bound needs one draw from the encoder's
+distribution per example: one encoder pass, one draw of
+$\vec\varepsilon$, one decoder pass, and the closed form (I.13.5) for the
+KL. Its cost does not grow with $k$ except through the width of two
+layers.
+
+**The encoder's output layer.** It returns $\vec\mu$ and $\log\vec\sigma^2$,
+$2k=40$ numbers, from $400$ hidden units: $400\cdot40+40=16{,}040$
+parameters, twice what a deterministic code of the same width would need.
+
+</Solution>
+
+<Answer>
+$r=1.320797$ and $n\approx132$ at noise variance $1$; $r=22.316431$ and
+$n\approx2{,}230$ at $0.01$. In ten dimensions, $n\approx4.53\times10^5$
+and $4.75\times10^{15}$. One ELBO step costs one encoder and one decoder
+pass per example. The output layer has $16{,}040$ parameters.
+</Answer>
+
+<CheckSanity>
+If the posterior were the prior, $\mu=0$ and $s=1$, the formula gives
+$1+r=1/(1\cdot1)=1$ and $r=0$: every draw would return $p(\vec x)$ exactly.
+The cost comes entirely from the posterior differing from the prior.
+</CheckSanity>
+
+<Breaks>
+The closed form needs $s^2<2$; a posterior wider than twice the prior's
+variance makes the integral infinite. Real posteriors are not factorised,
+and the exponent of the dimension count then depends on their shape, but
+the growth remains exponential in general.
+</Breaks>
+
+<Variation>
+Draw from the posterior instead and weight each draw by
+$p(z)/p(z\mid\vec x)$. Every draw then returns $p(\vec x)$ exactly and the
+variance is zero. An encoder close to the posterior is a cheap
+approximation to that ideal proposal.
+</Variation>

@@ -1,0 +1,58 @@
+---
+id: "I.13.X05"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: symbolic
+difficulty: 2
+title: "Where Jensen's inequality is tight"
+depends:
+  - "I.13.P02"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Derive the ELBO from Jensen's inequality, and state exactly when the
+inequality is an equality. Then check the condition for the model of
+[I.13.B01](/elementa/neural-networks/vae/problems/b01): show that
+$\log p(\vec x,z)-\log p(z\mid\vec x)$ takes the same value at every $z$,
+and find it.
+
+<Hint>
+The logarithm is strictly concave, so $\log\E[Y]=\E[\log Y]$ only when $Y$
+is constant.
+</Hint>
+
+<SolutionToggle>
+
+Write $Y=p(\vec x,\vec z)/q(\vec z\mid\vec x)$ with $\vec z\sim q$. Its mean
+is $\int p(\vec x,\vec z)\,d\vec z=p(\vec x)$, so by Jensen's inequality
+(<ApparatusRef ref="0.IT.05" />)
+
+$$
+\begin{aligned}
+\log p(\vec x)&=\log\E_q[Y]\\
+ &\geq\E_q[\log Y]=\operatorname{ELBO}(q).
+\end{aligned}
+$$
+
+Because $\log$ is strictly concave, equality holds exactly when $Y$ is the
+same number for every $\vec z$ that $q$ can draw. Then
+$q(\vec z\mid\vec x)\propto p(\vec x,\vec z)$, and normalising gives
+$q=p(\vec x,\vec z)/p(\vec x)$, the posterior. The constant is $p(\vec x)$.
+
+For the linear model, with $q$ the posterior, $Y$ is
+$p(\vec x,z)/p(z\mid\vec x)$, which by Bayes' rule is $p(\vec x)$ at every
+$z$. The script evaluates
+$\log p(z)+\log p(\vec x\mid z)-\log\mathcal N(z;0.866025,0.25)$ at
+$z=-1$, $0$, $0.5$ and $2$ and gets $-3.531024$ each time, the
+log-evidence.
+
+For any other $q$ the ratio varies with $z$, and the spread of
+$\log Y$ is what Jensen's inequality charges. The first derivation in
+proposition 2 shows that the charge is exactly
+$\KL(q\,\|\,p(\vec z\mid\vec x))$.
+
+</SolutionToggle>

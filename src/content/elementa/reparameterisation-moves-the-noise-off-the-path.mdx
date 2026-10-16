@@ -1,0 +1,151 @@
+---
+chapter: neural-networks--vae
+proposition: 3
+statement: "The reparameterisation trick moves the randomness off the path of the gradient."
+claim: "A draw has no derivative with respect to its parameters. Writing it as a sum and a product of parameter-free noise lets backpropagation through it, and usually gives far quieter gradients than the score-function estimator, though not always."
+given:
+  - the-elbo-misses-the-evidence-by-a-divergence
+  - backpropagation-is-the-chain-rule-over-a-graph
+figure: FigReparameterisation
+figureType: C
+status: published
+updated: 2026-10-16
+sources:
+  - title: "Auto-Encoding Variational Bayes"
+    url: https://arxiv.org/abs/1312.6114
+  - title: "Stochastic Backpropagation and Approximate Inference in Deep Generative Models"
+    url: https://proceedings.mlr.press/v32/rezende14.html
+  - title: "Simple statistical gradient-following algorithms for connectionist reinforcement learning"
+    url: https://doi.org/10.1007/BF00992696
+  - title: "Monte Carlo Gradient Estimation in Machine Learning"
+    url: https://jmlr.org/papers/v21/19-346.html
+  - title: "Categorical Reparameterization with Gumbel-Softmax"
+    url: https://arxiv.org/abs/1611.01144
+---
+
+## A draw has no derivative
+
+The reconstruction term of the ELBO is an expectation,
+$\E_{q_\phi}[f(\vec z)]$ with $f(\vec z)=\log p_\theta(\vec x\mid\vec z)$.
+Training needs its gradient with respect to the encoder's parameters
+$\phi$, and $\phi$ enters through the distribution being averaged over, not
+through $f$. Drawing $\vec z$ and backpropagating stops at the draw: a
+sample from $\mathcal N(\mu,\sigma^2)$ is not a differentiable function of
+$\mu$ and $\sigma$ as the program is written. The figure shows the break on
+its left.
+
+## Write the draw as a function
+
+The same distribution can be produced differently. Draw $\vec\varepsilon$
+from $\mathcal N(\vec 0,\mat I)$, which involves no parameter, and compute
+$\vec z=\vec\mu+\vec\sigma\odot\vec\varepsilon$. The expectation over
+$q_\phi$ becomes an expectation over $\vec\varepsilon$, whose distribution
+does not move when $\phi$ does, so the gradient can go inside:
+
+<Eq id="I.13.6" gloss="Moving the noise off the path lets the gradient through the draw.">
+
+$$
+\begin{aligned}
+&\vec z=\vec\mu_\phi+\vec\sigma_\phi\odot\vec\varepsilon,\\[6pt]
+&\nabla_\phi\,\E_{q_\phi}f(\vec z)\\
+&\;\;=\E_{\vec\varepsilon}\big[\nabla_\phi
+ f(\vec\mu_\phi+\vec\sigma_\phi\odot\vec\varepsilon)\big].
+\end{aligned}
+$$
+
+</Eq>
+
+In one dimension the derivative with respect to $\mu$ is $\E[f'(z)]$ and
+with respect to $\sigma$ is $\E[f'(z)\,\varepsilon]$, since
+$\partial z/\partial\mu=1$ and $\partial z/\partial\sigma=\varepsilon$. One
+draw of $\varepsilon$ per example gives an unbiased estimate, and the
+backward pass of I.6 computes it: $\varepsilon$ is one more input to the
+graph. Kingma and Welling (2014) and Rezende, Mohamed and Wierstra (2014)
+introduced this for variational autoencoders.
+
+An encoder that predicts $\ell=\log\sigma^2$ adds one link to the chain,
+$\sigma=e^{\ell/2}$, so $\partial z/\partial\ell=\tfrac12\sigma\varepsilon$.
+[I.13.X02](/elementa/neural-networks/vae/problems/x02) takes one step by
+hand.
+
+## The estimator that needs no derivative
+
+There is a second unbiased estimator. Differentiate the integral and use
+$\nabla q=q\,\nabla\log q$:
+
+<Eq id="I.13.7" gloss="The score function needs no derivative of f and pays in variance.">
+
+$$
+\begin{aligned}
+&\nabla_\phi\,\E_{q_\phi}f(\vec z)\\
+&\;\;=\int f(\vec z)\,\nabla_\phi q_\phi(\vec z)\,d\vec z\\
+&\;\;=\E_{q_\phi}\big[f(\vec z)\,\nabla_\phi\log q_\phi(\vec z)\big].
+\end{aligned}
+$$
+
+</Eq>
+
+This is the score-function estimator, which Williams (1992) introduced as
+REINFORCE. It never differentiates $f$, so $f$ may be a black box or
+discontinuous, and $\vec z$ may be discrete. For a Gaussian,
+$\partial\log q/\partial\mu=(z-\mu)/\sigma^2=\varepsilon/\sigma$. That is
+I.13.T2: two unbiased estimates of one gradient.
+
+## Which one is quieter?
+
+Take $f(z)=z^2$ and $q=\mathcal N(1,0.25)$, so the true derivative with
+respect to $\mu$ is $2\mu=2$. The pathwise estimate is $2(\mu+s\varepsilon)$,
+with variance $4s^2=1$. The score-function estimate is
+$(\mu+s\varepsilon)^2\varepsilon/s$, with variance
+$(\mu^4+18\mu^2s^2+15s^4)/s^2-4\mu^2=21.75$.
+[I.13.B04](/elementa/neural-networks/vae/problems/b04) derives both.
+
+As the encoder grows confident the difference becomes extreme. At $s=0.01$
+the pathwise variance is $0.0004$ and the score function's is $10{,}014$.
+The score function divides by $s$; the pathwise estimate multiplies by it.
+A trained VAE has narrow encoder distributions and a smooth decoder
+log-likelihood, which is the regime where reparameterisation wins.
+
+It does not always win. For $f(z)=\sin(10z)$ under $\mathcal N(0,1)$ the
+pathwise estimate $10\cos(10z)$ has variance $50$, the score function
+$0.5$, and the true gradient is $10e^{-50}$, zero to any printed precision
+([I.13.X10](/elementa/neural-networks/vae/problems/x10)). The pathwise
+variance grows with how fast $f$ changes, the score function's with how
+sharp $q$ is (Mohamed, Rosca, Figurnov and Mnih 2020).
+
+## Discrete codes
+
+A Bernoulli code cannot be reparameterised this way. Writing
+$z=\mathbf 1[u<\pi]$ for uniform $u$ produces the right distribution, but
+its derivative with respect to $\pi$ is zero almost everywhere. A
+backward pass through it returns a gradient of zero where the true one is
+not ([I.13.X08](/elementa/neural-networks/vae/problems/x08)). Discrete
+codes need the score function, or a continuous relaxation such as the
+Gumbel-softmax of Jang, Gu and Poole (2017), which is reparameterisable
+and biased.
+
+## Measure the two variances
+
+~~~python
+from math import exp, pi, sqrt
+
+mu, s = 1.0, 0.5
+f, df = (lambda z: z*z), (lambda z: 2*z)
+grid = [i/1000 for i in range(-8000, 8001)]
+weight = [exp(-e*e/2)/sqrt(2*pi)/1000 for e in grid]   # N(0, 1) on a fine grid
+
+def moments(estimate):
+    m1 = sum(w*estimate(e) for w, e in zip(weight, grid))
+    m2 = sum(w*estimate(e)**2 for w, e in zip(weight, grid))
+    return round(m1, 6), round(m2 - m1*m1, 6)
+
+print("pathwise", moments(lambda e: df(mu + s*e)))
+print("score   ", moments(lambda e: f(mu + s*e)*e/s))
+~~~
+
+It prints <code>pathwise (2.0, 1.0)</code> and
+<code>score (2.0, 21.75)</code>: the same mean, the correct gradient, and
+variances that differ by a factor of $21.75$. Set <code>mu, s = 0.0, 1.0</code>
+and replace <code>f</code> and <code>df</code> by $\sin(10z)$ and
+$10\cos(10z)$: the variances become $50$ and $0.5$, and the order
+reverses.

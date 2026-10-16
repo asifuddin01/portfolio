@@ -1,0 +1,73 @@
+---
+id: "I.13.X03"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: counterexample
+difficulty: 2
+title: "A factorised encoder misreports its uncertainty"
+depends:
+  - "I.13.P02"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+A two-dimensional posterior is $\mathcal N(\vec 0,\mat\Sigma)$ with unit
+variances and correlation $\rho=0.9$. The encoder's family is factorised:
+$q=\mathcal N(\vec m,\operatorname{diag}(v_1,v_2))$. Find the member of the
+family that minimises $\KL(q\,\|\,p)$, the variance it reports for each
+coordinate, and the gap that remains.
+
+<Hint>
+For Gaussians in $d$ dimensions,
+
+$$
+\begin{aligned}
+&\KL(q\,\|\,p)=\tfrac12\big(\operatorname{tr}(\mat\Sigma^{-1}\mat\Sigma_q)\\
+&\quad+\vec m^{\mathsf T}\mat\Sigma^{-1}\vec m-d\\
+&\quad+\log\det\mat\Sigma-\log\det\mat\Sigma_q\big),
+\end{aligned}
+$$
+
+and the diagonal of $\mat\Sigma^{-1}$ is $1/(1-\rho^2)$.
+</Hint>
+
+<SolutionToggle>
+
+The mean term is minimised at $\vec m=\vec 0$. With $\mat\Sigma_q$
+diagonal, only the diagonal of $\mat\Sigma^{-1}$ enters the trace:
+
+$$
+\begin{aligned}
+&\KL=\tfrac12\Big(\frac{v_1+v_2}{1-\rho^2}-2\\
+&\quad+\log(1-\rho^2)\\
+&\quad-\log v_1-\log v_2\Big).
+\end{aligned}
+$$
+
+Each $v_i$ appears in its own term. Setting
+$1/(1-\rho^2)-1/v_i=0$ gives $v_i=1-\rho^2=0.19$. Substituting, the trace term becomes $2$ and cancels
+the $-2$:
+
+$$
+\begin{aligned}
+\KL&=\tfrac12\big(\log0.19-2\log0.19\big)\\
+ &=-\tfrac12\log0.19\\
+ &=0.830366.
+\end{aligned}
+$$
+
+So the best factorised encoder reports a variance of $0.19$ for each
+coordinate, whose true posterior variance is $1$. It matches the
+conditional variance of one coordinate given the other, not the marginal
+one, and so understates the uncertainty more than fivefold.
+
+The claim this breaks is that a trained encoder's variance measures how
+uncertain the code is. The gap of $0.830366$ nats is the
+approximation gap: it does not shrink with training, because no member of
+the family is closer. Only a richer family, one with correlations, can
+remove it.
+
+</SolutionToggle>

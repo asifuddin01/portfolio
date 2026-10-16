@@ -1,0 +1,68 @@
+---
+id: "I.13.X09"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: proof
+difficulty: 3
+title: "The rate is information plus mismatch, for any encoder"
+depends:
+  - "I.13.P04"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+Let the training set have $N$ examples, chosen with equal probability
+$q(n)=1/N$, and let the encoder give $q(\vec z\mid n)$. Prove (I.13.9):
+the average of $\KL(q(\vec z\mid n)\,\|\,p(\vec z))$ equals
+$I_q(n;\vec z)+\KL(q(\vec z)\,\|\,p(\vec z))$, with
+$q(\vec z)=\frac1N\sum_nq(\vec z\mid n)$. Deduce that a zero average KL
+means a code that carries no information, and that the rate bounds the
+information from above.
+
+<Hint>
+Insert $q(\vec z)$ into the log-ratio:
+$\log\frac{q(\vec z\mid n)}{p(\vec z)}
+=\log\frac{q(\vec z\mid n)}{q(\vec z)}+\log\frac{q(\vec z)}{p(\vec z)}$.
+</Hint>
+
+<SolutionToggle>
+
+**The identity.** Average the split in the hint over $q(n,\vec z)=q(n)\,q(\vec z\mid n)$:
+
+$$
+\begin{aligned}
+&\frac1N\sum_n\KL\big(q(\vec z\mid n)\,\|\,p(\vec z)\big)\\
+&\;=\E_{q(n,\vec z)}\Big[\log\frac{q(\vec z\mid n)}{q(\vec z)}\Big]\\
+&\;\quad+\E_{q(n,\vec z)}\Big[\log\frac{q(\vec z)}{p(\vec z)}\Big].
+\end{aligned}
+$$
+
+In the first term,
+$q(\vec z\mid n)/q(\vec z)=q(n,\vec z)/\big(q(n)\,q(\vec z)\big)$, so it is
+$\KL(q(n,\vec z)\,\|\,q(n)q(\vec z))=I_q(n;\vec z)$
+(<ApparatusRef ref="0.IT.04" />). The second term depends on $\vec z$
+alone, and the marginal of $q(n,\vec z)$ over $\vec z$ is $q(\vec z)$, so
+it is $\KL(q(\vec z)\,\|\,p(\vec z))$. $\blacksquare$
+
+**Zero rate means no information.** Both terms on the right are
+non-negative. If the left side is zero, both are zero. Then
+$I_q(n;\vec z)=0$: the code is independent of the example, so it tells the
+decoder nothing about which input it came from. Equivalently, each
+$\KL(q(\vec z\mid n)\,\|\,p)$ is non-negative and their average is zero, so
+each is zero and every $q(\vec z\mid n)$ is the prior. That is posterior
+collapse.
+
+**The rate bounds the information.** Dropping the non-negative second term
+gives $I_q(n;\vec z)\leq\frac1N\sum_n\KL(q(\vec z\mid n)\,\|\,p)$. The rate
+is an upper bound on what the code says about the example. Since $n$ takes
+$N$ values, the information is also at most $\log N$; any rate above that
+is spent on the mismatch.
+
+The identity holds for every encoder, not only at an optimum. The script
+checks it for three encoders on the four points, including the collapsed
+one, where both sides are zero.
+
+</SolutionToggle>

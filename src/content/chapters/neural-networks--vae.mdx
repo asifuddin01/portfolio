@@ -3,19 +3,108 @@ id: "I.13"
 book: neural-networks
 order: 13
 title: "Variational Autoencoders"
-summary: "Learn a distribution over codes, not a code, so the space between codes means something."
-claim: "The ELBO bounds the log-evidence, and the gap is exactly the divergence between the approximate and the true posterior."
+summary: "Learn a distribution over codes, not a code, so that every code can be decoded and drawn. The price is a bound in place of the likelihood, and a term that can make the code worthless."
+claim: "The ELBO bounds the log-evidence, and the gap is exactly the divergence between the approximate and the true posterior. Its second term prices the code, and a code priced too high is ignored."
 mathTier: M3
-topics: []
-definitions: []
+topics:
+  - "Latent-variable models: prior, decoder distribution, evidence and posterior"
+  - "Probabilistic PCA, the linear model where every quantity has a closed form"
+  - "Why the evidence cannot be estimated by sampling the prior"
+  - "The evidence lower bound, derived twice, and the exact size of its gap"
+  - "The Gaussian KL in closed form, and its derivatives"
+  - "Amortised inference: one encoder in place of one optimisation per example"
+  - "The reparameterisation trick and the score-function estimator"
+  - "Variance of gradient estimators, and where each one fails"
+  - "β, rate and distortion, solved exactly for a linear model"
+  - "Posterior collapse, and the holes that a prior does not fill"
+definitions:
+  - n: 1
+    term: "Latent variable"
+    statement: "An unobserved random variable z, given a prior p(z) chosen before training, here the standard normal N(0, I). The model explains each observation as generated from some value of z."
+    introduces: []
+  - n: 2
+    term: "Evidence"
+    statement: "The marginal likelihood of an observation, p_theta(x) = integral of p(z) p_theta(x | z) over z. It is the quantity maximum likelihood would maximise, and for a nonlinear decoder it has no closed form."
+    introduces: []
+  - n: 3
+    term: "Posterior"
+    statement: "The distribution of the latent variable given an observation, p_theta(z | x) = p(z) p_theta(x | z) / p_theta(x). Computing it requires the evidence, so it is no easier than the evidence."
+    introduces: []
+  - n: 4
+    term: "Variational distribution"
+    statement: "A distribution q_phi(z | x) from a tractable family, used in place of the posterior. In a VAE it is a Gaussian with diagonal covariance whose mean and variances the encoder computes from x."
+    introduces: []
+  - n: 5
+    term: "Amortised inference"
+    statement: "Computing every observation's variational parameters with one shared network, the encoder, in place of a separate optimisation for each observation. The bound lost to the shared network is called the amortisation gap."
+    introduces: []
+  - n: 6
+    term: "Evidence lower bound (ELBO)"
+    statement: "The quantity E_q[log p_theta(x | z)] - KL(q_phi(z | x) || p(z)). It is at most log p_theta(x) for every q, and equal to it exactly when q is the posterior."
+    introduces: []
+  - n: 7
+    term: "Reparameterisation"
+    statement: "Writing a draw from q as a differentiable function of its parameters and of noise that does not depend on them, z = mu + sigma elementwise epsilon with epsilon from N(0, I). Gradients then pass through the draw."
+    introduces: []
+  - n: 8
+    term: "Score-function estimator"
+    statement: "The unbiased gradient estimate f(z) times the gradient of log q_phi(z), from one draw of z. It needs neither a differentiable f nor a continuous z, and its variance is often far larger. Also called REINFORCE."
+    introduces: []
+  - n: 9
+    term: "Rate and distortion"
+    statement: "The rate is the average KL term, the cost in nats of describing the code relative to the prior. The distortion is the average reconstruction term. The ELBO is minus their sum, and a weight beta on the rate moves along their trade-off."
+    introduces: []
+  - n: 10
+    term: "Posterior collapse"
+    statement: "The state in which the encoder's distribution equals the prior for every input. The KL term is then zero, the code carries no information about x, and the decoder generates without it."
+    introduces: []
+  - n: 11
+    term: "Aggregate posterior"
+    statement: "The average of the encoder's distributions over the data, q(z) = average of q_phi(z | x). Generation draws codes from the prior; where q(z) and the prior disagree, the decoder meets codes it was not trained on."
+    introduces: []
+  - n: 12
+    term: "Probabilistic PCA"
+    statement: "The latent-variable model z from N(0, I), x given z from N(W z, sigma^2 I). Its evidence is Gaussian with covariance W W^T + sigma^2 I, and its maximum-likelihood W spans the principal subspace of Chapter I.12."
+    introduces: []
 beforeYouStart:
   - "I.12"
+  - "I.4"
+  - "I.6"
   - "0.IT.03"
   - "0.IT.05"
-conceptFigure: FigCountLikelihood
-problemStatement: "An autoencoder's latent space has holes: a point between two codes decodes to nothing meaningful. Putting a distribution on the code fixes that, and the price is an objective that cannot be optimised directly."
-formalResults: []
-assumptions: []
+  - "0.PR.04"
+conceptFigure: FigVae
+problemStatement: "Chapter I.12 ended with codes that are points: nothing says which other codes are valid, so nothing can be drawn and decoded. A latent-variable model puts a distribution on the code and asks the decoder to explain the data from it. The price is an evidence that is an integral nobody can compute. We bound it, differentiate the bound through a random draw, and measure on the same four points as I.12 what the bound buys and when the code is thrown away."
+formalResults:
+  - id: "I.13.T1"
+    name: "The ELBO falls short of the log-evidence by exactly a KL divergence"
+    statement: "For any distribution q(z | x) that is positive exactly where the posterior is, log p_theta(x) = ELBO(q) + KL(q(z | x) || p_theta(z | x)). Hence ELBO(q) <= log p_theta(x), with equality exactly when q is the posterior. Maximising the ELBO over q, with the model fixed, is the same as minimising the KL divergence from q to the posterior."
+    doesNotPromise: "The gap is not computable on its own, so a larger ELBO may mean a better model or only a tighter bound. Maximising the ELBO over theta also pulls the model towards posteriors that q can represent. A tight bound says nothing about whether the model is good."
+  - id: "I.13.T2"
+    name: "Two unbiased gradients of an expectation"
+    statement: "For z = mu + sigma epsilon with epsilon from N(0, 1) and differentiable f, the derivative of E_q[f(z)] with respect to mu is E[f'(z)] and with respect to sigma is E[f'(z) epsilon]. For any integrable f, the score-function estimate f(z) times the derivative of log q(z) is also unbiased. For f(z) = z^2 at mu = 1, sigma = 0.5, the two one-draw estimates of the derivative with respect to mu have variances 1 and 21.75."
+    doesNotPromise: "Neither estimator always has the smaller variance: for f(z) = sin(10 z) under N(0, 1) the pathwise estimate has variance 50 and the score function 0.5. The pathwise form needs a differentiable f and a continuous, reparameterisable q; it does not apply to discrete codes."
+  - id: "I.13.T3"
+    name: "The linear β-VAE switches its code off when β sigma^2 reaches the top eigenvalue"
+    statement: "Take one latent dimension, the prior N(0, 1), a decoder x given z from N(w z, sigma^2 I) with sigma^2 fixed, centred data whose covariance has top eigenvalue lambda_1 along u_1, and the objective E_q log p(x | z) - beta KL(q || p) with a Gaussian encoder. At the optimum, w lies along u_1 with ||w||^2 = max(lambda_1 - beta sigma^2, 0). While beta sigma^2 < lambda_1 the rate is (1/2) log(lambda_1 / (beta sigma^2)) and the mean squared distortion is (lambda_2 + ... + lambda_d) + beta sigma^2. Otherwise w = 0 and the encoder returns the prior for every x. At beta = 1 the solution is probabilistic PCA and the bound is tight."
+    doesNotPromise: "A nonlinear decoder can ignore its code for a different reason: if it can model x well without z, the KL term is pure cost. Learning sigma^2 moves the threshold. A beta above one is not a guarantee of disentangled or interpretable codes."
+  - id: "I.13.T4"
+    name: "The rate is the information in the code plus a mismatch with the prior"
+    statement: "Average the KL term over N training examples, indexed by n. Then the average of KL(q(z | x_n) || p(z)) equals I_q(n; z) + KL(q(z) || p(z)), where I_q is the mutual information between the index and the code under q and q(z) is the aggregate posterior. In particular the average KL is zero only if every q(z | x_n) is the prior, and then the code carries no information."
+    doesNotPromise: "The identity does not say which term training will reduce. The information term is at most log N, so for a large rate most of it is spent on the mismatch. A small mismatch term does not mean the decoder produces good samples."
+assumptions:
+  - statement: "The encoder's family can represent the posterior. A factorised Gaussian cannot represent a correlated one, and the gap that remains does not close with training."
+    testedBy: "I.13.X03"
+  - statement: "The code is continuous, and the draw can be written as a differentiable function of noise that does not depend on the parameters."
+    testedBy: "I.13.X08"
+  - statement: "The reconstruction and KL terms are reduced consistently, both summed over their coordinates, or the KL is reweighted without anyone choosing to."
+    testedBy: "I.13.X07"
+  - statement: "beta sigma^2 stays below the variance the code is meant to capture, or the optimum discards the code."
+    testedBy: "I.13.B03"
+  - statement: "The encoder's variance stays away from zero. A point code has unbounded rate."
+    testedBy: "I.13.X04"
+  - statement: "A gradient estimator is chosen for the function at hand. Reparameterisation lowers the variance for smooth, slowly varying integrands, not for all."
+    testedBy: "I.13.X10"
 owns:
   - "variational-autoencoder"
   - "elbo"
@@ -23,12 +112,86 @@ owns:
   - "posterior-collapse"
 borrows:
   - "autoencoder"
+  - "bottleneck-representation"
   - "kl-divergence"
   - "jensens-inequality"
+  - "mutual-information"
+  - "bayes-rule"
   - "backpropagation"
-implementation: false
-failureModes: []
-references: []
+  - "loss-as-negative-log-likelihood"
+implementation: true
+failureModes:
+  - "A mean reduction where a sum was meant. Averaging squared error over the 784 pixels of an image while summing the KL over the latent dimensions weights the KL by 784 relative to the ELBO. With sigma^2 = 0.5 every direction whose variance is below 392 is then switched off."
+  - "Posterior collapse by design. On the chapter's four points with sigma^2 = 1, beta = 4 sets w = 0: the encoder returns N(0, 1) for every input, the rate is 0 and the distortion is 5, the total variance."
+  - "A factorised encoder for a correlated posterior. With correlation 0.9 the best diagonal Gaussian reports variance 0.19 for a coordinate whose posterior variance is 1, and a gap of 0.830366 nats remains however long training runs."
+  - "A point code. The KL from N(0.866025, s^2) to the prior is 2.182585, 4.480220 and 6.782756 nats at s = 0.1, 0.01 and 0.001: each tenfold narrowing adds about log 10. A deterministic encoder has unbounded rate."
+  - "The score-function estimator where a pathwise one exists. For f(z) = z^2 under N(1, s^2) its variance is 21.75 against 1 at s = 0.5, and 10014 against 0.0004 at s = 0.01."
+  - "The pathwise estimator on an oscillating integrand. For f(z) = sin(10 z) under N(0, 1) the true gradient is 10 e^(-50), the pathwise estimate has variance 50 and the score-function estimate 0.5."
+  - "Differentiating through a discrete draw. For a Bernoulli code with probability 0.5 and f(z) = (z - 0.3)^2, the true gradient is 0.4; writing z = 1[u < pi] gives a derivative of 0 almost everywhere."
+  - "Estimating the evidence by sampling the prior. For the point (1, 2), 10 per cent relative error needs 132 prior samples in one dimension, about 4.5e5 in ten independent dimensions, and about 4.7e15 when the noise variance is 0.01."
+  - "Predicting a standard deviation with an unconstrained linear output. An output of -0.3 is not a width. Predict log sigma^2 and exponentiate, or pass the output through softplus as in I.3.X02."
+  - "Expecting the prior to fill every hole. On the four points the aggregate posterior is a two-component mixture whose KL to the prior is 0.107208 nats: codes drawn from the prior near zero are rarer under q, and the decoder was trained less there."
+references:
+  - title: "Auto-Encoding Variational Bayes"
+    url: https://arxiv.org/abs/1312.6114
+    authors: "Kingma and Welling"
+    year: 2014
+    venue: "International Conference on Learning Representations"
+  - title: "Stochastic Backpropagation and Approximate Inference in Deep Generative Models"
+    url: https://proceedings.mlr.press/v32/rezende14.html
+    authors: "Rezende, Mohamed and Wierstra"
+    year: 2014
+    venue: "International Conference on Machine Learning, PMLR 32"
+  - title: "Probabilistic Principal Component Analysis"
+    url: https://doi.org/10.1111/1467-9868.00196
+    authors: "Tipping and Bishop"
+    year: 1999
+    venue: "Journal of the Royal Statistical Society: Series B 61(3)"
+  - title: "Simple statistical gradient-following algorithms for connectionist reinforcement learning"
+    url: https://doi.org/10.1007/BF00992696
+    authors: "Williams"
+    year: 1992
+    venue: "Machine Learning 8(3-4)"
+  - title: "Generating Sentences from a Continuous Space"
+    url: https://doi.org/10.18653/v1/K16-1002
+    authors: "Bowman, Vilnis, Vinyals, Dai, Jozefowicz and Bengio"
+    year: 2016
+    venue: "Conference on Computational Natural Language Learning"
+  - title: "beta-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework"
+    url: https://openreview.net/forum?id=Sy2fzU9gl
+    authors: "Higgins, Matthey, Pal, Burgess, Glorot, Botvinick, Mohamed and Lerchner"
+    year: 2017
+    venue: "International Conference on Learning Representations"
+  - title: "ELBO surgery: yet another way to carve up the variational evidence lower bound"
+    url: https://www.cs.columbia.edu/~blei/fogm/2023F/readings/HoffmanJohnson2016.pdf
+    authors: "Hoffman and Johnson"
+    year: 2016
+    venue: "NIPS 2016 Workshop on Advances in Approximate Bayesian Inference"
+  - title: "Fixing a Broken ELBO"
+    url: https://proceedings.mlr.press/v80/alemi18a.html
+    authors: "Alemi, Poole, Fischer, Dillon, Saurous and Murphy"
+    year: 2018
+    venue: "International Conference on Machine Learning, PMLR 80"
+  - title: "Inference Suboptimality in Variational Autoencoders"
+    url: https://proceedings.mlr.press/v80/cremer18a.html
+    authors: "Cremer, Li and Duvenaud"
+    year: 2018
+    venue: "International Conference on Machine Learning, PMLR 80"
+  - title: "Don't Blame the ELBO! A Linear VAE Perspective on Posterior Collapse"
+    url: https://arxiv.org/abs/1911.02469
+    authors: "Lucas, Tucker, Grosse and Norouzi"
+    year: 2019
+    venue: "Advances in Neural Information Processing Systems 32"
+  - title: "Monte Carlo Gradient Estimation in Machine Learning"
+    url: https://jmlr.org/papers/v21/19-346.html
+    authors: "Mohamed, Rosca, Figurnov and Mnih"
+    year: 2020
+    venue: "Journal of Machine Learning Research 21(132)"
+  - title: "An Introduction to Variational Autoencoders"
+    url: https://arxiv.org/abs/1906.02691
+    authors: "Kingma and Welling"
+    year: 2019
+    venue: "Foundations and Trends in Machine Learning 12(4)"
 notation:
   - "theta"
   - "E"
@@ -36,11 +199,43 @@ notation:
   - "nabla"
   - "Var"
   - "sigma"
+  - "W"
+  - "lambda"
+  - "d"
+  - "L_loss"
 apparatus:
+  - "0.PR.04"
   - "0.IT.03"
+  - "0.IT.04"
   - "0.IT.05"
   - "0.MC.03"
-  - "0.PR.06"
-keyEquations: []
-status: review
+keyEquations:
+  - id: "I.13.1"
+    formula: "p_theta(x) = integral p(z) p_theta(x | z) dz; p_theta(z | x) = p(z) p_theta(x | z) / p_theta(x)"
+    gloss: "The evidence is an integral over codes, and the posterior needs it."
+  - id: "I.13.2"
+    formula: "x ~ N(0, W W^T + sigma^2 I); z | x ~ N(M^(-1) W^T x, sigma^2 M^(-1)), M = W^T W + sigma^2 I"
+    gloss: "Probabilistic PCA: the one model in which the evidence and posterior are exact."
+  - id: "I.13.3"
+    formula: "Var[p_hat(x)] / p(x)^2 = E over p(z | x) of [p(z | x) / p(z)] - 1, for one prior sample"
+    gloss: "Sampling the prior pays for every place the posterior is not."
+  - id: "I.13.4"
+    formula: "log p(x) = ELBO(q) + KL(q(z | x) || p(z | x)); ELBO = E_q log p(x | z) - KL(q(z | x) || p(z))"
+    gloss: "The bound misses the evidence by the divergence to the posterior."
+  - id: "I.13.5"
+    formula: "KL(N(mu, diag sigma^2) || N(0, I)) = (1/2) sum_j (mu_j^2 + sigma_j^2 - 1 - log sigma_j^2)"
+    gloss: "The price of a Gaussian code, coordinate by coordinate."
+  - id: "I.13.6"
+    formula: "z = mu + sigma elementwise epsilon; grad_phi E_q f(z) = E_epsilon grad_phi f(mu_phi + sigma_phi epsilon)"
+    gloss: "Moving the noise off the path lets the gradient through the draw."
+  - id: "I.13.7"
+    formula: "grad_phi E_q f(z) = E_q [ f(z) grad_phi log q_phi(z) ]"
+    gloss: "The score function needs no derivative of f and pays in variance."
+  - id: "I.13.8"
+    formula: "||w||^2 = max(lambda_1 - beta sigma^2, 0); R = (1/2) log(lambda_1 / (beta sigma^2)); D = sum_(i>1) lambda_i + beta sigma^2"
+    gloss: "A linear β-VAE trades rate for distortion and switches off past a threshold."
+  - id: "I.13.9"
+    formula: "average over n of KL(q(z | x_n) || p(z)) = I_q(n; z) + KL(q(z) || p(z))"
+    gloss: "The rate pays for information in the code and for mismatch with the prior."
+status: published
 ---

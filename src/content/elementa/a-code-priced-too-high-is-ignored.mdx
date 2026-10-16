@@ -1,0 +1,199 @@
+---
+chapter: neural-networks--vae
+proposition: 4
+statement: "The KL term puts a price on the code, and a code priced too high is ignored."
+claim: "The ELBO trades a rate against a distortion. For a linear decoder the trade is exact: raising the weight on the rate shrinks the code until, past a threshold, the decoder stops using it. The rate pays for information and for every hole the prior does not cover."
+given:
+  - the-elbo-misses-the-evidence-by-a-divergence
+  - reparameterisation-moves-the-noise-off-the-path
+  - regularisation-decides-which-fit-you-get
+figure: FigRateDistortion
+figureType: G
+status: published
+updated: 2026-10-16
+sources:
+  - title: "beta-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework"
+    url: https://openreview.net/forum?id=Sy2fzU9gl
+  - title: "Fixing a Broken ELBO"
+    url: https://proceedings.mlr.press/v80/alemi18a.html
+  - title: "Don't Blame the ELBO! A Linear VAE Perspective on Posterior Collapse"
+    url: https://arxiv.org/abs/1911.02469
+  - title: "Generating Sentences from a Continuous Space"
+    url: https://doi.org/10.18653/v1/K16-1002
+  - title: "ELBO surgery: yet another way to carve up the variational evidence lower bound"
+    url: https://www.cs.columbia.edu/~blei/fogm/2023F/readings/HoffmanJohnson2016.pdf
+---
+
+## Rate and distortion
+
+Average the ELBO over the data and give its two terms names. The average
+KL term is the rate $R$: the cost, in nats, of the code relative to the
+prior. The average reconstruction term, negated, is the distortion. With a
+Gaussian decoder of fixed variance $\sigma^2$ the distortion is the mean
+squared error $D$, up to the factor $1/(2\sigma^2)$ and a constant, and the
+ELBO is minus their sum.
+
+Higgins and colleagues (2017) put a weight $\beta$ on the rate and found
+that $\beta>1$ gave codes whose coordinates varied more independently. A
+weight changes which point on the trade-off training reaches. Alemi and
+colleagues (2018) drew that trade-off as a curve in the plane of rate and
+distortion, and showed that models with the same ELBO can sit at very
+different points of it. The ELBO alone does not say how much the code is
+used.
+
+## The linear β-VAE, solved exactly
+
+Keep probabilistic PCA's decoder with one latent dimension and $\sigma^2$
+fixed, and let the encoder be any Gaussian $\mathcal N(m,v)$ for each input.
+Write $a=\vec w^{\mathsf T}\vec x$ and $r=\|\vec w\|^2$. The $\beta$-weighted
+ELBO of one input is a quadratic in $m$ and a sum of $v$ and $\log v$, so
+the best encoder can be found by setting two derivatives to zero:
+
+$$
+\begin{aligned}
+m&=\frac{a}{r+\beta\sigma^2},\\
+v&=\frac{\beta\sigma^2}{r+\beta\sigma^2}.
+\end{aligned}
+$$
+
+At $\beta=1$ this is the exact posterior of (I.13.2). Substituting back and
+averaging over the data, using $\E[a^2]=r\lambda_1$ for $\vec w$ along
+$\vec u_1$, leaves a function of $r$ alone whose derivative is
+
+$$
+\frac{\beta}{2(r+\beta\sigma^2)}
+ \Big(\frac{\lambda_1}{r+\beta\sigma^2}-1\Big).
+$$
+
+It is positive until $r+\beta\sigma^2=\lambda_1$ and negative after. If
+$\beta\sigma^2\geq\lambda_1$ it is never positive, and the best $r$ is
+zero. Evaluating the rate and the distortion at the optimum gives
+
+<Eq id="I.13.8" gloss="A linear β-VAE trades rate for distortion and switches off past a threshold.">
+
+$$
+\begin{aligned}
+\|\vec w\|^2&=\max(\lambda_1-\beta\sigma^2,\;0),\\
+R&=\tfrac12\log\frac{\lambda_1}{\beta\sigma^2},\\
+D&=\sum_{i>1}\lambda_i+\beta\sigma^2,
+\end{aligned}
+$$
+
+</Eq>
+
+the last two while $\beta\sigma^2<\lambda_1$. Past the threshold the rate
+is zero and the distortion is the total variance. This is I.13.T3, and
+[I.13.B03](/elementa/neural-networks/vae/problems/b03) derives every line.
+
+On the four points, with $\lambda_1=4$, $\lambda_2=1$ and $\sigma^2=1$,
+(I.13.8) gives a rate of $\tfrac12\log(4/\beta)$ and a distortion of
+$1+\beta$. The figure draws the curve:
+
+| $\beta$ | $\|\vec w\|^2$ | rate $R$ | $D$ |
+|---|---|---|---|
+| $0.25$ | $3.75$ | $1.386294$ | $1.25$ |
+| $1$ | $3$ | $0.693147$ | $2$ |
+| $2$ | $2$ | $0.346574$ | $3$ |
+| $4$ | $0$ | $0$ | $5$ |
+
+At $\beta=1$ the solution is probabilistic PCA, and the rate $\log2$ is the
+price of the code found in proposition 2. As $\beta\to0$ the distortion
+falls to $1$, which is the principal-axis autoencoder's loss in I.12, and
+the rate grows without bound: the encoder's variance $\beta\sigma^2/\lambda_1$
+goes to zero and the code becomes a point. The deterministic autoencoder of
+I.12 is the corner of this curve where the code is free and infinitely
+expensive.
+
+## Posterior collapse
+
+At $\beta=4$ the optimum is $\vec w=\vec 0$. The decoder ignores the code,
+the encoder returns the prior $\mathcal N(0,1)$ for every input, the rate
+is zero and the distortion is $5$, the whole variance of the data. That is
+posterior collapse, and here it is not a failure of optimisation. It is the
+maximum of the objective: the variance the code could explain, $4$, is not
+worth its price, $\beta\sigma^2=4$.
+
+With $\beta=1$ and $\sigma^2$ learned, the same threshold appears per
+direction: probabilistic PCA gives zero weight to every direction whose
+eigenvalue does not exceed the noise variance. Lucas, Tucker, Grosse and
+Norouzi (2019) showed that linear VAEs collapse exactly where probabilistic
+PCA does, and that the ELBO adds no bad maxima of its own. The threshold is
+the one weight decay imposed in (I.12.6), with $\sigma^2$ in place of
+$\gamma$.
+
+Nonlinear decoders add a second route. A decoder powerful enough to model
+$\vec x$ well without $\vec z$, such as one that predicts each word of a
+sentence from the words before it, can reach a good reconstruction term
+at zero rate. The KL term is then pure cost, and training removes the code.
+Bowman and colleagues (2016) met this with sentence VAEs. They annealed the
+KL weight up from zero during training, and weakened the decoder by hiding
+some of its input words, so that the code had work to do.
+
+## What the rate pays for
+
+The rate is an average over the training examples, indexed by $n$. Write
+$q(\vec z)$ for the aggregate posterior, the average of the encoder's
+distributions. Then
+
+<Eq id="I.13.9" gloss="The rate pays for information in the code and for mismatch with the prior.">
+
+$$
+\begin{aligned}
+&\frac1N\sum_{n=1}^N\KL\big(q(\vec z\mid\vec x_n)\,\|\,p(\vec z)\big)\\
+&\;\;=I_q(n;\vec z)+\KL\big(q(\vec z)\,\|\,p(\vec z)\big).
+\end{aligned}
+$$
+
+</Eq>
+
+To see it, write each $\log q(\vec z\mid\vec x_n)/p(\vec z)$ as
+$\log q(\vec z\mid\vec x_n)/q(\vec z)$ plus $\log q(\vec z)/p(\vec z)$. The
+first averages to the mutual information between the code and the index of
+the example (<ApparatusRef ref="0.IT.04" />), the second to the KL from the
+aggregate posterior to the prior. Hoffman and Johnson (2016) introduced
+this split. It is I.13.T4.
+
+Both parts mean something. Zero rate forces zero information: collapse is
+exactly a code that says nothing about which example it came from. And the
+second part is the hole problem of I.12, given a price. Where $q(\vec z)$
+is thin and the prior is not, codes drawn for generation land in places
+the decoder rarely saw in training.
+
+On the four points at $\beta=1$, every encoder distribution has variance
+$0.25$ and mean $\pm0.866025$, so $q(z)$ is a mixture of two Gaussians.
+The rate $0.693147$ splits into $0.585939$ of information and $0.107208$ of
+mismatch ([I.13.X06](/elementa/neural-networks/vae/problems/x06)). The
+mixture has variance exactly $1$, like the prior, but not its shape: at
+$z=0$ its density is $0.178032$ where the prior's is $0.398942$. The prior
+draws codes near zero more than twice as often as the encoder produced
+them.
+
+## What the variational autoencoder fixed, and what it did not
+
+Against I.12 it fixed three things. Codes have a distribution, so new ones
+can be drawn. The space between training codes is trained, because each
+input is decoded from a cloud of codes. And the objective is a lower bound
+on the likelihood, which an autoencoder never offered.
+
+Three things remain. The bound can be loose, and proposition 2 showed the
+gap cannot be measured on its own. The holes are priced, not removed.
+And a Gaussian decoder still returns a conditional mean, so ambiguous
+inputs are reconstructed as blurred averages, for the reason given in
+[I.12.X08](/elementa/neural-networks/autoencoders/problems/x08).
+
+## The curve, in six lines
+
+~~~python
+from math import log
+lam1, lam2, var = 4.0, 1.0, 1.0
+for beta in (0.25, 0.5, 1, 2, 4, 8):
+    r = max(lam1 - beta*var, 0.0)                  # ||w||^2 at the optimum
+    rate = 0.5*log(lam1/(beta*var)) if r > 0 else 0.0
+    distortion = lam2 + beta*var if r > 0 else lam1 + lam2
+    print(f"beta {beta}: ||w||^2 {r:.2f}, rate {rate:.6f}, distortion {distortion:.2f}")
+~~~
+
+It prints the table above with $\beta=0.5$ and $\beta=8$ added: rate
+$1.039721$ with distortion $1.5$, and a collapsed code with distortion $5$.
+The check script compares these closed forms with a direct maximisation of
+the averaged objective.

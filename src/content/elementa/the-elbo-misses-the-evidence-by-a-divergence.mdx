@@ -1,0 +1,172 @@
+---
+chapter: neural-networks--vae
+proposition: 2
+statement: "The ELBO falls short of the log-evidence by exactly the divergence from the encoder's distribution to the posterior."
+claim: "A bound that can be computed replaces an evidence that cannot. It splits into a reconstruction term and a price on the code, and it is tight only when the encoder returns the true posterior."
+given:
+  - the-evidence-is-an-integral-over-codes
+  - every-loss-is-a-likelihood
+figure: FigElboGap
+figureType: B
+status: published
+updated: 2026-10-16
+sources:
+  - title: "Auto-Encoding Variational Bayes"
+    url: https://arxiv.org/abs/1312.6114
+  - title: "An Introduction to Variational Autoencoders"
+    url: https://arxiv.org/abs/1906.02691
+  - title: "Inference Suboptimality in Variational Autoencoders"
+    url: https://proceedings.mlr.press/v80/cremer18a.html
+---
+
+## Two derivations of one bound
+
+Let $q(\vec z\mid\vec x)$ be any distribution over codes that is positive
+exactly where the posterior is; for Gaussian priors and decoders that is
+everywhere. Multiply and divide by it inside the evidence,
+then apply Jensen's inequality to the concave logarithm
+(<ApparatusRef ref="0.IT.05" />):
+
+$$
+\begin{aligned}
+&\log p(\vec x)\\
+&\;\;=\log\E_{q}\Big[\frac{p(\vec x,\vec z)}{q(\vec z\mid\vec x)}\Big]\\
+&\;\;\geq\E_{q}\big[\log p(\vec x,\vec z)\\
+&\;\;\qquad-\log q(\vec z\mid\vec x)\big].
+\end{aligned}
+$$
+
+The right-hand side is the evidence lower bound, the ELBO. Jensen's
+inequality is an equality only when the ratio inside is the same for every
+$\vec z$, that is, when $q$ is proportional to $p(\vec x,\vec z)$, which
+makes it the posterior.
+
+The second derivation gives the size of the gap. Since $\log p(\vec x)$
+does not depend on $\vec z$, it equals its own average under $q$. Write it
+as $\log p(\vec x,\vec z)-\log p(\vec z\mid\vec x)$ inside that average, and
+add and subtract $\log q$:
+
+<Eq id="I.13.4" gloss="The bound misses the evidence by the divergence to the posterior.">
+
+$$
+\begin{aligned}
+&\log p(\vec x)=\operatorname{ELBO}(q)\\
+&\;\;+\KL\big(q(\vec z\mid\vec x)\,\|\,p(\vec z\mid\vec x)\big),\\[6pt]
+&\operatorname{ELBO}(q)=\E_{q}\big[\log p(\vec x\mid\vec z)\big]\\
+&\;\;-\KL\big(q(\vec z\mid\vec x)\,\|\,p(\vec z)\big).
+\end{aligned}
+$$
+
+</Eq>
+
+The second line splits $\log p(\vec x,\vec z)$ into
+$\log p(\vec x\mid\vec z)+\log p(\vec z)$. Because a KL divergence is never
+negative (<ApparatusRef ref="0.IT.03" />), the first line is the bound, and
+it names the gap exactly. This is I.13.T1. With the model held fixed, the
+evidence is a constant, so raising the ELBO over $q$ and lowering the KL
+divergence from $q$ to the posterior are the same act.
+
+## Reading the two terms
+
+The first term of the ELBO is a reconstruction term: the decoder's
+log-likelihood of $\vec x$, averaged over codes drawn from the encoder.
+With a Gaussian decoder of variance $\sigma^2$ it is
+$-\|\vec x-\hat{\vec x}\|^2/(2\sigma^2)$ plus a constant, the loss of I.12
+with the code made random.
+
+The second term is the price of the code: how far the encoder's
+distribution sits from the prior. It is what I.12 lacked. It pulls every
+input's distribution towards $\mathcal N(\vec 0,\mat I)$, so the
+distributions of different inputs overlap and the decoder is trained on a
+cloud of codes around each one, not on isolated points. Proposition 4
+shows what happens when that price is set too high.
+
+## The price of a Gaussian code
+
+For $q=\mathcal N(\mu,s^2)$ and the prior $\mathcal N(0,1)$ in one
+dimension, the KL divergence is the average under $q$ of
+$\log q(z)-\log p(z)$. The log-densities are
+$-\tfrac12\log2\pi s^2-(z-\mu)^2/2s^2$ and $-\tfrac12\log2\pi-z^2/2$. Under
+$q$ the first quadratic averages to $\tfrac12$ and $z^2$ averages to
+$\mu^2+s^2$. A diagonal Gaussian is a product, and its KL is the sum over
+coordinates:
+
+<Eq id="I.13.5" gloss="The price of a Gaussian code, coordinate by coordinate.">
+
+$$
+\begin{aligned}
+&\KL\big(\mathcal N(\vec\mu,\operatorname{diag}\vec\sigma^2)\,\|\,
+ \mathcal N(\vec 0,\mat I)\big)\\
+&\;\;=\frac12\sum_{j=1}^k\big(\mu_j^2+\sigma_j^2-1-\log\sigma_j^2\big).
+\end{aligned}
+$$
+
+</Eq>
+
+Each coordinate costs nothing only at $\mu_j=0$, $\sigma_j=1$, which is the
+prior. Its derivatives are $\mu_j$ with respect to $\mu_j$ and
+$\tfrac12(\sigma_j^2-1)$ with respect to $\log\sigma_j^2$: the term pulls
+every mean to zero and every variance to one. As $\sigma_j\to0$ the cost
+grows like $-\log\sigma_j$ without limit, so a point code is infinitely
+expensive ([I.13.X04](/elementa/neural-networks/vae/problems/x04)).
+
+## One point, four bounds
+
+Return to probabilistic PCA on the four points, with $\sigma^2=1$,
+$\vec w=\sqrt3\,\vec u_1$ and the point $\vec x=(1,2)$. Proposition 1 found
+$\log p(\vec x)=-3.531024$ and the posterior $\mathcal N(0.866025,\,0.25)$.
+For any Gaussian $q=\mathcal N(m,v)$ both terms of the ELBO have closed
+forms, so the figure can compare four encoders exactly:
+
+| encoder's $q$ | ELBO | gap |
+|---|---|---|
+| $\mathcal N(0,1)$, the prior | $-5.837877$ | $2.306853$ |
+| $\mathcal N(0,\tfrac14)$ | $-5.031024$ | $1.5$ |
+| $\mathcal N(0.866,1)$ | $-4.337877$ | $0.806853$ |
+| $\mathcal N(0.866,\tfrac14)$ | $-3.531024$ | $0$ |
+
+Each gap is the KL divergence from that $q$ to the posterior, as
+(I.13.4) says it must be. The prior pays the most. The right width with the
+wrong mean, or the right mean with the wrong width, each closes part of the
+gap. At the posterior the reconstruction term is $-2.837877$ and the price
+of the code is $\log2=0.693147$, and they add to the evidence exactly.
+[I.13.B01](/elementa/neural-networks/vae/problems/b01) computes every
+entry.
+
+## What maximising over the model does
+
+A VAE maximises the ELBO over the decoder's parameters $\theta$ and the
+encoder's $\phi$ together. Over $\phi$, the bound tightens. Over $\theta$,
+it rises in two ways: by raising the evidence, which is the intended
+effect, and by moving the true posterior towards distributions the encoder
+can represent, which shrinks the gap without improving the model. The
+trained model is therefore biased towards posteriors that look like
+diagonal Gaussians. And the encoder is shared: with one network for every
+input, the gap includes an amortisation part that a per-input
+optimisation would remove (Cremer, Li and Duvenaud 2018).
+
+None of this needs the evidence itself. Each training step uses one draw
+of $\vec z$ per example to estimate the reconstruction term, the closed
+form (I.13.5) for the price, and a gradient that proposition 3 explains.
+
+## Reproduce the four bounds
+
+~~~python
+from math import log, pi, sqrt
+
+x, w, var = (1.0, 2.0), (0.8*sqrt(3), 0.6*sqrt(3)), 1.0
+wx, ww, xx = sum(a*b for a, b in zip(w, x)), sum(a*a for a in w), sum(a*a for a in x)
+
+def elbo(m, v):      # q = N(m, v); both terms in closed form
+    recon = -log(2*pi*var) - (xx - 2*m*wx + (m*m + v)*ww)/(2*var)
+    kl = 0.5*(m*m + v - 1 - log(v))
+    return recon - kl
+
+for m, v in ((0, 1), (0, 0.25), (sqrt(3)/2, 1), (sqrt(3)/2, 0.25)):
+    print(f"q = N({m:.3f}, {v}): ELBO {elbo(m, v):.6f}")
+~~~
+
+It prints $-5.837877$, $-5.031024$, $-4.337877$ and $-3.531024$. The
+reconstruction term uses
+$\E_q\|\vec x-\vec wz\|^2=\|\vec x\|^2-2m\,\vec w^{\mathsf T}\vec x+(m^2+v)\|\vec w\|^2$,
+which holds for any $q$ with mean $m$ and variance $v$.

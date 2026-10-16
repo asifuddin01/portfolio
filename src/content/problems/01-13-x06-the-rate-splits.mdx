@@ -1,0 +1,65 @@
+---
+id: "I.13.X06"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "The rate splits into information and a mismatch"
+depends:
+  - "I.13.P04"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+At $\beta=1$ the four points have encoder distributions
+$\mathcal N(\pm0.866025,\,0.25)$, two corners at each sign. Find the
+average KL to the prior, the mutual information between the example and
+its code, and the KL from the aggregate posterior to the prior, and check
+that (I.13.9) holds. Compare the aggregate posterior with the prior at
+$z=0$.
+
+<Hint>
+Two corners share each distribution, so the information between the
+example and the code equals the information between the sign and the code.
+That is $\mathcal H(q(z))-\mathcal H(q(z\mid\text{sign}))$
+(<ApparatusRef ref="0.IT.04" />). The first entropy has no closed form;
+integrate it numerically.
+</Hint>
+
+<SolutionToggle>
+
+**Average KL.** Every corner has $m^2=0.75$ and $v=0.25$, so each KL is
+$\tfrac12(0.75+0.25-1-\log0.25)=\log2=0.693147$, and so is the average.
+
+**Information.** The aggregate posterior is the mixture
+$q(z)=\tfrac12\mathcal N(0.866025,0.25)+\tfrac12\mathcal N(-0.866025,0.25)$.
+Each component has entropy
+$\tfrac12\log(2\pi e\cdot0.25)=0.725791$. Numerical integration of
+$-q\log q$ gives the mixture's entropy, and the difference is
+
+$$
+I_q(n;z)=0.585939.
+$$
+
+It is below $\log2=0.693147$, the most a binary sign could carry, because
+the two components overlap.
+
+**Mismatch.** $\KL(q(z)\,\|\,\mathcal N(0,1))
+=-\mathcal H(q)+\tfrac12\log2\pi+\tfrac12\E_q[z^2]$, and
+$\E_q[z^2]=0.75+0.25=1$. Numerically it is $0.107208$.
+
+**The identity.** $0.585939+0.107208=0.693147$, the average KL. Most of
+the rate pays for information about the example; about a sixth pays for
+the aggregate posterior not being the prior.
+
+**At $z=0$.** The mixture's density is
+$2\cdot\tfrac12\mathcal N(0;0.866025,0.25)=0.178032$, and the prior's is
+$1/\sqrt{2\pi}=0.398942$. The mixture has the prior's variance but not its
+shape. Codes drawn from the prior near zero, which are the commonest, are
+codes the encoder produced less than half as often. That is a hole, and
+the second term of (I.13.9) is its price.
+
+</SolutionToggle>

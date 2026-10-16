@@ -1,0 +1,127 @@
+---
+id: "I.13.B04"
+kind: problem
+chapter: "I.13"
+scope: chapter
+variant: probability
+difficulty: 2
+title: "Two estimators of one gradient"
+depends:
+  - "I.13.P03"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+<Statement>
+Show that the pathwise and score-function estimators of one gradient are
+both unbiased, compute their variances, and follow them as the encoder's
+distribution narrows.
+</Statement>
+
+<Given>
+$q=\mathcal N(\mu,s^2)$, $z=\mu+s\varepsilon$ with
+$\varepsilon\sim\mathcal N(0,1)$, and $f(z)=z^2$. The target is
+$\partial\,\E_q[f(z)]/\partial\mu$. The moments
+$\E[\varepsilon^2]=1$, $\E[\varepsilon^4]=3$ and $\E[\varepsilon^6]=15$,
+and odd moments vanish.
+</Given>
+
+<Find>
+Both one-draw estimates, their means, their variances in general and at
+$\mu=1$, $s=0.5$, and their behaviour as $s\to0$.
+</Find>
+
+<Strategy>
+Write each estimate as a polynomial in $\varepsilon$ and take moments term
+by term.
+</Strategy>
+
+<Solution>
+
+**The target.** $\E_q[z^2]=\mu^2+s^2$, so the derivative is $2\mu$.
+
+**Pathwise.** By (I.13.6) the estimate is
+$g_{\mathrm p}=f'(z)=2(\mu+s\varepsilon)$. Its mean is $2\mu$ and its
+variance is
+
+$$
+\operatorname{Var}g_{\mathrm p}=4s^2.
+$$
+
+**Score function.** By (I.13.7), with
+$\partial\log q/\partial\mu=(z-\mu)/s^2=\varepsilon/s$,
+
+$$
+g_{\mathrm s}=\frac{(\mu+s\varepsilon)^2\,\varepsilon}{s}.
+$$
+
+Expanding, $(\mu+s\varepsilon)^2\varepsilon
+=\mu^2\varepsilon+2\mu s\varepsilon^2+s^2\varepsilon^3$, whose mean is
+$2\mu s$. So $\E g_{\mathrm s}=2\mu$: unbiased. For the second moment,
+
+$$
+\begin{aligned}
+&(\mu+s\varepsilon)^4\varepsilon^2\\
+&\;=\mu^4\varepsilon^2+4\mu^3s\varepsilon^3\\
+&\;\quad+6\mu^2s^2\varepsilon^4+4\mu s^3\varepsilon^5\\
+&\;\quad+s^4\varepsilon^6,
+\end{aligned}
+$$
+
+which averages to $\mu^4+18\mu^2s^2+15s^4$. Dividing by $s^2$ and
+subtracting the squared mean,
+
+$$
+\begin{aligned}
+&\operatorname{Var}g_{\mathrm s}\\
+&\;=\frac{\mu^4+18\mu^2s^2+15s^4}{s^2}\\
+&\;\quad-4\mu^2.
+\end{aligned}
+$$
+
+**The numbers.** At $\mu=1$, $s=0.5$ the pathwise variance is $1$ and the
+score-function variance is $(1+4.5+0.9375)/0.25-4=21.75$.
+
+**As $s\to0$.** The pathwise variance $4s^2$ goes to zero. The
+score-function variance behaves like $\mu^4/s^2$ and grows without bound:
+
+| $s$ | pathwise | score function |
+|---|---|---|
+| $0.5$ | $1$ | $21.75$ |
+| $0.1$ | $0.04$ | $114.15$ |
+| $0.01$ | $0.0004$ | $10{,}014$ |
+
+</Solution>
+
+<Answer>
+Both have mean $2\mu$. Variances $4s^2$ and
+$(\mu^4+18\mu^2s^2+15s^4)/s^2-4\mu^2$: at $\mu=1$, $s=0.5$, $1$ against
+$21.75$. As $s\to0$ the first vanishes and the second grows like
+$\mu^4/s^2$.
+</Answer>
+
+<CheckSanity>
+At $\mu=0$ the score-function variance is $15s^2$, finite and small, while
+the pathwise variance is $4s^2$. The score function is worst when $f$ is
+large where $q$ sits, because it multiplies $f$ itself by
+$\varepsilon/s$.
+</CheckSanity>
+
+<Breaks>
+The comparison depends on $f$. For an integrand that oscillates quickly,
+such as $\sin(10z)$ in
+[I.13.X10](/elementa/neural-networks/vae/problems/x10), the order
+reverses. A baseline subtracted from $f$ can reduce the score function's
+variance a great deal without biasing it.
+</Breaks>
+
+<Variation>
+Subtract the baseline $b=\E_q f=\mu^2+s^2$ from $f$ before multiplying by
+$\varepsilon/s$. The estimate stays unbiased because
+$\E[\varepsilon/s]=0$. The estimate becomes
+$2\mu\varepsilon^2+s(\varepsilon^3-\varepsilon)$, with variance
+$8\mu^2+10s^2$. At $\mu=1$, $s=0.5$ that is $10.5$: half of $21.75$, and
+still ten times the pathwise $1$.
+</Variation>

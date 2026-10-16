@@ -1,0 +1,160 @@
+---
+id: "I.13.B03"
+kind: problem
+chapter: "I.13"
+scope: chapter
+variant: limit
+difficulty: 2
+title: "When the code switches off"
+depends:
+  - "I.13.P02"
+  - "I.13.P04"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+<Statement>
+Solve the linear β-VAE exactly, find its rate and distortion, and follow
+them as β goes to zero and as β grows past the point where the code is
+abandoned.
+</Statement>
+
+<Given>
+Centred data whose covariance has eigenvalues
+$\lambda_1>\lambda_2\geq\cdots$, the top one along $\vec u_1$. One latent
+dimension with prior $\mathcal N(0,1)$, a decoder
+$\vec x\mid z\sim\mathcal N(\vec wz,\sigma^2\mat I)$ with $\sigma^2$ fixed, and
+an encoder $\mathcal N(m,v)$ chosen freely for each input. The objective is
+the average of $\E_q\log p(\vec x\mid z)-\beta\,\KL(q\,\|\,\mathcal N(0,1))$.
+For numbers use the four points of I.12: $\lambda_1=4$, $\lambda_2=1$,
+$\sigma^2=1$.
+</Given>
+
+<Find>
+(a) The best encoder for a given $\vec w$. (b) The best $\|\vec w\|^2$.
+(c) The rate and the mean squared distortion there. (d) The limits
+$\beta\to0$ and $\beta\sigma^2\geq\lambda_1$. (e) A table for the four
+points at $\beta=0.25$, $1$, $2$ and $4$.
+</Find>
+
+<Strategy>
+Write $a=\vec w^{\mathsf T}\vec x$, $r=\|\vec w\|^2$ and $c=r+\beta\sigma^2$.
+Optimise the encoder first; what is left depends on $\vec w$ only through
+$r$ and its direction.
+</Strategy>
+
+<Solution>
+
+**(a)** For one input, up to terms that do not involve $m$ or $v$, the
+objective is
+
+$$
+\begin{aligned}
+&\frac{2am-(m^2+v)r}{2\sigma^2}\\
+&\quad-\frac\beta2\big(m^2+v-1-\log v\big).
+\end{aligned}
+$$
+
+Setting the derivatives in $m$ and $v$ to zero,
+
+$$
+m=\frac{a}{c},\qquad v=\frac{\beta\sigma^2}{c}.
+$$
+
+**(b)** Substituting, the terms in $a^2$ combine to $a^2/(2\sigma^2c)$ and
+the terms in $v$ to $\tfrac\beta2\log(\beta\sigma^2/c)$, up to constants.
+Averaged over the data, $\E[a^2]=\vec w^{\mathsf T}\mat S\vec w$, which for
+a given $r$ is largest, $r\lambda_1$, when $\vec w$ lies along $\vec u_1$.
+What remains is
+
+$$
+\begin{aligned}
+J(r)&=\frac{r\lambda_1}{2\sigma^2c}-\frac\beta2\log c\\
+ &\quad+\text{const},
+\end{aligned}
+$$
+
+with derivative
+
+$$
+J'(r)=\frac{\beta}{2c}\Big(\frac{\lambda_1}{c}-1\Big).
+$$
+
+It is positive while $c<\lambda_1$ and negative after, so
+
+$$
+r=\max(\lambda_1-\beta\sigma^2,\;0).
+$$
+
+**(c)** While the code is in use, $c=\lambda_1$. Then $\E[m^2]=r/\lambda_1$
+and $v=\beta\sigma^2/\lambda_1$, and the average KL is
+
+$$
+\begin{aligned}
+R&=\tfrac12\Big(\frac{r+\beta\sigma^2}{\lambda_1}-1\\
+ &\qquad-\log\frac{\beta\sigma^2}{\lambda_1}\Big)\\
+ &=\tfrac12\log\frac{\lambda_1}{\beta\sigma^2}.
+\end{aligned}
+$$
+
+The squared error averages to
+$\operatorname{tr}\mat S-2r+(\E[m^2]+v)\,r=\operatorname{tr}\mat S-r$, so
+
+$$
+D=\sum_{i>1}\lambda_i+\beta\sigma^2.
+$$
+
+**(d)** As $\beta\to0$, $r\to\lambda_1$, the encoder's variance
+$\beta\sigma^2/\lambda_1$ goes to zero, the rate grows like
+$-\tfrac12\log\beta$ without bound, and the distortion falls to
+$\sum_{i>1}\lambda_i$, the loss of the principal-axis autoencoder of
+I.12.T1. The code tends to $\vec u_1^{\mathsf T}\vec x/\sqrt{\lambda_1}$:
+the principal score, scaled to the prior's unit variance.
+
+As $\beta\sigma^2$ rises to $\lambda_1$, $r$ and $R$ fall to zero and $D$
+rises to $\operatorname{tr}\mat S$. For any larger $\beta$, $J'(r)<0$ for
+all $r\geq0$: the optimum is $\vec w=\vec 0$, the encoder returns
+$\mathcal N(0,1)$ for every input, and the code is ignored.
+
+**(e)** With $\lambda_1=4$, $\lambda_2=1$ and $\sigma^2=1$, $R=\tfrac12\log(4/\beta)$
+and $D=1+\beta$:
+
+| $\beta$ | $r$ | $v$ | $R$ | $D$ |
+|---|---|---|---|---|
+| $0.25$ | $3.75$ | $0.0625$ | $1.386294$ | $1.25$ |
+| $1$ | $3$ | $0.25$ | $0.693147$ | $2$ |
+| $2$ | $2$ | $0.5$ | $0.346574$ | $3$ |
+| $4$ | $0$ | $1$ | $0$ | $5$ |
+
+</Solution>
+
+<Answer>
+$m=a/(r+\beta\sigma^2)$ and $v=\beta\sigma^2/(r+\beta\sigma^2)$;
+$\|\vec w\|^2=\max(\lambda_1-\beta\sigma^2,0)$ along $\vec u_1$; while in use,
+$R=\tfrac12\log(\lambda_1/\beta\sigma^2)$ and
+$D=\sum_{i>1}\lambda_i+\beta\sigma^2$. As $\beta\to0$, $D\to\sum_{i>1}\lambda_i$
+and $R\to\infty$; from $\beta\sigma^2=\lambda_1$ on, the code is unused, with
+$R=0$ and $D=\operatorname{tr}\mat S$.
+</Answer>
+
+<CheckSanity>
+At $\beta=1$ the encoder is the exact posterior of (I.13.2), $r=3$ is
+probabilistic PCA's $\|\vec w\|^2$, and the objective equals the
+log-evidence $-3.531024$ of every corner. The curve is continuous at the
+threshold: $1+4=5=\operatorname{tr}\mat S$.
+</CheckSanity>
+
+<Breaks>
+The solution needs $\sigma^2$ fixed. If it is learned, at $\beta=1$ it
+settles at the average discarded eigenvalue, and a direction collapses
+when its eigenvalue does not exceed that. With several latent dimensions
+the same threshold applies to each eigen-direction separately.
+</Breaks>
+
+<Variation>
+At $\beta=8$ the code is unused, as at $\beta=4$. At $\beta=0.5$ the rate
+is $\tfrac12\log8=1.039721$ and the distortion $1.5$. Halving $\beta$
+always adds $\tfrac12\log2=0.346574$ nats to the rate.
+</Variation>

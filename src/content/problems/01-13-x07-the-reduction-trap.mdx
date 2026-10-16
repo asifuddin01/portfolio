@@ -1,0 +1,65 @@
+---
+id: "I.13.X07"
+kind: exercise
+chapter: "I.13"
+scope: chapter
+variant: shape
+difficulty: 2
+title: "A mean reduction weights the KL by the input width"
+depends:
+  - "I.13.P02"
+  - "I.13.P04"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-13-vae-checks.py"
+status: published
+---
+A VAE for $28\times28$ images in $[0,1]$ has a batch of $B$ inputs of
+shape $(B,1,28,28)$, a code of width $k=32$, and a Gaussian decoder with
+$\sigma^2=\tfrac12$, so that $-\log p(\vec x\mid\vec z)$ is the summed
+squared error plus a constant. Give the shape of every tensor from the
+encoder's output to the loss. Then compare the correct loss with the one
+written as the mean squared error over all elements plus the KL summed
+over the code and averaged over the batch. What $\beta$ does the second
+one train with, and by I.13.T3 what happens to the code?
+
+<Hint>
+A mean over all elements divides by $B\cdot784$. The KL was divided only
+by $B$.
+</Hint>
+
+<SolutionToggle>
+
+**Shapes.** The encoder's last layer returns $(B,64)$, split into
+$\vec\mu$ and $\log\vec\sigma^2$, each $(B,32)$. The noise
+$\vec\varepsilon$ and the code $\vec z$ are $(B,32)$. The decoder returns
+$(B,784)$, compared with the input flattened to $(B,784)$. The KL by
+(I.13.5) is summed over the $32$ coordinates to give $(B,)$, as is the
+squared error over the $784$ pixels, and the loss averages both over the
+batch.
+
+**The two losses.** The correct negative ELBO, up to a constant, is
+
+$$
+\begin{aligned}
+\frac1B\sum_b\Big(&\sum_{i=1}^{784}(x_{bi}-\hat x_{bi})^2\\
+&+\sum_{j=1}^{32}\KL_{bj}\Big).
+\end{aligned}
+$$
+
+The second divides the squared error by $B\cdot784$ and the KL by $B$.
+Multiplying it by $784$ gives the correct reconstruction term plus $784$
+times the KL. The two have the same minimisers only if $\beta=784$.
+
+**What happens.** In the linear model of I.13.T3 a direction survives only
+if its variance exceeds $\beta\sigma^2=392$. A pixel in $[0,1]$ has
+variance at most $\tfrac14$, so the total variance of all $784$ pixels is
+at most $196$, and no direction exceeds that. Every direction collapses:
+the encoder returns the prior and the decoder learns the mean image.
+
+A nonlinear VAE is not bound by this exactly, but the pressure is the
+same, and blurred reconstructions with a KL near zero are the usual
+symptom. The shapes were all correct. Only the reductions disagreed.
+
+</SolutionToggle>

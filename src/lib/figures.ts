@@ -74,6 +74,11 @@ import FigAutoencoder from '../components/figures/FigAutoencoder.astro';
 import FigPrincipalSubspace from '../components/figures/FigPrincipalSubspace.astro';
 import FigRegulariserGains from '../components/figures/FigRegulariserGains.astro';
 import FigCodeTear from '../components/figures/FigCodeTear.astro';
+/* Book I, Chapter XIII — Variational Autoencoders */
+import FigVae from '../components/figures/FigVae.astro';
+import FigElboGap from '../components/figures/FigElboGap.astro';
+import FigReparameterisation from '../components/figures/FigReparameterisation.astro';
+import FigRateDistortion from '../components/figures/FigRateDistortion.astro';
 import FigCnnLineage from '../components/figures/FigCnnLineage.astro';
 import FigFeatureHierarchy from '../components/figures/FigFeatureHierarchy.astro';
 import FigTransferFreeze from '../components/figures/FigTransferFreeze.astro';
@@ -653,6 +658,30 @@ export const FIGURES = {
     caption:
       'A circle encoded by its angle. Reconstruction is exact everywhere, yet two neighbouring inputs sit at opposite ends of the code, and the code halfway between them decodes to the far side of the circle.',
     source: 'Book I, Ch. XII, Prop. 4',
+  },
+  FigVae: {
+    component: FigVae,
+    caption:
+      'A variational autoencoder in training. The encoder returns a mean and a width, the code is drawn as μ + σε, and the loss adds the decoder\'s reconstruction error to the KL divergence from the encoder\'s distribution to the prior that generation will draw from.',
+    source: 'Book I, Ch. XIII, Prop. 1',
+  },
+  FigElboGap: {
+    component: FigElboGap,
+    caption:
+      'The log-evidence of the point (1, 2) under probabilistic PCA, and the lower bound four encoders give it. The gap is the KL divergence from each encoder\'s distribution to the true posterior, and it closes only at the posterior.',
+    source: 'Book I, Ch. XIII, Prop. 2',
+  },
+  FigReparameterisation: {
+    component: FigReparameterisation,
+    caption:
+      'The same draw written two ways. On the path, a sample has no derivative with respect to its parameters. Beside it, the noise enters from outside and the code is a sum and a product the chain rule can pass through.',
+    source: 'Book I, Ch. XIII, Prop. 3',
+  },
+  FigRateDistortion: {
+    component: FigRateDistortion,
+    caption:
+      'Rate against distortion for the linear β-VAE on the chapter\'s four points, drawn from the exact solution. Raising β buys a cheaper code with a worse reconstruction; at β = 4 the code carries nothing and the decoder ignores it.',
+    source: 'Book I, Ch. XIII, Prop. 4',
   },
   FigCnnLineage: {
     component: FigCnnLineage,
