@@ -1,0 +1,108 @@
+---
+id: "I.BOOK.B02"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: limit
+difficulty: 2
+title: "Three ways a gradient crosses many steps"
+depends:
+  - "I.3.P02"
+  - "I.9.P02"
+  - "I.10.P02"
+  - "I.11.P03"
+rounding: "Six significant figures."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Compare the derivative of a quantity $L$ steps downstream with respect to
+its start, for a saturating stack, a plain recurrence, a gated carry line
+and a residual stack, and find the limit of each as $L$ grows.
+</Statement>
+
+<Given>
+Four scalar chains, each evaluated where its per-step derivative is
+constant:
+
+- a sigmoid stack at its centre, derivative $\sigma'(0)=0.25$ per step (I.3);
+- a recurrence $h_t=\tanh(wh_{t-1})$ near $0$ with $w=0.9$ (I.9);
+- an LSTM carry line with forget value $f=0.95$ (I.10);
+- a residual stack $x_{l+1}=x_l+a\tanh(x_l)$ near $0$, with $a=+0.05$,
+  $a=-0.05$ or $a=-1$ (I.11).
+</Given>
+
+<Find>
+Each per-step factor; the product after $L=20$ and $L=100$ steps; the
+limit as $L\to\infty$; what sets each base.
+</Find>
+
+<Strategy>
+By the chain rule (I.6), the derivative across $L$ steps is the product of
+the per-step derivatives. Each chain here has a constant per-step factor,
+so each product is a power.
+</Strategy>
+
+<Solution>
+
+**Per-step factors.** The sigmoid stack multiplies by $0.25$. The
+recurrence by $w\tanh'(0)=0.9$. The carry line by $f=0.95$. The residual
+stack by $1+a\tanh'(0)=1+a$: $1.05$, $0.95$ or $0$.
+
+**Products.**
+
+| factor | $L=20$ | $L=100$ |
+|---|---|---|
+| $0.25$ | $9.09495\times10^{-13}$ | $6.22302\times10^{-61}$ |
+| $0.9$ | $0.121577$ | $2.65614\times10^{-5}$ |
+| $0.95$ | $0.358486$ | $0.00592$ |
+| $1.05$ | $2.65330$ | $131.501$ |
+
+The rows are the sigmoid stack, the recurrence, the carry line and the
+residual stack with $a=+0.05$.
+
+The residual stack with $a=-0.05$ gives the carry line's numbers, and with
+$a=-1$ the product is exactly $0$ after one step.
+
+**Limits.** Every product of a constant base is geometric: it goes to $0$
+when the base is below $1$ in size and grows without bound when it is
+above. Only a base of exactly $1$ survives every depth. None of the four
+mechanisms abolishes the geometry; they differ in what sets the base.
+
+**What sets each base.** In the sigmoid stack it is the activation's
+slope, at most $0.25$, so depth alone destroys the signal (I.3.P02). In
+the recurrence it is a weight times a slope, and pushing it towards $1$
+means asking a weight matrix to have norm near one everywhere (I.9.P02).
+On the carry line it is a learned gate, close to $1$ without any weight
+matrix being involved (I.10.P02). In the residual stack it is $1$ plus the
+branch's slope, near $1$ when the branch is small, and it can be driven to
+$0$ by a branch that cancels the identity (I.11.X09).
+
+</Solution>
+
+<Answer>
+At $L=20$: $9.09\times10^{-13}$, $0.122$, $0.358$ and $2.65$; at $L=100$:
+$6.22\times10^{-61}$, $2.66\times10^{-5}$, $0.00592$ and $132$. All are
+geometric in $L$: below one they vanish, above one they explode.
+</Answer>
+
+<CheckSanity>
+The carry line keeps $36$ per cent after twenty steps where the plain
+recurrence keeps $12$ per cent, although its factor differs by only
+$0.05$: small differences in the base compound.
+</CheckSanity>
+
+<Breaks>
+Real chains have factors that vary from step to step, and vectors whose
+Jacobians are matrices. Then the products are of matrices, the relevant
+quantity is a norm or a spectral radius, and the residual and gated paths
+add terms that can reinforce or cancel, as I.10.B02 showed.
+</Breaks>
+
+<Variation>
+To keep half the signal across $L=100$ steps, the base must be
+$0.5^{1/100}=0.993092$. A forget bias of $\ln(0.993092/0.006908)=4.97$
+sets that gate value at initialisation (I.10.T2).
+</Variation>

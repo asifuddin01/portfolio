@@ -1,0 +1,93 @@
+---
+id: "I.BOOK.B03"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: probability
+difficulty: 2
+title: "The reduction sets the step, the batch sets the noise"
+depends:
+  - "I.4.P04"
+  - "I.7.P02"
+  - "I.7.P01"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+For one parameter whose per-example gradients are independent, compare
+the mean and the variance of a gradient step under a mean reduction and a
+sum reduction, then change the batch size.
+</Statement>
+
+<Given>
+Per-example gradients $g_i$ with mean $\mu$ and variance $\sigma^2=4$,
+independent across examples. A batch of $B=32$. Learning rate $\eta=0.1$.
+The step is $-\eta$ times the batch gradient, where the batch gradient is
+either $\bar g=\tfrac1B\sum g_i$ or $\sum g_i$.
+</Given>
+
+<Find>
+The variance of each batch gradient; the standard deviation of each step;
+the learning rate that makes the sum's step match the mean's; the mean's
+variance at $B=128$.
+</Find>
+
+<Strategy>
+Variance scales with the square of a constant and adds over independent
+terms (<ApparatusRef ref="0.PR.03" />).
+</Strategy>
+
+<Solution>
+
+**Variances.** The sum of $B$ independent terms has variance
+$B\sigma^2=128$. Dividing by $B$ divides the variance by $B^2$:
+$\operatorname{Var}\bar g=\sigma^2/B=0.125$.
+
+**Steps.** With $\eta=0.1$ the mean's step has standard deviation
+$0.1\sqrt{0.125}=0.035355$ and the sum's $0.1\sqrt{128}=1.131371$, exactly
+$B=32$ times larger. Its expected size, $\eta B\mu$, is also $32$ times
+larger. The two runs are not the same algorithm with different noise; the
+sum is the mean with a learning rate $32$ times higher.
+
+**Matching.** The sum's step equals the mean's when
+$\eta_{\text{sum}}=\eta/B=0.003125$. The reduction is part of the loss
+(I.4.P04): changing it silently changes the learning rate by the batch
+size.
+
+**Larger batch.** At $B=128$ the mean's variance is $4/128=0.03125$, a
+quarter of the value at $32$. Quadrupling the batch halves the standard
+deviation of the step and leaves its expected value unchanged. The batch
+size is a statement about gradient noise (I.7.P02); the direction it
+estimates does not depend on it.
+
+</Solution>
+
+<Answer>
+Variances $0.125$ for the mean and $128$ for the sum; step standard
+deviations $0.035355$ and $1.131371$; matching learning rate $0.003125$;
+at $B=128$ the mean's variance is $0.03125$.
+</Answer>
+
+<CheckSanity>
+The ratio of the two standard deviations is $1.131371/0.035355=32=B$, as
+the scaling argument requires.
+</CheckSanity>
+
+<Breaks>
+Adaptive optimisers such as Adam divide the gradient by a running estimate
+of its size, so multiplying the loss by a constant leaves their steps
+nearly unchanged (I.7). The reduction then matters mainly through
+$\epsilon$ and through any penalty added to the loss with its own
+coefficient. Correlated examples, such as frames from one video, make the
+variance shrink more slowly than $1/B$.
+</Breaks>
+
+<Variation>
+A common heuristic raises the learning rate in proportion to the batch
+size, keeping $\eta/B$ fixed so that the noise per unit of progress stays
+roughly constant. It holds only while the step is small compared with the
+curvature of the loss, which is why it fails at very large batches.
+</Variation>

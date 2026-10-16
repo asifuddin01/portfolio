@@ -1,0 +1,100 @@
+---
+id: "I.BOOK.B04"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: complexity
+difficulty: 2
+title: "One sequence, three architectures"
+depends:
+  - "I.9.P01"
+  - "I.9.P03"
+  - "I.11.P03"
+  - "I.14.P01"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Let the last element of a sequence of length $64$ depend on the first, and
+count what a recurrent network, a dilated causal convolution and message
+passing on the path graph each need to achieve that.
+</Statement>
+
+<Given>
+Length $T=64$, width $d=128$. Each architecture uses layers with two
+$d\times d$ weight matrices and one bias:
+
+- a recurrent layer, $\vec h_t=\tanh(\mat U\vec x_t+\mat W\vec h_{t-1}+\vec b)$ (I.9);
+- a causal convolution with kernel width $2$ and dilations $1,2,4,\ldots$,
+  one weight matrix per tap (I.9.P03, I.11);
+- a message-passing layer on the path graph $1$–$2$–$\cdots$–$64$,
+  $\mat H'=\sigma(\mat H\mat W_0+\mat A\mat H\mat W_1)$ (I.14).
+</Given>
+
+<Find>
+Parameters per layer; the number of layers each needs; total parameters;
+the number of steps that must run one after another.
+</Find>
+
+<Strategy>
+A recurrent layer reaches every earlier step. A dilated stack's receptive
+field adds the dilation times one less than the kernel width at each layer.
+Message passing reaches one hop per layer (I.14.T2).
+</Strategy>
+
+<Solution>
+
+**Per layer.** Each has $2d^2+d=2\cdot16{,}384+128=32{,}896$ parameters.
+
+**Recurrent.** One layer suffices: $\vec h_{64}$ depends on $\vec x_1$
+through the state (I.9.P01). Total $32{,}896$ parameters. But step $t$
+needs step $t-1$, so $64$ steps run one after another.
+
+**Dilated convolution.** With kernel width $2$ the receptive field after
+$L$ layers is $1+(1+2+\cdots+2^{L-1})=2^L$. Reaching $64$ positions takes
+$L=6$ layers, $197{,}376$ parameters. Every position of a layer can be
+computed at once, so only $6$ stages run in sequence.
+
+**Message passing.** Node $64$ is $63$ hops from node $1$, so $63$ layers
+are needed and $2{,}072{,}448$ parameters, with $63$ stages in sequence. The
+graph network also lacks what the other two have for free: it cannot tell
+the node before from the node after (I.14.P02), so it does not even know
+which end of the path is the start.
+
+| | layers | parameters | serial |
+|---|---|---|---|
+| recurrent | $1$ | $32{,}896$ | $64$ |
+| dilated | $6$ | $197{,}376$ | $6$ |
+| graph | $63$ | $2{,}072{,}448$ | $63$ |
+
+</Solution>
+
+<Answer>
+$32{,}896$ parameters per layer. Recurrent: $1$ layer, $64$ sequential steps.
+Dilated convolution: $6$ layers, $197{,}376$ parameters, $6$ stages.
+Message passing: $63$ layers, $2{,}072{,}448$ parameters, $63$ stages.
+</Answer>
+
+<CheckSanity>
+Each count follows from one rule: the recurrence carries state across
+steps, the dilated stack doubles its reach per layer, and message passing
+adds one hop per layer. $2^6=64$ and $64-1=63$.
+</CheckSanity>
+
+<Breaks>
+Reaching a position is not using it. The recurrence's influence decays
+geometrically (I.9, I.10), the convolution's receptive field has holes
+when dilations skip positions (I.9.X10), and $63$ rounds of averaging
+over-smooth a graph network's states (I.14.P03). Book II's attention
+reaches every position in one layer, at a cost quadratic in $T$.
+</Breaks>
+
+<Variation>
+With kernel width $3$ the dilated stack's field after $L$ layers is
+$1+2(2^L-1)$. Five layers reach $63$ positions, one short, so six are still
+needed; they cover $127$ positions with $6(3d^2+d)=295{,}680$ parameters. A
+wider kernel buys range only in the steps the dilation schedule allows.
+</Variation>

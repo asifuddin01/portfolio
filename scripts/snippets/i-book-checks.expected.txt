@@ -1,0 +1,8 @@
+B01 outputs [0, 1, 1, 0]; perturbed outputs [0.0, 1.0, 1.0, 0.2]; loss 0.010000; dL/dv2 0.100000; dL/db2 -0.180000; dL/db1 0.100000; after one step v2 = -1.9
+B02 L = 20: sigmoid 9.094947e-13, recurrent 0.9 0.121577, forget 0.95 0.358486, residual +0.05 2.653298; L = 100: 6.223015e-61 2.656140e-05 0.005921 131.501
+B03 gradient variance, mean 0.125000, sum 128.0; step sd at lr 0.1: mean 0.035355, sum 1.131371; matching lr for the sum 0.003125; batch 128 mean variance 0.031250
+B04 per layer 32896; RNN 1 layer 32896 params, 64 sequential steps; dilated conv 6 layers 197376 params; message passing 63 layers 2072448 params
+B05 interpolant train 0, test 0.250000; line y = 0.2 + 0.2 x train 0.200000, test 0.276667; constant 0.5 test 0.25
+B06 sizes [28, 14, 7], flattened 1568 (not 2048), code 2 x 16; decoder [7, 14, 28]; parameters {'conv1': 160, 'conv2': 4640, 'enc': 50208, 'dec': 26656, 'convT1': 4624, 'convT2': 145}, total 86433
+B07 A-hat X [[0.666667, 0.288675], [0.666667, 0.288675], [0.57735, 0.603553], [0.0, 0.853553]]; loss 0.519686; P(node 4 = class 2) 0.701312; dL/dW [[-0.064314, 0.064314], [0.079503, -0.079503]]; loss after one step 0.499356
+B08 product of four layers [0.64, 0.48, 0.48, 0.36]; loss 1.000000 = lambda_2; beta -> 0 distortion of I.13: 1.0

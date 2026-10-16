@@ -1,0 +1,111 @@
+---
+id: "I.BOOK.B06"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: shape
+difficulty: 2
+title: "Shapes through a convolutional VAE"
+depends:
+  - "I.11.P02"
+  - "I.12.P01"
+  - "I.13.P02"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Trace every shape through a convolutional variational autoencoder for
+$28\times28$ images, count its parameters, and find the line of a
+colleague's code that would fail.
+</Statement>
+
+<Given>
+Encoder: two $3\times3$ convolutions with stride $2$ and padding $1$, from
+$1$ channel to $16$ and from $16$ to $32$; a flatten; a linear layer to
+$2k$ numbers with $k=16$, split into $\vec\mu$ and $\log\vec\sigma^2$. Decoder:
+a linear layer from $k$ back to the flattened size; a reshape; two
+transposed convolutions with the same kernel, stride and padding and
+output padding $1$, from $32$ channels to $16$ and from $16$ to $1$. All
+layers have biases. The colleague wrote the encoder's linear layer as
+taking $32\cdot8\cdot8$ inputs.
+</Given>
+
+<Find>
+Every spatial size; the flattened size; the shapes of $\vec\mu$,
+$\vec\sigma$, $\vec\varepsilon$ and $\vec z$ for a batch of $B$; each layer's
+parameters and the total; the colleague's error.
+</Find>
+
+<Strategy>
+Use (I.11.4) for the convolutions and (I.11.5) for the transposed ones.
+The reparameterisation of (I.13.6) acts coordinate by coordinate, so it
+keeps the code's shape.
+</Strategy>
+
+<Solution>
+
+**Encoder sizes.** $\lfloor(28+2-3)/2\rfloor+1=14$, then
+$\lfloor(14+2-3)/2\rfloor+1=7$. The feature map is $32\times7\times7$, which
+flattens to $1{,}568$ numbers.
+
+**The code.** The linear layer returns $(B,32)$, split into $\vec\mu$ and
+$\log\vec\sigma^2$, each $(B,16)$. The noise $\vec\varepsilon$ and the code
+$\vec z=\vec\mu+\vec\sigma\odot\vec\varepsilon$ are $(B,16)$.
+
+**Decoder sizes.** The linear layer returns $(B,1568)$, reshaped to
+$(B,32,7,7)$. Each transposed layer gives $(n-1)\cdot2-2+2+1+1=2n$: $7\to14$
+and $14\to28$. Without the output padding the sizes would be $13$ and
+$25$, as I.12.B05 found.
+
+**Parameters.**
+
+| layer | parameters |
+|---|---|
+| conv $1\to16$ | $16\cdot9+16=160$ |
+| conv $16\to32$ | $32\cdot16\cdot9+32=4{,}640$ |
+| linear $1568\to32$ | $1568\cdot32+32=50{,}208$ |
+| linear $16\to1568$ | $16\cdot1568+1568=26{,}656$ |
+| transposed $32\to16$ | $32\cdot16\cdot9+16=4{,}624$ |
+| transposed $16\to1$ | $16\cdot9+1=145$ |
+
+The total is $86{,}433$. Almost nine tenths of it, $76{,}864$, sits in the
+two linear layers on either side of the code.
+
+**The error.** $32\cdot8\cdot8=2{,}048$, but the feature map is $7\times7$,
+so the flattened tensor has $1{,}568$ entries. The matrix product fails at
+the first batch. The colleague halved $28$ to $14$ and then to $8$,
+rounding the wrong way; (I.11.4) takes the floor and gives $7$.
+
+**The loss.** Each example's reconstruction term sums over $784$ pixels and
+its KL over $16$ coordinates, both then averaged over the batch. Averaging
+the reconstruction over pixels as well would train with $\beta=784$
+(I.13.X07).
+
+</Solution>
+
+<Answer>
+Spatial sizes $28\to14\to7$ and back $7\to14\to28$; flattened $1{,}568$;
+$\vec\mu$, $\vec\sigma$, $\vec\varepsilon$ and $\vec z$ all $(B,16)$;
+$86{,}433$ parameters; the colleague's $2{,}048$ should be $1{,}568$.
+</Answer>
+
+<CheckSanity>
+The decoder's sizes are the encoder's read backwards, and its linear layer
+mirrors the encoder's with $k$ inputs where the encoder had $2k$ outputs:
+$26{,}656$ against $50{,}208$.
+</CheckSanity>
+
+<Breaks>
+The shapes say nothing about whether the code is used. With the
+reductions consistent, a decoder this size can still ignore $\vec z$ if the
+KL weight is too high (I.13.T3).
+</Breaks>
+
+<Variation>
+With $k=2$ for a code that can be plotted, the encoder's linear layer
+shrinks to $1568\cdot4+4=6{,}276$ and the decoder's to
+$2\cdot1568+1568=4{,}704$, and the total to $20{,}549$.
+</Variation>

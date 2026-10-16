@@ -1,0 +1,120 @@
+---
+id: "I.BOOK.B07"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: gradient
+difficulty: 2
+title: "Cross-entropy through a graph convolution"
+depends:
+  - "I.4.P03"
+  - "I.6.P01"
+  - "I.14.P02"
+  - "I.14.P03"
+rounding: "Six decimal places."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Classify the four nodes of the paw graph with one graph convolution and a
+softmax, derive the gradient with respect to the weights, take one step,
+and read off what the averaging did to the node whose own features
+disagree with its neighbours'.
+</Statement>
+
+<Given>
+The paw graph of I.14, with $\hat{\mat A}$ from (I.14.5). Node features
+$\mat X$ have rows $(1,0)$, $(1,0)$, $(0,1)$, $(0,1)$, and the labels are
+classes $1$, $1$, $2$, $2$. Logits $\mat Z=\hat{\mat A}\mat X\mat W$ with
+$\mat W=\mat I$ at the start, a softmax on each row, and the mean
+cross-entropy over the four nodes. Step size $1$.
+</Given>
+
+<Find>
+$\hat{\mat A}\mat X$; the loss; the gradient
+$\partial\mathcal L/\partial\mat W$; the loss after one step; each node's
+probability of its own class.
+</Find>
+
+<Strategy>
+Softmax with cross-entropy has the gradient $\mat P-\mat Y$ with respect to
+the logits (I.4.P03). Divide by four for the mean, then apply the chain
+rule for a matrix product (I.6).
+</Strategy>
+
+<Solution>
+
+**Averaged features.** With degrees $(3,3,4,2)$ counted with self-loops,
+
+$$
+\begin{aligned}
+&\hat{\mat A}\mat X=\\
+&\quad\big((0.666667,\;0.288675),\\
+&\quad(0.666667,\;0.288675),\\
+&\quad(0.577350,\;0.603553),\\
+&\quad(0,\;0.853553)\big),
+\end{aligned}
+$$
+
+one row per node. Node $3$'s row mixes its own class-$2$ feature with two
+class-$1$ neighbours, and the two entries come out almost equal.
+
+**Loss.** With $\mat W=\mat I$ these rows are the logits. Each node's
+probability of its own class is $0.593389$ for nodes $1$ and $2$,
+$0.506550$ for node $3$ and $0.701312$ for node $4$, and the mean
+cross-entropy is $0.519686$.
+
+**Gradient.** With $\mat G=(\mat P-\mat Y)/4$, the chain rule gives
+
+$$
+\frac{\partial\mathcal L}{\partial\mat W}=(\hat{\mat A}\mat X)^{\mathsf T}\mat G.
+$$
+
+Its first row is $(-0.064314,\,0.064314)$ and its second
+$(0.079503,\,-0.079503)$.
+
+Each row sums to zero because each row of $\mat P-\mat Y$ does: adding the
+same number to both logits of a node changes no probability.
+
+**One step.** $\mat W\leftarrow\mat W-\partial\mathcal L/\partial\mat W$ lowers
+the loss to $0.499356$. The step strengthens the link from the first
+averaged feature to class $1$ and from the second to class $2$.
+
+**What the averaging did.** Node $3$'s own features say class $2$ with no
+doubt. After one convolution its probability of class $2$ is $0.506550$,
+barely above a coin: its two class-$1$ neighbours contribute $0.577350$ to
+its average, against $0.603553$ from itself and node $4$. A sum layer with its own self-weight,
+(I.14.3), could keep that evidence; the convolution's fixed average
+cannot. This is the first round of the smoothing in I.14.P03.
+
+</Solution>
+
+<Answer>
+$\hat{\mat A}\mat X$ as above; loss $0.519686$; gradient rows
+$(-0.064314,\,0.064314)$ and $(0.079503,\,-0.079503)$; loss $0.499356$
+after one step. Own-class probabilities $0.593389$, $0.593389$,
+$0.506550$, $0.701312$.
+</Answer>
+
+<CheckSanity>
+Node $4$, whose only neighbour is node $3$, is the most confident: its
+average has no class-$1$ feature at all, so its first logit is $0$.
+</CheckSanity>
+
+<Breaks>
+The gradient would be the same for any relabelling of the nodes, since
+both $\hat{\mat A}\mat X$ and $\mat P-\mat Y$ would be permuted together and
+the product sums over nodes. A model that needs to treat node $3$
+differently from its neighbours needs features or layers that keep it
+apart.
+</Breaks>
+
+<Variation>
+The script checks all four entries of the gradient against central finite
+differences. Replacing the convolution by the sum layer
+$\mat X\mat W_0+\mat A\mat X\mat W_1$ with $\mat W_0=\mat I$, $\mat W_1=\mat 0$
+recovers each node's own features as logits, and node $3$'s own-class
+probability returns to $1/(1+e^{-1})=0.731059$.
+</Variation>

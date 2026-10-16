@@ -1,0 +1,109 @@
+---
+id: "I.BOOK.B08"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: proof
+difficulty: 3
+title: "Depth adds nothing to a linear autoencoder"
+depends:
+  - "I.3.P01"
+  - "I.12.P02"
+  - "I.13.P04"
+rounding: "Exact."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Prove that a deep linear autoencoder, of any depth and widths, attains no
+lower reconstruction loss than principal components with as many
+components as its narrowest layer, and that it attains exactly that loss.
+Connect the result to the linear β-VAE of I.13 as β goes to zero.
+</Statement>
+
+<Given>
+Centred data with covariance eigenvalues
+$\lambda_1\geq\cdots\geq\lambda_d$. A linear autoencoder
+$\hat{\vec x}=\mat W_L\cdots\mat W_1\vec x$ whose layer widths are
+$d=n_0,n_1,\ldots,n_{L-1},n_L=d$, with $k=\min_\ell n_\ell<d$. For the
+numbers, the four points of I.12, with widths $2,3,1,3,2$.
+</Given>
+
+<Find>
+A lower bound on the loss, a choice of weights that attains it, and the
+loss for the four points; the link to I.13.T3.
+</Find>
+
+<Strategy>
+The product of the layers is one matrix whose rank is limited by the
+narrowest layer. Then I.12.T1 applies to that one matrix.
+</Strategy>
+
+<Solution>
+
+**The product is one map.** Without nonlinearities the network computes
+$\mat M=\mat W_L\cdots\mat W_1$, a single linear map (I.3.B05). Every vector
+that leaves the narrowest layer lies in a space of dimension $k$, so the
+image of $\mat M$ has dimension at most $k$: $\operatorname{rank}\mat M\leq k$
+(<ApparatusRef ref="0.LA.04" />).
+
+**The bound.** The loss depends on the weights only through $\mat M$, as
+$\operatorname{tr}\big((\mat I-\mat M)\mat S(\mat I-\mat M)^{\mathsf T}\big)$
+(I.12.2). A matrix of rank at most $k$ factors as $\mat D\mat E$ with
+$\mat E$ of shape $k\times d$, so I.12.T1 applies:
+$\mathcal L\geq\lambda_{k+1}+\cdots+\lambda_d$. $\blacksquare$
+
+**Attaining it.** Let $\mat U_k$ hold the top $k$ eigenvectors. Map the
+input to $\mat U_k^{\mathsf T}\vec x$ in the first layers, carry those $k$
+numbers unchanged through every later layer, padding with zeros where a
+layer is wider than $k$, and map back with $\mat U_k$ at the end. Every
+width is at least $k$, so each step is possible, and the product is
+$\mat U_k\mat U_k^{\mathsf T}$, which attains the bound. $\blacksquare$
+
+**The four points.** With widths $2,3,1,3,2$, the narrowest is $1$. The
+layers
+$\begin{bmatrix}0.8&0.6\\0&0\\1&0\end{bmatrix}$,
+$\begin{bmatrix}1&0&0\end{bmatrix}$,
+$\begin{bmatrix}1\\0\\0\end{bmatrix}$ and
+$\begin{bmatrix}0.8&0&0\\0.6&0&0\end{bmatrix}$
+multiply to $\begin{bmatrix}0.64&0.48\\0.48&0.36\end{bmatrix}=\vec u_1\vec u_1^{\mathsf T}$,
+and the loss is $1=\lambda_2$. The extra rows in the first layer and the
+extra width in the third change nothing: depth and width beyond the
+bottleneck buy no expressiveness here.
+
+**The link to I.13.** By I.13.T3 the linear β-VAE has distortion
+$\lambda_2+\cdots+\lambda_d+\beta\sigma^2$, which tends to the same bound
+as $\beta\to0$. A deterministic linear autoencoder of any depth, and a
+linear VAE whose code becomes free, end at one point: the principal
+subspace.
+
+</Solution>
+
+<Answer>
+$\mathcal L\geq\lambda_{k+1}+\cdots+\lambda_d$ with $k$ the narrowest width,
+attained by passing the top $k$ principal scores through every layer. For
+the four points with widths $2,3,1,3,2$ the loss is $1$, which is also the
+linear β-VAE's distortion as $\beta\to0$.
+</Answer>
+
+<CheckSanity>
+If every width were at least $d$, then $k=d$, the bound would be an empty
+sum, and the identity would be reachable: depth cannot make a linear
+autoencoder compress unless some layer is narrow.
+</CheckSanity>
+
+<Breaks>
+The result is about the minimum, not the path to it. Gradient descent on
+the deep factorisation meets saddles that the one-layer problem does not
+have (I.12.T2), and its trajectory depends on depth, as I.3.B05 noted. With
+nonlinear layers the bound no longer applies, which is the point of making
+them nonlinear.
+</Breaks>
+
+<Variation>
+A two-dimensional code, widths $2,3,2,3,2$, makes $k=2=d$: the loss can be
+$0$, and the network can copy. The narrowest layer, not the depth, decides
+what is lost.
+</Variation>

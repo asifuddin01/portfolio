@@ -1,0 +1,97 @@
+---
+id: "I.BOOK.B05"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: counterexample
+difficulty: 2
+title: "A zero training loss that taught nothing"
+depends:
+  - "I.1.P05"
+  - "I.5.P02"
+  - "I.12.P01"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Fit labels drawn by coin flips exactly with a small ReLU network, compare
+it with a straight line, and show that the zero training loss predicts
+nothing about new points.
+</Statement>
+
+<Given>
+Inputs $x=0,1,2,3$ with labels $(0,1,0,1)$, which were drawn by fair coin
+flips. The network is
+$f(x)=x-2\operatorname{relu}(x-1)+2\operatorname{relu}(x-2)$. The line is
+the least-squares fit $y=a+bx$. New inputs $0.5$, $1.5$ and $2.5$ get labels
+from fresh coin flips. Losses are mean squared errors.
+</Given>
+
+<Find>
+The network's training loss; the line and its training loss; the expected
+loss of each, and of the constant $0.5$, on the new points.
+</Find>
+
+<Strategy>
+Evaluate the network piece by piece. For a prediction $p$ and a label that
+is $0$ or $1$ with probability one half, the expected squared error is
+$(p-\tfrac12)^2+\tfrac14$.
+</Strategy>
+
+<Solution>
+
+**The network.** Its slopes are $1$ before $x=1$, $-1$ between $1$ and $2$,
+and $1$ after $2$. So $f(0)=0$, $f(1)=1$, $f(2)=0$, $f(3)=1$: the labels
+exactly, training loss $0$. Two ReLU units and a linear term were enough
+to put a kink at every change of label (I.5.P02).
+
+**The line.** With $\bar x=1.5$ and $\bar y=0.5$, the slope is
+$\sum(x-\bar x)(y-\bar y)/\sum(x-\bar x)^2=1/5=0.2$ and the intercept
+$0.5-0.2\cdot1.5=0.2$. Its residuals are $-0.2$, $0.6$, $-0.6$ and $0.2$,
+so its training loss is $0.2$.
+
+**New points.** The network predicts $0.5$ at all three, so its expected
+loss is $\tfrac14=0.25$, exactly that of the constant $0.5$. The line
+predicts $0.3$, $0.5$ and $0.7$, with expected loss
+$\tfrac13(0.04+0+0.04)+0.25=0.276667$.
+
+So the network with zero training loss does no better than a constant on
+new points, and the line, which fitted worse, does slightly worse still.
+Neither number on the training set said anything about the new points,
+because the labels carried no pattern to learn. That is I.1.P05: the
+training loss cannot tell memorisation from generalisation.
+
+**The same failure, twice more.** Chapter I.12 met it in the autoencoder
+as wide as its input, whose zero loss reconstructed points far from the
+data just as exactly (I.12.X04), and in the width-one decoder that threaded
+a curve through every training point (I.12.B04). In all three the
+capacity to fit was the problem, and only held-out data revealed it.
+
+</Solution>
+
+<Answer>
+Network training loss $0$; line $y=0.2+0.2x$ with training loss $0.2$. On
+new coin-flip labels: network $0.25$, line $0.276667$, constant $0.25$.
+</Answer>
+
+<CheckSanity>
+No predictor can beat $0.25$ in expectation on fair coin flips, since
+$(p-\tfrac12)^2+\tfrac14$ is smallest at $p=\tfrac12$. Both the network and
+the constant reach that floor on these three points.
+</CheckSanity>
+
+<Breaks>
+With labels that follow a pattern, the same architecture can generalise:
+capacity permits memorisation without forcing it. What separates the two
+cases is not the training loss but a held-out evaluation drawn from the
+same distribution.
+</Breaks>
+
+<Variation>
+With $n$ distinct inputs on a line, a network with $n-2$ ReLU kinks and a
+linear term interpolates any labels, so a network of that size reaches
+zero training loss on every labelling, patterned or not.
+</Variation>

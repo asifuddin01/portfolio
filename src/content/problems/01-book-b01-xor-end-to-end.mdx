@@ -1,0 +1,134 @@
+---
+id: "I.BOOK.B01"
+kind: problem
+chapter: "I.BOOK"
+scope: book
+variant: numeric
+difficulty: 2
+title: "XOR, from the perceptron to one step of training"
+depends:
+  - "I.2.P04"
+  - "I.3.P01"
+  - "I.5.P02"
+  - "I.6.P01"
+  - "I.7.P01"
+rounding: "Exact values where possible; six decimal places otherwise."
+hasSolution: true
+verified: true
+snippet: "i-book-checks.py"
+status: published
+---
+<Statement>
+Show that no perceptron computes XOR, that a two-unit ReLU network does,
+and then backpropagate through that network after one of its weights has
+been disturbed and take a gradient step.
+</Statement>
+
+<Given>
+The four XOR examples: $(0,0)\mapsto0$, $(0,1)\mapsto1$, $(1,0)\mapsto1$,
+$(1,1)\mapsto0$. The network, with $s=x_1+x_2$:
+
+$$
+\begin{aligned}
+h_1&=\operatorname{relu}(s),\\
+h_2&=\operatorname{relu}(s-1),\\
+y&=h_1+v_2h_2,\\
+v_2&=-2.
+\end{aligned}
+$$
+
+The loss is the mean squared error over the four examples. For the second
+part, $v_2=-1.8$ and the step size is $1$.
+</Given>
+
+<Find>
+Why no threshold unit $\mathbf 1[w_1x_1+w_2x_2+b>0]$ fits the data; the
+network's outputs; after disturbing $v_2$, the loss and the gradients with
+respect to $v_2$, the bias of $h_2$ and the bias of $h_1$; the new $v_2$.
+</Find>
+
+<Strategy>
+Write the perceptron's four conditions as inequalities (I.2). For the
+network, only the example $(1,1)$ has an error after the disturbance, so
+the backward pass of I.6 runs through one example.
+</Strategy>
+
+<Solution>
+
+**No perceptron.** The examples require $b\leq0$ for $(0,0)$,
+$w_2+b>0$ and $w_1+b>0$ for the two positives, and $w_1+w_2+b\leq0$ for
+$(1,1)$. Adding the middle two gives $w_1+w_2+2b>0$, so
+$w_1+w_2+b>-b\geq0$, contradicting the last. The positives and negatives
+are not linearly separable (I.2.P04), and no learning rule changes that.
+
+**The network.** At $s=0,1,1,2$ the hidden units are $(0,0)$, $(1,0)$,
+$(1,0)$ and $(2,1)$, so
+
+$$
+\begin{aligned}
+y&=(0,\;1,\;1,\;2-2)\\
+ &=(0,1,1,0).
+\end{aligned}
+$$
+
+The ReLU's kink at $s=1$ is what a linear map cannot supply (I.3.P01):
+the network bends the line $s$ once and folds the fourth example back to
+zero.
+
+**Disturbed.** With $v_2=-1.8$ the last output is $2-1.8=0.2$ and the
+others are unchanged. The loss is $0.2^2/4=0.01$. The output error is
+$\delta=2(0.2-0)/4=0.1$ at $(1,1)$ and zero elsewhere, so
+
+$$
+\begin{aligned}
+\frac{\partial\mathcal L}{\partial v_2}&=\delta\,h_2=0.1,\\
+\frac{\partial\mathcal L}{\partial b_2}&=\delta\,v_2\operatorname{relu}'(1)\\
+ &=-0.18,\\
+\frac{\partial\mathcal L}{\partial b_1}&=\delta\operatorname{relu}'(2)=0.1.
+\end{aligned}
+$$
+
+**One step.** Gradient descent moves $v_2$ to $-1.8-1\cdot0.1=-1.9$, back
+towards $-2$. The gradient supplied the direction and the step size of $1$
+was a choice (I.7.P01). Repeating the step halves the remaining error each
+time: $-1.95$, then $-1.975$, approaching $-2$ without reaching it.
+
+</Solution>
+
+<Answer>
+The four perceptron inequalities contradict each other. The network
+outputs $(0,1,1,0)$. Disturbed: loss $0.01$, gradients $0.1$, $-0.18$ and
+$0.1$; after one step $v_2=-1.9$.
+</Answer>
+
+<CheckSanity>
+The gradient with respect to $v_2$ is positive because raising $v_2$ makes
+the wrong output $0.2$ larger. The script confirms it with a central finite
+difference.
+</CheckSanity>
+
+<CheckNumeric snippet="i-book-checks.py" verified={true}>
+
+The [complete reproduction script](https://github.com/asifuddin01/portfolio/blob/main/scripts/snippets/i-book-checks.py)
+uses only the Python standard library. From a checkout of the repository, run:
+
+~~~sh
+python3 scripts/snippets/i-book-checks.py
+~~~
+
+It checks all eight problems of the Book I set. For this one it also
+searches $15{,}625$ perceptrons on a grid and confirms none fits XOR.
+
+</CheckNumeric>
+
+<Breaks>
+The network computes a function of $s$ alone, so it cannot represent the
+other three Boolean functions of two inputs that need $x_1$ and $x_2$
+separately. Two hidden units suffice for XOR because XOR is symmetric.
+</Breaks>
+
+<Variation>
+With $v_2=-2$ every error is zero and so is every gradient: XOR is a global
+minimum. Disturbing the bias of $h_2$ instead moves the kink, and then
+several examples err at once.
+</Variation>
