@@ -29,6 +29,9 @@ export async function getStaticPaths() {
       ctx,
       hrefs: Object.fromEntries(contexts.map((c) => [c.entry.id, href(c)])),
       idOf: Object.fromEntries(contexts.map((c) => [c.entry.id, c.id])),
+      chapterHrefOf: Object.fromEntries(contexts.map((c) =>
+        [c.chapter.data.id, `/elementa/${c.book.id}/${c.chapter.id.split('--')[1]}`])),
+      bookHrefOf: Object.fromEntries(contexts.map((c) => [c.book.data.id, `/elementa/${c.book.id}`])),
     },
   }));
 }
@@ -37,8 +40,10 @@ interface Props {
   ctx: PropositionContext;
   hrefs: Record<string, string>;
   idOf: Record<string, string>;
+  chapterHrefOf: Record<string, string>;
+  bookHrefOf: Record<string, string>;
 }
-const { ctx, hrefs, idOf } = Astro.props;
+const { ctx, hrefs, idOf, chapterHrefOf, bookHrefOf } = Astro.props;
 const { entry, book, chapter, chapterN, index, total, previous, next } = ctx;
 const d = entry.data;
 const { Content } = await render(entry);
@@ -47,8 +52,21 @@ const bookNumeral = book.data.id;
 const base = `/elementa/${book.id}`;
 const chapterSlug = chapter.id.split('--')[1];
 const chapterHref = `${base}/${chapterSlug}`;
-const problemHref = (id: string) =>
-  `${chapterHref}/problems/${id.split('.').pop()!.toLowerCase()}`;
+/**
+ * A problem lives under its own chapter, which need not be this
+ * proposition's: a problem in one chapter may draw on another's results. A
+ * book-level item ("I.BOOK.B03") has no page of its own and is linked by its
+ * anchor on the book's problem set.
+ */
+const problemHref = (id: string) => {
+  const parts = id.split('.');
+  const item = parts.pop()!.toLowerCase();
+  const home = parts.join('.');
+  if (home.endsWith('.BOOK')) {
+    return `${bookHrefOf[parts[0]] ?? base}/problems#${id.replace(/\./g, '-').toLowerCase()}`;
+  }
+  return `${chapterHrefOf[home] ?? chapterHref}/problems/${item}`;
+};
 
 const figName = d.figure && isFigureName(d.figure) ? d.figure : null;
 const fig = figName ? FIGURES[figName] : null;

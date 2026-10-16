@@ -12,6 +12,7 @@ import LesionRule from '../../../components/ornament/LesionRule.astro';
 import Breadcrumb from '../../../components/elementa/Breadcrumb.astro';
 import ProblemSet from '../../../components/elementa/ProblemSet.astro';
 import { getElementaTree, getProblems, type ElementaBook } from '../../../lib/collections';
+import { BOOK_NUMERALS } from '../../../lib/elementa-spec';
 import type { CollectionEntry } from 'astro:content';
 // KaTeX's stylesheet, scoped to the Elementa routes — the rest of the
 // site has no equations and should not carry it.
@@ -19,6 +20,7 @@ import '../../../styles/math.css';
 
 export async function getStaticPaths() {
   const [tree, items] = await Promise.all([getElementaTree(), getProblems()]);
+  const rank = (n: string) => BOOK_NUMERALS.indexOf(n as (typeof BOOK_NUMERALS)[number]);
   return tree
     .filter((node) => node.chapters.some((c) => c.tier === 'M3'))
     .map((node) => ({
@@ -26,12 +28,15 @@ export async function getStaticPaths() {
       props: {
         node,
         items: items.filter((p) => p.data.chapter === `${node.numeral}.BOOK`),
+        /* The first book has nothing earlier to reach back into. */
+        hasEarlier: tree.some((n) =>
+          n.numeral !== '0' && n.chapters.length > 0 && rank(n.numeral) < rank(node.numeral)),
       },
     }));
 }
 
-interface Props { node: ElementaBook; items: CollectionEntry<'problems'>[] }
-const { node, items } = Astro.props;
+interface Props { node: ElementaBook; items: CollectionEntry<'problems'>[]; hasEarlier: boolean }
+const { node, items, hasEarlier } = Astro.props;
 const { book, numeral } = node;
 const base = `/elementa/${book.id}`;
 const crossBook = items.filter((p) => p.data.scope === 'cross-book');
@@ -61,14 +66,19 @@ const NEED_CROSS = 2;
       </p>
       <p class="bp-count" data-reveal>
         <span class={items.length >= NEED ? 'bp-met' : 'bp-owed'}>{items.length}/{NEED} problems</span>
-        <span class={crossBook.length >= NEED_CROSS ? 'bp-met' : 'bp-owed'}>
-          {crossBook.length}/{NEED_CROSS} reaching back into an earlier book
-        </span>
+        {hasEarlier ? (
+          <span class={crossBook.length >= NEED_CROSS ? 'bp-met' : 'bp-owed'}>
+            {crossBook.length}/{NEED_CROSS} reaching back into an earlier book
+          </span>
+        ) : (
+          <span class="bp-met">the first book: none earlier to reach back into</span>
+        )}
       </p>
     </header>
 
     <LesionRule />
 
+    {items.length > 0 && <h2 class="bp-label">The problems</h2>}
     <ProblemSet
       items={items}
       empty={`Not yet written. Book ${numeral} contains load-bearing chapters, so it owes at least ${NEED} cross-chapter problems and ${NEED_CROSS} that reach back into an earlier book. Those are writable once the chapters they combine are.`}
@@ -96,6 +106,15 @@ const NEED_CROSS = 2;
     margin-bottom: 0.7rem;
   }
   .bp-h1 { font-size: var(--t-2xl); margin-bottom: 0.9rem; }
+  .bp-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 1rem;
+  }
   .bp-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); margin-bottom: 1rem; }
   .bp-count {
     display: flex;

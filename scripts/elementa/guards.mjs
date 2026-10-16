@@ -152,7 +152,14 @@ export async function checkMathQuota(data) {
     const cross = set.filter((p) => p.data.scope === 'cross-book');
     if (set.length < 8)
       into.push(`Book ${numeral}: has load-bearing chapters but its problem set holds ${set.length}/8.`);
-    if (cross.length < 2)
+    /* A cross-book problem reaches back into an earlier book. The first book
+       has none to reach, so the requirement starts with the second; it is
+       not waived for any book that has an earlier one with chapters. */
+    const hasEarlier = books.some((b) =>
+      b.data.id !== '0' &&
+      (BOOK_RANK[b.data.id] ?? 99) < (BOOK_RANK[numeral] ?? 99) &&
+      chapters.some((c) => c.data.book === b.id));
+    if (hasEarlier && cross.length < 2)
       into.push(`Book ${numeral}: needs ≥2 cross-book problems, has ${cross.length}.`);
   }
 
