@@ -7,6 +7,7 @@
  *   /artifacts/private/api/*   the private archive's data — list, add, edit, delete
  *   /artifacts/private/file/*  the archive's files, served so they open anywhere
  *   /api/artifacts/*   the inbox, for adding from a script or from Cowork
+ *   /api/share/*       one artifact shared by link and passkey (edge/share.js)
  *   /api/tutor         Officina AI's tutor, answered by Workers AI (edge/tutor.js)
  *
  * The first two sit behind Cloudflare Access and check its signed token on
@@ -26,7 +27,10 @@
 
 import { marked } from 'marked';
 import { verifyAccess } from './access.js';
+import { shares, sharedArtifact, unlock, withdrawAll } from './share.js';
 import { tutor } from './tutor.js';
+
+export { ShareGate } from './share.js';
 
 /** KV's ceiling for a single value. */
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -125,6 +129,17 @@ export default {
     try {
       if (pathname === '/api/artifacts/inbox') return await inbox(request, env);
       if (pathname === '/api/tutor') return await tutor(request, env);
+      if (pathname === '/api/share/unlock') return await unlock(request, env);
+      if (pathname.startsWith('/api/share/file/')) {
+        const artifact = await sharedArtifact(request, env, pathname.split('/')[4] ?? '');
+        if (!artifact) {
+          return new Response('401 — open the link again and enter the passkey.\n', {
+            status: 401,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+          });
+        }
+        return await file(request, env, artifact, true);
+      }
 
       if (pathname.startsWith('/artifacts/private/api/') || pathname.startsWith('/artifacts/private/file/')) {
         const who = await verifyAccess(request, env);
@@ -136,7 +151,9 @@ export default {
               })
             : oops(401, 'signed-out', who.reason);
         }
-        if (pathname.startsWith('/artifacts/private/file/')) return await file(request, env, pathname);
+        if (pathname.startsWith('/artifacts/private/file/')) {
+          return await file(request, env, pathname.slice('/artifacts/private/file/'.length).split('/')[0]);
+        }
         return await api(request, env, pathname, who);
       }
 
@@ -166,11 +183,13 @@ async function api(request, env, pathname, who) {
   if (rest[2] === 'content') {
     return request.method === 'PUT' ? saveContent(request, env, id) : oops(405, 'method', 'PUT only.');
   }
+  if (rest[2] === 'shares') return shares(request, env, id, rest[3]);
   if (rest[2] === 'undo') {
     return request.method === 'POST' ? undo(env, id) : oops(405, 'method', 'POST only.');
   }
   if (request.method === 'PATCH') return edit(request, env, id);
   if (request.method === 'DELETE') {
+    await withdrawAll(env, id);
     await env.ARTIFACTS.delete(`item:${id}`);
     await env.ARTIFACTS.delete(`blob:${id}`);
     await env.ARTIFACTS.delete(`prev:${id}`);
@@ -579,9 +598,13 @@ const esc = (s) =>
 
 /* --------------------------------------------------------------- files ---- */
 
-async function file(request, env, pathname) {
+/**
+ * An artifact's file, to the owner or, `shared`, to someone who unlocked a
+ * link to it. A shared file is never cached: withdrawing the link has to end
+ * what the recipient can see, and nothing should linger on their device.
+ */
+async function file(request, env, id, shared = false) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return oops(405, 'method', 'GET only.');
-  const id = pathname.slice('/artifacts/private/file/'.length).split('/')[0];
   if (!ID.test(id)) return new Response('Not found', { status: 404 });
 
   const url = new URL(request.url);
@@ -598,7 +621,7 @@ async function file(request, env, pathname) {
     'X-Frame-Options': 'SAMEORIGIN',
     // An id is never reused, so the bytes behind it never change. `private`
     // keeps them in the owner's browser and out of any shared cache.
-    'Cache-Control': 'private, max-age=31536000, immutable',
+    'Cache-Control': shared ? 'no-store' : 'private, max-age=31536000, immutable',
     'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(m.n ?? id)}`,
   });
 

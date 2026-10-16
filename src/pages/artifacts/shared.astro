@@ -1,0 +1,251 @@
+---
+/**
+ * Where a shared link lands: /artifacts/shared#<token>.
+ *
+ * The owner shares one artifact from the private archive with a link and a
+ * six-digit passkey (edge/share.js has the whole of the security). This page
+ * is static and knows nothing until the passkey is right. It reads the token
+ * from after the #, which no browser sends to a server, posts it with the
+ * passkey to /api/share/unlock, and on success shows the one artifact the
+ * link opens, from /api/share/file/, through the same viewer as the archive.
+ *
+ * The token is moved from the address bar into this tab's session storage
+ * as the page opens, so a screenshot or a shared screen does not show it.
+ * A reload in the same tab still finds it.
+ *
+ * Outside Cloudflare Access on purpose: whoever has the link and the
+ * passkey is who it is for. Noindexed, and /artifacts is disallowed in
+ * robots.txt and kept out of the sitemap.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AUTHOR } from '../../consts';
+import '../../styles/artifact-view.css';
+---
+<BaseLayout
+  title={`Shared with you — ${AUTHOR}`}
+  description="A document shared with you by link and passkey."
+  folio="A"
+  noindex
+  router={false}
+>
+  <div class="codex sh" data-sh>
+    <p class="sh-kicker" data-reveal>Shared with you</p>
+    <h1 class="sh-h1" data-press>Enter the passkey</h1>
+    <p class="sh-text codex-measure" data-reveal>
+      Asif has shared one document from the private archive with you. Type the six-digit
+      passkey that came with the link.
+    </p>
+
+    <form class="sh-form" data-sh-form>
+      <label class="sh-label" for="sh-code">Passkey</label>
+      <div class="sh-row">
+        <input id="sh-code" class="sh-code" name="code" inputmode="numeric" pattern="[0-9]{6}"
+          minlength="6" maxlength="6" required autocomplete="one-time-code" spellcheck="false"
+          aria-describedby="sh-msg" />
+        <button class="sh-btn" type="submit" data-sh-open>Open</button>
+      </div>
+    </form>
+    <p class="sh-msg" id="sh-msg" role="status" data-sh-msg></p>
+
+    <p class="sh-note">
+      Five wrong passkeys lock the link for good. Nothing about the document is shown until
+      the passkey is right.
+    </p>
+  </div>
+
+  <dialog class="av-view" aria-labelledby="sh-title" data-sh-view>
+    <div class="av-view-bar">
+      <div class="av-view-id">
+        <span class="av-view-research">Shared with you</span>
+        <h2 class="av-view-title" id="sh-title" data-sh-title></h2>
+      </div>
+      <div class="av-view-actions">
+        <a class="av-btn" target="_blank" rel="noopener" data-sh-tab>Open in a new tab ↗</a>
+        <button class="av-btn" type="button" data-sh-close>Close</button>
+      </div>
+    </div>
+    <div class="av-view-body" data-sh-body></div>
+  </dialog>
+</BaseLayout>
+
+<style>
+  .sh { padding-top: clamp(3rem, 12vh, 7rem); padding-bottom: 3rem; }
+  .sh-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oxblood-text);
+    margin-bottom: 0.8rem;
+  }
+  .sh-h1 { font-size: var(--t-2xl); margin-bottom: 1.2rem; }
+  .sh-text { font-size: var(--t-md); line-height: var(--body-leading); }
+  .sh-form { margin: 2rem 0 0.8rem; }
+  .sh-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.45rem;
+  }
+  .sh-row { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+  .sh-code {
+    font-family: var(--font-mono);
+    font-size: var(--t-xl);
+    letter-spacing: 0.35em;
+    width: 11ch;
+    padding: 0.35em 0.2em 0.35em 0.55em;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--paper-raised) 80%, transparent);
+    border: var(--rule) solid var(--brass);
+    border-radius: 0;
+  }
+  .sh-code:focus-visible { outline: 2px solid var(--fundus); outline-offset: 2px; }
+  .sh-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-nav);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--fundus);
+    border: var(--rule) solid var(--fundus);
+    padding: 0.7em 1.6em 0.64em;
+    cursor: pointer;
+  }
+  .sh-btn:hover { background: color-mix(in srgb, var(--fundus) 85%, var(--ink)); }
+  .sh-btn[disabled] { opacity: 0.5; cursor: progress; }
+  .sh-msg { min-height: 1.5em; font-size: var(--t-sm); color: var(--oxblood-text); margin: 0 0 1.6rem; }
+  .sh-msg.is-ok { color: var(--ink-soft); }
+  .sh-note {
+    max-width: var(--measure);
+    padding-top: 1rem;
+    border-top: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent);
+    font-size: var(--t-sm);
+    color: var(--ink-soft);
+  }
+</style>
+
+<script>
+  import { artifactBody } from '../../lib/artifact-view';
+
+  interface Unlocked {
+    pub: string;
+    title: string;
+    kind: string;
+    name: string | null;
+    size: number | null;
+    version: number;
+  }
+
+  const KEY = 'shared-link-token';
+  const $ = <T extends Element>(sel: string) => document.querySelector<T>(sel);
+
+  /** The token: from the link the first time, from this tab's storage after. */
+  function takeToken(): string {
+    const fromLink = location.hash.slice(1);
+    if (fromLink) {
+      try {
+        sessionStorage.setItem(KEY, fromLink);
+        history.replaceState(null, '', location.pathname);
+      } catch {
+        /* storage blocked: the token stays in the address bar, which still works */
+      }
+      return fromLink;
+    }
+    try {
+      return sessionStorage.getItem(KEY) ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  function say(text: string, ok = false): void {
+    const msg = $<HTMLElement>('[data-sh-msg]')!;
+    msg.textContent = text;
+    msg.classList.toggle('is-ok', ok);
+  }
+
+  function show(it: Unlocked): void {
+    const url = (extra = '') => {
+      const q = new URLSearchParams(extra);
+      if (it.version) q.set('v', String(it.version));
+      const qs = q.toString();
+      return `/api/share/file/${it.pub}/${encodeURIComponent(it.name ?? 'view')}${qs ? `?${qs}` : ''}`;
+    };
+    const view = $<HTMLDialogElement>('[data-sh-view]')!;
+    $('[data-sh-title]')!.textContent = it.title;
+    const tab = $<HTMLAnchorElement>('[data-sh-tab]')!;
+    tab.href = url();
+    tab.hidden = it.kind === 'file';
+    $('[data-sh-body]')!.replaceChildren(artifactBody(it, url));
+    view.showModal();
+  }
+
+  async function unlock(form: HTMLFormElement, token: string): Promise<void> {
+    const input = form.elements.namedItem('code') as HTMLInputElement;
+    const code = input.value.replace(/\D/g, '');
+    if (code.length !== 6) {
+      say('The passkey is six digits.');
+      input.focus();
+      return;
+    }
+    const open = $<HTMLButtonElement>('[data-sh-open]')!;
+    open.disabled = true;
+    say('Checking…', true);
+    try {
+      const res = await fetch('/api/share/unlock', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token, code }),
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const body = await res.json().catch(() => ({}));
+      input.value = '';
+      if (!res.ok) {
+        say(body.message ?? `Something went wrong (HTTP ${res.status}).`);
+        // A locked or withdrawn link will not open with any passkey.
+        if (res.status === 423 || res.status === 404) {
+          input.disabled = true;
+          return;
+        }
+        input.focus();
+        return;
+      }
+      say('');
+      show(body as Unlocked);
+    } catch {
+      say('The page could not reach the site. Check the connection and try again.');
+    } finally {
+      open.disabled = input.disabled;
+    }
+  }
+
+  function init(): void {
+    const form = $<HTMLFormElement>('[data-sh-form]');
+    if (!form || form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+    const token = takeToken();
+    const input = form.elements.namedItem('code') as HTMLInputElement;
+    if (!token) {
+      say('This link is incomplete. Copy the whole link, including everything after the #, and open it again.');
+      input.disabled = true;
+      $<HTMLButtonElement>('[data-sh-open]')!.disabled = true;
+      return;
+    }
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      void unlock(form, token);
+    });
+    const view = $<HTMLDialogElement>('[data-sh-view]')!;
+    $('[data-sh-close]')?.addEventListener('click', () => view.close());
+    // Closing unloads the document, so its scripts stop.
+    view.addEventListener('close', () => $('[data-sh-body]')?.replaceChildren());
+    input.focus();
+  }
+
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+</script>

@@ -1,0 +1,86 @@
+/*
+ * The artifact viewer: the buttons, the full-screen frame and how each kind
+ * of file sits in it. Shared by the private archive (/artifacts/private) and
+ * the page a shared link opens (/artifacts/shared). Every class carries the
+ * `av-` prefix, so nothing reaches the rest of the site.
+ */
+.av-btn {
+  font-family: var(--font-mono);
+  font-size: var(--t-nav);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  background: transparent;
+  border: var(--rule) solid var(--brass);
+  padding: 0.42em 0.85em 0.36em;
+  cursor: pointer;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+.av-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+.av-btn--primary { color: var(--paper); background: var(--fundus); border-color: var(--fundus); }
+.av-btn--primary:hover { background: color-mix(in srgb, var(--fundus) 85%, var(--ink)); }
+.av-btn--danger { color: var(--oxblood-text); border-color: var(--oxblood); }
+.av-btn[disabled] { opacity: 0.5; cursor: progress; }
+
+/* --- the viewer --------------------------------------------------------- */
+/* Only when open: a `display` on a closed <dialog> beats the user agent's
+   `dialog:not([open]) { display: none }` and paints it over the page. */
+.av-view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+.av-view[open] { display: flex; flex-direction: column; }
+.av-view::backdrop { background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.av-view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 16px;
+  border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+}
+.av-view-id { display: grid; gap: 0.1rem; min-width: 0; }
+.av-view-research {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+}
+.av-view-title {
+  font-size: var(--t-md);
+  margin: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.av-view-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.av-view-actions [hidden] { display: none; }
+
+.av-view-body { flex: 1; min-height: 0; display: flex; overflow: auto; }
+
+.av-frame { flex: 1; width: 100%; min-height: 100%; border: 0; background: #fff; }
+.av-frame--doc { background: transparent; }
+.av-img { margin: auto; padding: 1rem; max-width: 100%; max-height: 100%; object-fit: contain; }
+.av-panel {
+  margin: auto;
+  max-width: 34rem;
+  padding: 2rem 16px;
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+.av-panel p { margin: 0; }
+.av-panel .av-url { font-family: var(--font-mono); font-size: var(--t-xs); overflow-wrap: anywhere; color: var(--ink-soft); }

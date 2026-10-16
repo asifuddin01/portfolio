@@ -16,6 +16,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import { AUTHOR } from '../../consts';
+import '../../styles/artifact-view.css';
 ---
 <BaseLayout
   title={`Artifacts — ${AUTHOR}`}
@@ -117,6 +118,7 @@ import { AUTHOR } from '../../consts';
         <a class="av-btn" data-view-download>Download</a>
         <a class="av-btn" target="_blank" rel="noopener noreferrer" data-view-source hidden>Source ↗</a>
         <button class="av-btn" type="button" data-view-copy>Copy link</button>
+        <button class="av-btn" type="button" data-view-share>Share with passkey</button>
         <button class="av-btn" type="button" data-view-edit>Details</button>
         <button class="av-btn" type="button" data-view-undo hidden>Undo last edit</button>
         <button class="av-btn av-btn--danger" type="button" data-view-delete>Delete</button>
@@ -142,6 +144,52 @@ import { AUTHOR } from '../../consts';
       </div>
     </div>
     <div class="av-view-body" data-view-body></div>
+  </dialog>
+
+  <dialog class="av-share" aria-labelledby="av-share-title" data-share>
+    <h2 class="av-share-title" id="av-share-title">Share with a passkey</h2>
+    <p class="av-share-what" data-share-what></p>
+    <p class="av-share-intro">
+      The link opens this one artifact and nothing else, and only after the six-digit
+      passkey. Five wrong passkeys lock the link for good.
+    </p>
+
+    <form class="av-share-form" data-share-form>
+      <label class="av-field">
+        <span class="av-label">Passkey <em>six digits</em></span>
+        <span class="av-share-code">
+          <input name="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required
+            autocomplete="off" spellcheck="false" aria-describedby="av-share-status" />
+          <button class="av-btn" type="button" data-share-new>New code</button>
+        </span>
+      </label>
+      <label class="av-field">
+        <span class="av-label">The link works for</span>
+        <select name="days">
+          <option value="1">1 day</option>
+          <option value="7" selected>7 days</option>
+          <option value="30">30 days</option>
+          <option value="0">Until withdrawn</option>
+        </select>
+      </label>
+      <div class="av-share-foot">
+        <button class="av-btn av-btn--primary" type="submit" data-share-make>Make the link</button>
+        <button class="av-btn" type="button" data-share-close>Close</button>
+      </div>
+      <p class="av-progress" id="av-share-status" role="status" data-share-status></p>
+    </form>
+
+    <div class="av-share-made" hidden data-share-made>
+      <span class="av-label">The new link</span>
+      <div class="av-share-linkrow">
+        <input readonly aria-label="The new link" data-share-link />
+        <button class="av-btn av-btn--primary" type="button" data-share-copy>Copy link</button>
+      </div>
+      <p class="av-share-tip" data-share-tip></p>
+    </div>
+
+    <h3 class="av-label av-share-sub">Links to this artifact</h3>
+    <ul class="av-share-list" data-share-list></ul>
   </dialog>
 
   <dialog class="av-ask" aria-labelledby="av-ask-text" data-ask>
@@ -202,26 +250,6 @@ import { AUTHOR } from '../../consts';
   .av-filter:focus-visible,
   .av-field input:focus-visible { outline: 2px solid var(--fundus); outline-offset: 1px; }
 
-  .av-btn {
-    font-family: var(--font-mono);
-    font-size: var(--t-nav);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-    background: transparent;
-    border: var(--rule) solid var(--brass);
-    padding: 0.42em 0.85em 0.36em;
-    cursor: pointer;
-    line-height: 1.2;
-    white-space: nowrap;
-    text-decoration: none;
-    display: inline-block;
-  }
-  .av-btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
-  .av-btn--primary { color: var(--paper); background: var(--fundus); border-color: var(--fundus); }
-  .av-btn--primary:hover { background: color-mix(in srgb, var(--fundus) 85%, var(--ink)); }
-  .av-btn--danger { color: var(--oxblood-text); border-color: var(--oxblood); }
-  .av-btn[disabled] { opacity: 0.5; cursor: progress; }
   .av-who {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
@@ -368,49 +396,6 @@ import { AUTHOR } from '../../consts';
   .av-note { font-style: italic; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.4; }
   .av-empty { font-style: italic; color: var(--ink-soft); }
 
-  /* --- the viewer --------------------------------------------------------- */
-  /* Only when open: a `display` on a closed <dialog> beats the user agent's
-     `dialog:not([open]) { display: none }` and paints it over the page. */
-  .av-view {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: var(--paper);
-    color: var(--ink);
-  }
-  .av-view[open] { display: flex; flex-direction: column; }
-  .av-view::backdrop { background: color-mix(in srgb, var(--ink) 45%, transparent); }
-  .av-view-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem 1rem;
-    padding: 0.7rem 16px;
-    border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
-  }
-  .av-view-id { display: grid; gap: 0.1rem; min-width: 0; }
-  .av-view-research {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--brass-text);
-  }
-  .av-view-title {
-    font-size: var(--t-md);
-    margin: 0;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-  .av-view-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .av-view-actions [hidden] { display: none; }
   .av-edit {
     display: flex;
     flex-wrap: wrap;
@@ -423,7 +408,6 @@ import { AUTHOR } from '../../consts';
   .av-edit .av-field { flex: 1 1 12rem; }
   .av-edit .av-field--grow { flex: 2 1 18rem; }
   .av-edit-foot { display: flex; gap: 0.5rem; }
-  .av-view-body { flex: 1; min-height: 0; display: flex; overflow: auto; }
   .av-writing {
     display: flex;
     flex-wrap: wrap;
@@ -471,25 +455,89 @@ import { AUTHOR } from '../../consts';
     color: var(--ink);
     box-shadow: 0 22px 60px -24px color-mix(in srgb, var(--ink) 70%, transparent);
   }
+  .av-share {
+    margin: auto;
+    width: min(34rem, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 1.3rem 1.3rem 1.1rem;
+    border: var(--rule) solid var(--brass);
+    background: var(--paper-raised, var(--paper));
+    color: var(--ink);
+    box-shadow: 0 22px 60px -24px color-mix(in srgb, var(--ink) 70%, transparent);
+  }
+  .av-share::backdrop { background: color-mix(in srgb, var(--ink) 35%, transparent); }
+  .av-share-title { font-size: var(--t-lg); margin: 0 0 0.2rem; }
+  .av-share-what { margin: 0 0 0.9rem; font-family: var(--font-display); color: var(--ink-soft); overflow-wrap: anywhere; }
+  .av-share-intro { margin: 0 0 1.1rem; font-size: var(--t-sm); line-height: 1.45; }
+  .av-share-form { display: grid; gap: 0.9rem; }
+  .av-share-code { display: flex; gap: 0.5rem; }
+  .av-share-code input {
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    letter-spacing: 0.3em;
+    width: 9.5rem;
+    flex: 0 0 auto;
+  }
+  .av-field select {
+    font: inherit;
+    font-size: var(--t-sm);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--paper-raised) 80%, transparent);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0.45rem 0.6rem;
+    border-radius: 0;
+    width: max-content;
+  }
+  .av-field select:focus-visible { outline: 2px solid var(--fundus); outline-offset: 1px; }
+  .av-share-foot { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .av-share-made {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 1.1rem;
+    padding: 0.9rem;
+    border: var(--rule) solid var(--fundus);
+    background: color-mix(in srgb, var(--fundus) 10%, transparent);
+  }
+  .av-share-made[hidden] { display: none; }
+  .av-share-linkrow { display: flex; gap: 0.5rem; }
+  .av-share-linkrow input {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink);
+    background: var(--paper);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent);
+    padding: 0.45rem 0.6rem;
+  }
+  .av-share-tip { margin: 0.2rem 0 0; font-size: var(--t-sm); line-height: 1.45; }
+  .av-share-tip strong { font-family: var(--font-mono); letter-spacing: 0.12em; font-weight: 500; }
+  .av-share-sub { margin: 1.4rem 0 0.5rem; font-weight: 400; }
+  .av-share-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .av-share-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.8rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+  .av-share-state { margin: 0; font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.4; flex: 1 1 14rem; }
+  .av-share-state strong { color: var(--ink); font-weight: 500; }
+  .av-share-actions { display: flex; gap: 0.4rem; }
+  .av-share-none { font-size: var(--t-sm); font-style: italic; color: var(--ink-soft); }
+
   .av-ask::backdrop { background: color-mix(in srgb, var(--ink) 35%, transparent); }
   .av-ask-text { margin: 0 0 1.1rem; font-size: var(--t-base); line-height: 1.45; }
   .av-ask-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; }
-  .av-frame { flex: 1; width: 100%; min-height: 100%; border: 0; background: #fff; }
-  .av-frame--doc { background: transparent; }
-  .av-img { margin: auto; padding: 1rem; max-width: 100%; max-height: 100%; object-fit: contain; }
-  .av-panel {
-    margin: auto;
-    max-width: 34rem;
-    padding: 2rem 16px;
-    display: grid;
-    gap: 1rem;
-    justify-items: start;
-  }
-  .av-panel p { margin: 0; }
-  .av-panel .av-url { font-family: var(--font-mono); font-size: var(--t-xs); overflow-wrap: anywhere; color: var(--ink-soft); }
 </style>
 
 <script>
+  import { artifactBody, bytes } from '../../lib/artifact-view';
+  import { newPasskey, weakPasskey } from '../../lib/passkey.js';
+
   type Kind = 'html' | 'svg' | 'image' | 'pdf' | 'markdown' | 'text' | 'file' | 'link';
   interface Item {
     id: string;
@@ -534,12 +582,6 @@ import { AUTHOR } from '../../consts';
 
   const dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const date = (iso: string) => dateFmt.format(new Date(iso));
-  function bytes(n: number | null): string {
-    if (n == null) return '';
-    if (n < 1024) return `${n} B`;
-    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  }
 
   function el<K extends keyof HTMLElementTagNameMap>(
     tag: K,
@@ -804,6 +846,8 @@ import { AUTHOR } from '../../consts';
     download.href = fileUrl(it, 'download');
     $<HTMLButtonElement>('[data-view-write]', view)!.hidden = !WRITABLE.has(it.kind);
     $<HTMLButtonElement>('[data-view-undo]', view)!.hidden = !it.canUndo;
+    // A saved link can be sent as it is; a passkey guards files kept here.
+    $<HTMLButtonElement>('[data-view-share]', view)!.hidden = it.kind === 'link';
     // A kept copy still knows where it came from.
     const source = $<HTMLAnchorElement>('[data-view-source]', view)!;
     source.hidden = it.kind === 'link' || !it.url;
@@ -830,66 +874,20 @@ import { AUTHOR } from '../../consts';
   }
 
   function content(it: Item): HTMLElement {
-    const src = fileUrl(it);
-    const theme = document.documentElement.dataset.theme === 'nocturne' ? 'dark' : 'light';
-    const coarse = matchMedia('(pointer: coarse)').matches;
-
-    // No `sandbox` attribute on these frames. The Worker sends every HTML,
-    // Markdown and text file with a `Content-Security-Policy: sandbox` header,
-    // which gives the document an opaque origin of its own — the frame is
-    // cross-origin to this page, and its scripts cannot reach the site's
-    // storage. The header is the control that also holds in a tab of its own;
-    // doubling it with the attribute stopped some embedded browsers from
-    // loading the frame at all, for no gain in isolation.
-    if (it.kind === 'html') {
-      const f = el('iframe', 'av-frame');
-      f.title = it.title;
-      f.src = src;
-      return f;
-    }
-    if (it.kind === 'markdown' || it.kind === 'text') {
-      const f = el('iframe', 'av-frame av-frame--doc');
-      f.title = it.title;
-      f.src = it.kind === 'markdown' ? fileUrl(it, `theme=${theme}`) : src;
-      return f;
-    }
-    if (it.kind === 'image' || it.kind === 'svg') {
-      const img = el('img', 'av-img');
-      img.alt = it.title;
-      img.src = src;
-      return img;
-    }
-    if (it.kind === 'pdf' && !coarse) {
-      // No sandbox: browsers will not start their PDF viewer inside one.
-      const f = el('iframe', 'av-frame');
-      f.title = it.title;
-      f.src = src;
-      return f;
-    }
-
+    if (it.kind !== 'link') return artifactBody(it, (extra = '') => fileUrl(it, extra));
     const panel = el('div', 'av-panel');
-    if (it.kind === 'pdf') {
-      // Phones show only the first page of a framed PDF, so open it whole.
-      panel.append(el('p', undefined, `${it.name ?? 'PDF'} · ${bytes(it.size)}`));
-      const a = Object.assign(el('a', 'av-btn av-btn--primary', 'Open the PDF'), { href: src, target: '_blank', rel: 'noopener' });
-      panel.append(a);
-    } else if (it.kind === 'link') {
-      panel.append(el('p', 'av-url', it.url ?? ''));
-      if (it.note) panel.append(el('p', 'av-note', it.note));
-      const a = Object.assign(el('a', 'av-btn av-btn--primary', 'Open the link ↗'), {
-        href: it.url ?? '#', target: '_blank', rel: 'noopener noreferrer',
-      });
-      panel.append(a);
-      if (hostOf(it.url) === 'claude.ai') {
-        panel.append(
-          el('p', 'av-note',
-            'This opens on claude.ai and needs your Claude sign-in. To have it here without Claude, ' +
-            'download its HTML from claude.ai and add it as a file on this shelf.'),
-        );
-      }
-    } else {
-      panel.append(el('p', undefined, `${it.name ?? 'File'} · ${bytes(it.size)}`));
-      panel.append(Object.assign(el('a', 'av-btn av-btn--primary', 'Download'), { href: fileUrl(it, 'download') }));
+    panel.append(el('p', 'av-url', it.url ?? ''));
+    if (it.note) panel.append(el('p', 'av-note', it.note));
+    const a = Object.assign(el('a', 'av-btn av-btn--primary', 'Open the link ↗'), {
+      href: it.url ?? '#', target: '_blank', rel: 'noopener noreferrer',
+    });
+    panel.append(a);
+    if (hostOf(it.url) === 'claude.ai') {
+      panel.append(
+        el('p', 'av-note',
+          'This opens on claude.ai and needs your Claude sign-in. To have it here without Claude, ' +
+          'download its HTML from claude.ai and add it as a file on this shelf.'),
+      );
     }
     return panel;
   }
@@ -1202,6 +1200,179 @@ import { AUTHOR } from '../../consts';
     render();
   }
 
+  /* --- sharing ------------------------------------------------------------ */
+
+  /**
+   * One artifact shared by a link and a six-digit passkey (edge/share.js has
+   * the security). The list of an artifact's links comes from a KV listing,
+   * which can lag a new link by up to a minute, so a link made here is kept
+   * in the list until the listing has it too.
+   */
+  interface Share {
+    pub: string;
+    link: string;
+    created: number;
+    expires: number | null;
+    state: 'open' | 'locked' | 'expired' | 'gone';
+    left: number;
+    opened: number;
+  }
+  let shareList: Share[] = [];
+  let shareFor: string | null = null;
+
+  const share$ = () => $<HTMLDialogElement>('[data-share]')!;
+  const day = (ms: number) => dateFmt.format(new Date(ms));
+  /** To the minute, so two links made on one day have labels that differ. */
+  const stampFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  function openShare(): void {
+    if (!current) return;
+    const box = share$();
+    if (shareFor !== current.id) {
+      shareList = [];
+      shareFor = current.id;
+    }
+    $('[data-share-what]', box)!.textContent = current.title;
+    const form = $<HTMLFormElement>('[data-share-form]', box)!;
+    form.reset();
+    (form.elements.namedItem('code') as HTMLInputElement).value = newPasskey();
+    $<HTMLElement>('[data-share-made]', box)!.hidden = true;
+    $('[data-share-status]', box)!.textContent = '';
+    renderShares('Looking for links…');
+    box.showModal();
+    void loadShares(current.id);
+  }
+
+  async function loadShares(id: string): Promise<void> {
+    try {
+      const res = await api(`items/${id}/shares`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+      if (shareFor !== id) return;
+      const fresh: Share[] = body.shares;
+      shareList = [...shareList.filter((s) => !fresh.some((f) => f.pub === s.pub)), ...fresh]
+        .filter((s) => s.state !== 'gone')
+        .sort((a, b) => b.created - a.created);
+      renderShares();
+    } catch (err) {
+      renderShares(`The links did not load: ${(err as Error).message}`);
+    }
+  }
+
+  function describe(s: Share): HTMLElement {
+    const p = el('p', 'av-share-state');
+    const opened = s.opened === 0 ? 'not opened yet' : s.opened === 1 ? 'opened once' : `opened ${s.opened} times`;
+    if (s.state === 'locked') {
+      p.append(el('strong', undefined, 'Locked'), ` after five wrong passkeys. Made ${day(s.created)}, ${opened}.`);
+    } else if (s.state === 'expired') {
+      p.append(el('strong', undefined, 'Expired'), ` ${day(s.expires!)}. Made ${day(s.created)}, ${opened}.`);
+    } else {
+      p.append(
+        el('strong', undefined, s.expires ? `Works until ${day(s.expires)}` : 'Works until withdrawn'),
+        ` · made ${day(s.created)} · ${opened} · ${s.left} of 5 tries left`,
+      );
+    }
+    return p;
+  }
+
+  function renderShares(message?: string): void {
+    const rows = shareList.map((s) => {
+      const li = el('li', 'av-share-item');
+      const actions = el('div', 'av-share-actions');
+      if (s.state === 'open') {
+        const copy = el('button', 'av-btn', 'Copy link');
+        copy.type = 'button';
+        copy.addEventListener('click', () => void copyText(copy, s.link, 'Copy link'));
+        actions.append(copy);
+      }
+      const drop = el('button', 'av-btn av-btn--danger', s.state === 'open' ? 'Withdraw' : 'Remove');
+      drop.type = 'button';
+      drop.setAttribute('aria-label', `${drop.textContent} the link made ${stampFmt.format(new Date(s.created))}`);
+      drop.addEventListener('click', () => void withdrawShare(s, drop));
+      actions.append(drop);
+      li.append(describe(s), actions);
+      return li;
+    });
+    if (message) rows.push(el('li', 'av-share-none', message));
+    else if (rows.length === 0) rows.push(el('li', 'av-share-none', 'No links yet.'));
+    $<HTMLUListElement>('[data-share-list]', share$())!.replaceChildren(...rows);
+  }
+
+  async function copyText(btn: HTMLButtonElement, text: string, label: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'Copied';
+    } catch {
+      btn.textContent = 'Copy failed';
+    }
+    setTimeout(() => (btn.textContent = label), 1600);
+  }
+
+  async function makeShare(form: HTMLFormElement): Promise<void> {
+    if (!current) return;
+    const box = share$();
+    const status = $<HTMLElement>('[data-share-status]', box)!;
+    const data = new FormData(form);
+    const code = String(data.get('code') ?? '').replace(/\s+/g, '');
+    const weak = weakPasskey(code);
+    if (weak) {
+      status.textContent = weak;
+      (form.elements.namedItem('code') as HTMLInputElement).focus();
+      return;
+    }
+    const make = $<HTMLButtonElement>('[data-share-make]', box)!;
+    make.disabled = true;
+    status.textContent = 'Making the link…';
+    try {
+      const id = current.id;
+      const res = await api(`items/${id}/shares`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code, days: Number(data.get('days')) }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
+      if (shareFor === id) {
+        shareList = [body, ...shareList];
+        renderShares();
+      }
+      $<HTMLInputElement>('[data-share-link]', box)!.value = body.link;
+      const tip = $<HTMLElement>('[data-share-tip]', box)!;
+      tip.replaceChildren(
+        'Passkey ',
+        el('strong', undefined, `${code.slice(0, 3)} ${code.slice(3)}`),
+        '. Send it apart from the link: the link in one message, the passkey in another or by voice, ' +
+          'so that anyone who sees one of them does not have both.',
+      );
+      $<HTMLElement>('[data-share-made]', box)!.hidden = false;
+      // The box keeps this link's passkey: a fresh code in it now could be
+      // sent by mistake instead. New code is one tap for the next link.
+      status.textContent = '';
+    } catch (err) {
+      status.textContent = `No link made: ${(err as Error).message}`;
+    } finally {
+      make.disabled = false;
+    }
+  }
+
+  async function withdrawShare(s: Share, btn: HTMLButtonElement): Promise<void> {
+    if (!current) return;
+    btn.disabled = true;
+    try {
+      const res = await api(`items/${current.id}/shares/${s.pub}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `HTTP ${res.status}`);
+      shareList = shareList.filter((x) => x.pub !== s.pub);
+      if ($<HTMLInputElement>('[data-share-link]', share$())!.value === s.link) {
+        $<HTMLElement>('[data-share-made]', share$())!.hidden = true;
+      }
+      renderShares();
+      $('[data-share-status]', share$())!.textContent = 'Withdrawn. That link opens nothing now.';
+    } catch (err) {
+      btn.disabled = false;
+      $('[data-share-status]', share$())!.textContent = `Not withdrawn: ${(err as Error).message}`;
+    }
+  }
+
   /* --- adding ------------------------------------------------------------- */
 
   /** XHR rather than fetch, for the upload progress a large PDF on a phone needs. */
@@ -1419,6 +1590,20 @@ import { AUTHOR } from '../../consts';
         btn.textContent = 'Copy failed';
       }
       setTimeout(() => (btn.textContent = 'Copy link'), 1600);
+    });
+    $('[data-view-share]', view)?.addEventListener('click', openShare);
+    const shareBox = share$();
+    const shareForm = $<HTMLFormElement>('[data-share-form]', shareBox)!;
+    shareForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      void makeShare(shareForm);
+    });
+    $('[data-share-new]', shareBox)?.addEventListener('click', () => {
+      (shareForm.elements.namedItem('code') as HTMLInputElement).value = newPasskey();
+    });
+    $('[data-share-close]', shareBox)?.addEventListener('click', () => shareBox.close());
+    $('[data-share-copy]', shareBox)?.addEventListener('click', (e) => {
+      void copyText(e.currentTarget as HTMLButtonElement, $<HTMLInputElement>('[data-share-link]', shareBox)!.value, 'Copy link');
     });
     $('[data-view-write]', view)?.addEventListener('click', () => {
       if (!current) return;

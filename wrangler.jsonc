@@ -29,15 +29,26 @@
     // page and the public door at /artifacts are static assets like any other.
     // And /uploads, for media: the asset layer ignores Range, and Safari will
     // not play a video from a server that does (edge/index.js, withByteRanges).
-    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*", "/api/tutor", "/uploads/*"]
+    // And /api/share/*, where someone given a link and passkey opens one
+    // artifact (edge/share.js). Its page, /artifacts/shared, is static.
+    "run_worker_first": ["/artifacts/private/api/*", "/artifacts/private/file/*", "/api/artifacts/*", "/api/share/*", "/api/tutor", "/uploads/*"]
   },
   // Officina AI's tutor: the model it asks (edge/tutor.js). Billed to this
   // account's Workers AI allowance — 10,000 neurons a day free.
   "ai": { "binding": "AI" },
   // And how often one visitor may ask it: ten questions a minute.
   "ratelimits": [
-    { "name": "TUTOR_RATE", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }
+    { "name": "TUTOR_RATE", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    // And how often one visitor may try a passkey on a shared link: ten a
+    // minute. The hard limit is the share's own count of five wrong passkeys.
+    { "name": "SHARE_RATE", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
   ],
+  // One object per shared link: the passkey's hash and an exact count of
+  // wrong tries, which KV, eventually consistent, cannot keep (edge/share.js).
+  "durable_objects": {
+    "bindings": [{ "name": "SHARES", "class_name": "ShareGate" }]
+  },
+  "migrations": [{ "tag": "v1-share-gate", "new_sqlite_classes": ["ShareGate"] }],
   "kv_namespaces": [
     // The archive. `wrangler kv namespace create ARTIFACTS`, 2026-09-22.
     { "binding": "ARTIFACTS", "id": "78bb9e21ec7c47c5a96bf12886810ee3" }

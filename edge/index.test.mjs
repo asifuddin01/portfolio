@@ -34,7 +34,7 @@ globalThis.fetch = async (input, init) => {
   return realFetch(input, init);
 };
 
-const { default: worker } = await import('./index.js');
+const { default: worker, ShareGate } = await import('./index.js');
 
 const TEAM = 'test-team.cloudflareaccess.com';
 const AUD = 'aud-for-the-cv-editor';
@@ -76,9 +76,44 @@ class KV {
   }
 }
 
+/**
+ * Durable Objects, as far as sharing uses them: one ShareGate per name, with
+ * storage that outlives the instance, as a real object's does when it is
+ * evicted from memory and started again.
+ */
+class DOStorage {
+  m = new Map();
+  async get(k) {
+    return structuredClone(this.m.get(k));
+  }
+  async put(k, v) {
+    this.m.set(k, structuredClone(v));
+  }
+  async deleteAll() {
+    this.m.clear();
+  }
+}
+const objects = new Map();
+const SHARES = {
+  idFromName: (name) => name,
+  get: (name) => ({
+    fetch: (url, init) => {
+      if (!objects.has(name)) {
+        const storage = new DOStorage();
+        objects.set(name, { storage, gate: new ShareGate({ storage }) });
+      }
+      return objects.get(name).gate.fetch(new Request(url, init));
+    },
+  }),
+};
+const evictAll = () => {
+  for (const o of objects.values()) o.gate = new ShareGate({ storage: o.storage });
+};
+
 let env;
 before(() => {
   env = {
+    SHARES,
     ARTIFACTS: new KV(),
     ASSETS: { fetch: async () => new Response('static', { status: 200 }) },
     ACCESS_TEAM_DOMAIN: TEAM,
@@ -420,6 +455,175 @@ test('with no key configured, the inbox does not exist', async () => {
   } finally {
     env.INBOX_KEY = saved;
   }
+});
+
+/* --- sharing by link and passkey ---------------------------------------- */
+
+const makeShare = (id, body = { code: '480135', days: 7 }, jwt) =>
+  call(`/artifacts/private/api/items/${id}/shares`, paste(body), jwt);
+const tokenOf = (link) => new URL(link).hash.slice(1);
+const unlockWith = (token, code, headers = {}) =>
+  call('/api/share/unlock', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: JSON.stringify({ token, code }),
+  }, null);
+const cookieOf = (res) => res.headers.get('set-cookie').split(';')[0];
+const sharedFile = (pub, cookie) =>
+  call(`/api/share/file/${pub}/page.html`, cookie ? { headers: { cookie } } : {}, null);
+const secretPage = async () =>
+  (await (await call('/artifacts/private/api/items', upload('plan.html', '<!doctype html><title>Grant plan 0.713</title><p>unpublished</p>'))).json());
+
+test('sharing is behind the sign-in: no token, no link', async () => {
+  const item = await secretPage();
+  assert.equal((await makeShare(item.id, undefined, null)).status, 401);
+  assert.equal((await makeShare(item.id, undefined, token({}, { key: stranger.privateKey }))).status, 401);
+});
+
+test('a passkey anyone would try first is refused, and so is one that is not six digits', async () => {
+  const item = await secretPage();
+  for (const code of ['123456', '000000', '987654', '121212', '123123', '112233', '12345', '1234567', 'abcdef']) {
+    assert.equal((await makeShare(item.id, { code, days: 7 })).status, 400, code);
+  }
+  assert.equal((await makeShare(item.id, { code: '480135', days: 365 })).status, 400, 'a year is not an offered term');
+});
+
+test('the right passkey opens the artifact, sandboxed and never cached; nothing opens without it', async () => {
+  const item = await secretPage();
+  const made = await (await makeShare(item.id)).json();
+  assert.match(made.link, /^https:\/\/asifuddin\.com\/artifacts\/shared#[A-Za-z0-9_-]{22}$/);
+
+  // A wrong passkey says nothing about what was shared.
+  const wrong = await unlockWith(tokenOf(made.link), '480136');
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.headers.get('set-cookie'), null);
+  assert.doesNotMatch(await wrong.text(), /Grant plan|0\.713|plan\.html/);
+
+  const res = await unlockWith(tokenOf(made.link), '480135');
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.title, 'Grant plan 0.713');
+  assert.equal(body.pub, made.pub);
+  const set = res.headers.get('set-cookie');
+  for (const part of ['HttpOnly', 'Secure', 'SameSite=Strict', `Path=/api/share/file/${made.pub}/`]) {
+    assert.ok(set.includes(part), `cookie lacks ${part}: ${set}`);
+  }
+
+  const page = await sharedFile(made.pub, cookieOf(res));
+  assert.equal(page.status, 200);
+  assert.equal(page.headers.get('cache-control'), 'no-store');
+  assert.match(page.headers.get('content-security-policy'), /^sandbox allow-scripts/);
+  assert.doesNotMatch(page.headers.get('content-security-policy'), /allow-same-origin/);
+  assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
+  assert.match(await page.text(), /unpublished/);
+
+  // The file's URL alone, or with a forged session, opens nothing.
+  assert.equal((await sharedFile(made.pub)).status, 401);
+  assert.equal((await sharedFile(made.pub, `sh_${made.pub}=${'A'.repeat(43)}`)).status, 401);
+  // And the owner's files stay behind Access for everyone holding a share.
+  assert.equal((await call(`/artifacts/private/file/${item.id}`, { headers: { cookie: cookieOf(res) } }, null)).status, 401);
+});
+
+test('one share\'s session does not open another share', async () => {
+  const a = await (await makeShare((await secretPage()).id)).json();
+  const b = await (await makeShare((await secretPage()).id)).json();
+  const cookie = cookieOf(await unlockWith(tokenOf(a.link), '480135'));
+  const stolen = cookie.replace(`sh_${a.pub}=`, `sh_${b.pub}=`);
+  assert.equal((await sharedFile(b.pub, stolen)).status, 401);
+});
+
+test('five wrong passkeys lock the link for good, even when fired all at once', async () => {
+  const made = await (await makeShare((await secretPage()).id)).json();
+  const t = tokenOf(made.link);
+  const burst = await Promise.all(Array.from({ length: 40 }, (_, i) => unlockWith(t, String(100000 + i))));
+  const statuses = burst.map((r) => r.status);
+  assert.equal(statuses.filter((s) => s === 401).length, 5, `only five guesses may be judged: ${statuses}`);
+  assert.equal(statuses.filter((s) => s === 423).length, 35);
+  // Locked means locked: the right passkey no longer opens it.
+  assert.equal((await unlockWith(t, '480135')).status, 423);
+});
+
+test('a right passkey gives its try back; the count survives the object restarting', async () => {
+  const made = await (await makeShare((await secretPage()).id)).json();
+  const t = tokenOf(made.link);
+  for (let i = 0; i < 4; i++) assert.equal((await unlockWith(t, '999990')).status, 401);
+  assert.equal((await unlockWith(t, '480135')).status, 200);
+  evictAll();
+  const last = await unlockWith(t, '999990');
+  assert.equal((await last.json()).left, 0);
+  assert.equal((await unlockWith(t, '480135')).status, 423);
+});
+
+test('withdrawing a link ends it at once, open sessions included', async () => {
+  const item = await secretPage();
+  const made = await (await makeShare(item.id)).json();
+  const cookie = cookieOf(await unlockWith(tokenOf(made.link), '480135'));
+  assert.equal((await sharedFile(made.pub, cookie)).status, 200);
+  const res = await call(`/artifacts/private/api/items/${item.id}/shares/${made.pub}`, { method: 'DELETE' });
+  assert.equal(res.status, 200);
+  assert.equal((await sharedFile(made.pub, cookie)).status, 401);
+  assert.equal((await unlockWith(tokenOf(made.link), '480135')).status, 404);
+});
+
+test('deleting the artifact withdraws every link to it', async () => {
+  const item = await secretPage();
+  const made = await (await makeShare(item.id)).json();
+  await call(`/artifacts/private/api/items/${item.id}`, { method: 'DELETE' });
+  assert.equal((await unlockWith(tokenOf(made.link), '480135')).status, 404);
+  assert.equal(env.ARTIFACTS.m.has(`share:${item.id}:${made.pub}`), false);
+});
+
+test('an expired link opens nothing, and its sessions end with it', async () => {
+  const made = await (await makeShare((await secretPage()).id, { code: '480135', days: 1 })).json();
+  const cookie = cookieOf(await unlockWith(tokenOf(made.link), '480135'));
+  const realNow = Date.now;
+  Date.now = () => realNow() + 2 * 86_400_000;
+  try {
+    assert.equal((await unlockWith(tokenOf(made.link), '480135')).status, 404);
+    assert.equal((await sharedFile(made.pub, cookie)).status, 401);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test('the owner\'s list shows each link and its state, and never the passkey', async () => {
+  const item = await secretPage();
+  const made = await (await makeShare(item.id)).json();
+  await unlockWith(tokenOf(made.link), '111110');
+  const res = await call(`/artifacts/private/api/items/${item.id}/shares`);
+  const text = await res.text();
+  const { shares } = JSON.parse(text);
+  assert.equal(shares.length, 1);
+  assert.equal(shares[0].link, made.link);
+  assert.equal(shares[0].state, 'open');
+  assert.equal(shares[0].left, 4);
+  assert.doesNotMatch(text, /480135|salt|hash/);
+});
+
+test('a saved link is not shared by passkey; it can be sent as it is', async () => {
+  const link = await (await call('/artifacts/private/api/items', paste({ research: 'X', url: 'https://example.org/paper' }))).json();
+  assert.equal((await makeShare(link.id)).status, 400);
+});
+
+test('unlocking answers this site only, and an incomplete link is told so', async () => {
+  const made = await (await makeShare((await secretPage()).id)).json();
+  assert.equal((await unlockWith(tokenOf(made.link), '480135', { origin: 'https://evil.example' })).status, 403);
+  const cut = await unlockWith(tokenOf(made.link).slice(0, 10), '480135');
+  assert.equal(cut.status, 404);
+  assert.match((await cut.json()).message, /incomplete/);
+  // A slip of the keyboard is not a guess.
+  assert.equal((await unlockWith(tokenOf(made.link), '48013')).status, 400);
+});
+
+test('too many tries from one visitor are turned away before any count', async () => {
+  const made = await (await makeShare((await secretPage()).id)).json();
+  env.SHARE_RATE = { async limit() { return { success: false }; } };
+  try {
+    assert.equal((await unlockWith(tokenOf(made.link), '480135')).status, 429);
+  } finally {
+    delete env.SHARE_RATE;
+  }
+  assert.equal((await unlockWith(tokenOf(made.link), '480135')).status, 200);
 });
 
 /* --- the tutor (Officina AI) --------------------------------------------- */
