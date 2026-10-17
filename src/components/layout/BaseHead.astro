@@ -59,6 +59,9 @@ const personLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: AUTHOR,
+  /* The same person under the forms people type and other sites print: arXiv
+     and the papers drop the full stop, and most searches drop the "Md". */
+  alternateName: ['Md Asif Uddin', 'Asif Uddin'],
   /**
    * Both, and the engineering first — this is the field a search engine reads
    * for a knowledge panel, and it was the last place the site still described
