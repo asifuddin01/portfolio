@@ -111,6 +111,15 @@ const meta = [
     .tab-fig, .tab-text { grid-column: 1; grid-row: auto; }
     .tab-fig { position: static; }
   }
+  /* The reader sets the page as a column flow, and a sticky box there stops
+     following its own column: it pins and paints over the next one, which
+     put the plate's caption across the title. Nothing to stick to anyway —
+     the reader's pages do not scroll. The plate's own 74vh is taller than a
+     reader page and more specific than the reader's cap, so a tall plate
+     overflowed its column onto the next page's text: hand the height back
+     to the reader, which sizes images against the page it is drawing. */
+  :global(.br-flow) .tab-fig { position: static; }
+  :global(.br-flow) .tab-frame :global(img) { max-height: none; }
   .tab-frame {
     width: 100%;
     padding: clamp(1rem, 2.4vw, 1.8rem);
