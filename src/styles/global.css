@@ -185,6 +185,42 @@ hr { border: 0; border-top: var(--rule) solid var(--brass); opacity: 0.6; margin
 }
 
 /* ------------------------------------------------------------------
+   A paper's own links — preprint, DOI, code — set as quiet buttons: a
+   hairline box in brass, a size up from the citation around them, and a
+   small arrow because each leaves the site. Firm enough to find at a
+   glance, light enough not to outweigh the title.
+   ------------------------------------------------------------------ */
+.ref-btns { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0; padding: 0; }
+.ref-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem 0.48rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--paper-raised) 60%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--fundus);
+  text-decoration: none;
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+}
+.ref-btn::after {
+  content: '↗';
+  font-size: 0.9em;
+  color: var(--brass-text);
+  transition: transform 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+.ref-btn:hover {
+  border-color: var(--fundus);
+  background: color-mix(in srgb, var(--fundus) 8%, transparent);
+}
+.ref-btn:hover::after { color: var(--fundus); transform: translate(1px, -1px); }
+
+/* ------------------------------------------------------------------
    Prose — long-form MDX bodies
    ------------------------------------------------------------------ */
 .prose {

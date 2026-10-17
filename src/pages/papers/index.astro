@@ -83,20 +83,18 @@ const LABEL: Record<string, string> = {
             {p.data.venue && <p class="pp-venue">{p.data.venue}</p>}
             <p class="pp-summary">{p.data.summary}</p>
             {(p.data.url || p.data.doi || p.data.code) && (
-              <p class="pp-refs">
-                {[
-                  p.data.url && (
-                    <a class="link" href={p.data.url} rel="noopener">
-                      {/arxiv\.org\//.test(p.data.url) ? 'arXiv preprint' : 'Read it'}
-                    </a>
-                  ),
-                  p.data.doi && (
-                    <a class="link" href={`https://doi.org/${p.data.doi}`} rel="noopener">
-                      doi:{p.data.doi}
-                    </a>
-                  ),
-                  p.data.code && <a class="link" href={p.data.code} rel="noopener">Code</a>,
-                ].filter(Boolean).map((a, i) => <>{i > 0 && <span class="pp-sep"> · </span>}{a}</>)}
+              <p class="pp-refs ref-btns">
+                {p.data.url && (
+                  <a class="ref-btn" href={p.data.url} rel="noopener">
+                    {/arxiv\.org\//.test(p.data.url) ? 'arXiv preprint' : 'Read it'}
+                  </a>
+                )}
+                {p.data.doi && (
+                  <a class="ref-btn" href={`https://doi.org/${p.data.doi}`} rel="noopener">
+                    doi:{p.data.doi}
+                  </a>
+                )}
+                {p.data.code && <a class="ref-btn" href={p.data.code} rel="noopener">Code</a>}
               </p>
             )}
           </li>
@@ -347,8 +345,7 @@ const LABEL: Record<string, string> = {
     margin: 0.5rem 0 0;
     max-width: var(--measure);
   }
-  .pp-refs { margin: 0.6rem 0 0; font-family: var(--font-mono); font-size: var(--t-xs); }
-  .pp-sep { color: var(--brass-text); }
+  .pp-refs { margin: 0.9rem 0 0; }
   .pp-empty { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
 
   /* Numbered halves, matching Marginalia. Two pages carry the same division

@@ -14,10 +14,9 @@ const hasAny = Boolean(cite) || Boolean(paperUrl) || Boolean(repoUrl);
   <div class="cl" data-reveal>
     {cite && <p class="cl-cite">{cite}</p>}
     {(paperUrl || repoUrl) && (
-      <p class="cl-links">
-        {paperUrl && <a class="link" href={paperUrl}>{/arxiv\.org\//.test(paperUrl) ? 'Preprint (arXiv)' : 'Paper'}</a>}
-        {paperUrl && repoUrl && <span class="cl-sep"> · </span>}
-        {repoUrl && <a class="link" href={repoUrl}>Repository</a>}
+      <p class="cl-links ref-btns">
+        {paperUrl && <a class="ref-btn" href={paperUrl} rel="noopener">{/arxiv\.org\//.test(paperUrl) ? 'Preprint (arXiv)' : 'Paper'}</a>}
+        {repoUrl && <a class="ref-btn" href={repoUrl} rel="noopener">Repository</a>}
       </p>
     )}
   </div>
@@ -33,7 +32,5 @@ const hasAny = Boolean(cite) || Boolean(paperUrl) || Boolean(repoUrl);
     color: var(--ink-soft);
     max-width: var(--measure);
   }
-  .cl-cite { margin: 0 0 0.4rem; }
-  .cl-links { margin: 0; }
-  .cl-sep { color: var(--brass-text); }
+  .cl-cite { margin: 0 0 1rem; }
 </style>
