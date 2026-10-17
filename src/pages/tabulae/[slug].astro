@@ -115,11 +115,18 @@ const meta = [
      following its own column: it pins and paints over the next one, which
      put the plate's caption across the title. Nothing to stick to anyway —
      the reader's pages do not scroll. The plate's own 74vh is taller than a
-     reader page and more specific than the reader's cap, so a tall plate
-     overflowed its column onto the next page's text: hand the height back
-     to the reader, which sizes images against the page it is drawing. */
+     reader page, so a tall plate overflowed its column onto the next page's
+     text; it is scoped out of the reader above, which caps a captioned
+     figure's image at a fraction of the page so the caption keeps its place
+     under the plate instead of being pushed onto the facing page. */
   :global(.br-flow) .tab-fig { position: static; }
-  :global(.br-flow) .tab-frame :global(img) { max-height: none; }
+  /* On the page the plate's number sits under the plate and again over the
+     title, a spread apart. The reader sets them in one flow, where they can
+     land a line apart and read as a stutter. The number belongs to the plate
+     it labels, so the title keeps the name and gives the number up. */
+  :global(.br-flow) .tab-n { display: none; }
+  /* ...which leaves the caption and the title in one column, a line apart. */
+  :global(.br-flow) .tab-cap { margin-bottom: 1.4rem; }
   .tab-frame {
     width: 100%;
     padding: clamp(1rem, 2.4vw, 1.8rem);
@@ -128,7 +135,10 @@ const meta = [
   outline-offset: -6px;
     overflow: hidden;
   }
-  .tab-frame :global(img) { width: 100%; height: auto; display: block; max-height: 74vh; object-fit: contain; }
+  .tab-frame :global(img) { width: 100%; height: auto; display: block; object-fit: contain; }
+  /* A plate fills most of the window, but not past it. Scoped away from the
+     reader, which measures against the page it is drawing, not the viewport. */
+  :global(html:not(.br-is-open)) .tab-frame :global(img) { max-height: 74vh; }
   .tab-cap { display: grid; gap: 0.4rem; justify-items: center; text-align: center; }
   .tab-cap-n { font-size: var(--t-sm); letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass-text); }
   .tab-gloss { font-style: italic; font-size: var(--t-md); color: var(--ink-soft); max-width: 44ch; line-height: 1.5; }
