@@ -1076,6 +1076,16 @@ const projects = defineCollection({
      */
     repo: z.string().url().optional(),
     /**
+     * Pictures shown on the project's page, in this order: a cover, its
+     * screens, the thing in use. Uploaded in /admin, so each `src` is a path
+     * under /uploads. A wide picture takes the whole width and tall ones, such
+     * as phone screens, sit side by side; the page reads which is which from
+     * the file, so there is nothing to set.
+     */
+    gallery: z
+      .array(z.object({ src: z.string().startsWith('/uploads/'), caption: z.string(), alt: z.string().optional() }))
+      .optional(),
+    /**
      * Whether this belongs in "Systems that run" on the frontispiece.
      *
      * A flag rather than the regular expression over ids that used to select

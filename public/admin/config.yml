@@ -2207,6 +2207,23 @@ collections:
           as a separate "Source" link beside the button — someone who has just
           read what a project does usually wants to read how it is written.
           Leave empty for work with nothing public to show.
+      - label: Pictures
+        name: gallery
+        widget: list
+        required: false
+        summary: "{{fields.caption}}"
+        hint: >-
+          Shown on the project's page in this order, e.g. a cover, then its
+          screens. Wide pictures take the full width; tall ones such as phone
+          screens sit side by side. WebP or PNG.
+        fields:
+          - { label: Picture, name: src, widget: image }
+          - { label: Caption, name: caption, widget: string, hint: "One line under the picture." }
+          - label: Description for screen readers
+            name: alt
+            widget: string
+            required: false
+            hint: "What the picture shows, for someone who cannot see it. Leave blank to use the caption."
       - label: Show under "Systems that run"
         name: system
         widget: boolean

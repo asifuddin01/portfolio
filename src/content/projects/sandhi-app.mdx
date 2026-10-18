@@ -1,0 +1,81 @@
+---
+order: 9
+system: false
+title: "SANDHI app — the research lab's Android app, a second client of the website rather than a second system"
+teaser: "The Android app of SANDHI Research Lab: the research map, projects, papers, people and news for anyone, and two-factor sign-in for members. It has no backend of its own. It reads the website's API under the same permission rules as the site's pages, so the app and the site never disagree. Released on 18 October 2026 as a signed 57 MB APK."
+summary: "The Android app of SANDHI Research Lab, released on 18 October 2026. Anyone can browse the lab's research map of themes and the areas beneath them, its projects and their published progress, papers with search, people and their profiles, news, events, research notes and site-wide search. Members sign in with their lab account: a password, then a two-factor code or a backup code. They then see their announcements, pinned first with an unread count, their projects, project documents and profile. The app has no backend of its own. It reads the website's /api/v1, which applies the same visibility and permission rules as the web pages, so a member sees exactly what they would see on the site. The two-factor challenge is held only in memory and the session token only in the device keychain; signing out ends the session on the server, and an expired session signs the app out cleanly. It ships outside the app stores as a signed APK whose SHA-256 is published on the download page, and the site can require a minimum app version, so an older install shows a link to the new release instead of failing. Building only for phone processors (ARM) halved the APK from 101 MB to 57 MB, and it asks Android for network access only. Light and dark themes follow the phone and match the website's palettes and typefaces, with line heights taken from the serif's own metrics because iOS cuts the tops off letters on lines that are too short. Built with Expo SDK 57, React Native 0.86, React 19, TypeScript and Expo Router. The iOS version is built and tested on iPhone and comes to the App Store after funding."
+cvSummary: "Android app for SANDHI Research Lab, released as a signed APK (Expo SDK 57, React Native 0.86, React 19, TypeScript, Expo Router, expo-secure-store, EAS Build). Public research map, projects, papers, people, news and search; member sign-in with password and two-factor code, the token in the device keychain and sign-out ended on the server. No backend of its own: it reads the website's /api/v1 under the same visibility rules as the site's pages. Minimum-version gate set from the site, published SHA-256, and an ARM-only build that halved the APK from 101 MB to 57 MB, asking Android for network access only. iOS built and tested, awaiting App Store funding."
+link: "https://sandhiresearch.org/app"
+linkLabel: "Get the app"
+repo: "https://github.com/asifuddin01/sandhi-app"
+gallery:
+  - src: "/uploads/sandhi-app/cover.webp"
+    caption: "SANDHI app: research, projects, papers and people."
+    alt: "Three phone screens of the SANDHI app beside its name and stack: the research map, the home screen, and a researcher's profile."
+  - src: "/uploads/sandhi-app/home.webp"
+    caption: "Home: the lab at a glance, with news and project updates."
+    alt: "The app's home screen: SANDHI Research Lab, its motto, a link to the research map, and sections for projects, papers and news."
+  - src: "/uploads/sandhi-app/research-map.webp"
+    caption: "The research map: each theme and the areas beneath it."
+    alt: "The research screen, listing themes such as Perception and Language with their areas beneath them."
+  - src: "/uploads/sandhi-app/profile.webp"
+    caption: "People: every public profile, with interests and links."
+    alt: "The profile screen of the lab's research lead, Md. Asif Uddin, with a photograph, research interests, a short biography and links."
+  - src: "/uploads/sandhi-app/sign-in.webp"
+    caption: "Members sign in with their SANDHI account."
+    alt: "The sign-in screen, for members whose accounts are created by invitation, with email and password fields."
+  - src: "/uploads/sandhi-app/download-page.webp"
+    caption: "The download page on sandhiresearch.org/app, with the APK's size and SHA-256."
+    alt: "The SANDHI app page on the lab's website: an Android install section listing version 1.0.0, a 57 MB size, Android 7.0 or later, the SHA-256, and a Download the APK button."
+---
+
+## What it is
+
+The Android app of SANDHI Research Lab, released on 18 October 2026. It puts the lab's public research on a phone and gives members the parts of their workspace they check most. It is a client of [the lab's website](/projects/sandhi), not a second system: the same accounts, the same data and the same permissions.
+
+## For anyone
+
+- Home: the lab at a glance, with news and project updates, newest first.
+- The research map: the lab's themes and the areas beneath them.
+- Projects with their published progress, papers with search, and people and their profiles.
+- News, events, research notes and site-wide search.
+
+## For members
+
+Members sign in with their lab account: a password, then a two-factor code or a backup code. "Your account" then shows:
+
+- announcements, pinned first, with an unread count;
+- their projects and the projects' documents;
+- their profile.
+
+Joining the lab, registering for events and changing account settings open the website.
+
+## One system, two clients
+
+The app has no backend of its own. It reads the website's `/api/v1`, which applies the same visibility and permission rules as the web pages. A member sees exactly what they would see on the site, and a rule changed on the site changes the app with it.
+
+## Sign-in on a phone
+
+- Bearer sessions with two-factor authentication.
+- The two-factor challenge is held only in memory, and the session token only in the device keychain.
+- Signing out ends the session on the server, not just on the phone.
+- An expired session signs the app out cleanly instead of failing screen by screen.
+
+## Shipping outside the app stores
+
+- A signed APK, with its SHA-256 published on the download page so that a download can be checked.
+- The site can require a minimum app version. An older install then shows a link to the new release instead of failing.
+
+## Small, and asks for little
+
+Building only for phone processors (ARM) halved the APK from 101 MB to 57 MB. The app asks Android for network access and nothing else.
+
+## Type that survives iOS
+
+Light and dark themes follow the phone and match the website's palettes and typefaces, Spectral and Hanken Grotesk. Line heights come from the serif's own metrics, because iOS cuts the tops off letters on lines that are too short. The iOS version is built and tested on iPhone, and comes to the App Store after funding.
+
+## Built with
+
+Expo SDK 57, React Native 0.86, React 19, TypeScript, Expo Router with typed routes and native tabs, the React Compiler, expo-secure-store and EAS Build.
+
+Get it from [sandhiresearch.org/app](https://sandhiresearch.org/app), or take the APK straight from [the 1.0.0 release](https://github.com/asifuddin01/sandhi-app/releases/tag/v1.0.0). It needs Android 7.0 or later.

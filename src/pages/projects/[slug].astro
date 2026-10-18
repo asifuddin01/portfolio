@@ -6,6 +6,7 @@
  * without one falls back to its summary so a new project is never a blank page.
  */
 import { render, type CollectionEntry } from 'astro:content';
+import sharp from 'sharp';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LesionRule from '../../components/ornament/LesionRule.astro';
 import Fact from '../../components/projects/Fact.astro';
@@ -35,6 +36,16 @@ const teaser = projectTeaser(entry);
 const video = projectVideo(entry);
 const { Content } = await render(entry);
 const hasBody = Boolean(entry.body?.trim());
+// Each picture's size, read from the file: it sets width and height, so the
+// page does not jump as pictures load, and says whether one is wide.
+const gallery = await Promise.all(
+  (d.gallery ?? []).map(async (g) => {
+    const { width, height } = await sharp(`public${g.src}`).metadata().catch(() => {
+      throw new Error(`Project "${entry.id}": picture ${g.src} is not in public/. Upload it again in /admin.`);
+    });
+    return { ...g, width, height, wide: (width ?? 1) > (height ?? 0) };
+  }),
+);
 const pad = (x: number) => String(x).padStart(2, '0');
 ---
 <BaseLayout title={`${name} — ${AUTHOR}`} description={teaser} folio="P" type="article">
@@ -64,6 +75,19 @@ const pad = (x: number) => String(x).padStart(2, '0');
         </video>
         <figcaption>The demo, as recorded. It plays here; nothing is loaded until you press play.</figcaption>
       </figure>
+    )}
+
+    {gallery.length > 0 && (
+      <div class="pj-gallery" data-reveal>
+        {gallery.map((g) => (
+          <figure class:list={['pj-shot', { 'pj-shot--wide': g.wide }]}>
+            <a href={g.src}>
+              <img src={g.src} alt={g.alt ?? g.caption} width={g.width} height={g.height} loading="lazy" decoding="async" />
+            </a>
+            <figcaption>{g.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
     )}
 
     <div class="prose pj-body">
@@ -141,6 +165,35 @@ const pad = (x: number) => String(x).padStart(2, '0');
     border-bottom: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
   }
   .pj-src:hover { color: var(--fundus); border-bottom-color: var(--fundus); }
+
+  /* Wide pictures span the row; tall ones, phone screens, four abreast and
+     two on a phone. Each opens full size, for reading a screen's small type. */
+  .pj-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.6rem 1.1rem;
+    max-width: 60rem;
+    margin: 0 0 2.8rem;
+  }
+  .pj-shot { margin: 0; }
+  .pj-shot--wide { grid-column: 1 / -1; }
+  .pj-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper-raised);
+    border: var(--rule) solid color-mix(in srgb, var(--brass) 40%, transparent);
+  }
+  .pj-shot a:hover img, .pj-shot a:focus-visible img { border-color: var(--brass); }
+  .pj-shot figcaption {
+    margin-top: 0.55rem;
+    font-size: var(--t-sm);
+    line-height: 1.4;
+    color: var(--ink-soft);
+  }
+  @media (max-width: 40rem) {
+    .pj-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem 0.8rem; }
+  }
 
   .pj-demo { max-width: 52rem; margin: 0 0 2.8rem; scroll-margin-top: 5rem; }
   .pj-demo video {
