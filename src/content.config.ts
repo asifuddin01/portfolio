@@ -67,7 +67,8 @@ const works = defineCollection({
     title: z.string(),
     fullTitle: z.string(),
     subtitle: z.string(),
-    status: z.enum(['deposited', 'in-preparation', 'under-review', 'proposal-accepted']),
+    /** `preprint`: public on arXiv or similar, and not under review anywhere yet. */
+    status: z.enum(['deposited', 'in-preparation', 'preprint', 'under-review', 'proposal-accepted']),
     /** Where it is under review or published, e.g. "IEEE JBHI". Shown beside the status. */
     venue: optionalText,
     disclosure: z.enum(['public', 'embargoed']),

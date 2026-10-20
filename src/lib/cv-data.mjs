@@ -27,6 +27,7 @@ const STATE = {
 const PLATE_STATUS = {
   deposited: 'Deposited',
   'in-preparation': 'In preparation',
+  preprint: 'Preprint',
   'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
 };

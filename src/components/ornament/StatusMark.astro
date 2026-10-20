@@ -10,13 +10,14 @@
  * a status nobody had written a label for.
  */
 interface Props {
-  status: 'deposited' | 'in-preparation' | 'under-review' | 'proposal-accepted';
+  status: 'deposited' | 'in-preparation' | 'preprint' | 'under-review' | 'proposal-accepted';
 }
 const { status } = Astro.props;
 
 const LABELS: Record<Props['status'], string> = {
   'deposited': 'Deposited',
   'in-preparation': 'In preparation',
+  'preprint': 'Preprint',
   'under-review': 'Under review',
   'proposal-accepted': 'Proposal accepted',
 };
