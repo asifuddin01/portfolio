@@ -192,8 +192,14 @@ export async function renderCv(cv) {
 
       if (style.runIn) {
         /* Bold label, then the text continuing on the same line. */
-        const label = title ? `${title}. ` : '';
-        const labelW = fonts.serifBold.widthOfTextAtSize(label, style.size);
+        /* The gap after the label is a measured third of an em, not a
+           trailing space. The fonts are the PDF's standard Times, which are
+           not embedded, so a viewer draws them with its own substitute; on
+           macOS Preview that bold face runs a little wider than the metrics
+           measured here, and after some labels a space-sized gap all but
+           vanished ("Other.Git"). */
+        const label = title ? `${title}.` : '';
+        const labelW = label ? fonts.serifBold.widthOfTextAtSize(label, style.size) + style.size * 0.38 : 0;
         const lines = wrap(detail, fonts.serif, style.size, WIDTH, WIDTH - labelW);
         room(lines.length * style.lead + 3);
         if (label) {
