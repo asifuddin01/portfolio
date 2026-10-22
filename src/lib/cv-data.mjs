@@ -128,17 +128,15 @@ export function buildCv({
   }
 
   /**
-   * Engineering, split in two.
+   * Engineering, split in three.
    *
    * One "Engineering" heading put a retrieval system that answers from 103
    * indexed papers next to a university marketplace assignment, and a reader
-   * skimming the section had to work out which was which from the prose. The
-   * systems are the argument; the coursework is evidence of range. They are
-   * different claims and now they are different headings, in that order.
-   *
-   * The split is the `system` flag the frontispiece already uses to decide
-   * what appears under "Systems that run" — one property, two consumers,
-   * rather than a second list to keep in step.
+   * skimming the section had to work out which was which from the prose. Two
+   * headings fixed that but still mixed a from-scratch ViT and a MONAI fix in
+   * with coursework, and left Vi-Graph and Lucy out of the AI systems. Each
+   * project now says which section it belongs to (`section`, editable in
+   * /admin): AI systems first, then AI projects, then other software.
    */
   const projectSection = (id, heading, list) =>
     list.length && {
@@ -156,10 +154,17 @@ export function buildCv({
     };
 
   const ordered = [...projects].sort(byOrder);
-  const built = projectSection('systems', 'AI systems', ordered.filter((p) => p.data.system));
-  const other = projectSection('projects', 'Other projects', ordered.filter((p) => !p.data.system));
-  if (built) sections.push(built);
-  if (other) sections.push(other);
+  // Three sections, by the project's own `section` field: AI systems, AI
+  // projects, and other software. `system` is not used here; it means "a
+  // stranger can open it now", which is a narrower claim than "AI system".
+  for (const [id, heading, key] of [
+    ['systems', 'AI systems', 'ai-system'],
+    ['ai-projects', 'AI projects', 'ai-project'],
+    ['projects', 'Other projects', 'other'],
+  ]) {
+    const s = projectSection(id, heading, ordered.filter((p) => (p.data.section ?? 'other') === key));
+    if (s) sections.push(s);
+  }
 
   if (skills.length) {
     sections.push({

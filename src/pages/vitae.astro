@@ -144,17 +144,27 @@ const role = await getRole();
       )}
     </section>
 
-    <section class="cv-sec" aria-labelledby="cv-eng">
-      <h2 class="cv-h2" id="cv-eng">Engineering</h2>
-      <ol class="cv-list">
-        {projects.map((e) => (
-          <li class="cv-item">
-            <h3 class="cv-item-t">{e.data.title}</h3>
-            <p class="cv-detail">{fillFacts(e.data.cvSummary ?? e.data.summary)}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
+    {/* The same three sections as the PDF, by each project's own `section`. */}
+    {([
+      ['cv-eng', 'AI systems', 'ai-system'],
+      ['cv-aiproj', 'AI projects', 'ai-project'],
+      ['cv-other', 'Other projects', 'other'],
+    ] as const).map(([id, heading, key]) => {
+      const list = projects.filter((e) => (e.data.section ?? 'other') === key);
+      return list.length > 0 && (
+        <section class="cv-sec" aria-labelledby={id}>
+          <h2 class="cv-h2" id={id}>{heading}</h2>
+          <ol class="cv-list">
+            {list.map((e) => (
+              <li class="cv-item">
+                <h3 class="cv-item-t">{e.data.title}</h3>
+                <p class="cv-detail">{fillFacts(e.data.cvSummary ?? e.data.summary)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+    })}
   </div>
 </BaseLayout>
 

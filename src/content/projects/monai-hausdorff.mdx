@@ -1,4 +1,5 @@
 ---
+section: ai-project
 order: 13
 title: "MONAI — the metric that hid the failures"
 teaser: "A silent bug in MONAI, the library most medical segmentation work is built on: a prediction that missed entirely was dropped from the HD95 average instead of being scored. Found, traced to torch.quantile, fixed with twelve regression tests, and merged upstream on 6 October 2026."

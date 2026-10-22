@@ -1096,6 +1096,16 @@ const projects = defineCollection({
      * it where the other facts about it live.
      */
     system: z.boolean().default(false),
+    /**
+     * Which of the CV's three project sections this belongs to. Separate from
+     * `system`, which is narrower: that one means a stranger can open it and
+     * use it now, and decides "Systems that run" on the frontispiece.
+     *   ai-system  — a working application with a model at its core
+     *   ai-project — AI or machine-learning work that is a model, a study or
+     *                a contribution to AI tooling rather than an application
+     *   other      — software where AI is not the point
+     */
+    section: z.enum(['ai-system', 'ai-project', 'other']).default('other'),
   }),
 });
 

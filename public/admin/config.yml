@@ -2225,6 +2225,15 @@ collections:
             widget: string
             required: false
             hint: "What the picture shows, for someone who cannot see it. Leave blank to use the caption."
+      - label: CV section
+        name: section
+        widget: select
+        default: other
+        options:
+          - { label: "AI systems — a working application with a model at its core", value: ai-system }
+          - { label: "AI projects — a model, study or contribution to AI tooling", value: ai-project }
+          - { label: "Other projects — software where AI is not the point", value: other }
+        hint: "Which of the three project sections it appears under on the CV and on /vitae."
       - label: Show under "Systems that run"
         name: system
         widget: boolean
