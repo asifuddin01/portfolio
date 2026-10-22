@@ -2312,6 +2312,14 @@ collections:
       - label: The decision
         name: decision
         widget: text
+      - label: Kind
+        name: kind
+        widget: select
+        default: architecture
+        options:
+          - { label: "Architecture", value: architecture }
+          - { label: "Losses", value: losses }
+        hint: "The frontispiece counts the architectures here, so a set of losses is marked as one."
       - label: Rejected along the way
         name: rejections
         widget: list

@@ -918,6 +918,9 @@ const instrumenta = defineCollection({
     problem: z.string(),
     decision: z.string(),
     rejections: z.array(z.string()).default([]),
+    /** The frontispiece counts the architectures among these ("{architectures}"),
+        so a set of losses says it is one rather than inflating that number. */
+    kind: z.enum(['architecture', 'losses']).default('architecture'),
   }),
 });
 

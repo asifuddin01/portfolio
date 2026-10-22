@@ -1,0 +1,7 @@
+---
+order: 3
+name: "LG-DRG"
+problem: "A diabetic retinopathy grade is defined by its lesions, and a photograph too poor to read is not a severity grade at all. A grader that only sees pixels can do neither on purpose."
+decision: "A lesion-guided grader: a ConvNeXt V2-L stream reads the photograph, a light CNN reads the five lesion and vessel masks, and the masks query the image through a gated cross-attention path. Gradability and severity are separate heads, the second ordinal, with its thresholds fitted on out-of-fold predictions. Then tested honestly: in the mask ablation the grade did not use the masks, even with the gate started open, and the paper reports that."
+rejections: []
+---

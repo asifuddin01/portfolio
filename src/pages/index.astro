@@ -26,6 +26,10 @@ const tagline = fp?.data.tagline ?? fp?.data.role ?? '';
 const standing = fp?.data.standing ?? '';
 const epigraph = fp?.data.epigraph ?? '';
 const highlights = fp?.data.highlights ?? [];
+/* "{architectures}" in a highlight is counted from Instrumenta propria, not
+   typed: the strip said 4 for as long as nobody remembered to change it. */
+const architectures = (await getCollection('instrumenta')).filter((e) => e.data.kind === 'architecture').length;
+const fill = (v: string) => fillFacts(v.replaceAll('{architectures}', String(architectures)));
 const now = fp?.data.now ?? '';
 const nowLabel = fp?.data.nowLabel ?? '';
 const nowItems = fp?.data.nowItems ?? [];
@@ -100,7 +104,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
                     crawler — read "0.0000 macro-AUC", and mid-count it showed
                     values that were never measured. A result is stated, not
                     performed. */}
-                <span class="fr-ev-v">{fillFacts(h.value)}</span>
+                <span class="fr-ev-v">{fill(h.value)}</span>
                 <span class="fr-ev-l">{h.label}</span>
               </a>
             </li>
