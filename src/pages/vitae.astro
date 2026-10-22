@@ -8,11 +8,20 @@ import { getEducation, getProjects, getPapers } from '../lib/collections';
 import { getContact } from '../lib/collections';
 import { AUTHOR } from '../consts';
 
-const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.data.plate);
+/* One list for research and publications, as on the PDF (see cv-data.mjs):
+   a plate and the paper behind it share an id, so each piece of work is
+   listed once, with its paper's link beside it. Public and submitted work
+   first, then work in preparation, then proposals; plate order within each. */
+const TIER: Record<string, number> = { deposited: 0, 'under-review': 1, preprint: 1, 'in-preparation': 2, 'proposal-accepted': 3 };
+const works = (await getCollection('works')).sort(
+  (a, b) => (TIER[a.data.status] ?? 9) - (TIER[b.data.status] ?? 9) || a.data.plate - b.data.plate,
+);
 const education = await getEducation();
 const projects = await getProjects();
 /* The thesis is under Education; see cv-data.mjs. */
 const papers = (await getPapers()).filter((p) => p.data.state !== 'thesis');
+const paperOf = new Map(papers.map((p) => [p.id, p]));
+const loosePapers = papers.filter((p) => !works.some((w) => w.id === p.id));
 const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
 const { email, github, linkedin, orcid, location } = await getContact();
@@ -50,7 +59,7 @@ const role = await getRole();
     <LesionRule />
 
     <section class="cv-sec" aria-labelledby="cv-research">
-      <h2 class="cv-h2" id="cv-research">Research</h2>
+      <h2 class="cv-h2" id="cv-research">Research and publications</h2>
       <ol class="cv-list">
         {works.map((w) => (
           <li class="cv-item">
@@ -66,6 +75,14 @@ const role = await getRole();
               {w.data.supervisors.length > 0 && ` Supervisor${w.data.supervisors.length > 1 ? 's' : ''}: ${w.data.supervisors.join(', ')}.`}
               {w.data.coauthors.length > 0 && ` Co-authors: ${w.data.coauthors.join(', ')}.`}
             </p>
+            {paperOf.get(w.id)?.data.url && (
+              <p class="cv-detail cv-paper">
+                {w.data.venue && <>{w.data.venue} · </>}
+                <a class="link" href={paperOf.get(w.id)!.data.url!} rel="noopener">
+                  {/arxiv\.org\//.test(paperOf.get(w.id)!.data.url!) ? 'Preprint on arXiv' : 'Read the paper'}
+                </a>
+              </p>
+            )}
             {w.data.metrics.length > 0 && (
               <p class="cv-metrics">
                 {w.data.metrics.map((m, i) => (
@@ -75,30 +92,22 @@ const role = await getRole();
             )}
           </li>
         ))}
+        {loosePapers.map((p) => (
+          <li class="cv-item">
+            <div class="cv-item-head">
+              <h3 class="cv-item-t">
+                {p.data.url ? <a class="link" href={p.data.url}>{p.data.title}</a> : p.data.title}
+              </h3>
+              <span class="cv-when">{p.data.year}</span>
+            </div>
+            <p class="cv-detail">
+              <span class="cv-tag">{p.data.state.replace(/-/g, ' ')}</span>
+              {p.data.venue || p.data.summary}
+            </p>
+          </li>
+        ))}
       </ol>
     </section>
-
-    {papers.length > 0 && (
-      <section class="cv-sec" aria-labelledby="cv-papers">
-        <h2 class="cv-h2" id="cv-papers">Papers and manuscripts</h2>
-        <ol class="cv-list">
-          {papers.map((p) => (
-            <li class="cv-item">
-              <div class="cv-item-head">
-                <h3 class="cv-item-t">
-                  {p.data.url ? <a class="link" href={p.data.url}>{p.data.title}</a> : p.data.title}
-                </h3>
-                <span class="cv-when">{p.data.year}</span>
-              </div>
-              <p class="cv-detail">
-                <span class="cv-tag">{p.data.state.replace(/-/g, ' ')}</span>
-                {p.data.venue ?? p.data.summary}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </section>
-    )}
 
     <section class="cv-sec" aria-labelledby="cv-education">
       <h2 class="cv-h2" id="cv-education">Education</h2>
@@ -202,6 +211,7 @@ const role = await getRole();
   .cv-item-head { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
   .cv-item-t { font-family: var(--font-display); font-size: var(--t-md); margin: 0 0 0.25rem; }
   .cv-when { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); white-space: nowrap; }
+  .cv-paper { margin-top: 0.3rem; }
   .cv-full { font-style: italic; font-size: var(--t-base); color: var(--ink-soft); margin: 0 0 0.35rem; line-height: 1.5; }
   .cv-detail { font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); margin: 0; }
   .cv-tag {

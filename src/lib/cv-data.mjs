@@ -73,45 +73,57 @@ export function buildCv({
     });
   }
 
-  if (works.length) {
+  /**
+   * Research and publications, as one section.
+   *
+   * There used to be two: "Research" listed the plates and "Papers and
+   * manuscripts" listed the papers, and every plate with a paper behind it
+   * appeared in both, so a reader met the same four pieces of work twice.
+   * A plate and its paper share an id (works/hierarchiretina and
+   * papers/hierarchiretina), so each piece of work is now one entry: the
+   * paper's citable title and authors when there is a paper, the plate's
+   * one-line account of what it does, its status, venue and link. A plate with
+   * no paper yet (a proposal) keeps its own title; a paper with no plate is
+   * still listed. A thesis stays under Education, as before.
+   *
+   * Order: public and submitted work first, then work in preparation, then
+   * proposals; plate order within each.
+   */
+  if (works.length || papers.length) {
+    const TIER = { deposited: 0, published: 0, 'under-review': 1, preprint: 1, 'in-preparation': 2, 'proposal-accepted': 3 };
+    const paperOf = new Map(papers.filter((p) => p.data.state !== 'thesis').map((p) => [p.id, p]));
+    const entries = [...works].sort((a, b) => a.data.plate - b.data.plate).map((w) => {
+      const p = paperOf.get(w.id);
+      paperOf.delete(w.id);
+      return { w, p, tier: TIER[w.data.status] ?? 9, order: w.data.plate };
+    });
+    for (const p of paperOf.values()) entries.push({ w: null, p, tier: TIER[p.data.state] ?? 9, order: 99 });
+    entries.sort((a, b) => a.tier - b.tier || a.order - b.order);
+
     sections.push({
       id: 'research',
-      heading: 'Research',
+      heading: 'Research and publications',
       style: 'work',
-      // Title and what the work does. No metrics — results belong on the plate.
-      items: [...works].sort((a, b) => a.data.plate - b.data.plate).map((w) => {
-        const who = [];
-        if (w.data.supervisors?.length) {
-          who.push(`Supervisor${w.data.supervisors.length > 1 ? 's' : ''}: ${w.data.supervisors.join(', ')}`);
-        }
-        if (w.data.status) who.push([PLATE_STATUS[w.data.status] ?? w.data.status, w.data.venue].filter(Boolean).join(', '));
+      // What the work does and where it stands. No metrics — results belong on the plate.
+      items: entries.map(({ w, p }) => {
+        const status = w ? PLATE_STATUS[w.data.status] ?? w.data.status : STATE[p.data.state] ?? p.data.state;
+        const bits = [];
+        // A supervisor who is also an author is marked in the author list
+        // rather than named a second time after it.
+        const sup = w?.data.supervisors ?? [];
+        const authors = p?.data.authors ?? [];
+        if (authors.length) bits.push(`${authors.map((a) => (sup.includes(a) ? `${a} (supervisor)` : a)).join(', ')}.`);
+        const others = sup.filter((x) => !authors.includes(x));
+        if (others.length) bits.push(`Supervisor${others.length > 1 ? 's' : ''}: ${others.join(', ')}.`);
+        const where = [p?.data.venue || w?.data.venue, p?.data.url].filter(Boolean).join('  ·  ');
+        if (where) bits.push(where);
         return {
-          title: w.data.title ?? '',
-          right: w.data.year ?? '',
-          subtitle: w.data.subtitle ?? '',
-          detail: who.length ? who.join('. ') + '.' : '',
+          title: p?.data.title || w?.data.title || '',
+          right: `${status} ${(w ?? p).data.year ?? ''}`.trim(),
+          subtitle: w?.data.subtitle ?? p?.data.summary ?? '',
+          detail: bits.join(' '),
         };
       }),
-    });
-  }
-
-  if (papers.length) {
-    const RANK = { published: 0, preprint: 1, 'under-review': 2, 'in-preparation': 3, thesis: 4 };
-    sections.push({
-      id: 'papers',
-      heading: 'Papers and manuscripts',
-      style: 'paper',
-      // A thesis is already under Education; listed here beside the paper it
-      // became, it reads as a second publication of the same work.
-      items: papers.filter((p) => p.data.state !== 'thesis')
-        .sort((a, b) =>
-          (RANK[a.data.state] ?? 9) - (RANK[b.data.state] ?? 9) ||
-          String(b.data.year).localeCompare(String(a.data.year)))
-        .map((p) => ({
-          title: p.data.title ?? '',
-          right: `${STATE[p.data.state] ?? ''} ${p.data.year ?? ''}`.trim(),
-          detail: [p.data.venue, p.data.url].filter(Boolean).join('  ·  '),
-        })),
     });
   }
 
