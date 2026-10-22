@@ -879,6 +879,9 @@ const instrumentarium = defineCollection({
     title: z.string(),
     note: z.string(),
     items: z.string(),
+    /** Off for a group the CV already says elsewhere (Reading is under
+        Additional there). It stays on the home page either way. */
+    onCv: z.boolean().default(true),
   }),
 });
 

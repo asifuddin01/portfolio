@@ -171,7 +171,7 @@ export function buildCv({
       id: 'technical',
       heading: 'Technical',
       style: 'skill',
-      items: [...skills].sort(byOrder).map((s) => ({
+      items: [...skills].filter((s) => s.data.onCv !== false).sort(byOrder).map((s) => ({
         title: s.data.title ?? '',
         detail: s.data.items ?? '',
       })),

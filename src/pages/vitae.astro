@@ -22,7 +22,7 @@ const projects = await getProjects();
 const papers = (await getPapers()).filter((p) => p.data.state !== 'thesis');
 const paperOf = new Map(papers.map((p) => [p.id, p]));
 const loosePapers = papers.filter((p) => !works.some((w) => w.id === p.id));
-const skills = (await getCollection('instrumentarium')).sort((a, b) => a.data.order - b.data.order);
+const skills = (await getCollection('instrumentarium')).filter((s) => s.data.onCv !== false).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
 const { email, github, linkedin, orcid, location } = await getContact();
 

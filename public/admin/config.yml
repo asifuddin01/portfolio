@@ -2276,6 +2276,12 @@ collections:
         name: note
         widget: string
         hint: "One line. What you really do with these."
+      - label: Show on the CV
+        name: onCv
+        widget: boolean
+        default: true
+        required: false
+        hint: "Off for a group the CV already covers elsewhere. It stays on the home page either way."
       - label: Order
         name: order
         widget: number
