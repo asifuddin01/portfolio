@@ -300,7 +300,7 @@ export const GET: APIRoute = async () => {
     url: SITE,
     text: tidy(
       `${AUTHOR} can be reached by email at ${contact.email}. ` +
-      `His code is at ${contact.github}, his LinkedIn at ${contact.linkedin}, his ORCID iD at ${contact.orcid}, ` +
+      `His code is at ${contact.github}, his LinkedIn at ${contact.linkedin}, his ORCID iD at ${contact.orcid}, his Google Scholar profile at ${contact.scholar}, ` +
       `and his site at ${SITE}. He is based in ${contact.location}.`
     ),
   });

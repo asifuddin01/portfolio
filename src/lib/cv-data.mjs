@@ -55,6 +55,8 @@ export function buildCv({
   const github = contact.github ?? fallback.github ?? '';
   const linkedin = contact.linkedin ?? fallback.linkedin ?? '';
   const orcid = contact.orcid ?? fallback.orcid ?? '';
+  // The profile address without its language parameter, which reads as noise on paper.
+  const scholar = String(contact.scholar ?? fallback.scholar ?? '').replace(/[?&]hl=[a-z-]+/i, '');
   const location = contact.location ?? fallback.location ?? '';
 
   const sections = [];
@@ -245,7 +247,7 @@ export function buildCv({
     // The phone number is deliberately absent. This file is served publicly,
     // and a number on a public page is a different exposure from one on a CV
     // handed to a person.
-    contact: [location, email, host(linkedin), host(github), host(orcid), host(siteUrl)].filter(Boolean),
+    contact: [location, email, host(linkedin), host(github), host(orcid), host(scholar), host(siteUrl)].filter(Boolean),
     summary: cvMeta.summary ?? '',
     sections,
     siteHost: host(siteUrl),

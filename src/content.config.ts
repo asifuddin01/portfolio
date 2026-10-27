@@ -818,6 +818,7 @@ const site = defineCollection({
     github: optionalUrl,
     linkedin: optionalUrl,
     orcid: optionalUrl,
+    scholar: optionalUrl,
     // Elementa ledes.
     kicker: z.string().optional(),
     lede: z.string().optional(),

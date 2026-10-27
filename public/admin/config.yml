@@ -2481,6 +2481,7 @@ collections:
           - { label: GitHub, name: github, widget: string, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
           - { label: LinkedIn, name: linkedin, widget: string, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://example.com/page — not a sentence." ], hint: The address only. A sentence with a link in it will not be accepted here. }
           - { label: ORCID, name: orcid, widget: string, required: false, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://orcid.org/0000-0000-0000-0000" ], hint: "The full address, https://orcid.org/…" }
+          - { label: Google Scholar, name: scholar, widget: string, required: false, pattern: [ "^\\s*$|^(https?://)?[\\w.-]+\\.[a-z]{2,}(/\\S*)?\\s*$", "Paste the address only, e.g. https://scholar.google.com/citations?user=…" ], hint: "The profile address, https://scholar.google.com/citations?user=…" }
           - { label: Location, name: location, widget: string }
       - name: chronicle
         label: Chronicle coursework

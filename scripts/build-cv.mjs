@@ -58,6 +58,7 @@ const cv = buildCv({
     github: constOf('GITHUB'),
     linkedin: constOf('LINKEDIN'),
     orcid: constOf('ORCID'),
+    scholar: constOf('SCHOLAR'),
     location: constOf('LOCATION'),
   },
 });
