@@ -43,6 +43,7 @@ export interface CvInput {
   site?: readonly CvSource[];
   works?: readonly CvSource[];
   papers?: readonly CvSource[];
+  software?: readonly CvSource[];
   education?: readonly CvSource[];
   projects?: readonly CvSource[];
   skills?: readonly CvSource[];

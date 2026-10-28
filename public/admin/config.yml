@@ -1588,6 +1588,45 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: software
+    label: Archived software
+    label_singular: Archive
+    description: >-
+      Code archived with a DOI, e.g. on Zenodo. Shown on the paper's entry on /papers and under Software on /vitae and the CV.
+    folder: src/content/software
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{year}} · {{title}}"
+    fields:
+      - { label: Title, name: title, widget: string, hint: "As the archive gives it." }
+      - label: Authors
+        name: authors
+        widget: list
+        field: { label: Name, name: name, widget: string }
+      - { label: Year, name: year, widget: string, default: "2026" }
+      - { label: Publisher, name: publisher, widget: string, default: Zenodo }
+      - label: DOI
+        name: doi
+        widget: string
+        hint: "The all-versions DOI, e.g. 10.5281/zenodo.1234567. It always opens the latest release."
+        pattern: ["^10\\.\\d{4,9}/\\S+$", "The DOI itself, e.g. 10.5281/zenodo.1234567, not its address"]
+      - label: Repository
+        name: repo
+        widget: string
+        required: false
+        pattern: ["^\\s*$|^https?://.+", "A full address, starting http:// or https://"]
+      - label: Paper
+        name: paper
+        widget: relation
+        collection: papers
+        value_field: "{{slug}}"
+        search_fields: [title]
+        display_fields: [title]
+        required: false
+        hint: "The paper this code supports. Its entry on /papers gets a Code DOI button."
   - name: papers
     label: Published papers
     label_singular: Paper

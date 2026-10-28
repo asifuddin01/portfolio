@@ -41,7 +41,7 @@ const host = (u) => String(u ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '
  *          field as text without knowing which section it came from
  */
 export function buildCv({
-  site = [], works = [], papers = [], education = [], projects = [], skills = [],
+  site = [], works = [], papers = [], software = [], education = [], projects = [], skills = [],
   referees = [], author = '', siteUrl = '', fallback = {},
   /** Offer empty blocks to type into. The editor sets this; the public page
       does not, so a section nobody has filled in never reaches a reader. */
@@ -126,6 +126,21 @@ export function buildCv({
           detail: bits.join(' '),
         };
       }),
+    });
+  }
+
+  /* Archived code with a DOI, cited as software. The all-versions DOI, so the
+     line stays true when a new release is archived. */
+  if (software.length) {
+    sections.push({
+      id: 'software',
+      heading: 'Software',
+      style: 'work',
+      items: [...software].sort((a, b) => String(b.data.year).localeCompare(String(a.data.year))).map((s) => ({
+        title: s.data.title ?? '',
+        right: `${s.data.publisher ?? ''} ${s.data.year ?? ''}`.trim(),
+        detail: [(s.data.authors ?? []).join(', '), `doi: ${s.data.doi}`, s.data.repo].filter(Boolean).join('  ·  '),
+      })),
     });
   }
 

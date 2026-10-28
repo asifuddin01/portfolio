@@ -949,6 +949,27 @@ const papers = defineCollection({
 });
 
 /**
+ * Archived code with a DOI (Zenodo and the like). A collection of its own
+ * because the software is a separate citable record from the paper it
+ * supports: its own title, its own authors, its own DOI. `doi` is the
+ * all-versions (concept) DOI, which always opens the latest release; a paper's
+ * data-availability statement cites a specific version instead. `paper` names
+ * the paper it supplements, by id, so /papers can show it on that entry.
+ */
+const software = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/software' }),
+  schema: z.object({
+    title: z.string(),
+    authors: z.array(z.string()).default([]),
+    year: z.string(),
+    publisher: z.string().default('Zenodo'),
+    doi: z.string().regex(/^10\.\d{4,9}\/\S+$/, 'The DOI itself, e.g. 10.5281/zenodo.1234567, not its address'),
+    repo: optionalUrl,
+    paper: z.string().optional(),
+  }),
+});
+
+/**
  * Scoping reviews in progress.
  *
  * Kept apart from `papers` because a protocol is not a manuscript and saying
@@ -1225,6 +1246,6 @@ export const collections = {
   works, elementa, marginalia, lectiones, bibliotheca, recipes, reviews, library, site, art, books, instrumentarium,
   pantheons, numina,
   referees,
-  instrumenta, papers, education, projects, images, axioms, chapters,
+  instrumenta, papers, software, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };

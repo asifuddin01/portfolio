@@ -39,10 +39,11 @@ async function readCollection(dir) {
 const consts = await readFile('src/consts.ts', 'utf8');
 const constOf = (key) => (consts.match(new RegExp(`${key} = '([^']*)'`)) ?? [])[1] ?? '';
 
-const [site, works, papers, education, projects, skills, referees] = await Promise.all([
+const [site, works, papers, software, education, projects, skills, referees] = await Promise.all([
   readCollection('site'),
   readCollection('works'),
   readCollection('papers'),
+  readCollection('software'),
   readCollection('education'),
   readCollection('projects'),
   readCollection('instrumentarium'),
@@ -50,7 +51,7 @@ const [site, works, papers, education, projects, skills, referees] = await Promi
 ]);
 
 const cv = buildCv({
-  site, works, papers, education, projects, skills, referees,
+  site, works, papers, software, education, projects, skills, referees,
   author: constOf('AUTHOR'),
   siteUrl: constOf('SITE'),
   fallback: {
@@ -68,12 +69,18 @@ const cv = buildCv({
 // before the scan, so nothing else gets a way through by looking like an iD —
 // a bare 0009-0000-1705-4097 anywhere else still stops the build. An arXiv
 // identifier (2610.17933) is the same case and gets the same narrow
-// exemption: only as an arxiv.org/abs/ or /pdf/ address.
+// exemption: only as an arxiv.org/abs/ or /pdf/ address. So does a DOI, whose
+// suffix is often a long run of digits (10.5281/zenodo.23741643): only when
+// it is a whole DOI.
 const phoneShaped = (text) =>
   /\+?\d[\d\s().-]{7,}/.test(
     text
       .replace(/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/g, 'orcid')
-      .replace(/arxiv\.org\/(?:abs|pdf)\/\d{4}\.\d{4,5}(?:v\d+)?/g, 'arxiv'),
+      .replace(/arxiv\.org\/(?:abs|pdf)\/\d{4}\.\d{4,5}(?:v\d+)?/g, 'arxiv')
+      // A DOI: "10.", a registrant code, a slash, then the suffix up to the
+      // next space. Only that shape is set aside, so a number written after
+      // it is still read on its own.
+      .replace(/\b10\.\d{4,9}\/[^\s"·,;]+/g, 'doi'),
   );
 
 // The guard checks itself before it checks the CV. If the exemption is ever
@@ -87,6 +94,9 @@ for (const [text, blocked] of [
   ['2610.17933', true],
   ['arXiv:2610.17933', true],
   ['https://arxiv.org/abs/2610.17933 +880 1712-345678', true],
+  ['doi: 10.5281/zenodo.23741643', false],
+  ['zenodo 23741643', true],
+  ['doi: 10.5281/zenodo.23741643 +880 1712-345678', true],
 ]) {
   if (phoneShaped(text) !== blocked) {
     console.error(`✗ the phone-number guard is broken: it ${blocked ? 'let through' : 'blocked'} ${JSON.stringify(text)}.`);

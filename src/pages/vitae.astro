@@ -22,6 +22,7 @@ const projects = await getProjects();
 const papers = (await getPapers()).filter((p) => p.data.state !== 'thesis');
 const paperOf = new Map(papers.map((p) => [p.id, p]));
 const loosePapers = papers.filter((p) => !works.some((w) => w.id === p.id));
+const software = (await getCollection('software')).sort((a, b) => String(b.data.year).localeCompare(String(a.data.year)));
 const skills = (await getCollection('instrumentarium')).filter((s) => s.data.onCv !== false).sort((a, b) => a.data.order - b.data.order);
 const cvMeta = (await getEntry('site', 'cv'))?.data;
 const { email, github, linkedin, orcid, scholar, location } = await getContact();
@@ -110,6 +111,29 @@ const role = await getRole();
       </ol>
     </section>
 
+    {software.length > 0 && (
+      <section class="cv-sec" aria-labelledby="cv-software">
+        <h2 class="cv-h2" id="cv-software">Software</h2>
+        <ol class="cv-list">
+          {software.map((sw) => (
+            <li class="cv-item">
+              <div class="cv-item-head">
+                <h3 class="cv-item-t">
+                  <a class="link" href={`https://doi.org/${sw.data.doi}`}>{sw.data.title}</a>
+                </h3>
+                <span class="cv-when">{sw.data.year}</span>
+              </div>
+              <p class="cv-detail">
+                <span class="cv-tag">{sw.data.publisher}</span>
+                {sw.data.authors.join(', ')}. doi: {sw.data.doi}
+                {sw.data.repo && <> · <a class="link" href={sw.data.repo} rel="noopener">repository</a></>}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
     <section class="cv-sec" aria-labelledby="cv-education">
       <h2 class="cv-h2" id="cv-education">Education</h2>
       <ol class="cv-list">
@@ -120,8 +144,8 @@ const role = await getRole();
               <span class="cv-when">{e.data.period}</span>
             </div>
             <p class="cv-detail">
-              {e.data.institution}, {e.data.location}.
-              {e.data.result && <span class="cv-result">{e.data.result}.</span>}
+              {e.data.institution}, {e.data.location}.{' '}
+              {e.data.result && <><span class="cv-result">{e.data.result}.</span>{' '}</>}
               {e.data.detail}
             </p>
           </li>

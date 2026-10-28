@@ -15,17 +15,18 @@ export const CV_DOCX = '/cv/Md-Asif-Uddin-CV.docx';
  *        into. Only /vitae/cv/edit asks for them.
  */
 export async function loadCv(opts = {}) {
-  const [site, works, papers, education, projects, skills, referees] = await Promise.all([
+  const [site, works, papers, software, education, projects, skills, referees] = await Promise.all([
     getCollection('site'),
     getCollection('works'),
     getCollection('papers'),
+    getCollection('software'),
     getCollection('education'),
     getCollection('projects'),
     getCollection('instrumentarium'),
     getCollection('referees'),
   ]);
   return buildCv({
-    site, works, papers, education, projects, skills, referees,
+    site, works, papers, software, education, projects, skills, referees,
     blanks: opts.blanks === true,
     author: AUTHOR,
     siteUrl: SITE,

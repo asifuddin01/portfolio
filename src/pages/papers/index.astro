@@ -7,6 +7,8 @@ import { AUTHOR, toRoman } from '../../consts';
 
 const papers = await getPapers();
 const { scholar } = await getContact();
+/* Archived code, keyed by the paper it supports. */
+const archiveOf = new Map((await getCollection('software')).filter((s) => s.data.paper).map((s) => [s.data.paper!, s]));
 /* A paper whose slug matches a plate opens that plate: the plate is where the
    work is argued, and most manuscripts have no public URL to link instead. */
 const plates = new Set((await getCollection('works')).map((w) => w.id));
@@ -88,7 +90,7 @@ const LABEL: Record<string, string> = {
             )}
             {p.data.venue && <p class="pp-venue">{p.data.venue}</p>}
             <p class="pp-summary">{p.data.summary}</p>
-            {(p.data.url || p.data.doi || p.data.code) && (
+            {(p.data.url || p.data.doi || p.data.code || archiveOf.has(p.id)) && (
               <p class="pp-refs ref-btns">
                 {p.data.url && (
                   <a class="ref-btn" href={p.data.url} rel="noopener">
@@ -101,6 +103,11 @@ const LABEL: Record<string, string> = {
                   </a>
                 )}
                 {p.data.code && <a class="ref-btn" href={p.data.code} rel="noopener">Code</a>}
+                {archiveOf.has(p.id) && (
+                  <a class="ref-btn" href={`https://doi.org/${archiveOf.get(p.id)!.data.doi}`} rel="noopener">
+                    Code DOI ({archiveOf.get(p.id)!.data.publisher})
+                  </a>
+                )}
               </p>
             )}
           </li>
