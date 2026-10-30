@@ -1588,6 +1588,95 @@ collections:
           - { label: "Published", value: published }
 
   # ------------------------------------------------------------------
+  - name: armarium
+    label: Armarium — home library
+    label_singular: Book
+    description: >-
+      Every book on the shelves at home. Add one with New Book: only the title, the shelf and the language are needed; the rest can wait. The page counts and sorts everything itself. The next free accession number is shown at the foot of /armarium.
+    folder: src/content/armarium
+    extension: mdx
+    format: frontmatter
+    create: true
+    identifier_field: title
+    slug: "{{slug}}"
+    summary: "{{accession}} · {{title}} — {{author}}"
+    sortable_fields: [ accession, title, author, language ]
+    view_filters:
+      - { label: Bangla, field: language, pattern: Bangla }
+      - { label: English, field: language, pattern: English }
+      - { label: Translations, field: translated, pattern: true }
+      - { label: Favourites, field: favourite, pattern: true }
+      - { label: Reading now, field: status, pattern: reading }
+    view_groups:
+      - { label: Language, field: language }
+      - { label: Publisher, field: publisher }
+    media_folder: "../../assets/armarium/covers"
+    public_folder: "../../assets/armarium/covers"
+    fields:
+      - { label: Title, name: title, widget: string, hint: "In English or transliteration, as it should sort." }
+      - { label: Title in Bangla, name: titleBn, widget: string, required: false }
+      - label: Shelves
+        name: shelves
+        widget: select
+        multiple: true
+        min: 1
+        max: 2
+        hint: "The first is where it stands; a second is where else it belongs."
+        options:
+          - { label: "Classic Bengali literature", value: classic-bengali }
+          - { label: "Contemporary Bengali fiction", value: contemporary-bengali }
+          - { label: "World classics", value: world-classics }
+          - { label: "Literary fiction", value: literary-fiction }
+          - { label: "Crime, mystery & thriller", value: thriller }
+          - { label: "Horror & supernatural", value: horror }
+          - { label: "Fantasy", value: fantasy }
+          - { label: "Science fiction", value: science-fiction }
+          - { label: "Historical fiction", value: historical-fiction }
+          - { label: "Adventure", value: adventure }
+          - { label: "Mythology & epics", value: mythology }
+          - { label: "Poetry & drama", value: poetry-drama }
+          - { label: "History & politics", value: history-politics }
+          - { label: "Philosophy", value: philosophy }
+          - { label: "Religion & spirituality", value: religion }
+          - { label: "Self-development", value: self-development }
+          - { label: "Science & computing", value: science }
+      - label: Language
+        name: language
+        widget: select
+        default: Bangla
+        options: [ Bangla, English, Arabic, Urdu, Hindi, Other ]
+      - { label: Translated, name: translated, widget: boolean, default: false, required: false, hint: "On for a translation, e.g. a Bangla edition of a Japanese novel." }
+      - { label: Author, name: author, widget: string, required: false, hint: "Several as A, B and C." }
+      - { label: Translator, name: translator, widget: string, required: false }
+      - { label: Editor, name: editor, widget: string, required: false }
+      - { label: Other contributors, name: contributors, widget: string, required: false, hint: "E.g. Illustrated by MinaLima Studio." }
+      - { label: Credit line in Bangla, name: creditBn, widget: string, required: false }
+      - { label: Series, name: series, widget: string, required: false }
+      - { label: Number in series, name: seriesNumber, widget: number, value_type: int, required: false }
+      - { label: Publisher, name: publisher, widget: string, required: false }
+      - label: Cover
+        name: cover
+        widget: image
+        required: false
+        hint: "A photograph of your copy works well; a phone photo is fine, the site resizes it."
+      - { label: Cover description, name: coverAlt, widget: string, required: false, hint: "What the cover shows, for someone who cannot see it. Leave blank for 'Cover of <title>'." }
+      - { label: Accession number, name: accession, widget: number, value_type: int, required: false, hint: "The number on the book. The next free one is at the foot of /armarium." }
+      - { label: Last accession number of a set, name: accessionEnd, widget: number, value_type: int, required: false, hint: "Only for a boxed set numbered as a range, e.g. 48–69." }
+      - { label: Volumes, name: volumes, widget: number, value_type: int, default: 1, required: false, hint: "More than one for a set kept as one entry." }
+      - { label: Kind, name: category, widget: string, required: false, hint: "A finer description, e.g. Japanese detective fiction." }
+      - { label: Kind in Bangla, name: categoryBn, widget: string, required: false }
+      - { label: Description, name: description, widget: text, required: false }
+      - label: Reading
+        name: status
+        widget: select
+        required: false
+        options:
+          - { label: "Not yet read", value: unread }
+          - { label: "Reading now", value: reading }
+          - { label: "Read", value: read }
+      - { label: Favourite, name: favourite, widget: boolean, default: false, required: false }
+      - { label: Date added, name: added, widget: datetime, time_format: false, date_format: YYYY-MM-DD, format: YYYY-MM-DD, required: false }
+      - { label: Notes, name: body, widget: markdown, required: false, hint: "Your own notes on the book. Shown on its card." }
   - name: software
     label: Archived software
     label_singular: Archive
@@ -2548,6 +2637,15 @@ collections:
             hint: >-
               Avoid naming a number of books here — you can add more, and the text would go stale.
           - { label: On the home page, name: homeIntro, widget: text }
+      - name: armarium
+        label: Armarium introduction
+        file: src/content/site/armarium.mdx
+        extension: mdx
+        format: frontmatter
+        fields:
+          - { label: Heading, name: title, widget: string }
+          - { label: Kicker, name: kicker, widget: string, hint: "The small line above the title." }
+          - { label: Introduction, name: lede, widget: text, hint: "A blank line starts a new paragraph. Do not type the number of books; the page counts them." }
       - name: tabulae
         label: Tabulae introduction
         file: src/content/site/tabulae.mdx

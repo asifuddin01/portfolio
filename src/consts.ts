@@ -63,6 +63,7 @@ export const NAV: readonly (NavLink | NavGroup)[] = [
     children: [
       { href: '/tabulae', label: 'Tabulae', gloss: 'The interleaved plates' },
       { href: '/numina', label: 'Numina', gloss: 'Eleven mythologies' },
+      { href: '/armarium', label: 'Armarium', gloss: 'My home library' },
     ],
   },
   { href: '/researchlens', label: 'ResearchLens' },

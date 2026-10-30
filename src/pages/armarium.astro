@@ -1,0 +1,529 @@
+---
+import { getImage } from 'astro:assets';
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LesionRule from '../components/ornament/LesionRule.astro';
+import { ARMARIUM_SHELVES } from '../lib/armarium';
+import { AUTHOR } from '../consts';
+
+/**
+ * Armarium — the home library.
+ *
+ * Every book is rendered here as real HTML, so the page reads and searches
+ * with the browser's own find even with scripts off. The script below adds the
+ * catalogue: search, filters, sorting, grouping, two views, and a card for
+ * each book. It never fetches anything; the whole collection is on the page.
+ */
+type Shelf = keyof typeof ARMARIUM_SHELVES;
+const entries = (await getCollection('armarium')).sort(
+  (a, b) => (a.data.accession ?? 1e9) - (b.data.accession ?? 1e9) || a.data.title.localeCompare(b.data.title),
+);
+const meta = await getEntry('site', 'armarium');
+const ledes = (meta?.data.lede ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
+
+/** Authors are credited as "A, B and C" or "A; B". The facet wants each name. */
+const namesOf = (s: string | null | undefined) =>
+  (s ?? '').split(/;|,|\sand\s/).map((n) => n.trim()).filter(Boolean);
+/** Sort an author by surname, as a catalogue does. A parenthesis is a gloss. */
+const surnameKey = (s: string | null | undefined) => {
+  const first = namesOf(s)[0] ?? '';
+  const parts = first.replace(/\(.*?\)/g, '').trim().split(/\s+/);
+  return `${parts.at(-1) ?? ''} ${first}`.toLowerCase();
+};
+/** Lowercase, Latin accents folded, Bangla untouched (its vowel signs are marks too). */
+const fold = (s: string) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+/** Publishers are written with and without the generic suffix; facet on the name. */
+const pubKey = (p: string) =>
+  p.replace(/\s*\((ভারত|India)\)\s*/g, '').split(/\s*\/\s*/)[0]
+    .replace(/\s+(প্রকাশনী|প্রকাশন|প্রকাশনা সংস্থা|পাবলিকেশন্স|পাবলিকেশন|Publications?|Publishers?|Prokashoni|Prokashon)$/i, '')
+    .trim();
+
+const books = await Promise.all(
+  entries.map(async (e) => {
+    const d = e.data;
+    const cover = d.cover
+      ? await getImage({ src: d.cover, width: 360, format: 'webp', quality: 72 })
+      : null;
+    const shelves = d.shelves as Shelf[];
+    return {
+      id: e.id,
+      acc: d.accession ?? null,
+      accEnd: d.accessionEnd ?? null,
+      volumes: d.volumes,
+      title: d.title,
+      titleBn: d.titleBn,
+      series: d.series,
+      seriesNo: d.seriesNumber ?? null,
+      author: d.author,
+      authors: namesOf(d.author),
+      translator: d.translator,
+      editor: d.editor,
+      contributors: d.contributors,
+      creditBn: d.creditBn,
+      shelves,
+      shelfNames: shelves.map((s) => ARMARIUM_SHELVES[s]),
+      category: d.category,
+      categoryBn: d.categoryBn,
+      language: d.language,
+      translated: d.translated,
+      publisher: d.publisher,
+      pub: d.publisher ? pubKey(d.publisher) : null,
+      description: d.description,
+      cover: cover?.src ?? null,
+      coverAlt: d.coverAlt ?? `Cover of ${d.title}`,
+      status: d.status ?? null,
+      favourite: d.favourite,
+      added: d.added ? d.added.toISOString().slice(0, 10) : null,
+      notes: (e.body ?? '').trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+      sortAuthor: surnameKey(d.author || d.editor || d.translator),
+      search: fold([
+        d.title, d.titleBn, d.series, d.author, d.translator, d.editor, d.contributors, d.creditBn,
+        d.category, d.categoryBn, d.publisher, d.description, d.language, d.accession,
+        ...shelves.map((s) => ARMARIUM_SHELVES[s]),
+      ].filter(Boolean).join(' ')),
+    };
+  }),
+);
+
+/* ---- The collection at a glance. Counted, never typed. ---- */
+const volumes = books.reduce((n, b) => n + b.volumes, 0);
+const authorCount = new Map<string, number>();
+for (const b of books) for (const a of b.authors) authorCount.set(a, (authorCount.get(a) ?? 0) + b.volumes);
+const topAuthors = [...authorCount].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6);
+const byLang = Object.entries(
+  books.reduce<Record<string, number>>((m, b) => ((m[b.language] = (m[b.language] ?? 0) + b.volumes), m), {}),
+).sort((a, b) => b[1] - a[1]);
+const translations = books.filter((b) => b.translated).reduce((n, b) => n + b.volumes, 0);
+const seriesSet = new Set(books.map((b) => b.series).filter(Boolean));
+const pubSet = new Set(books.map((b) => b.pub).filter(Boolean));
+const shelfCount = (Object.keys(ARMARIUM_SHELVES) as Shelf[])
+  .map((s) => [s, books.filter((b) => b.shelves[0] === s).reduce((n, b) => n + b.volumes, 0)] as const)
+  .filter(([, n]) => n > 0)
+  .sort((a, b) => b[1] - a[1]);
+const nextAccession = Math.max(0, ...books.map((b) => b.accEnd ?? b.acc ?? 0)) + 1;
+const hasStatus = books.some((b) => b.status);
+const hasFav = books.some((b) => b.favourite);
+
+/* Facet values for the selects, most-held first. */
+const tally = (keys: (string | null | undefined)[]) => {
+  const m = new Map<string, number>();
+  for (const k of keys) if (k) m.set(k, (m.get(k) ?? 0) + 1);
+  return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+};
+const authorOpts = tally(books.flatMap((b) => b.authors));
+const pubOpts = tally(books.map((b) => b.pub));
+const seriesOpts = tally(books.map((b) => b.series));
+const langOpts = tally(books.map((b) => b.language));
+
+/* What the script needs, without the derived search and sort keys (it builds
+   those itself) and without empty fields, which are most of them. */
+const data = Object.fromEntries(
+  books.map(({ search, sortAuthor, shelfNames, ...b }) => [
+    b.id,
+    Object.fromEntries(Object.entries(b).filter(([, v]) => v !== null && v !== false && !(Array.isArray(v) && !v.length))),
+  ]),
+);
+---
+<BaseLayout
+  title={`${meta?.data.title ?? 'Armarium'} — ${AUTHOR}`}
+  description={`The home library: ${volumes} books, catalogued, searchable by title, author, shelf, language and publisher.`}
+  folio="A"
+>
+  <div class="codex am">
+    <header class="am-head">
+      <p class="am-kicker" data-reveal>{meta?.data.kicker ?? 'Humaniora · the home library'}</p>
+      <h1 class="am-h1" data-press>{meta?.data.title ?? 'Armarium'}</h1>
+      {ledes.map((t) => <p class="am-lede codex-measure" data-reveal>{t}</p>)}
+    </header>
+
+    <section class="am-glance" aria-label="The collection at a glance" data-reveal>
+      <dl class="am-figs">
+        <div><dt>Books</dt><dd>{volumes}</dd></div>
+        <div><dt>Titles</dt><dd>{books.length}</dd></div>
+        <div><dt>Authors</dt><dd>{authorCount.size}</dd></div>
+        <div><dt>Series</dt><dd>{seriesSet.size}</dd></div>
+        <div><dt>Publishers</dt><dd>{pubSet.size}</dd></div>
+        <div><dt>In translation</dt><dd>{translations}</dd></div>
+      </dl>
+      <div class="am-bars">
+        <p class="am-bars-h">By shelf</p>
+        <ul class="am-shelfbar" aria-label="Books on each shelf">
+          {shelfCount.map(([s, n]) => (
+            <li style={`flex-grow:${n}`} data-shelf={s} title={`${ARMARIUM_SHELVES[s]}: ${n}`}>
+              <button type="button" data-filter-shelf={s} aria-label={`Show ${ARMARIUM_SHELVES[s]}, ${n} books`}></button>
+            </li>
+          ))}
+        </ul>
+        <p class="am-langs">
+          {byLang.map(([l, n], i) => <>{i > 0 && ' · '}<button type="button" class="am-linkish" data-filter-lang={l}>{l}</button> {n}</>)}
+        </p>
+        <p class="am-bars-h">Most collected</p>
+        <p class="am-top">
+          {topAuthors.map(([a, n], i) => <>{i > 0 && ' · '}<button type="button" class="am-linkish" data-filter-author={a}>{a}</button> {n}</>)}
+        </p>
+      </div>
+    </section>
+
+    <LesionRule />
+
+    {/* The catalogue's controls. Hidden until the script is running, since
+        without it they would do nothing. */}
+    <section class="am-tools" aria-label="Search and filter" data-tools hidden>
+      <div class="am-searchrow">
+        <label class="am-search">
+          <span class="am-lbl">Search</span>
+          <input type="search" name="q" placeholder="Title, author, translator, publisher, in English or বাংলা" autocomplete="off" spellcheck="false" />
+        </label>
+        <button type="button" class="am-btn" data-surprise title="Open a random book from the current results">Surprise me</button>
+      </div>
+
+      <div class="am-chips" role="group" aria-label="Shelf">
+        <button type="button" class="am-chip" data-shelf-chip="" aria-pressed="true">All shelves</button>
+        {(Object.keys(ARMARIUM_SHELVES) as Shelf[]).filter((s) => books.some((b) => b.shelves.includes(s))).map((s) => (
+          <button type="button" class="am-chip" data-shelf-chip={s} data-shelf={s} aria-pressed="false">
+            <span class="am-swatch" aria-hidden="true"></span>{ARMARIUM_SHELVES[s]} <span class="am-n" data-count={s}></span>
+          </button>
+        ))}
+      </div>
+
+      <details class="am-more" open>
+        <summary>Filters, sorting and view</summary>
+        <div class="am-grid">
+          <label><span class="am-lbl">Language</span>
+            <select name="lang"><option value="">Any</option>{langOpts.map(([l, n]) => <option value={l}>{l} ({n})</option>)}</select>
+          </label>
+          <label><span class="am-lbl">Edition</span>
+            <select name="tr"><option value="">Originals and translations</option><option value="orig">Originals only</option><option value="tr">Translations only</option></select>
+          </label>
+          <label><span class="am-lbl">Author</span>
+            <select name="author"><option value="">Any author</option>{authorOpts.map(([a, n]) => <option value={a}>{a} ({n})</option>)}</select>
+          </label>
+          <label><span class="am-lbl">Publisher</span>
+            <select name="pub"><option value="">Any publisher</option>{pubOpts.map(([p, n]) => <option value={p}>{p} ({n})</option>)}</select>
+          </label>
+          <label><span class="am-lbl">Series</span>
+            <select name="series"><option value="">Any series</option><option value="*">Only books in a series</option>{seriesOpts.map(([s, n]) => <option value={s}>{s} ({n})</option>)}</select>
+          </label>
+          {(hasStatus || hasFav) && (
+            <label><span class="am-lbl">Reading</span>
+              <select name="status">
+                <option value="">Any</option>
+                {hasFav && <option value="fav">Favourites</option>}
+                {hasStatus && <><option value="reading">Reading now</option><option value="read">Read</option><option value="unread">Not yet read</option></>}
+              </select>
+            </label>
+          )}
+          <label><span class="am-lbl">Sort by</span>
+            <select name="sort">
+              <option value="acc">Shelf number</option>
+              <option value="title">Title, A to Z</option>
+              <option value="author">Author, by surname</option>
+              <option value="series">Series, in order</option>
+              <option value="added">Recently added</option>
+            </select>
+          </label>
+          <label><span class="am-lbl">Group by</span>
+            <select name="group">
+              <option value="">No grouping</option>
+              <option value="shelf">Shelf</option>
+              <option value="author">Author</option>
+              <option value="series">Series</option>
+              <option value="language">Language</option>
+              <option value="pub">Publisher</option>
+            </select>
+          </label>
+          <div class="am-view" role="group" aria-label="View">
+            <span class="am-lbl">View</span>
+            <span>
+              <button type="button" class="am-btn" data-view="covers" aria-pressed="true">Covers</button>
+              <button type="button" class="am-btn" data-view="list" aria-pressed="false">List</button>
+            </span>
+          </div>
+        </div>
+      </details>
+
+      <p class="am-status" aria-live="polite">
+        <span data-result-count></span>
+        <button type="button" class="am-linkish" data-reset hidden>Clear all filters</button>
+      </p>
+    </section>
+
+    <div class="am-results" data-results data-view="covers">
+      {books.map((b) => (
+        <article class="am-book" id={b.id} data-id={b.id} data-shelf={b.shelves[0]}>
+          <button type="button" class="am-open" data-open={b.id} aria-label={`${b.title}${b.author ? `, ${b.author}` : ''} — details`}>
+            <span class="am-cover">
+              {b.cover ? (
+                <img src={b.cover} alt="" loading="lazy" decoding="async" width="180" height="270" />
+              ) : (
+                <span class="am-gen" aria-hidden="true">
+                  <span class="am-gen-t" lang={b.language === 'Bangla' && b.titleBn ? 'bn' : 'en'}>
+                    {b.language === 'Bangla' && b.titleBn ? b.titleBn : b.title}
+                  </span>
+                  <span class="am-gen-a">{b.author ?? b.editor ?? b.translator}</span>
+                </span>
+              )}
+              {b.volumes > 1 && <span class="am-vols">{b.volumes} vols</span>}
+            </span>
+            <span class="am-meta">
+              <span class="am-t">{b.title}</span>
+              {b.titleBn && b.titleBn !== b.title && <span class="am-tbn" lang="bn">{b.titleBn}</span>}
+              <span class="am-a">{b.author ?? b.editor}{b.translator && <span class="am-tr"> · trans. {b.translator}</span>}</span>
+              <span class="am-x">
+                <span class="am-x-acc">No. {b.acc}{b.accEnd && `–${b.accEnd}`}</span>
+                <span class="am-x-shelf">{b.shelfNames.join(' · ')}</span>
+                <span class="am-x-lang">{b.language}{b.translated && ' (translation)'}</span>
+                {b.series && <span class="am-x-series">{b.series}{b.seriesNo && ` · ${b.seriesNo}`}</span>}
+                {b.publisher && <span class="am-x-pub">{b.publisher}</span>}
+              </span>
+            </span>
+          </button>
+        </article>
+      ))}
+    </div>
+
+    <p class="am-foot">
+      {volumes} books on {shelfCount.length} shelves. The next accession number is {nextAccession}.
+      <span class="am-owner"> <a class="link" href="/admin/#/collections/armarium/new">Add a book</a>.</span>
+    </p>
+  </div>
+
+  <dialog class="am-dialog" data-dialog aria-labelledby="am-d-title">
+    <form method="dialog" class="am-d-close"><button class="am-btn" value="close" aria-label="Close">Close ×</button></form>
+    <div class="am-d" data-dialog-body></div>
+  </dialog>
+
+  <script is:inline type="application/json" id="am-data" set:html={JSON.stringify({ books: data, shelves: ARMARIUM_SHELVES })}></script>
+</BaseLayout>
+
+<script>
+  import '../scripts/armarium.ts';
+</script>
+
+<style is:global>
+  /* Global rather than scoped: the book card is filled in by the script, and
+     scoped styles do not reach elements a script creates. Every rule is
+     prefixed .am or .am- so nothing leaks. */
+
+  /* Each shelf is a bookcloth colour. Dark enough that the pale title on a
+     generated cover reads at well over 7:1 in both themes. */
+  [data-shelf] { --cloth: #3B3B52; }
+  [data-shelf='classic-bengali'] { --cloth: #6B2230; }
+  [data-shelf='contemporary-bengali'] { --cloth: #7A3E2E; }
+  [data-shelf='world-classics'] { --cloth: #2F3E5C; }
+  [data-shelf='literary-fiction'] { --cloth: #4A5A3C; }
+  [data-shelf='thriller'] { --cloth: #2B2B2B; }
+  [data-shelf='horror'] { --cloth: #3A1F2B; }
+  [data-shelf='fantasy'] { --cloth: #2E4B4F; }
+  [data-shelf='science-fiction'] { --cloth: #263E5E; }
+  [data-shelf='historical-fiction'] { --cloth: #5C4424; }
+  [data-shelf='adventure'] { --cloth: #3F5A2A; }
+  [data-shelf='mythology'] { --cloth: #6A4A12; }
+  [data-shelf='poetry-drama'] { --cloth: #5A2E4E; }
+  [data-shelf='history-politics'] { --cloth: #3B3B52; }
+  [data-shelf='philosophy'] { --cloth: #39404A; }
+  [data-shelf='religion'] { --cloth: #1F4A3F; }
+  [data-shelf='self-development'] { --cloth: #6A5A1E; }
+  [data-shelf='science'] { --cloth: #1E3F52; }
+
+  .am [lang='bn'], .am-dialog [lang='bn'] {
+    font-family: 'Noto Serif Bengali', 'Noto Sans Bengali', 'Kohinoor Bangla', 'Bangla Sangam MN', 'Hind Siliguri', var(--font-body);
+  }
+
+  .am { padding-top: clamp(2.5rem, 7vh, 5rem); padding-bottom: 3rem; }
+  .am-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass-text);
+    margin: 0 0 0.8rem;
+  }
+  .am-h1 { font-size: clamp(var(--t-2xl), 5vw, 4rem); line-height: 1.02; margin: 0 0 1.1rem; }
+  .am-lede { font-size: var(--body-size); line-height: var(--body-leading); color: var(--ink-soft); }
+
+  /* ---- At a glance ---- */
+  .am-glance { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: clamp(1.5rem, 4vw, 3.5rem); margin-top: 2rem; align-items: start; }
+  @media (max-width: 52rem) { .am-glance { grid-template-columns: minmax(0, 1fr); } }
+  .am-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem 1.5rem; margin: 0; }
+  .am-figs div { border-top: var(--rule) solid color-mix(in srgb, var(--brass) 55%, transparent); padding-top: 0.5rem; }
+  .am-figs dt { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-text); }
+  .am-figs dd { margin: 0.15rem 0 0; font-family: var(--font-display); font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.1; color: var(--fundus); font-variant-numeric: lining-nums; }
+  .am-bars-h { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-text); margin: 0 0 0.45rem; }
+  .am-bars-h + * { margin-bottom: 1rem; }
+  .am-shelfbar { display: flex; list-style: none; margin: 0; padding: 0; height: 1.4rem; border-radius: 2px; overflow: hidden; gap: 1px; background: color-mix(in srgb, var(--brass) 30%, transparent); }
+  .am-shelfbar li { flex-basis: 0; min-width: 4px; background: var(--cloth); }
+  .am-shelfbar button { display: block; width: 100%; height: 100%; border: 0; padding: 0; background: none; cursor: pointer; }
+  .am-shelfbar li:hover { filter: brightness(1.35); }
+  .am-langs, .am-top { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.8; }
+  .am-linkish {
+    border: 0; padding: 0; background: none; font: inherit; color: var(--fundus); cursor: pointer;
+    text-decoration: underline; text-decoration-thickness: 0.5px; text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in srgb, var(--fundus) 45%, transparent);
+  }
+  .am-linkish:hover { text-decoration-color: var(--fundus); }
+
+  /* ---- Tools ---- */
+  .am-tools { position: relative; scroll-margin-top: 5rem; }
+  .am-searchrow { display: flex; gap: 0.8rem; align-items: end; flex-wrap: wrap; }
+  .am-search { flex: 1 1 22rem; display: grid; gap: 0.3rem; }
+  .am-lbl { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-text); }
+  .am-search input, .am-grid select {
+    width: 100%;
+    font: inherit;
+    font-size: var(--t-base);
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    border-radius: 2px;
+    padding: 0.6rem 0.75rem;
+  }
+  .am-search input { font-size: var(--t-md); padding: 0.7rem 0.9rem; }
+  .am-search input:focus, .am-grid select:focus { outline: 2px solid var(--fundus); outline-offset: 1px; }
+  .am-btn {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--brass) 60%, transparent);
+    border-radius: 2px;
+    padding: 0.65rem 0.95rem;
+    cursor: pointer;
+  }
+  .am-btn:hover { border-color: var(--fundus); color: var(--fundus); }
+  .am-btn[aria-pressed='true'] { background: color-mix(in srgb, var(--fundus) 14%, transparent); border-color: var(--fundus); color: var(--fundus); }
+
+  .am-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 1.1rem 0 0.4rem; }
+  .am-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: var(--t-sm); color: var(--ink);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    cursor: pointer;
+  }
+  .am-chip:hover { border-color: var(--fundus); }
+  .am-chip[aria-pressed='true'] { background: color-mix(in srgb, var(--fundus) 14%, transparent); border-color: var(--fundus); color: var(--fundus); }
+  .am-swatch { width: 0.65rem; height: 0.65rem; border-radius: 1px; background: var(--cloth); flex: none; }
+  .am-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+
+  .am-more { margin-top: 0.8rem; }
+  .am-more summary { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass-text); cursor: pointer; padding: 0.35rem 0; }
+  .am-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: 0.9rem 1.1rem; margin-top: 0.6rem; }
+  .am-grid label, .am-view { display: grid; gap: 0.3rem; align-content: start; }
+  .am-view span:last-child { display: flex; gap: 0.4rem; }
+  .am-status { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; margin: 1.2rem 0 1.4rem; font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.08em; color: var(--ink-soft); }
+
+  /* ---- Covers view ---- */
+  .am-results[data-view='covers'], .am-results[data-view='covers'] .am-group-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(7.2rem, 15vw, 10rem), 1fr));
+    gap: clamp(1.2rem, 2.5vw, 2rem) clamp(0.9rem, 2vw, 1.6rem);
+    align-items: start;
+  }
+  .am-results[data-view='covers']:has(.am-group) { display: block; }
+  .am-book { content-visibility: auto; contain-intrinsic-size: auto 22rem; scroll-margin-top: 5rem; }
+  .am-open { display: grid; gap: 0.6rem; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .am-cover {
+    position: relative;
+    display: block;
+    aspect-ratio: 2 / 3;
+    border-radius: 2px 4px 4px 2px;
+    overflow: hidden;
+    background: var(--cloth);
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), 0 10px 18px -12px rgb(0 0 0 / 0.55), inset 3px 0 0 rgb(255 255 255 / 0.08);
+    transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out);
+  }
+  .am-open:hover .am-cover, .am-open:focus-visible .am-cover { transform: translateY(-3px); box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), 0 16px 24px -14px rgb(0 0 0 / 0.65); }
+  .am-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* A cover drawn for the books without a photograph: cloth, a spine shadow,
+     a gilt double rule, the title as the binder would stamp it. */
+  .am-gen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+    padding: 14% 10% 11%;
+    text-align: center;
+    color: #F2E8D0;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 0.38), rgb(255 255 255 / 0.06) 7%, rgb(0 0 0 / 0.12) 10%, transparent 16%),
+      repeating-linear-gradient(45deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 3px),
+      var(--cloth);
+  }
+  .am-gen::before {
+    content: ''; position: absolute; inset: 6% 7% 6% 11%;
+    border: 1px solid rgb(217 184 103 / 0.55);
+    outline: 1px solid rgb(217 184 103 / 0.3); outline-offset: -4px;
+    pointer-events: none;
+  }
+  .am-gen-t { position: relative; font-family: var(--font-display); font-size: clamp(0.82rem, 1.25vw, 1.02rem); line-height: 1.22; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+  .am-gen-t[lang='bn'] { font-size: clamp(0.88rem, 1.35vw, 1.1rem); line-height: 1.35; }
+  .am-gen-a { position: relative; font-family: var(--font-body); font-size: clamp(0.62rem, 0.9vw, 0.74rem); letter-spacing: 0.1em; text-transform: uppercase; color: #E2CC93; line-height: 1.35; }
+  .am-vols { position: absolute; right: 6%; top: 4%; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; color: #1b1712; background: #E2CC93; padding: 0.1rem 0.35rem; border-radius: 2px; }
+  .am-meta { display: grid; gap: 0.15rem; min-width: 0; }
+  .am-t { font-family: var(--font-display); font-size: var(--t-base); line-height: 1.25; color: var(--ink); }
+  .am-open:hover .am-t { color: var(--fundus); }
+  .am-tbn { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.35; }
+  .am-a { font-size: var(--t-sm); color: var(--ink-soft); line-height: 1.4; }
+  .am-tr { color: color-mix(in srgb, var(--ink-soft) 80%, transparent); }
+  .am-results[data-view='covers'] .am-tbn, .am-results[data-view='covers'] .am-x, .am-results[data-view='covers'] .am-tr { display: none; }
+
+  /* ---- List view: a catalogue card per row ---- */
+  .am-results[data-view='list'] .am-book { border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 28%, transparent); content-visibility: visible; }
+  .am-results[data-view='list'] .am-open { grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding: 0.75rem 0; align-items: start; }
+  .am-results[data-view='list'] .am-gen { padding: 10% 8%; }
+  .am-results[data-view='list'] .am-gen-t, .am-results[data-view='list'] .am-gen-a, .am-results[data-view='list'] .am-vols { display: none; }
+  .am-x { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin-top: 0.25rem; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .am-x-acc { color: var(--brass-text); }
+
+  .am-group { margin: 0 0 2.4rem; }
+  .am-group-h { font-family: var(--font-display); font-size: var(--t-lg); margin: 0 0 1rem; padding-bottom: 0.4rem; border-bottom: var(--rule) solid color-mix(in srgb, var(--brass) 45%, transparent); }
+  .am-group-n { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--brass-text); margin-left: 0.4rem; }
+  .am-empty { font-style: italic; color: var(--ink-soft); }
+  .am-foot { margin-top: 2.6rem; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .am-owner { display: none; }
+  html[data-owner] .am-owner { display: inline; }
+  html[data-owner] p.am-owner { display: block; }
+
+  /* ---- The book card ---- */
+  .am-dialog {
+    margin: auto;
+    width: min(56rem, calc(100vw - 1.5rem));
+    max-height: min(52rem, calc(100dvh - 2rem));
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    border-radius: 3px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.6);
+  }
+  .am-dialog::backdrop { background: rgb(12 10 8 / 0.55); backdrop-filter: blur(2px); }
+  .am-d-close { position: sticky; top: 0; z-index: 1; display: flex; justify-content: flex-end; padding: 0.7rem 0.7rem 0; pointer-events: none; }
+  .am-d-close .am-btn { pointer-events: auto; background: var(--paper-raised); }
+  .am-d { display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); gap: clamp(1.2rem, 3vw, 2.2rem); padding: 0.4rem clamp(1rem, 3vw, 2.2rem) 2rem; }
+  @media (max-width: 40rem) { .am-d { grid-template-columns: minmax(0, 1fr); } .am-d-cover { max-width: 11rem; } }
+  .am-d-cover { align-self: start; }
+  .am-d-cover .am-gen-t { font-size: 1.15rem; -webkit-line-clamp: 8; }
+  .am-d-cover .am-gen-a { font-size: 0.78rem; }
+  .am-d-acc { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.1em; color: var(--brass-text); margin: 0 0 0.6rem; }
+  .am-fav { color: var(--fundus); }
+  .am-d-title { font-size: clamp(var(--t-xl), 3.4vw, 2.4rem); line-height: 1.1; margin: 0 0 0.4rem; }
+  .am-d-bn { font-size: var(--t-md); color: var(--ink-soft); margin: 0 0 0.6rem; }
+  .am-d-series { font-style: italic; color: var(--ink-soft); margin: 0 0 0.9rem; }
+  .am-d-credits { margin: 0 0 1rem; }
+  .am-d-row { margin: 0 0 0.3rem; font-size: var(--t-base); line-height: 1.5; }
+  .am-d-k { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass-text); margin-right: 0.35rem; }
+  .am-d-soft { color: var(--ink-soft); }
+  .am-d-shelves { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1rem; }
+  .am-d-facts { margin: 0 0 1rem; display: grid; gap: 0.35rem; }
+  .am-d-facts div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.8rem; font-size: var(--t-sm); line-height: 1.5; }
+  .am-d-facts dt { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass-text); }
+  .am-d-facts dd { margin: 0; }
+  .am-d-desc { font-size: var(--t-base); line-height: 1.75; border-left: 2px solid var(--brass); padding-left: 0.9rem; margin: 0 0 1rem; }
+  .am-d-notes { font-size: var(--t-base); line-height: 1.7; margin: 0 0 1rem; }
+  .am-d-more { margin: 1.2rem 0 0; }
+  .am-d-more ol, .am-d-more ul { margin: 0.4rem 0 0; padding-left: 1.3rem; font-size: var(--t-sm); line-height: 1.8; }
+  .am-d-edit { margin-top: 1.4rem; font-family: var(--font-mono); font-size: var(--t-xs); }
+</style>

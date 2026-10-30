@@ -1,4 +1,5 @@
 import { defineCollection, reference } from 'astro:content';
+import { ARMARIUM_SHELVES } from './lib/armarium';
 import { z } from 'zod';
 import { glob, file } from 'astro/loaders';
 import {
@@ -949,6 +950,57 @@ const papers = defineCollection({
 });
 
 /**
+ * Armarium — the home library, under Humaniora.
+ *
+ * Named for the book cupboard a monastery kept its books in. Not to be
+ * confused with `bibliotheca` (the course's reading list) or `library` (PDFs
+ * fed to ResearchLens): this is the physical collection on the shelves at
+ * home, one entry per book, or per boxed set when a set was bought together.
+ *
+ * `shelf` is a closed list because the page filters and colours by it, and a
+ * free-text genre would split one shelf into five spellings. The book's own
+ * finer description stays in `category`.
+ */
+const shelfKeys = Object.keys(ARMARIUM_SHELVES) as [keyof typeof ARMARIUM_SHELVES, ...(keyof typeof ARMARIUM_SHELVES)[]];
+
+const armarium = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/armarium' }),
+  schema: ({ image }) =>
+    z.object({
+      /** The number written in the book. A boxed set spans accession to accessionEnd. */
+      accession: z.number().int().min(1).optional(),
+      accessionEnd: z.number().int().min(1).optional(),
+      /** How many physical books this entry is. More than one for a set. */
+      volumes: z.number().int().min(1).default(1),
+      title: z.string(),
+      titleBn: optionalText,
+      series: optionalText,
+      seriesNumber: z.number().optional(),
+      author: optionalText,
+      translator: optionalText,
+      editor: optionalText,
+      /** Illustrator, introduction and the like, as a sentence. */
+      contributors: optionalText,
+      /** The credit line as printed in Bangla. */
+      creditBn: optionalText,
+      /** First shelf is where it stands; a second is where else it belongs. */
+      shelves: z.array(z.enum(shelfKeys)).min(1).max(2),
+      category: optionalText,
+      categoryBn: optionalText,
+      language: z.enum(['Bangla', 'English', 'Arabic', 'Urdu', 'Hindi', 'Other']).default('Bangla'),
+      translated: z.boolean().default(false),
+      publisher: optionalText,
+      description: optionalText,
+      /** A photograph of this copy, or a published cover of this edition. */
+      cover: image().optional(),
+      coverAlt: optionalText,
+      status: z.enum(['unread', 'reading', 'read']).optional(),
+      favourite: z.boolean().default(false),
+      added: z.coerce.date().optional(),
+    }),
+});
+
+/**
  * Archived code with a DOI (Zenodo and the like). A collection of its own
  * because the software is a separate citable record from the paper it
  * supports: its own title, its own authors, its own DOI. `doi` is the
@@ -1246,6 +1298,6 @@ export const collections = {
   works, elementa, marginalia, lectiones, bibliotheca, recipes, reviews, library, site, art, books, instrumentarium,
   pantheons, numina,
   referees,
-  instrumenta, papers, software, education, projects, images, axioms, chapters,
+  instrumenta, papers, software, armarium, education, projects, images, axioms, chapters,
   problems, apparatus, notation,
 };
