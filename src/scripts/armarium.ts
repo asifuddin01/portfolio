@@ -48,7 +48,8 @@ interface State {
 const KEYS: (keyof State)[] = ['q', 'shelf', 'lang', 'tr', 'author', 'pub', 'series', 'status', 'sort', 'group', 'view'];
 const DEFAULTS: State = { q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '', sort: 'acc', group: '', view: 'covers' };
 
-const fold = (s: string) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+import { fold, rank } from '../lib/armarium';
+
 const esc = (s: unknown) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const cmp = (a: string, b: string) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true });
@@ -309,10 +310,154 @@ function init() {
 
   const clearFilters = (): Partial<State> => ({ q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '' });
 
+  /* ---------------------------------------------------------- suggestions */
+
+  // Everyone named on a book, with the Bangla spellings its credit line gives
+  // them, so "হুমায়ূন" finds Humayun Ahmed. A Bangla name is kept only when
+  // the book names one person in that role, so it can't land on the wrong one.
+  const names = (s: string | null) => (s ?? '').split(/;|,|\s(?:and|&)\s|\s\/\s/).map((x) => x.trim()).filter(Boolean);
+  const people = new Map<string, { name: string; bn: string[]; hay: string[]; author: number; tr: number }>();
+  const seriesCount = new Map<string, number>();
+  const bookHay: Record<string, [string[], string[]]> = {};
+  for (const id of all) {
+    const b = books[id]!;
+    const credits = (b.creditBn ?? '').split(';').map((s) => s.trim());
+    const bnAuthor = credits.find((s) => s && !s.includes(':'));
+    const bnTr = credits.find((s) => s.startsWith('অনুবাদ'))?.split(':')[1]?.trim();
+    const translators = names(b.translator);
+    for (const [list, role, bn] of [[b.authors, 'author', bnAuthor], [translators, 'tr', bnTr]] as const) {
+      for (const n of list) {
+        const p = people.get(n) ?? { name: n, bn: [], hay: [fold(n)], author: 0, tr: 0 };
+        p[role]++;
+        if (bn && list.length === 1 && !p.bn.includes(bn)) { p.bn.push(bn); p.hay.push(fold(bn)); }
+        people.set(n, p);
+      }
+    }
+    if (b.series) seriesCount.set(b.series, (seriesCount.get(b.series) ?? 0) + 1);
+    bookHay[id] = [
+      [b.title, b.titleBn].filter(Boolean).map((s) => fold(s!)),
+      [...b.authors, ...translators, ...names(b.editor), b.creditBn].filter(Boolean).map((s) => fold(s!)),
+    ];
+  }
+
+  /** The label with the typed part marked, when folding kept its length. */
+  const mark = (label: string, qq: string) => {
+    const f = fold(label);
+    const i = f.length === label.length ? f.indexOf(qq) : -1;
+    return i < 0 ? esc(label) : `${esc(label.slice(0, i))}<mark>${esc(label.slice(i, i + qq.length))}</mark>${esc(label.slice(i + qq.length))}`;
+  };
+  const row = (main: string, sub: string, kind: string) =>
+    `<span class="am-sg-main">${main}</span>${sub ? `<span class="am-sg-sub">${sub}</span>` : ''}<span class="am-sg-kind">${esc(kind)}</span>`;
+  const plural = (n: number) => `${n} ${n === 1 ? 'book' : 'books'}`;
+
+  interface Suggestion { s: number; kind: number; n: number; label: string; html: string; go: () => void }
+
+  function suggestions(qq: string): Suggestion[] {
+    const out: Suggestion[] = [];
+    for (const p of people.values()) {
+      const s = rank(qq, p.hay);
+      if (s > 3) continue;
+      const n = p.author + p.tr;
+      const role = p.author && p.tr ? 'Author, translator' : p.author ? 'Author' : 'Translator';
+      out.push({
+        s, kind: 0, n, label: p.name,
+        html: row(mark(p.name, qq), p.bn[0] ? `<span lang="bn">${mark(p.bn[0], qq)}</span>` : '', `${role} · ${plural(n)}`),
+        // Authors have a filter of their own; a translator is found by name.
+        go: () => set(p.author ? { ...clearFilters(), author: p.name, sort: 'series' } : { ...clearFilters(), q: p.name }, true),
+      });
+    }
+    for (const [name, n] of seriesCount) {
+      const s = rank(qq, [fold(name)]);
+      if (s <= 3) out.push({ s, kind: 1, n, label: name, html: row(mark(name, qq), '', `Series · ${plural(n)}`), go: () => set({ ...clearFilters(), series: name, sort: 'series' }, true) });
+    }
+    for (const id of all) {
+      const b = books[id]!;
+      const [titles, credits] = bookHay[id]!;
+      // A book whose title matches comes before one found by its author's name.
+      const s = Math.min(rank(qq, titles), rank(qq, credits) + 4);
+      if (s > 7) continue;
+      const sub = [b.titleBn && b.titleBn !== b.title ? `<span lang="bn">${mark(b.titleBn, qq)}</span>` : '', esc(b.authors.join(', ') || (b.editor ? `ed. ${b.editor}` : ''))].filter(Boolean).join(' · ');
+      out.push({ s, kind: 2, n: 0, label: b.title, html: row(mark(b.title, qq), sub, b.acc ? `No. ${b.acc}` : 'Book'), go: () => open(id, q) });
+    }
+    out.sort((a, b) => a.s - b.s || a.kind - b.kind || b.n - a.n || cmp(a.label, b.label));
+    // At most six people, three series and twelve books.
+    const room = [6, 3, 12];
+    const kept = out.filter((x) => (room[x.kind] = room[x.kind]! - 1) >= 0);
+    // Then everything the words match, which is what the shelf below shows.
+    const terms = qq.split(/\s+/).filter(Boolean);
+    const total = all.filter((id) => matches(books[id]!, terms)).length;
+    if (total) {
+      kept.push({ s: 9, kind: 3, n: total, label: '', html: `<span class="am-sg-main">See all ${plural(total)} matching</span>`, go: () => { q.blur(); results.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+    }
+    return kept;
+  }
+
+  const listbox = tools.querySelector<HTMLUListElement>('[data-suggest]')!;
+  let offered: Suggestion[] = [];
+  let active = -1;
+
+  function showSuggestions() {
+    const qq = fold(q.value.trim());
+    offered = qq ? suggestions(qq) : [];
+    listbox.innerHTML = offered
+      .map((x, i) => `<li role="option" id="am-sg-${i}" class="am-sg${x.kind === 3 ? ' am-sg-all' : ''}" aria-selected="false" data-i="${i}">${x.html}</li>`)
+      .join('');
+    listbox.hidden = !offered.length;
+    q.setAttribute('aria-expanded', String(!listbox.hidden));
+    setActive(-1);
+  }
+  function setActive(i: number) {
+    listbox.querySelector('[aria-selected="true"]')?.setAttribute('aria-selected', 'false');
+    active = i;
+    const li = i >= 0 ? listbox.children[i] : null;
+    if (li) {
+      li.setAttribute('aria-selected', 'true');
+      li.scrollIntoView({ block: 'nearest' });
+      q.setAttribute('aria-activedescendant', li.id);
+    } else q.removeAttribute('aria-activedescendant');
+  }
+  function hideSuggestions() {
+    listbox.hidden = true;
+    q.setAttribute('aria-expanded', 'false');
+    setActive(-1);
+  }
+  function pick(i: number) {
+    const x = offered[i];
+    hideSuggestions();
+    x?.go();
+  }
+
+  q.addEventListener('keydown', (e) => {
+    if (listbox.hidden) {
+      if (e.key === 'ArrowDown' && q.value.trim()) { e.preventDefault(); showSuggestions(); }
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const n = offered.length;
+      setActive(e.key === 'ArrowDown' ? (active + 1) % n : (active - 1 + n) % n);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (active >= 0) pick(active); else hideSuggestions();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      hideSuggestions();
+    }
+  });
+  q.addEventListener('blur', hideSuggestions);
+  // Keep the focus in the box while a suggestion is pressed, so blur doesn't
+  // close the list before the click lands.
+  listbox.addEventListener('mousedown', (e) => e.preventDefault());
+  listbox.addEventListener('click', (e) => {
+    const li = (e.target as HTMLElement).closest<HTMLElement>('[data-i]');
+    if (li) pick(Number(li.dataset.i));
+  });
+
   /* ---------------------------------------------------------------- wiring */
 
   let timer = 0;
   q.addEventListener('input', () => {
+    showSuggestions();
     window.clearTimeout(timer);
     timer = window.setTimeout(() => set({ q: q.value }), 120);
   });

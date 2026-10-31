@@ -170,10 +170,13 @@ const data = Object.fromEntries(
         without it they would do nothing. */}
     <section class="am-tools" aria-label="Search and filter" data-tools hidden>
       <div class="am-searchrow">
-        <label class="am-search">
-          <span class="am-lbl">Search</span>
-          <input type="search" name="q" placeholder="Title, author, translator, publisher, in English or বাংলা" autocomplete="off" spellcheck="false" />
-        </label>
+        <div class="am-search">
+          <label class="am-lbl" for="am-q">Search</label>
+          <div class="am-combo">
+            <input id="am-q" type="search" name="q" placeholder="Title, author, translator, publisher, in English or বাংলা" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="am-suggest" />
+            <ul class="am-suggest" id="am-suggest" role="listbox" aria-label="Suggestions" data-suggest hidden></ul>
+          </div>
+        </div>
         <button type="button" class="am-btn" data-surprise title="Open a random book from the current results">Surprise me</button>
       </div>
 
@@ -380,6 +383,30 @@ const data = Object.fromEntries(
   }
   .am-search input { font-size: var(--t-md); padding: 0.7rem 0.9rem; }
   .am-search input:focus, .am-grid select:focus { outline: 2px solid var(--fundus); outline-offset: 1px; }
+  .am-combo { position: relative; }
+  .am-suggest {
+    position: absolute;
+    z-index: 20;
+    inset: calc(100% + 4px) 0 auto;
+    margin: 0;
+    padding: 0.3rem 0;
+    list-style: none;
+    max-height: min(28rem, 62vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--paper-raised);
+    border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+    border-radius: 2px;
+    box-shadow: 0 14px 36px -14px rgb(0 0 0 / 0.5);
+  }
+  .am-sg { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; align-items: baseline; padding: 0.5rem 0.9rem; cursor: pointer; }
+  .am-sg[aria-selected='true'], .am-sg:hover { background: color-mix(in srgb, var(--fundus) 13%, transparent); }
+  .am-sg-main { color: var(--ink); font-size: var(--t-base); }
+  .am-sg-sub { grid-row: 2; font-size: var(--t-sm); color: var(--ink-soft); }
+  .am-sg-kind { grid-column: 2; grid-row: 1; font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass-text); white-space: nowrap; }
+  .am-sg mark { background: none; color: var(--fundus); font-weight: 600; }
+  .am-sg-all { border-top: 1px solid color-mix(in srgb, var(--brass) 35%, transparent); margin-top: 0.3rem; }
+  .am-sg-all .am-sg-main { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fundus); }
   .am-btn {
     font-family: var(--font-mono);
     font-size: var(--t-xs);
