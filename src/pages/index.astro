@@ -366,13 +366,16 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
   /* Beside the portrait the text's own bottom margin would push the row's
      centre off the photo's; the row carries the space instead. */
   .fr-id--portrait .fr-id-text > :last-child { margin-bottom: 0; }
+  /* Framed like the plates: the outer rule is the box's own edge, so it lines
+     up with the name and the lines below it, and the second rule is drawn
+     inside. An outline pushed outward stood a few pixels proud of the text. */
   .fr-portrait {
     margin: 0;
     width: 6.5rem;
-    padding: 0.35rem;
+    padding: 0.5rem;
     border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
     outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
-    outline-offset: 3px;
+    outline-offset: -4px;
   }
   .fr-portrait :global(img) {
     display: block;
@@ -387,7 +390,7 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
   :global([data-theme='nocturne']) .fr-portrait :global(img) { filter: grayscale(1) sepia(0.12) contrast(1.02) brightness(0.94); }
   @media (max-width: 559px) {
     .fr-id--portrait { align-items: start; }
-    .fr-portrait { width: 4.5rem; padding: 0.25rem; }
+    .fr-portrait { width: 4.5rem; padding: 0.4rem; outline-offset: -3px; }
   }
   .fr-name {
     font-size: clamp(2.6rem, 8.5vw, 4rem);

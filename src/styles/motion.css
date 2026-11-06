@@ -35,6 +35,11 @@
   opacity: 1;
   transform: none;
 }
+/* An epigraph's words are spans joined by a non-breaking space, so each one
+   is a box of its own — the line can only wrap between boxes. Set only under
+   `.js`, a visitor with reduced motion got the spans inline, the spaces glued
+   every word to the next, and the epigraph ran as one line into the figure. */
+.word { display: inline-block; }
 
 @media all {
 
