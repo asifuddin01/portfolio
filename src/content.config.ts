@@ -762,7 +762,7 @@ const numina = defineCollection({
  */
 const site = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/site' }),
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     dropCap: z.boolean().default(false),
     // Frontispiece-only fields.
@@ -829,6 +829,10 @@ const site = defineCollection({
     languages: z.string().optional(),
     /** Reading and research interests, one paragraph. Shown under Additional. */
     interests: z.string().optional(),
+    /** Frontispiece: the author's portrait beside the name. Small on purpose —
+        the figure is the page's subject; the portrait says who made it. */
+    portrait: image().optional(),
+    portraitAlt: z.string().optional(),
   }),
 });
 

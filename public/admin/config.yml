@@ -2693,6 +2693,21 @@ collections:
           The page a stranger lands on. It is arranged around one question — can he build things that work — so the copy here should answer that and nothing else. The long version lives in the Summa, reached by clicking your name.
         fields:
           - { label: Heading, name: title, widget: string }
+          - label: Portrait
+            name: portrait
+            widget: image
+            required: false
+            media_folder: ../../assets/portrait
+            public_folder: ../../assets/portrait
+            hint: >-
+              The small photo beside your name. Head and shoulders, plain
+              background, good light; it is set in black and white to match the
+              page, so colour does not matter. Leave empty to show no photo.
+          - label: Portrait description
+            name: portraitAlt
+            widget: string
+            required: false
+            hint: What a screen reader says for the photo. Your name is enough.
           - label: Tagline
             name: tagline
             widget: text

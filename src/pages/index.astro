@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LesionRule from '../components/ornament/LesionRule.astro';
 import DescentPlate from '../components/front/DescentPlate.astro';
 import { getCollection, getEntry } from 'astro:content';
+import { Image } from 'astro:assets';
 import { getProjects, projectBrief } from '../lib/collections';
 import { AUTHOR, LOCATION, GITHUB } from '../consts';
 
@@ -34,6 +35,7 @@ const now = fp?.data.now ?? '';
 const nowLabel = fp?.data.nowLabel ?? '';
 const nowItems = fp?.data.nowItems ?? [];
 const location = fp?.data.location ?? LOCATION;
+const portrait = fp?.data.portrait;
 const words = epigraph.split(' ').filter(Boolean);
 
 const projects = await getProjects();
@@ -62,8 +64,32 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     <section class="fr-hero" aria-labelledby="fr-h">
       <div class="fr-hero-text">
         <h1 class="fr-name" id="fr-h" data-intro="press">{AUTHOR}</h1>
-        <p class="fr-tag" data-intro style="--d:160ms">{tagline}</p>
-        {standing && <p class="fr-standing" data-intro style="--d:220ms">{standing}</p>}
+        {/* A frontispiece faces the title page, and in an old book it is
+            usually the author's portrait: here a small one, beside the lines
+            that say what he does, so it names who made the work without
+            competing with the figure. Under the name, not beside it, so the
+            name keeps its one line. */}
+        <div class:list={['fr-id', { 'fr-id--portrait': portrait }]}>
+          {portrait && (
+            <figure class="fr-portrait" data-intro style="--d:120ms">
+              <Image
+                src={portrait}
+                alt={fp?.data.portraitAlt || AUTHOR}
+                width={240}
+                height={300}
+                widths={[120, 240, 360]}
+                sizes="(max-width: 559px) 4.5rem, 6.5rem"
+                loading="eager"
+                decoding="async"
+                quality={78}
+              />
+            </figure>
+          )}
+          <div class="fr-id-text">
+            <p class="fr-tag" data-intro style="--d:160ms">{tagline}</p>
+            {standing && <p class="fr-standing" data-intro style="--d:220ms">{standing}</p>}
+          </div>
+        </div>
 
         <blockquote class="fr-epi">
           <p class="fr-epi-t">
@@ -328,6 +354,40 @@ const works = (await getCollection('works')).sort((a, b) => a.data.plate - b.dat
     }
     .fr-hero .fr-ev, .fr-hero-plate { order: 0; }
     .fr-hero .fr-ev { grid-column: 1 / -1; }
+  }
+  /* ---- Portrait --------------------------------------------------- */
+  .fr-id--portrait {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 clamp(1.1rem, 2.4vw, 1.6rem);
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  /* Beside the portrait the text's own bottom margin would push the row's
+     centre off the photo's; the row carries the space instead. */
+  .fr-id--portrait .fr-id-text > :last-child { margin-bottom: 0; }
+  .fr-portrait {
+    margin: 0;
+    width: 6.5rem;
+    padding: 0.35rem;
+    border: 0.5px solid color-mix(in srgb, var(--brass) 70%, transparent);
+    outline: 0.5px solid color-mix(in srgb, var(--brass) 40%, transparent);
+    outline-offset: 3px;
+  }
+  .fr-portrait :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 30%;
+    /* Toned like the plates: an engraving's black and white, a little warm. */
+    filter: grayscale(1) sepia(0.16) contrast(1.06);
+  }
+  :global([data-theme='nocturne']) .fr-portrait :global(img) { filter: grayscale(1) sepia(0.12) contrast(1.02) brightness(0.94); }
+  @media (max-width: 559px) {
+    .fr-id--portrait { align-items: start; }
+    .fr-portrait { width: 4.5rem; padding: 0.25rem; }
   }
   .fr-name {
     font-size: clamp(2.6rem, 8.5vw, 4rem);
