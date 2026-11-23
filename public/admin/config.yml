@@ -1600,8 +1600,9 @@ collections:
     identifier_field: title
     slug: "{{slug}}"
     summary: "{{accession}} · {{title}} — {{author}}"
-    sortable_fields: [ accession, title, author, language ]
+    sortable_fields: [ accession, title, author, language, rating ]
     view_filters:
+      - { label: Rated, field: rating, pattern: "." }
       - { label: Bangla, field: language, pattern: Bangla }
       - { label: English, field: language, pattern: English }
       - { label: Translations, field: translated, pattern: true }
@@ -1675,8 +1676,9 @@ collections:
           - { label: "Reading now", value: reading }
           - { label: "Read", value: read }
       - { label: Favourite, name: favourite, widget: boolean, default: false, required: false }
+      - { label: My rating, name: rating, widget: number, value_type: float, min: 0.5, max: 5, step: 0.5, required: false, hint: "Out of five, in half stars: 3, 3.5, 4, 4.5, 5. Public. You can also rate from the book's card on /armarium." }
+      - { label: My review, name: review, widget: text, required: false, hint: "Public: shown on the book's card under the rating." }
       - { label: Date added, name: added, widget: datetime, time_format: false, date_format: YYYY-MM-DD, format: YYYY-MM-DD, required: false }
-      - { label: Notes, name: body, widget: markdown, required: false, hint: "Your own notes on the book. Shown on its card." }
   - name: software
     label: Archived software
     label_singular: Archive

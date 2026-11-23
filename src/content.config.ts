@@ -1000,6 +1000,10 @@ const armarium = defineCollection({
       coverAlt: optionalText,
       status: z.enum(['unread', 'reading', 'read']).optional(),
       favourite: z.boolean().default(false),
+      /** Out of five in half stars, and the review under it. Both public;
+       *  set from /admin or from the book's card by the owner. */
+      rating: z.number().min(0.5).max(5).multipleOf(0.5).optional(),
+      review: optionalText,
       added: z.coerce.date().optional(),
     }),
 });

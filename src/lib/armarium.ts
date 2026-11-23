@@ -61,3 +61,24 @@ export function rank(q: string, names: string[]) {
   }
   return best;
 }
+
+/**
+ * A book's file with its rating and review replaced, for saving from the
+ * page. Old values go whether written as one line or as a YAML block
+ * (`review: |-` and its indented lines, as the CMS writes them); new ones are
+ * written as single lines, the review as a JSON string, which is valid YAML.
+ * A rating of 0 or an empty review removes the field.
+ */
+export function withRating(mdx: string, rating: number, review: string) {
+  const m = /^---\n([\s\S]*?)\n---/.exec(mdx);
+  if (!m) throw new Error('The book file has no frontmatter.');
+  const kept: string[] = [];
+  const lines = m[1]!.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^(rating|review):/.test(lines[i]!)) { kept.push(lines[i]!); continue; }
+    while (i + 1 < lines.length && /^(\s|$)/.test(lines[i + 1]!)) i++;
+  }
+  if (rating) kept.push(`rating: ${rating}`);
+  if (review.trim()) kept.push(`review: ${JSON.stringify(review.trim())}`);
+  return `---\n${kept.join('\n')}\n---${mdx.slice(m[0].length)}`;
+}

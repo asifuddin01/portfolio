@@ -37,22 +37,38 @@ interface Book {
   status: 'unread' | 'reading' | 'read' | null;
   favourite: boolean;
   added: string | null;
-  notes: string[];
+  rating: number | null;
+  review: string | null;
 }
 
 interface State {
   q: string; shelf: string; lang: string; tr: string; author: string; pub: string;
-  series: string; status: string; sort: string; group: string; view: string;
+  series: string; status: string; rate: string; sort: string; group: string; view: string;
 }
 
-const KEYS: (keyof State)[] = ['q', 'shelf', 'lang', 'tr', 'author', 'pub', 'series', 'status', 'sort', 'group', 'view'];
-const DEFAULTS: State = { q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '', sort: 'acc', group: '', view: 'covers' };
+const KEYS: (keyof State)[] = ['q', 'shelf', 'lang', 'tr', 'author', 'pub', 'series', 'status', 'rate', 'sort', 'group', 'view'];
+const DEFAULTS: State = { q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '', rate: '', sort: 'acc', group: '', view: 'covers' };
 
-import { fold, rank } from '../lib/armarium';
+import { fold, rank, withRating } from '../lib/armarium';
 
 const esc = (s: unknown) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const cmp = (a: string, b: string) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true });
+
+// Where a rating is saved; the same repository and branch as public/admin/config.yml.
+const REPO = 'asifuddin01/portfolio';
+const BRANCH = 'main';
+/** The GitHub token the CMS keeps after the owner signs in at /admin. */
+const githubToken = (): string => {
+  try { return JSON.parse(localStorage.getItem('sveltia-cms.user') ?? 'null')?.token ?? ''; } catch { return ''; }
+};
+// GitHub sends and takes file contents as base64 of the UTF-8 bytes; atob/btoa alone would mangle Bangla.
+const fromBase64 = (b64: string) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), (c) => c.charCodeAt(0)));
+const toBase64 = (text: string) => {
+  let bin = '';
+  for (const byte of new TextEncoder().encode(text)) bin += String.fromCharCode(byte);
+  return btoa(bin);
+};
 
 function init() {
   const root = document.querySelector<HTMLElement>('.am');
@@ -66,22 +82,21 @@ function init() {
   // search text and sort key, here rather than sending them twice.
   const books: Record<string, Book> = {};
   const search: Record<string, [string, string]> = {};
+  const hay = (b: Book) =>
+    fold([b.title, b.titleBn, b.series, b.author, b.translator, b.editor, b.contributors, b.creditBn, b.category,
+      b.categoryBn, b.publisher, b.description, b.review, b.language, b.acc, ...b.shelfNames].filter(Boolean).join(' '));
   for (const [id, p] of Object.entries(raw.books)) {
     const b = {
       acc: null, accEnd: null, volumes: 1, titleBn: null, series: null, seriesNo: null, author: null, authors: [],
       translator: null, editor: null, contributors: null, creditBn: null, category: null, categoryBn: null,
       translated: false, publisher: null, pub: null, description: null, cover: null, status: null, favourite: false,
-      added: null, notes: [], ...p, id,
+      added: null, rating: null, review: null, ...p, id,
     } as Book;
     b.shelfNames = b.shelves.map((s) => shelves[s] ?? s);
     books[id] = b;
     const first = (b.author || b.editor || b.translator || '').split(/;|,|\sand\s/)[0]!.trim();
     const parts = first.replace(/\(.*?\)/g, '').trim().split(/\s+/);
-    search[id] = [
-      fold([b.title, b.titleBn, b.series, b.author, b.translator, b.editor, b.contributors, b.creditBn, b.category,
-        b.categoryBn, b.publisher, b.description, b.language, b.acc, ...b.shelfNames].filter(Boolean).join(' ')),
-      `${parts.at(-1) ?? ''} ${first}`.toLowerCase(),
-    ];
+    search[id] = [hay(b), `${parts.at(-1) ?? ''} ${first}`.toLowerCase()];
   }
   const shelfOrder = Object.keys(shelves);
   const tools = root.querySelector<HTMLElement>('[data-tools]')!;
@@ -119,6 +134,10 @@ function init() {
     if (state.status === 'fav' && !b.favourite) return false;
     if (state.status === 'unread' && b.status && b.status !== 'unread') return false;
     if ((state.status === 'read' || state.status === 'reading') && b.status !== state.status) return false;
+    if (state.rate === 'rated' && !b.rating) return false;
+    if (state.rate === 'none' && b.rating) return false;
+    if (state.rate === 'review' && !b.review) return false;
+    if (/^\d$/.test(state.rate) && (b.rating ?? 0) < +state.rate) return false;
     return true;
   };
 
@@ -128,6 +147,7 @@ function init() {
     author: (a, b) => cmp(search[a.id]![1], search[b.id]![1]) || cmp(a.series ?? '', b.series ?? '') || (a.seriesNo ?? 0) - (b.seriesNo ?? 0) || cmp(a.title, b.title),
     series: (a, b) => (a.series ? 0 : 1) - (b.series ? 0 : 1) || cmp(a.series ?? '', b.series ?? '') || (a.seriesNo ?? 0) - (b.seriesNo ?? 0) || cmp(a.title, b.title),
     added: (a, b) => cmp(b.added ?? '', a.added ?? '') || (b.acc ?? 0) - (a.acc ?? 0),
+    rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || cmp(a.title, b.title),
   };
 
   /** A group's key and the order groups are listed in. */
@@ -234,6 +254,25 @@ function init() {
 
   const by = (label: string, names: string | null) =>
     names ? `<p class="am-d-row"><span class="am-d-k">${label}</span> ${esc(names)}</p>` : '';
+  const stars = (r: number) => `<span class="am-stars" style="--r:${r}" aria-hidden="true"></span>`;
+  const paragraphs = (t: string) => t.split(/\n\s*\n/).map((p) => `<p>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+
+  /** The rating and review controls, for the owner's browser only: the one
+   *  holding the CMS's GitHub sign-in, which is what saving needs. */
+  function editor(b: Book) {
+    if (!githubToken()) return `<p class="am-owner am-d-edit">Sign in at <a class="link" href="/admin/">/admin</a> to rate and review from here.</p>`;
+    const r = b.rating ?? 0;
+    return `<section class="am-rate" aria-label="Rate and review">
+      <p class="am-d-k">Rate and review</p>
+      <div class="am-rate-row">
+        <span class="am-stars" role="slider" tabindex="0" aria-label="Rating" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${r}" aria-valuetext="${r ? `${r} of 5` : 'Not rated'}" style="--r:${r}" data-rate-stars></span>
+        <input type="number" min="0.5" max="5" step="0.5" inputmode="decimal" aria-label="Rating out of five" value="${r || ''}" data-rate-num>
+        <button type="button" class="am-linkish" data-rate-clear>Clear</button>
+      </div>
+      <textarea data-rate-review aria-label="Review" placeholder="What you made of it. Visitors will read this.">${esc(b.review ?? '')}</textarea>
+      <p class="am-rate-actions"><button type="button" class="am-btn" data-rate-save>Save</button><span class="am-rate-msg" data-rate-msg aria-live="polite"></span></p>
+    </section>`;
+  }
 
   function open(id: string, opener?: HTMLElement | null) {
     const b = books[id];
@@ -253,6 +292,7 @@ function init() {
         <p class="am-d-acc">No. ${esc(b.acc ?? '—')}${b.accEnd ? `–${esc(b.accEnd)}` : ''}${b.volumes > 1 ? ` · ${b.volumes} volumes` : ''}${b.favourite ? ' · <span class="am-fav">Favourite</span>' : ''}${b.status ? ` · ${statusText[b.status]}` : ''}</p>
         <h2 class="am-d-title" id="am-d-title">${esc(b.title)}</h2>
         ${b.titleBn && b.titleBn !== b.title ? `<p class="am-d-bn" lang="bn">${esc(b.titleBn)}</p>` : ''}
+        ${b.rating ? `<p class="am-d-rating"><span class="am-d-k">My rating</span>${stars(b.rating)} ${b.rating} of 5</p>` : ''}
         ${b.series ? `<p class="am-d-series">${b.seriesNo ? `Book ${esc(b.seriesNo)} of ` : 'Part of '}<button type="button" class="am-linkish" data-go-series="${esc(b.series)}">${esc(b.series)}</button></p>` : ''}
         <div class="am-d-credits">
           ${b.authors.length ? `<p class="am-d-row"><span class="am-d-k">By</span> ${b.authors.map((a) => `<button type="button" class="am-linkish" data-go-author="${esc(a)}">${esc(a)}</button>`).join(', ')}</p>` : ''}
@@ -267,13 +307,16 @@ function init() {
           ${b.added ? `<div><dt>Added</dt><dd>${esc(b.added)}</dd></div>` : ''}
         </dl>
         ${b.description ? `<p class="am-d-desc" lang="bn">${esc(b.description)}</p>` : ''}
-        ${b.notes.length ? `<div class="am-d-notes">${b.notes.map((p) => `<p>${esc(p)}</p>`).join('')}</div>` : ''}
+        ${b.review ? `<div class="am-d-review"><p class="am-d-k">My review</p>${paragraphs(b.review)}</div>` : ''}
         ${sameSeries.length > 1 ? `<div class="am-d-more"><p class="am-d-k">In this series</p><ol>${sameSeries.map((x) => `<li>${x.id === id ? `<strong>${esc(x.title)}</strong>` : `<button type="button" class="am-linkish" data-go-book="${esc(x.id)}">${esc(x.title)}</button>`}</li>`).join('')}</ol></div>` : ''}
         ${!b.series && sameAuthor.length ? `<div class="am-d-more"><p class="am-d-k">More by ${esc(b.authors[0])}</p><ul>${sameAuthor.map((x) => `<li><button type="button" class="am-linkish" data-go-book="${esc(x.id)}">${esc(x.title)}</button></li>`).join('')}</ul></div>` : ''}
+        ${editor(b)}
         <p class="am-owner am-d-edit"><a class="link" href="/admin/#/collections/armarium/entries/${esc(id)}">Edit this book</a></p>
       </div>`;
     const img = dialogBody.querySelector('img');
     if (img) { img.alt = b.coverAlt; img.loading = 'eager'; }
+    current = id;
+    draft = b.rating ?? 0;
     if (!dialog.open) {
       lastOpener = opener ?? lastOpener;
       dialog.showModal();
@@ -282,6 +325,106 @@ function init() {
     history.replaceState(history.state, '', `${location.pathname}${location.search}#book=${encodeURIComponent(id)}`);
   }
   let lastOpener: HTMLElement | null = null;
+  let current = '';
+  let draft = 0;
+
+  /* ------------------------------------------------- rating, by the owner */
+
+  function setDraft(r: number) {
+    draft = Math.min(5, Math.max(0, Math.round(r * 2) / 2));
+    const el = dialogBody.querySelector<HTMLElement>('[data-rate-stars]');
+    const num = dialogBody.querySelector<HTMLInputElement>('[data-rate-num]');
+    if (el) {
+      el.style.setProperty('--r', String(draft));
+      el.setAttribute('aria-valuenow', String(draft));
+      el.setAttribute('aria-valuetext', draft ? `${draft} of 5` : 'Not rated');
+    }
+    if (num && document.activeElement !== num) num.value = draft ? String(draft) : '';
+  }
+  // A press or drag on the stars takes the half star under the pointer.
+  const underPointer = (e: PointerEvent, el: HTMLElement) => {
+    const box = el.getBoundingClientRect();
+    return Math.max(0.5, Math.ceil(((e.clientX - box.left) / box.width) * 10) / 2);
+  };
+  dialogBody.addEventListener('pointerdown', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-rate-stars]');
+    if (!el) return;
+    el.setPointerCapture(e.pointerId);
+    setDraft(underPointer(e, el));
+    const move = (m: PointerEvent) => setDraft(underPointer(m, el));
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', () => el.removeEventListener('pointermove', move), { once: true });
+  });
+  dialogBody.addEventListener('keydown', (e) => {
+    if (!(e.target as HTMLElement).matches('[data-rate-stars]')) return;
+    const step = ({ ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5 } as Record<string, number>)[e.key];
+    if (step) setDraft(Math.max(0.5, draft + step));
+    else if (e.key === 'Home') setDraft(0.5);
+    else if (e.key === 'End') setDraft(5);
+    else if (e.key === 'Delete' || e.key === 'Backspace') setDraft(0);
+    else return;
+    e.preventDefault();
+  });
+  dialogBody.addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.matches('[data-rate-num]')) setDraft(t.value ? +t.value : 0);
+  });
+  dialogBody.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.matches('[data-rate-num]')) t.value = draft ? String(draft) : '';
+  });
+  dialogBody.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest('[data-rate-clear], [data-rate-save]');
+    if (!t) return;
+    if (t.hasAttribute('data-rate-clear')) return setDraft(0);
+    void save(current, draft, dialogBody.querySelector<HTMLTextAreaElement>('[data-rate-review]')!.value);
+  });
+
+  /** Writes the rating and review into the book's file on GitHub, as the CMS
+   *  would, then shows them here at once; the public page follows when the
+   *  site rebuilds. */
+  async function save(id: string, rating: number, review: string) {
+    const b = books[id]!;
+    const msg = dialogBody.querySelector<HTMLElement>('[data-rate-msg]')!;
+    const btn = dialogBody.querySelector<HTMLButtonElement>('[data-rate-save]')!;
+    btn.disabled = true;
+    msg.textContent = 'Saving…';
+    try {
+      const url = `https://api.github.com/repos/${REPO}/contents/src/content/armarium/${encodeURIComponent(id)}.mdx`;
+      const headers = { Authorization: `Bearer ${githubToken()}`, Accept: 'application/vnd.github+json' };
+      const message = `Armarium: ${b.title}, ${rating ? `${rating} of 5` : 'rating cleared'}${review.trim() ? ', with a review' : ''}`;
+      // Read the file fresh, and once more if it changed under us (a second save, or the CMS).
+      for (let attempt = 0; ; attempt++) {
+        const got = await fetch(`${url}?ref=${BRANCH}`, { headers, cache: 'no-store' });
+        if (!got.ok) throw new Error(got.status === 401 ? 'the GitHub sign-in has expired; sign in at /admin again' : `GitHub answered ${got.status}`);
+        const file = (await got.json()) as { content: string; sha: string };
+        const content = toBase64(withRating(fromBase64(file.content), rating, review));
+        const put = await fetch(url, { method: 'PUT', headers, body: JSON.stringify({ message, content, sha: file.sha, branch: BRANCH }) });
+        if (put.ok) break;
+        if (put.status !== 409 || attempt) throw new Error(`GitHub answered ${put.status}`);
+      }
+      b.rating = rating || null;
+      b.review = review.trim() || null;
+      search[id]![0] = hay(b);
+      refreshCard(b);
+      apply();
+      const top = dialogBody.scrollTop;
+      open(id);
+      dialogBody.scrollTop = top;
+      dialogBody.querySelector('[data-rate-msg]')!.textContent = 'Saved. Visitors will see it once the site rebuilds, in about four minutes.';
+    } catch (err) {
+      msg.textContent = `Not saved: ${(err as Error).message}.`;
+      btn.disabled = false;
+    }
+  }
+
+  function refreshCard(b: Book) {
+    const card = cards.get(b.id)!;
+    card.querySelector('.am-rating')?.remove();
+    if (b.rating) card.querySelector('.am-a')!.insertAdjacentHTML('afterend', `<span class="am-rating">${stars(b.rating)} ${b.rating}</span>`);
+    const btn = card.querySelector<HTMLElement>('[data-open]')!;
+    btn.setAttribute('aria-label', btn.getAttribute('aria-label')!.replace(/, rated [\d.]+ of 5(?= — details$)|(?= — details$)/, b.rating ? `, rated ${b.rating} of 5` : ''));
+  }
 
   dialog.addEventListener('close', () => {
     history.replaceState(history.state, '', `${location.pathname}${location.search}`);
@@ -308,7 +451,7 @@ function init() {
     }
   });
 
-  const clearFilters = (): Partial<State> => ({ q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '' });
+  const clearFilters = (): Partial<State> => ({ q: '', shelf: '', lang: '', tr: '', author: '', pub: '', series: '', status: '', rate: '' });
 
   /* ---------------------------------------------------------- suggestions */
 
@@ -479,6 +622,7 @@ function init() {
     if (t.dataset.filterShelf) set({ ...clearFilters(), shelf: t.dataset.filterShelf }, true);
     if (t.dataset.filterLang) set({ ...clearFilters(), lang: t.dataset.filterLang }, true);
     if (t.dataset.filterAuthor) set({ ...clearFilters(), author: t.dataset.filterAuthor, sort: 'series' }, true);
+    if (t.dataset.filterRate) set({ ...clearFilters(), rate: t.dataset.filterRate, sort: 'rating' }, true);
   });
   // "/" puts the cursor in the search box, as on most catalogues.
   document.addEventListener('keydown', (e) => {

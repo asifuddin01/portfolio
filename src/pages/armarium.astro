@@ -74,11 +74,12 @@ const books = await Promise.all(
       status: d.status ?? null,
       favourite: d.favourite,
       added: d.added ? d.added.toISOString().slice(0, 10) : null,
-      notes: (e.body ?? '').trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+      rating: d.rating ?? null,
+      review: d.review ?? null,
       sortAuthor: surnameKey(d.author || d.editor || d.translator),
       search: fold([
         d.title, d.titleBn, d.series, d.author, d.translator, d.editor, d.contributors, d.creditBn,
-        d.category, d.categoryBn, d.publisher, d.description, d.language, d.accession,
+        d.category, d.categoryBn, d.publisher, d.description, d.review, d.language, d.accession,
         ...shelves.map((s) => ARMARIUM_SHELVES[s]),
       ].filter(Boolean).join(' ')),
     };
@@ -103,6 +104,9 @@ const shelfCount = (Object.keys(ARMARIUM_SHELVES) as Shelf[])
 const nextAccession = Math.max(0, ...books.map((b) => b.accEnd ?? b.acc ?? 0)) + 1;
 const hasStatus = books.some((b) => b.status);
 const hasFav = books.some((b) => b.favourite);
+const rated = books.filter((b) => b.rating);
+const ratedAvg = rated.length ? (rated.reduce((n, b) => n + b.rating!, 0) / rated.length).toFixed(1) : '';
+const fiveStar = rated.filter((b) => b.rating === 5).length;
 
 /* Facet values for the selects, most-held first. */
 const tally = (keys: (string | null | undefined)[]) => {
@@ -161,6 +165,15 @@ const data = Object.fromEntries(
         <p class="am-top">
           {topAuthors.map(([a, n], i) => <>{i > 0 && ' · '}<button type="button" class="am-linkish" data-filter-author={a}>{a}</button> {n}</>)}
         </p>
+        {rated.length > 0 && (
+          <>
+            <p class="am-bars-h">My ratings</p>
+            <p class="am-top">
+              <button type="button" class="am-linkish" data-filter-rate="rated">{rated.length} rated</button>, averaging {ratedAvg} of 5
+              {fiveStar > 0 && <> · <button type="button" class="am-linkish" data-filter-rate="5">{fiveStar} at five stars</button></>}
+            </p>
+          </>
+        )}
       </div>
     </section>
 
@@ -216,6 +229,19 @@ const data = Object.fromEntries(
               </select>
             </label>
           )}
+          {rated.length > 0 && (
+            <label><span class="am-lbl">My rating</span>
+              <select name="rate">
+                <option value="">Any</option>
+                <option value="5">Five stars</option>
+                <option value="4">Four and up</option>
+                <option value="3">Three and up</option>
+                <option value="rated">Rated</option>
+                <option value="review">With a review</option>
+                <option value="none">Not yet rated</option>
+              </select>
+            </label>
+          )}
           <label><span class="am-lbl">Sort by</span>
             <select name="sort">
               <option value="acc">Shelf number</option>
@@ -223,6 +249,7 @@ const data = Object.fromEntries(
               <option value="author">Author, by surname</option>
               <option value="series">Series, in order</option>
               <option value="added">Recently added</option>
+              {rated.length > 0 && <option value="rating">My rating, highest first</option>}
             </select>
           </label>
           <label><span class="am-lbl">Group by</span>
@@ -254,7 +281,7 @@ const data = Object.fromEntries(
     <div class="am-results" data-results data-view="covers">
       {books.map((b) => (
         <article class="am-book" id={b.id} data-id={b.id} data-shelf={b.shelves[0]}>
-          <button type="button" class="am-open" data-open={b.id} aria-label={`${b.title}${b.author ? `, ${b.author}` : ''} — details`}>
+          <button type="button" class="am-open" data-open={b.id} aria-label={`${b.title}${b.author ? `, ${b.author}` : ''}${b.rating ? `, rated ${b.rating} of 5` : ''} — details`}>
             <span class="am-cover">
               {b.cover ? (
                 <img src={b.cover} alt="" loading="lazy" decoding="async" width="180" height="270" />
@@ -272,6 +299,7 @@ const data = Object.fromEntries(
               <span class="am-t">{b.title}</span>
               {b.titleBn && b.titleBn !== b.title && <span class="am-tbn" lang="bn">{b.titleBn}</span>}
               <span class="am-a">{b.author ?? b.editor}{b.translator && <span class="am-tr"> · trans. {b.translator}</span>}</span>
+              {b.rating && <span class="am-rating"><span class="am-stars" style={`--r:${b.rating}`} aria-hidden="true"></span> {b.rating}</span>}
               <span class="am-x">
                 <span class="am-x-acc">No. {b.acc}{b.accEnd && `–${b.accEnd}`}</span>
                 <span class="am-x-shelf">{b.shelfNames.join(' · ')}</span>
@@ -549,7 +577,24 @@ const data = Object.fromEntries(
   .am-d-facts dt { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass-text); }
   .am-d-facts dd { margin: 0; }
   .am-d-desc { font-size: var(--t-base); line-height: 1.75; border-left: 2px solid var(--brass); padding-left: 0.9rem; margin: 0 0 1rem; }
-  .am-d-notes { font-size: var(--t-base); line-height: 1.7; margin: 0 0 1rem; }
+  /* ---- Ratings: a row of five stars, and a second row clipped to the rating ---- */
+  .am-stars { position: relative; display: inline-block; white-space: nowrap; letter-spacing: 0; line-height: 1; font-family: system-ui, sans-serif; color: color-mix(in srgb, var(--ink-soft) 32%, transparent); }
+  .am-stars::before { content: '★★★★★'; }
+  .am-stars::after { content: '★★★★★'; position: absolute; inset: 0 auto 0 0; width: calc(var(--r, 0) * 20%); overflow: hidden; color: var(--brass-text); }
+  .am-rating { display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-soft); }
+  .am-d-rating { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.9rem; font-family: var(--font-mono); font-size: var(--t-sm); }
+  .am-d-rating .am-stars { font-size: 1.35rem; }
+  .am-d-review { font-size: var(--t-base); line-height: 1.75; margin: 0 0 1rem; }
+  .am-d-review p { margin: 0 0 0.7rem; }
+  .am-rate { margin: 1.4rem 0 0; padding: 1rem; border: 1px dashed color-mix(in srgb, var(--brass) 60%, transparent); border-radius: 2px; display: grid; gap: 0.7rem; }
+  .am-rate-row { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+  .am-rate .am-stars { font-size: 2rem; cursor: pointer; touch-action: none; }
+  .am-rate .am-stars:focus-visible { outline: 2px solid var(--fundus); outline-offset: 3px; }
+  .am-rate input, .am-rate textarea { font: inherit; font-size: var(--t-base); color: var(--ink); background: var(--paper-raised); border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent); border-radius: 2px; padding: 0.45rem 0.6rem; }
+  .am-rate input { width: 5rem; }
+  .am-rate textarea { width: 100%; min-height: 7rem; resize: vertical; line-height: 1.6; }
+  .am-rate-actions { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; margin: 0; }
+  .am-rate-msg { font-size: var(--t-sm); color: var(--ink-soft); }
   .am-d-more { margin: 1.2rem 0 0; }
   .am-d-more ol, .am-d-more ul { margin: 0.4rem 0 0; padding-left: 1.3rem; font-size: var(--t-sm); line-height: 1.8; }
   .am-d-edit { margin-top: 1.4rem; font-family: var(--font-mono); font-size: var(--t-xs); }
